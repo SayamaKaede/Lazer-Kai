@@ -106,6 +106,8 @@ namespace osu.Desktop
             {
                 IPCPipeName = !tournamentClient ? OsuGame.IPC_PIPE_NAME : null,
                 FriendlyGameName = OsuGameBase.GAME_NAME,
+                // keep all game files alongside the executable so this build never touches a standard osu! installation's data.
+                PortableInstallation = true,
             };
 
             using (DesktopGameHost host = Host.GetSuitableDesktopHost(gameName, hostOptions))
