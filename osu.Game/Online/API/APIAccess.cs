@@ -101,9 +101,13 @@ namespace osu.Game.Online.API
             log.Add($@"API endpoint root: {Endpoints.APIUrl}");
             log.Add($@"API request version: {APIVersion}");
 
-            ProvidedUsername = config.Get<string>(OsuSetting.Username);
+            // This build is for local beatmap editing only, so signing in is deliberately unavailable.
+            // Saved credentials are discarded rather than restored, which also covers a `game.ini` copied in from a
+            // regular osu! installation carrying a still-valid token.
+            ProvidedUsername = string.Empty;
+            config.SetValue(OsuSetting.Username, string.Empty);
+            config.SetValue(OsuSetting.Token, string.Empty);
 
-            authentication.TokenString = config.Get<string>(OsuSetting.Token);
             authentication.Token.ValueChanged += onTokenChanged;
 
             AddInternal(localUserState = new LocalUserState(this, config));

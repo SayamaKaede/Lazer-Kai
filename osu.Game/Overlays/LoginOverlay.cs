@@ -72,13 +72,19 @@ namespace osu.Game.Overlays
             };
         }
 
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            // Sign-in is intentionally unavailable in this build, which is meant for local beatmap editing only.
+            // Blocking it here covers every entry point at once: the toolbar user button, the main menu buttons,
+            // and every other `loginOverlay?.Show()` caller.
+            State.ValueChanged += _ => State.Value = Visibility.Hidden;
+        }
+
         protected override void PopIn()
         {
-            panel.Bounding = true;
-            this.FadeIn(transition_time, Easing.OutQuint);
-            FadeEdgeEffectTo(WaveContainer.SHADOW_OPACITY, WaveContainer.APPEAR_DURATION, Easing.Out);
-
-            ScheduleAfterChildren(() => GetContainingFocusManager()!.ChangeFocus(panel));
+            // intentionally does nothing; sign-in is disabled, see LoadComplete().
         }
 
         protected override void PopOut()
