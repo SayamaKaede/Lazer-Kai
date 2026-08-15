@@ -29,11 +29,9 @@ namespace osu.Game.Screens.Edit.Components
         [Resolved]
         private EditorClock editorClock { get; set; } = null!;
 
-        [Resolved]
-        private RealmAccess realm { get; set; } = null!;
-
+        // not always present: the bottom bar can be constructed without a full editor around it (notably in test scenes).
         [Resolved(canBeNull: true)]
-        private Editor? editor { get; set; }
+        private EditorStarRating? starRatingTracker { get; set; }
 
         [BackgroundDependencyLoader]
         private void load(OsuColour colours, OverlayColourProvider colourProvider)
@@ -82,30 +80,10 @@ namespace osu.Game.Screens.Edit.Components
         {
             base.LoadComplete();
 
-            if (editor != null)
-                editor.Saved += updateStarRating;
-
-            updateStarRating();
-        }
-
-        /// <summary>
-        /// Star rating is recalculated by <see cref="BeatmapUpdater"/> as part of saving, so it is only refreshed on save.
-        /// </summary>
-        private void updateStarRating() => Schedule(() =>
-        {
-            // the editor operates on a detached copy of `BeatmapInfo`, so the recalculated value has to be read back from realm.
-            double stars = realm.Run(r => r.Find<BeatmapInfo>(editorBeatmap.BeatmapInfo.ID)?.StarRating)
-                           ?? editorBeatmap.BeatmapInfo.StarRating;
-
-            starRating.Text = @$"{stars:0.00}*";
-        });
-
-        protected override void Dispose(bool isDisposing)
-        {
-            base.Dispose(isDisposing);
-
-            if (editor != null)
-                editor.Saved -= updateStarRating;
+            if (starRatingTracker == null)
+                starRating.Text = @"-";
+            else
+                starRatingTracker.Current.BindValueChanged(stars => starRating.Text = stars.NewValue == null ? @"-" : @$"{stars.NewValue:0.00}*", true);
         }
 
         private double? lastBPM;

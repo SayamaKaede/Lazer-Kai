@@ -220,6 +220,12 @@ namespace osu.Game.Localisation
         public static LocalisableString EditorTestGameplay => new TranslatableString(getKey(@"editor_test_gameplay"), @"Test gameplay");
 
         /// <summary>
+        /// "Toggle mod preview while composing"
+        /// </summary>
+        public static LocalisableString EditorToggleComposerModPreview =>
+            new TranslatableString(getKey(@"editor_toggle_composer_mod_preview"), @"Toggle mod preview while composing");
+
+        /// <summary>
         /// "Hold for HUD"
         /// </summary>
         public static LocalisableString HoldForHUD => new TranslatableString(getKey(@"hold_for_hud"), @"Hold for HUD");

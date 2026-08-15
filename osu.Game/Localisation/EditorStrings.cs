@@ -375,6 +375,11 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString SelectionOpacity => new TranslatableString(getKey(@"selection_opacity"), @"Opacity");
 
+        /// <summary>
+        /// "Editor colour (applies on next open)"
+        /// </summary>
+        public static LocalisableString EditorColourScheme => new TranslatableString(getKey(@"editor_colour_scheme"), @"Editor colour (applies on next open)");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

@@ -160,14 +160,24 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
             foreach (var kvp in SelectionHandler.SelectionSampleStates)
             {
-                yield return new DrawableTernaryButton
+                var button = new DrawableTernaryButton
                 {
                     Current = kvp.Value,
                     Description = kvp.Key.Replace(@"hit", string.Empty).Titleize(),
                     CreateIcon = () => GetIconForSample(kvp.Key),
                 };
+
+                SampleTernaryButtons[kvp.Key] = button;
+
+                yield return button;
             }
         }
+
+        /// <summary>
+        /// The toolbox buttons for each sample addition, keyed by sample name (see <see cref="HitSampleInfo"/>).
+        /// Exposed so the samples playing at the current time can be highlighted during playback.
+        /// </summary>
+        public IDictionary<string, DrawableTernaryButton> SampleTernaryButtons { get; } = new Dictionary<string, DrawableTernaryButton>();
 
         private IEnumerable<SampleBankTernaryButton> createSampleBankTernaryButtons()
         {

@@ -152,7 +152,7 @@ namespace osu.Game.Screens.Edit.Components
 
         public partial class PlaybackTabControl : OsuTabControl<double>
         {
-            private static readonly double[] tempo_values = { 0.25, 0.5, 0.75, 1 };
+            private static readonly double[] tempo_values = { 0.25, 0.5, 0.75, 1, 1.5 };
 
             protected override TabItem<double> CreateTabItem(double value) => new PlaybackTabItem(value);
 

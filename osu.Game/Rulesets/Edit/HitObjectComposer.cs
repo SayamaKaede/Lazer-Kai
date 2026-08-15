@@ -373,6 +373,47 @@ namespace osu.Game.Rulesets.Edit
             composerFocusMode.Value = PlayfieldContentContainer.Contains(InputManager.CurrentState.Mouse.Position)
                                       && !LeftToolbox.Contains(InputManager.CurrentState.Mouse.Position)
                                       && !RightToolbox.Contains(InputManager.CurrentState.Mouse.Position);
+
+            flashSamplesPlayingNow();
+        }
+
+        private double? lastFlashedTime;
+
+        /// <summary>
+        /// Highlights the sample toolbox buttons for hit sounds passing under the playhead, so the additions in use
+        /// can be read off while listening rather than by inspecting each object.
+        /// </summary>
+        private void flashSamplesPlayingNow()
+        {
+            if (!EditorClock.IsRunning)
+            {
+                lastFlashedTime = null;
+                return;
+            }
+
+            double currentTime = EditorClock.CurrentTime;
+            double previousTime = lastFlashedTime ?? currentTime;
+
+            lastFlashedTime = currentTime;
+
+            // only forward playback is handled; seeking backwards would otherwise flash everything jumped over.
+            if (currentTime <= previousTime)
+                return;
+
+            foreach (var hitObject in EditorBeatmap.HitObjects)
+            {
+                if (hitObject.StartTime > currentTime)
+                    break;
+
+                if (hitObject.StartTime <= previousTime)
+                    continue;
+
+                foreach (var sample in hitObject.Samples)
+                {
+                    if (blueprintContainer.SampleTernaryButtons.TryGetValue(sample.Name, out var button))
+                        button.Flash();
+                }
+            }
         }
 
         public override Playfield Playfield => drawableRulesetWrapper.Playfield;

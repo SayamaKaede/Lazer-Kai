@@ -91,6 +91,20 @@ namespace osu.Game.Screens.Edit.Components.TernaryButtons
             Toggle();
         }
 
+        /// <summary>
+        /// Briefly highlights this button, reusing the hover treatment so the flash reads the same way.
+        /// Used to show which hit sounds are playing as the editor plays through the beatmap.
+        /// </summary>
+        public void Flash()
+        {
+            if (IsHovered)
+                return;
+
+            Hover.FadeTo(0.2f, 40, Easing.OutQuint)
+                 .Then()
+                 .FadeOut(400, Easing.OutQuint);
+        }
+
         public void Toggle()
         {
             switch (Current.Value)

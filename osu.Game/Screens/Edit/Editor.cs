@@ -219,6 +219,8 @@ namespace osu.Game.Screens.Edit
         [Cached]
         private readonly OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Aquamarine);
 
+        private Bindable<OverlayColourScheme> editorColourScheme;
+
         [Resolved(canBeNull: true)]
         private OnScreenDisplay onScreenDisplay { get; set; }
 
@@ -260,6 +262,12 @@ namespace osu.Game.Screens.Edit
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
+            editorColourScheme = config.GetBindable<OverlayColourScheme>(OsuSetting.EditorColourScheme);
+
+            // `OverlayColourProvider` does not signal drawables when its hue changes, so this is only applied on load.
+            // A change to the setting therefore takes effect the next time the editor is opened.
+            colourProvider.ChangeColourScheme(editorColourScheme.Value);
+
             var loadableBeatmap = Beatmap.Value;
 
             if (loadableBeatmap is DummyWorkingBeatmap)
@@ -342,6 +350,10 @@ namespace osu.Game.Screens.Edit
             AddInternal(bookmarkController);
 
             testPlayModsController = new TestPlayModsController(config, editorBeatmap.BeatmapInfo.Ruleset);
+
+            var starRating = new EditorStarRating();
+            AddInternal(starRating);
+            dependencies.Cache(starRating);
 
             OsuMenuItem undoMenuItem;
             OsuMenuItem redoMenuItem;
@@ -451,6 +463,8 @@ namespace osu.Game.Screens.Edit
                                                 ]
                                             },
                                             new SelectionAppearanceMenuItem(editorSelectionColour, editorSelectionThickness, editorSelectionOpacity),
+                                            new ChoiceMenuItem<OverlayColourScheme>(EditorStrings.EditorColourScheme, editorColourScheme,
+                                                Enum.GetValues<OverlayColourScheme>().Select(scheme => ((LocalisableString)scheme.ToString(), scheme))),
                                             new OsuMenuItemSpacer(),
                                             new BackgroundDimMenuItem(editorBackgroundDim),
                                             new ToggleMenuItem(EditorStrings.ShowStoryboard)
@@ -904,6 +918,10 @@ namespace osu.Game.Screens.Edit
 
                 case GlobalAction.EditorTestGameplay:
                     bottomBar.TestGameplayButton.TriggerClick();
+                    return true;
+
+                case GlobalAction.EditorToggleComposerModPreview:
+                    editorApplyTestPlayModsToComposer.Value = !editorApplyTestPlayModsToComposer.Value;
                     return true;
 
                 case GlobalAction.EditorDiscardUnsavedChanges:

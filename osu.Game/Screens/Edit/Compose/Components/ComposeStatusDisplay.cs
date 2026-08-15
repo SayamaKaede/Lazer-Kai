@@ -30,15 +30,14 @@ namespace osu.Game.Screens.Edit.Compose.Components
         [Resolved]
         private EditorClock editorClock { get; set; } = null!;
 
-        [Resolved]
-        private RealmAccess realm { get; set; } = null!;
-
+        // not always present: the composer can be constructed without a full editor around it (notably in test scenes).
         [Resolved(canBeNull: true)]
-        private Editor? editor { get; set; }
+        private EditorStarRating? starRatingTracker { get; set; }
 
         private OsuSpriteText starRating = null!;
         private OsuSpriteText sliderVelocity = null!;
-        private OsuSpriteText sampleBank = null!;
+        private OsuSpriteText normalBank = null!;
+        private OsuSpriteText additionBank = null!;
         private OsuSpriteText sampleVolume = null!;
 
         [BackgroundDependencyLoader]
@@ -57,7 +56,8 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 {
                     createRow(@"SR", out starRating, colours.Yellow),
                     createRow(@"SV", out sliderVelocity, colours.Lime1),
-                    createRow(@"Bank", out sampleBank, colours.Pink1),
+                    createRow(@"Normal", out normalBank, colours.Pink1),
+                    createRow(@"Addition", out additionBank, colours.Pink2),
                     createRow(@"Volume", out sampleVolume, colours.Pink1),
                 }
             };
@@ -99,23 +99,11 @@ namespace osu.Game.Screens.Edit.Compose.Components
         {
             base.LoadComplete();
 
-            if (editor != null)
-                editor.Saved += updateStarRating;
-
-            updateStarRating();
+            if (starRatingTracker == null)
+                starRating.Text = @"-";
+            else
+                starRatingTracker.Current.BindValueChanged(stars => starRating.Text = stars.NewValue == null ? @"-" : @$"{stars.NewValue:0.00}*", true);
         }
-
-        /// <summary>
-        /// Star rating is only recalculated as part of saving, so this is refreshed on save rather than continuously.
-        /// </summary>
-        private void updateStarRating() => Schedule(() =>
-        {
-            // the editor operates on a detached copy of `BeatmapInfo`, so the recalculated value has to be read back from realm.
-            double stars = realm.Run(r => r.Find<BeatmapInfo>(editorBeatmap.BeatmapInfo.ID)?.StarRating)
-                           ?? editorBeatmap.BeatmapInfo.StarRating;
-
-            starRating.Text = @$"{stars:0.00}*";
-        });
 
         private double? lastTime;
 
@@ -132,27 +120,8 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
         private void updateValuesAtCurrentTime()
         {
-            var current = objectAtCurrentTime();
-
-            if (current == null)
-            {
-                sliderVelocity.Text = sampleBank.Text = sampleVolume.Text = @"-";
-                return;
-            }
-
-            sliderVelocity.Text = current is IHasSliderVelocity sv ? @$"{sv.SliderVelocityMultiplier:0.00}x" : @"-";
-
-            string bank = SamplePointPiece.GetBankValue(current.Samples) ?? @"-";
-            sampleBank.Text = $"{bank}{SamplePointPiece.GetSuffix(current.Samples)}";
-            sampleVolume.Text = @$"{SamplePointPiece.GetVolumeValue(current.Samples)}%";
-        }
-
-        /// <summary>
-        /// The most recent object at or before the current time, i.e. the one whose settings are "in effect" right now.
-        /// </summary>
-        private HitObject? objectAtCurrentTime()
-        {
-            HitObject? result = null;
+            HitObject? current = null;
+            IHasSliderVelocity? currentWithVelocity = null;
 
             // hit objects are kept in start time order, so the last one which has started is the relevant one.
             foreach (var hitObject in editorBeatmap.HitObjects)
@@ -160,18 +129,25 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 if (hitObject.StartTime > editorClock.CurrentTime)
                     break;
 
-                result = hitObject;
+                current = hitObject;
+
+                // slider velocity is tracked separately and deliberately not cleared by objects which don't carry one
+                // (circles, spinners), so the last velocity in effect stays on screen until the next slider.
+                if (hitObject is IHasSliderVelocity hasVelocity)
+                    currentWithVelocity = hasVelocity;
             }
 
-            return result;
-        }
+            sliderVelocity.Text = currentWithVelocity == null ? @"-" : @$"{currentWithVelocity.SliderVelocityMultiplier:0.00}x";
 
-        protected override void Dispose(bool isDisposing)
-        {
-            base.Dispose(isDisposing);
+            if (current == null)
+            {
+                normalBank.Text = additionBank.Text = sampleVolume.Text = @"-";
+                return;
+            }
 
-            if (editor != null)
-                editor.Saved -= updateStarRating;
+            normalBank.Text = $"{SamplePointPiece.GetBankValue(current.Samples) ?? @"-"}{SamplePointPiece.GetSuffix(current.Samples)}";
+            additionBank.Text = SamplePointPiece.GetAdditionBankValue(current.Samples) ?? @"-";
+            sampleVolume.Text = @$"{SamplePointPiece.GetVolumeValue(current.Samples)}%";
         }
     }
 }

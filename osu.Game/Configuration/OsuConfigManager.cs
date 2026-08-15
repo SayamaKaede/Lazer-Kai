@@ -238,6 +238,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSelectionColour, EditorSelectionAppearance.DEFAULT_COLOUR);
             SetDefault(OsuSetting.EditorSelectionThickness, 1f, 0.25f, 3f, 0.25f);
             SetDefault(OsuSetting.EditorSelectionOpacity, 1f, 0.1f, 1f, 0.05f);
+            SetDefault(OsuSetting.EditorColourScheme, OverlayColourScheme.Aquamarine);
 
             SetDefault(OsuSetting.AlwaysShowHoldForMenuButton, false);
             SetDefault(OsuSetting.AlwaysRequireHoldingForPause, false);
@@ -535,5 +536,10 @@ namespace osu.Game.Configuration
         /// Opacity of the editor's selection outlines.
         /// </summary>
         EditorSelectionOpacity,
+
+        /// <summary>
+        /// Colour scheme the editor's own chrome is tinted with.
+        /// </summary>
+        EditorColourScheme,
     }
 }
