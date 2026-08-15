@@ -385,6 +385,10 @@ namespace osu.Game.Rulesets.Edit
         /// </summary>
         private void flashSamplesPlayingNow()
         {
+            // load() bails out early if the beatmap could not be loaded, leaving the blueprint container unset.
+            if (blueprintContainer == null)
+                return;
+
             if (!EditorClock.IsRunning)
             {
                 lastFlashedTime = null;
