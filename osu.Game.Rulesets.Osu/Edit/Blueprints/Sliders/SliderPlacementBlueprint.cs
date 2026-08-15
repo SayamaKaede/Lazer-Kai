@@ -59,6 +59,8 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
 
         private Bindable<bool> limitedDistanceSnap { get; set; } = null!;
 
+        private Bindable<bool> freehandPlacement { get; set; } = null!;
+
         private readonly IncrementalBSplineBuilder bSplineBuilder = new IncrementalBSplineBuilder { Degree = 4 };
 
         protected override bool IsValidForPlacement => base.IsValidForPlacement && (PlacementActive == PlacementState.Waiting || HitObject.Path.HasValidLengthForPlacement);
@@ -85,6 +87,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
 
             state = SliderPlacementState.Initial;
             limitedDistanceSnap = config.GetBindable<bool>(OsuSetting.EditorLimitedDistanceSnap);
+            freehandPlacement = config.GetBindable<bool>(OsuSetting.EditorFreehandSliderPlacement);
         }
 
         protected override void LoadComplete()
@@ -187,6 +190,9 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
         protected override bool OnDragStart(DragStartEvent e)
         {
             if (e.Button != MouseButton.Left)
+                return base.OnDragStart(e);
+
+            if (!freehandPlacement.Value)
                 return base.OnDragStart(e);
 
             if (state != SliderPlacementState.ControlPoints)

@@ -3,9 +3,11 @@
 
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.Skinning.Default;
+using osu.Game.Screens.Edit;
 using osuTK;
 using osuTK.Graphics;
 
@@ -13,6 +15,11 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
 {
     public partial class SliderBodyPiece : BlueprintPiece<Slider>
     {
+        /// <summary>
+        /// Matches <see cref="DrawableSliderPath.BorderSize"/>'s own default.
+        /// </summary>
+        private const float default_border_size = 1;
+
         private readonly ManualSliderBody body;
 
         /// <summary>
@@ -40,9 +47,19 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
         }
 
         [BackgroundDependencyLoader]
-        private void load(OsuColour colours)
+        private void load(OsuColour colours, OsuConfigManager config)
         {
-            body.BorderColour = colours.Yellow;
+            var appearance = new EditorSelectionAppearance(config);
+
+            void updateAppearance()
+            {
+                body.BorderColour = appearance.GetColour(colours.Yellow);
+                body.BorderSize = appearance.GetThickness(default_border_size);
+                Alpha = appearance.Opacity;
+            }
+
+            appearance.Changed += updateAppearance;
+            updateAppearance();
         }
 
         private int? lastVersion;

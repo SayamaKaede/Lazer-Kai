@@ -49,7 +49,8 @@ namespace osu.Game.Screens.Edit
                     RelativeSizeAxes = Axes.Both,
                     ColumnDimensions = new[]
                     {
-                        new Dimension(GridSizeMode.Absolute, 150),
+                        // slightly wider than upstream to fit the star rating readout alongside the timestamp.
+                        new Dimension(GridSizeMode.Absolute, 190),
                         new Dimension(),
                         new Dimension(GridSizeMode.Absolute, 220),
                         new Dimension(GridSizeMode.Absolute, HitObjectComposer.TOOLBOX_CONTRACTED_SIZE_RIGHT),

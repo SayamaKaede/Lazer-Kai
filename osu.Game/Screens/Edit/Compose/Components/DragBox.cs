@@ -12,7 +12,9 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
 using osu.Framework.Layout;
+using osu.Game.Configuration;
 using osuTK;
+using osuTK.Graphics;
 
 namespace osu.Game.Screens.Edit.Compose.Components
 {
@@ -33,10 +35,26 @@ namespace osu.Game.Screens.Edit.Compose.Components
             Alpha = 0;
         }
 
+        private EditorSelectionAppearance appearance;
+
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            appearance = new EditorSelectionAppearance(config);
+            appearance.Changed += updateAppearance;
+
             InternalChild = Box = CreateBox();
+
+            updateAppearance();
+        }
+
+        private void updateAppearance()
+        {
+            // the drag box is drawn in white by default, so only override the colour once the user has picked one.
+            Colour = appearance.GetColour(Color4.White);
+
+            if (Box is BoxWithBorders boxWithBorders)
+                boxWithBorders.ThicknessScale = appearance.GetThickness(1);
         }
 
         protected virtual Drawable CreateBox() => new BoxWithBorders();
@@ -61,7 +79,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 if (value == state) return;
 
                 state = value;
-                this.FadeTo(state == Visibility.Hidden ? 0 : 1, 250, Easing.OutQuint);
+                this.FadeTo(state == Visibility.Hidden ? 0 : appearance?.Opacity ?? 1, 250, Easing.OutQuint);
                 StateChanged?.Invoke(state);
             }
         }
@@ -76,6 +94,24 @@ namespace osu.Game.Screens.Edit.Compose.Components
         public partial class BoxWithBorders : CompositeDrawable
         {
             private readonly LayoutValue cache = new LayoutValue(Invalidation.RequiredParentSizeToFit);
+
+            private float thicknessScale = 1;
+
+            /// <summary>
+            /// Multiplier applied to the drawn border lines, so the user can make the drag selection easier or harder to see.
+            /// </summary>
+            public float ThicknessScale
+            {
+                get => thicknessScale;
+                set
+                {
+                    if (thicknessScale == value)
+                        return;
+
+                    thicknessScale = value;
+                    cache.Invalidate();
+                }
+            }
 
             public BoxWithBorders()
             {
@@ -102,9 +138,9 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 }
 
                 // Make lines the same width independent of display resolution.
-                float lineThickness = DrawWidth > 0
+                float lineThickness = (DrawWidth > 0
                     ? DrawWidth / ScreenSpaceDrawQuad.Width * 2
-                    : DrawHeight / ScreenSpaceDrawQuad.Height * 2;
+                    : DrawHeight / ScreenSpaceDrawQuad.Height * 2) * thicknessScale;
 
                 Padding = new MarginPadding(-lineThickness / 2);
 

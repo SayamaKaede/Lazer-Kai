@@ -19,6 +19,7 @@ using osu.Game.Overlays;
 using osu.Game.Overlays.Dashboard.Friends;
 using osu.Game.Overlays.Mods.Input;
 using osu.Game.Rulesets.Scoring;
+using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Compose.Components;
 using osu.Game.Screens.OnlinePlay.Lounge.Components;
 using osu.Game.Screens.Select;
@@ -227,6 +228,16 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorTimelineShowTicks, true);
 
             SetDefault(OsuSetting.EditorContractSidebars, false);
+
+            SetDefault(OsuSetting.EditorTestPlayMods, string.Empty);
+            SetDefault(OsuSetting.EditorApplyTestPlayModsToComposer, false);
+            SetDefault(OsuSetting.EditorLiveModPreview, true);
+            SetDefault(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement, false);
+            SetDefault(OsuSetting.EditorFreehandSliderPlacement, true);
+            SetDefault(OsuSetting.EditorAlwaysExpandTimelinePointLabels, false);
+            SetDefault(OsuSetting.EditorSelectionColour, EditorSelectionAppearance.DEFAULT_COLOUR);
+            SetDefault(OsuSetting.EditorSelectionThickness, 1f, 0.25f, 3f, 0.25f);
+            SetDefault(OsuSetting.EditorSelectionOpacity, 1f, 0.1f, 1f, 0.05f);
 
             SetDefault(OsuSetting.AlwaysShowHoldForMenuButton, false);
             SetDefault(OsuSetting.AlwaysRequireHoldingForPause, false);
@@ -478,5 +489,51 @@ namespace osu.Game.Configuration
 
         DashboardSortMode,
         DashboardDisplayStyle,
+
+        /// <summary>
+        /// Mods to apply when entering gameplay test from the editor, serialised as a per-ruleset dictionary of <see cref="Online.API.APIMod"/>s.
+        /// </summary>
+        EditorTestPlayMods,
+
+        /// <summary>
+        /// Whether <see cref="EditorTestPlayMods"/> should also be applied to the editor's compose view, not just gameplay test.
+        /// </summary>
+        EditorApplyTestPlayModsToComposer,
+
+        /// <summary>
+        /// Whether the composer's mod preview keeps up with edits as they happen.
+        /// Turning this off limits the (potentially expensive) re-derivation to entering compose mode and saving.
+        /// </summary>
+        EditorLiveModPreview,
+
+        /// <summary>
+        /// Whether placing an object should advance the editor clock by the spacing between the two objects preceding it.
+        /// </summary>
+        EditorAdvanceByPreviousSpacingOnPlacement,
+
+        /// <summary>
+        /// Whether sliders can be drawn freehand by dragging during placement.
+        /// </summary>
+        EditorFreehandSliderPlacement,
+
+        /// <summary>
+        /// Whether the timeline's slider velocity / volume / sample bank labels stay expanded even where objects are dense.
+        /// </summary>
+        EditorAlwaysExpandTimelinePointLabels,
+
+        /// <summary>
+        /// Hex colour overriding the editor's selection outlines. Empty leaves each piece at its default.
+        /// </summary>
+        EditorSelectionColour,
+
+        /// <summary>
+        /// Multiplier applied to the border thickness of the editor's selection outlines.
+        /// </summary>
+        EditorSelectionThickness,
+
+        /// <summary>
+        /// Opacity of the editor's selection outlines.
+        /// </summary>
+        EditorSelectionOpacity,
     }
 }

@@ -10,6 +10,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osuTK;
@@ -123,9 +124,15 @@ namespace osu.Game.Screens.Edit.Compose.Components
         [Resolved]
         private OsuColour colours { get; set; } = null!;
 
+        private EditorSelectionAppearance appearance = null!;
+        private Box infoTextBackground = null!;
+        private Container border = null!;
+
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            appearance = new EditorSelectionAppearance(config);
+
             InternalChildren = new Drawable[]
             {
                 new Container
@@ -134,7 +141,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
                     AutoSizeAxes = Axes.Both,
                     Children = new Drawable[]
                     {
-                        new Box
+                        infoTextBackground = new Box
                         {
                             Colour = colours.YellowDark,
                             RelativeSizeAxes = Axes.Both,
@@ -148,7 +155,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
                         }
                     }
                 },
-                new Container
+                border = new Container
                 {
                     Masking = true,
                     BorderThickness = BORDER_RADIUS,
@@ -198,6 +205,19 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 recreateRotationHandles();
                 recreateButtons();
             }, true);
+
+            appearance.Changed += updateAppearance;
+            updateAppearance();
+        }
+
+        private void updateAppearance()
+        {
+            var colour = appearance.GetColour(colours.YellowDark);
+
+            infoTextBackground.Colour = colour;
+            border.BorderColour = colour;
+            border.BorderThickness = appearance.GetThickness(BORDER_RADIUS);
+            Alpha = appearance.Opacity;
         }
 
         protected override bool OnKeyDown(KeyDownEvent e)

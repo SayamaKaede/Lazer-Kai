@@ -91,6 +91,13 @@ namespace osu.Game.Rulesets.Edit
 
         private IBindable<bool> hasTiming;
         private Bindable<bool> autoSeekOnPlacement;
+        private Bindable<bool> advanceByPreviousSpacingOnPlacement;
+        private Bindable<bool> liveModPreview;
+
+        /// <summary>
+        /// Mods being previewed in the composer, if the user opted into previewing their gameplay test mods while editing.
+        /// </summary>
+        private Mod[] previewMods = Array.Empty<Mod>();
         private readonly Bindable<bool> composerFocusMode = new Bindable<bool>();
 
         [CanBeNull]
@@ -110,15 +117,25 @@ namespace osu.Game.Rulesets.Edit
         private void load(OsuConfigManager config, [CanBeNull] Editor editor, ReadableKeyCombinationProvider keyCombinationProvider)
         {
             autoSeekOnPlacement = config.GetBindable<bool>(OsuSetting.EditorAutoSeekOnPlacement);
+            advanceByPreviousSpacingOnPlacement = config.GetBindable<bool>(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement);
+            liveModPreview = config.GetBindable<bool>(OsuSetting.EditorLiveModPreview);
 
             if (editor != null)
+            {
                 composerFocusMode.BindTo(editor.ComposerFocusMode);
+
+                if (config.Get<bool>(OsuSetting.EditorApplyTestPlayModsToComposer))
+                    previewMods = editor.TestPlayMods.Mods.Value.Select(m => m.DeepClone()).ToArray();
+            }
+
+            // must happen before the drawable ruleset is constructed so that hit objects are already in their modded state.
+            applyBeatmapPreviewMods();
 
             Config = Dependencies.Get<IRulesetConfigCache>().GetConfigFor(Ruleset);
 
             try
             {
-                DrawableRuleset = CreateDrawableRuleset(Ruleset, EditorBeatmap.PlayableBeatmap, new[] { Ruleset.GetAutoplayMod() });
+                DrawableRuleset = CreateDrawableRuleset(Ruleset, EditorBeatmap.PlayableBeatmap, previewMods.Prepend(Ruleset.GetAutoplayMod()).ToArray());
                 drawableRulesetWrapper = new DrawableEditorRulesetWrapper<TObject>(DrawableRuleset)
                 {
                     Clock = EditorClock,
@@ -253,10 +270,17 @@ namespace osu.Game.Rulesets.Edit
                         },
                         RightToolbox = new ExpandingToolboxContainer(TOOLBOX_CONTRACTED_SIZE_RIGHT, 250)
                         {
-                            Child = new EditorToolboxGroup("inspector")
+                            Children = new Drawable[]
                             {
-                                Child = CreateHitObjectInspector()
-                            },
+                                new EditorToolboxGroup("status")
+                                {
+                                    Child = new ComposeStatusDisplay()
+                                },
+                                new EditorToolboxGroup("inspector")
+                                {
+                                    Child = CreateHitObjectInspector()
+                                },
+                            }
                         }
                     }
                 },
@@ -288,6 +312,9 @@ namespace osu.Game.Rulesets.Edit
             base.LoadComplete();
 
             InputManager = GetContainingInputManager();
+
+            if (previewMods.OfType<IApplicableToBeatmap>().Any())
+                EditorBeatmap.BeatmapReprocessed += onBeatmapReprocessed;
 
             hasTiming = EditorBeatmap.HasTiming.GetBoundCopy();
             hasTiming.BindValueChanged(timing =>
@@ -550,6 +577,85 @@ namespace osu.Game.Rulesets.Edit
 
             if (autoSeekOnPlacement.Value && EditorClock.CurrentTime < hitObject.StartTime)
                 EditorClock.SeekSmoothlyTo(hitObject.StartTime);
+
+            if (advanceByPreviousSpacingOnPlacement.Value)
+                advanceByPreviousSpacing(hitObject);
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            if (EditorBeatmap == null)
+                return;
+
+            EditorBeatmap.BeatmapReprocessed -= onBeatmapReprocessed;
+
+            // leave the beatmap in its unmodded state for whatever uses it next.
+            if (previewMods.OfType<IApplicableToBeatmap>().Any())
+            {
+                foreach (var hitObject in EditorBeatmap.PlayableBeatmap.HitObjects)
+                    hitObject.ApplyDefaults(EditorBeatmap.ControlPointInfo, EditorBeatmap.PlayableBeatmap.Difficulty);
+            }
+        }
+
+        // deferred to the next frame both to avoid re-entering `EditorBeatmap`'s own processing and to coalesce bursts of edits.
+        private void onBeatmapReprocessed()
+        {
+            if (liveModPreview.Value)
+                Scheduler.AddOnce(applyBeatmapPreviewMods);
+        }
+
+        /// <summary>
+        /// Applies the beatmap-level effects of <see cref="previewMods"/> to the beatmap being edited, so that the composer
+        /// shows what gameplay would look like with those mods active.
+        /// </summary>
+        /// <remarks>
+        /// These mods mutate hit object properties in place (freeze frame, for instance, extends each object's preempt time),
+        /// so everything is reset to its unmodded state first. Without that, repeated application would compound.
+        /// </remarks>
+        private void applyBeatmapPreviewMods()
+        {
+            var beatmapMods = previewMods.OfType<IApplicableToBeatmap>().ToArray();
+
+            if (beatmapMods.Length == 0)
+                return;
+
+            foreach (var hitObject in EditorBeatmap.PlayableBeatmap.HitObjects)
+                hitObject.ApplyDefaults(EditorBeatmap.ControlPointInfo, EditorBeatmap.PlayableBeatmap.Difficulty);
+
+            foreach (var mod in beatmapMods)
+                mod.ApplyToBeatmap(EditorBeatmap.PlayableBeatmap);
+        }
+
+        /// <summary>
+        /// Seeks forward by the spacing between the just-placed object and the one before it, so that the playhead lands
+        /// where an object continuing the same rhythm would go. This allows placing a constant rhythm without touching the timeline.
+        /// </summary>
+        private void advanceByPreviousSpacing(HitObject placed)
+        {
+            // deliberately compares against start times only: a constant rhythm is defined by when objects begin, not when they end.
+            HitObject precedingObject = null;
+
+            foreach (var h in EditorBeatmap.HitObjects)
+            {
+                if (h.StartTime >= placed.StartTime || h == placed)
+                    continue;
+
+                if (precedingObject == null || h.StartTime > precedingObject.StartTime)
+                    precedingObject = h;
+            }
+
+            // nothing to infer a spacing from yet.
+            if (precedingObject == null)
+                return;
+
+            double spacing = placed.StartTime - precedingObject.StartTime;
+
+            if (spacing <= 0)
+                return;
+
+            EditorClock.SeekSmoothlyTo(BeatSnapProvider.SnapTime(placed.StartTime + spacing));
         }
 
         public void Delete(HitObject hitObject) => EditorBeatmap.Remove(hitObject);

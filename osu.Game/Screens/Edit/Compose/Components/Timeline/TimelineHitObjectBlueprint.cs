@@ -17,6 +17,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
 using osu.Framework.Threading;
 using osu.Framework.Utils;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Overlays;
@@ -506,14 +507,30 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         public partial class Border : ExtendableCircle
         {
+            /// <summary>
+            /// Matches the border thickness <see cref="ExtendableCircle"/> sets up.
+            /// </summary>
+            private const float default_border_thickness = 4;
+
             [BackgroundDependencyLoader]
-            private void load(OsuColour colours)
+            private void load(OsuColour colours, OsuConfigManager config)
             {
                 Content.Child.Alpha = 0;
                 Content.Child.AlwaysPresent = true;
 
-                Content.BorderColour = colours.Yellow;
                 Content.EdgeEffect = new EdgeEffectParameters();
+
+                var appearance = new EditorSelectionAppearance(config);
+
+                void updateAppearance()
+                {
+                    Content.BorderColour = appearance.GetColour(colours.Yellow);
+                    Content.BorderThickness = appearance.GetThickness(default_border_thickness);
+                    Alpha = appearance.Opacity;
+                }
+
+                appearance.Changed += updateAppearance;
+                updateAppearance();
             }
         }
 

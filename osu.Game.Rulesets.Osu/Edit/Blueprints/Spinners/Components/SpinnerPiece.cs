@@ -4,8 +4,10 @@
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Shapes;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Screens.Edit;
 using osuTK;
 
 namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Spinners.Components
@@ -40,9 +42,18 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Spinners.Components
         }
 
         [BackgroundDependencyLoader]
-        private void load(OsuColour colours)
+        private void load(OsuColour colours, OsuConfigManager config)
         {
-            Colour = colours.Yellow;
+            var appearance = new EditorSelectionAppearance(config);
+
+            void updateAppearance()
+            {
+                Colour = appearance.GetColour(colours.Yellow);
+                Alpha = appearance.Opacity;
+            }
+
+            appearance.Changed += updateAppearance;
+            updateAppearance();
         }
 
         public override void UpdateFrom(Spinner hitObject)

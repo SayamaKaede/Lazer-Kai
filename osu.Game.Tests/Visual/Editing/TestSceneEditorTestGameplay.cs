@@ -8,17 +8,22 @@ using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
+using osu.Game.Graphics.UserInterface;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu;
+using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.UI;
 using osu.Game.Screens;
 using osu.Game.Screens.Backgrounds;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Components;
+using osu.Game.Screens.Edit.Components.Menus;
 using osu.Game.Screens.Edit.Components.Timelines.Summary;
 using osu.Game.Screens.Edit.GameplayTest;
 using osu.Game.Screens.Play;
@@ -74,6 +79,75 @@ namespace osu.Game.Tests.Visual.Editing
             AddUntilStep("current screen is editor", () => Stack.CurrentScreen is Editor);
             AddUntilStep("background is correct", () => this.ChildrenOfType<BackgroundScreenStack>().Single().CurrentScreen is EditorBackgroundScreen);
             AddAssert("no mods selected", () => SelectedMods.Value.Count == 0);
+        }
+
+        [Test]
+        public void TestSelectingTestPlayModThroughMenuBar()
+        {
+            // the selection is persisted to config, so it can carry over from a previously run test in this fixture.
+            AddStep("clear test play mods", () => Editor.TestPlayMods.DeselectAll());
+
+            AddStep("click Test", () => this.ChildrenOfType<EditorMenuBar.DrawableEditorBarMenuItem>()
+                                            .Single(item => hasText(item, "Test")).TriggerClick());
+
+            hoverMenuItem("Mods");
+            hoverMenuItem("Fun");
+            hoverMenuItem("Freeze Frame (FR)");
+            AddStep("click Freeze Frame", () => getMenuItem("Freeze Frame (FR)").TriggerClick());
+
+            AddAssert("freeze frame selected for test play", () => Editor.TestPlayMods.Mods.Value.OfType<OsuModFreezeFrame>().Any());
+        }
+
+        private void hoverMenuItem(string text)
+        {
+            AddUntilStep($"wait for \"{text}\"", () => getMenuItem(text) != null);
+            AddStep($"hover \"{text}\"", () => InputManager.MoveMouseTo(getMenuItem(text)));
+        }
+
+        private DrawableOsuMenuItem getMenuItem(string text) => this.ChildrenOfType<DrawableOsuMenuItem>().FirstOrDefault(item => hasText(item, text));
+
+        private static bool hasText(Drawable item, string text) => item.ChildrenOfType<SpriteText>().Any(t => t.Text.ToString() == text);
+
+        [Test]
+        public void TestGameplayTestAppliesTestPlayMods()
+        {
+            AddStep("select freeze frame as a test play mod", () => Editor.TestPlayMods.Mods.Value = new[] { new OsuModFreezeFrame() });
+
+            AddStep("click test gameplay button", () =>
+            {
+                var button = Editor.ChildrenOfType<TestGameplayButton>().Single();
+
+                InputManager.MoveMouseTo(button);
+                InputManager.Click(MouseButton.Left);
+            });
+
+            EditorPlayer editorPlayer = null;
+            AddUntilStep("player pushed", () => (editorPlayer = Stack.CurrentScreen as EditorPlayer) != null);
+            AddAssert("freeze frame applied to gameplay", () => editorPlayer.GameplayState.Mods.OfType<OsuModFreezeFrame>().Any());
+
+            AddStep("exit player", () => editorPlayer.Exit());
+            AddUntilStep("current screen is editor", () => Stack.CurrentScreen is Editor);
+            AddStep("exit editor", () => Editor.Exit());
+            AddUntilStep("mod selection restored on leaving editor", () => SelectedMods.Value.Count == 1 && SelectedMods.Value.Single() is ModCinema);
+        }
+
+        [Test]
+        public void TestTestPlayModsPersistAcrossEditorSessions()
+        {
+            Editor firstEditor = null;
+
+            AddStep("select freeze frame as a test play mod", () =>
+            {
+                firstEditor = Editor;
+                Editor.TestPlayMods.Mods.Value = new[] { new OsuModFreezeFrame() };
+            });
+
+            AddStep("exit editor", () => Editor.Exit());
+            AddUntilStep("wait for editor exit", () => !firstEditor.IsCurrentScreen());
+
+            AddStep("reload editor", LoadEditor);
+            AddUntilStep("wait for new editor", () => Editor != firstEditor && Editor?.ReadyForUse == true);
+            AddAssert("test play mods restored", () => Editor.TestPlayMods.Mods.Value.OfType<OsuModFreezeFrame>().Any());
         }
 
         [Test]

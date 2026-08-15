@@ -166,6 +166,13 @@ namespace osu.Game.Screens.Edit
         private string lastSavedHash;
         private EditorMenuItem discardChangesMenuItem;
 
+        private TestPlayModsController testPlayModsController;
+
+        /// <summary>
+        /// Mods which will be applied when entering gameplay test.
+        /// </summary>
+        public TestPlayModsController TestPlayMods => testPlayModsController;
+
         private ScreenContainer screenContainer;
 
         [CanBeNull]
@@ -224,6 +231,14 @@ namespace osu.Game.Screens.Edit
         private Bindable<bool> editorTimelineShowBreaks;
         private Bindable<bool> editorTimelineShowTicks;
         private Bindable<bool> editorContractSidebars;
+        private Bindable<bool> editorAdvanceByPreviousSpacing;
+        private Bindable<bool> editorFreehandSliderPlacement;
+        private Bindable<bool> editorApplyTestPlayModsToComposer;
+        private Bindable<bool> editorLiveModPreview;
+        private Bindable<bool> editorAlwaysExpandTimelinePointLabels;
+        private Bindable<string> editorSelectionColour;
+        private Bindable<float> editorSelectionThickness;
+        private Bindable<float> editorSelectionOpacity;
 
         /// <summary>
         /// This controls the opacity of components like the timelines, sidebars, etc.
@@ -326,6 +341,8 @@ namespace osu.Game.Screens.Edit
             var bookmarkController = new BookmarkController();
             AddInternal(bookmarkController);
 
+            testPlayModsController = new TestPlayModsController(config, editorBeatmap.BeatmapInfo.Ruleset);
+
             OsuMenuItem undoMenuItem;
             OsuMenuItem redoMenuItem;
 
@@ -338,6 +355,14 @@ namespace osu.Game.Screens.Edit
             editorTimelineShowBreaks = config.GetBindable<bool>(OsuSetting.EditorTimelineShowBreaks);
             editorTimelineShowTicks = config.GetBindable<bool>(OsuSetting.EditorTimelineShowTicks);
             editorContractSidebars = config.GetBindable<bool>(OsuSetting.EditorContractSidebars);
+            editorAdvanceByPreviousSpacing = config.GetBindable<bool>(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement);
+            editorFreehandSliderPlacement = config.GetBindable<bool>(OsuSetting.EditorFreehandSliderPlacement);
+            editorApplyTestPlayModsToComposer = config.GetBindable<bool>(OsuSetting.EditorApplyTestPlayModsToComposer);
+            editorLiveModPreview = config.GetBindable<bool>(OsuSetting.EditorLiveModPreview);
+            editorAlwaysExpandTimelinePointLabels = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandTimelinePointLabels);
+            editorSelectionColour = config.GetBindable<string>(OsuSetting.EditorSelectionColour);
+            editorSelectionThickness = config.GetBindable<float>(OsuSetting.EditorSelectionThickness);
+            editorSelectionOpacity = config.GetBindable<float>(OsuSetting.EditorSelectionOpacity);
 
             // These two settings don't work together. Make them mutually exclusive to let the user know.
             editorAutoSeekOnPlacement.BindValueChanged(enabled =>
@@ -419,8 +444,13 @@ namespace osu.Game.Screens.Edit
                                                     {
                                                         State = { BindTarget = editorTimelineShowBreaks }
                                                     },
+                                                    new ToggleMenuItem(EditorStrings.AlwaysExpandTimelinePointLabels)
+                                                    {
+                                                        State = { BindTarget = editorAlwaysExpandTimelinePointLabels }
+                                                    },
                                                 ]
                                             },
+                                            new SelectionAppearanceMenuItem(editorSelectionColour, editorSelectionThickness, editorSelectionOpacity),
                                             new OsuMenuItemSpacer(),
                                             new BackgroundDimMenuItem(editorBackgroundDim),
                                             new ToggleMenuItem(EditorStrings.ShowStoryboard)
@@ -440,6 +470,14 @@ namespace osu.Game.Screens.Edit
                                             {
                                                 State = { BindTarget = editorLimitedDistanceSnap },
                                             },
+                                            new ToggleMenuItem(EditorStrings.AdvanceByPreviousSpacingOnPlacement)
+                                            {
+                                                State = { BindTarget = editorAdvanceByPreviousSpacing },
+                                            },
+                                            new ToggleMenuItem(EditorStrings.FreehandSliderPlacement)
+                                            {
+                                                State = { BindTarget = editorFreehandSliderPlacement },
+                                            },
                                             new ToggleMenuItem(EditorStrings.ContractSidebars)
                                             {
                                                 State = { BindTarget = editorContractSidebars }
@@ -453,6 +491,28 @@ namespace osu.Game.Screens.Edit
                                             new EditorMenuItem(EditorStrings.SetPreviewPointToCurrent, MenuItemType.Standard, SetPreviewPointToCurrentTime),
                                             new EditorMenuItem(EditorStrings.SnapAllNotesToCurrentSnapDivisor, MenuItemType.Destructive, confirmSnapAllHitObjectsToCurrentDivisor),
                                             bookmarkController.Menu,
+                                        }
+                                    },
+                                    new MenuItem(EditorStrings.MenuBarTest)
+                                    {
+                                        Items = new MenuItem[]
+                                        {
+                                            new EditorMenuItem(EditorStrings.TestGameplay, MenuItemType.Standard, TestGameplay)
+                                            {
+                                                Hotkey = new Hotkey(GlobalAction.EditorTestGameplay)
+                                            },
+                                            new OsuMenuItemSpacer(),
+                                            testPlayModsController.Menu,
+                                            new EditorMenuItem(EditorStrings.TestPlayDeselectAllMods, MenuItemType.Destructive, testPlayModsController.DeselectAll),
+                                            new OsuMenuItemSpacer(),
+                                            new ToggleMenuItem(EditorStrings.ApplyTestPlayModsToComposer)
+                                            {
+                                                State = { BindTarget = editorApplyTestPlayModsToComposer },
+                                            },
+                                            new ToggleMenuItem(EditorStrings.LiveModPreview)
+                                            {
+                                                State = { BindTarget = editorLiveModPreview },
+                                            },
                                         }
                                     }
                                 }
@@ -487,6 +547,14 @@ namespace osu.Game.Screens.Edit
 
             Mode.Value = isNewBeatmap ? EditorScreenMode.SongSetup : EditorScreenMode.Compose;
             Mode.BindValueChanged(onModeChanged, true);
+
+            // the composer reads the mod preview settings when it is constructed, so it has to be rebuilt for a change to take effect.
+            editorApplyTestPlayModsToComposer.BindValueChanged(_ => reloadComposeScreen());
+            testPlayModsController.Mods.BindValueChanged(_ =>
+            {
+                if (editorApplyTestPlayModsToComposer.Value)
+                    reloadComposeScreen();
+            });
 
             MutationTracker.InProgress.BindValueChanged(_ =>
             {
@@ -549,7 +617,14 @@ namespace osu.Game.Screens.Edit
                 pushEditorPlayer();
             }
 
-            void pushEditorPlayer() => this.Push(new EditorPlayerLoader(this));
+            void pushEditorPlayer()
+            {
+                // applied to the editor's own (leased) bindable so that the pushed player screen picks them up.
+                // the lease reverts on editor exit, so the user's song select mod selection is left untouched.
+                Mods.Value = testPlayModsController.Mods.Value.Select(m => m.DeepClone()).ToArray();
+
+                this.Push(new EditorPlayerLoader(this));
+            }
         }
 
         private bool attemptMutationOperation(Func<bool> mutationOperation)
@@ -1075,6 +1150,28 @@ namespace osu.Game.Screens.Edit
             clock.Stop();
             clock.UnbindAdjustments();
             musicController.TrackChanged -= onTrackChanged;
+        }
+
+        /// <summary>
+        /// Discards the cached compose screen so it is rebuilt from scratch on next display.
+        /// Needed for settings which the composer only reads while being constructed, such as the mods it previews.
+        /// </summary>
+        private void reloadComposeScreen()
+        {
+            var existing = screenContainer.SingleOrDefault(s => s.Type == EditorScreenMode.Compose);
+
+            if (existing == null)
+                return;
+
+            bool wasCurrent = currentScreen == existing;
+
+            if (wasCurrent)
+                currentScreen = null;
+
+            screenContainer.Remove(existing, true);
+
+            if (wasCurrent)
+                onModeChanged(new ValueChangedEvent<EditorScreenMode>(EditorScreenMode.Compose, EditorScreenMode.Compose));
         }
 
         private void onModeChanged(ValueChangedEvent<EditorScreenMode> e)

@@ -6,6 +6,8 @@ using osu.Game.Graphics.Sprites;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Game.Beatmaps;
+using osu.Game.Database;
 using osu.Game.Extensions;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
@@ -19,12 +21,19 @@ namespace osu.Game.Screens.Edit.Components
     {
         private OsuSpriteText bpm = null!;
         private OsuSpriteText progress = null!;
+        private OsuSpriteText starRating = null!;
 
         [Resolved]
         private EditorBeatmap editorBeatmap { get; set; } = null!;
 
         [Resolved]
         private EditorClock editorClock { get; set; } = null!;
+
+        [Resolved]
+        private RealmAccess realm { get; set; } = null!;
+
+        [Resolved(canBeNull: true)]
+        private Editor? editor { get; set; }
 
         [BackgroundDependencyLoader]
         private void load(OsuColour colours, OverlayColourProvider colourProvider)
@@ -43,15 +52,60 @@ namespace osu.Game.Screens.Edit.Components
                     Anchor = Anchor.CentreRight,
                     Origin = Anchor.TopRight,
                 },
-                progress = new OsuSpriteText
+                new FillFlowContainer
                 {
-                    Colour = colours.Purple1,
-                    Font = OsuFont.Torus.With(size: 14, weight: FontWeight.SemiBold, fixedWidth: true),
-                    Spacing = new Vector2(-1, 0),
+                    AutoSizeAxes = Axes.Both,
+                    Direction = FillDirection.Horizontal,
+                    Spacing = new Vector2(6, 0),
                     Anchor = Anchor.CentreLeft,
                     Position = new Vector2(2, 4),
+                    Children = new Drawable[]
+                    {
+                        progress = new OsuSpriteText
+                        {
+                            Colour = colours.Purple1,
+                            Font = OsuFont.Torus.With(size: 14, weight: FontWeight.SemiBold, fixedWidth: true),
+                            Spacing = new Vector2(-1, 0),
+                        },
+                        starRating = new OsuSpriteText
+                        {
+                            Colour = colours.Yellow,
+                            Font = OsuFont.Torus.With(size: 14, weight: FontWeight.SemiBold, fixedWidth: true),
+                            Spacing = new Vector2(-1, 0),
+                        },
+                    }
                 }
             };
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            if (editor != null)
+                editor.Saved += updateStarRating;
+
+            updateStarRating();
+        }
+
+        /// <summary>
+        /// Star rating is recalculated by <see cref="BeatmapUpdater"/> as part of saving, so it is only refreshed on save.
+        /// </summary>
+        private void updateStarRating() => Schedule(() =>
+        {
+            // the editor operates on a detached copy of `BeatmapInfo`, so the recalculated value has to be read back from realm.
+            double stars = realm.Run(r => r.Find<BeatmapInfo>(editorBeatmap.BeatmapInfo.ID)?.StarRating)
+                           ?? editorBeatmap.BeatmapInfo.StarRating;
+
+            starRating.Text = @$"{stars:0.00}*";
+        });
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            if (editor != null)
+                editor.Saved -= updateStarRating;
         }
 
         private double? lastBPM;

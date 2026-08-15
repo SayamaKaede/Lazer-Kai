@@ -309,6 +309,72 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString SampleSet => new TranslatableString(getKey(@"sample_set"), @"Sample set");
 
+        /// <summary>
+        /// "Test"
+        /// </summary>
+        public static LocalisableString MenuBarTest => new TranslatableString(getKey(@"menu_bar_test"), @"Test");
+
+        /// <summary>
+        /// "Mods"
+        /// </summary>
+        public static LocalisableString TestPlayMods => new TranslatableString(getKey(@"test_play_mods"), @"Mods");
+
+        /// <summary>
+        /// "Deselect all mods"
+        /// </summary>
+        public static LocalisableString TestPlayDeselectAllMods => new TranslatableString(getKey(@"test_play_deselect_all_mods"), @"Deselect all mods");
+
+        /// <summary>
+        /// "Test gameplay"
+        /// </summary>
+        public static LocalisableString TestGameplay => new TranslatableString(getKey(@"test_gameplay"), @"Test gameplay");
+
+        /// <summary>
+        /// "Preview mods while composing"
+        /// </summary>
+        public static LocalisableString ApplyTestPlayModsToComposer => new TranslatableString(getKey(@"apply_test_play_mods_to_composer"), @"Preview mods while composing");
+
+        /// <summary>
+        /// "Advance by previous spacing after placing objects"
+        /// </summary>
+        public static LocalisableString AdvanceByPreviousSpacingOnPlacement =>
+            new TranslatableString(getKey(@"advance_by_previous_spacing_on_placement"), @"Advance by previous spacing after placing objects");
+
+        /// <summary>
+        /// "Draw sliders freehand by dragging"
+        /// </summary>
+        public static LocalisableString FreehandSliderPlacement => new TranslatableString(getKey(@"freehand_slider_placement"), @"Draw sliders freehand by dragging");
+
+        /// <summary>
+        /// "Keep mod preview up to date while editing"
+        /// </summary>
+        public static LocalisableString LiveModPreview => new TranslatableString(getKey(@"live_mod_preview"), @"Keep mod preview up to date while editing");
+
+        /// <summary>
+        /// "Always expand timeline labels"
+        /// </summary>
+        public static LocalisableString AlwaysExpandTimelinePointLabels => new TranslatableString(getKey(@"always_expand_timeline_point_labels"), @"Always expand timeline labels");
+
+        /// <summary>
+        /// "Selection outline"
+        /// </summary>
+        public static LocalisableString SelectionAppearance => new TranslatableString(getKey(@"selection_appearance"), @"Selection outline");
+
+        /// <summary>
+        /// "Colour"
+        /// </summary>
+        public static LocalisableString SelectionColour => new TranslatableString(getKey(@"selection_colour"), @"Colour");
+
+        /// <summary>
+        /// "Thickness"
+        /// </summary>
+        public static LocalisableString SelectionThickness => new TranslatableString(getKey(@"selection_thickness"), @"Thickness");
+
+        /// <summary>
+        /// "Opacity"
+        /// </summary>
+        public static LocalisableString SelectionOpacity => new TranslatableString(getKey(@"selection_opacity"), @"Opacity");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

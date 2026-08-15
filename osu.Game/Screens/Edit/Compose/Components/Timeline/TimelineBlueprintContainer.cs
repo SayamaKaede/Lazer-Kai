@@ -20,6 +20,7 @@ using osu.Game.Audio;
 using osu.Game.Graphics;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Rulesets.Edit;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
@@ -58,9 +59,13 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             Height = 0.6f;
         }
 
+        private Bindable<bool> alwaysExpandPointLabels;
+
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            alwaysExpandPointLabels = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandTimelinePointLabels);
+
             AddInternal(new SelectableAreaBackground
             {
                 Colour = Color4.Black,
@@ -154,6 +159,13 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         {
             const double absolute_minimum_gap = 31; // assumes single letter bank name for default banks
             double minimumGap = absolute_minimum_gap;
+
+            // the user may prefer to always read the labels, accepting that they overlap where objects are dense.
+            if (alwaysExpandPointLabels.Value)
+            {
+                SamplePointContracted.Value = false;
+                return;
+            }
 
             if (timeline == null || editorClock == null)
                 return;
