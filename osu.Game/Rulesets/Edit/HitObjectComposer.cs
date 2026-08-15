@@ -405,15 +405,29 @@ namespace osu.Game.Rulesets.Edit
                 if (hitObject.StartTime > currentTime)
                     break;
 
-                if (hitObject.StartTime <= previousTime)
+                // sliders keep sounding past their start time, so an object is only skipped once it has finished
+                // before the window. Otherwise a slider's repeats and tail would never be reached.
+                if (hitObject.GetEndTime() < previousTime)
                     continue;
 
+                flashSamplesInWindow(hitObject, previousTime, currentTime);
+            }
+        }
+
+        private void flashSamplesInWindow(HitObject hitObject, double previousTime, double currentTime)
+        {
+            if (hitObject.StartTime > previousTime && hitObject.StartTime <= currentTime)
+            {
                 foreach (var sample in hitObject.Samples)
                 {
                     if (blueprintContainer.SampleTernaryButtons.TryGetValue(sample.Name, out var button))
                         button.Flash();
                 }
             }
+
+            // slider heads, repeats, tails and ticks carry their own samples, so they are all worth reporting.
+            foreach (var nested in hitObject.NestedHitObjects)
+                flashSamplesInWindow(nested, previousTime, currentTime);
         }
 
         public override Playfield Playfield => drawableRulesetWrapper.Playfield;
