@@ -18,7 +18,9 @@ using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Logging;
 using osu.Framework.Testing;
+using osu.Game.Audio;
 using osu.Game.Beatmaps;
+using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Overlays;
@@ -421,17 +423,30 @@ namespace osu.Game.Rulesets.Edit
         private void flashSamplesInWindow(HitObject hitObject, double previousTime, double currentTime)
         {
             if (hitObject.StartTime > previousTime && hitObject.StartTime <= currentTime)
+                flashSamples(hitObject.Samples);
+
+            // the final node's samples (a slider's tail) are not carried by any nested object: the slider itself sounds
+            // them at its end time. See `Slider.UpdateNestedSamples()`.
+            if (hitObject is IHasRepeats repeats && repeats.NodeSamples.Count > 0)
             {
-                foreach (var sample in hitObject.Samples)
-                {
-                    if (blueprintContainer.SampleTernaryButtons.TryGetValue(sample.Name, out var button))
-                        button.Flash();
-                }
+                double endTime = hitObject.GetEndTime();
+
+                if (endTime > previousTime && endTime <= currentTime)
+                    flashSamples(repeats.NodeSamples[^1]);
             }
 
-            // slider heads, repeats, tails and ticks carry their own samples, so they are all worth reporting.
+            // slider heads, repeats and ticks do carry their own samples.
             foreach (var nested in hitObject.NestedHitObjects)
                 flashSamplesInWindow(nested, previousTime, currentTime);
+        }
+
+        private void flashSamples(IEnumerable<HitSampleInfo> samples)
+        {
+            foreach (var sample in samples)
+            {
+                if (blueprintContainer.SampleTernaryButtons.TryGetValue(sample.Name, out var button))
+                    button.Flash();
+            }
         }
 
         public override Playfield Playfield => drawableRulesetWrapper.Playfield;
@@ -709,12 +724,14 @@ namespace osu.Game.Rulesets.Edit
             if (precedingObject == null)
                 return;
 
-            double spacing = placed.StartTime - precedingObject.StartTime;
+            // measured from the end of the preceding object rather than its start, so that a slider's length doesn't
+            // get counted as part of the gap (which would overshoot when placing after one).
+            double spacing = placed.StartTime - precedingObject.GetEndTime();
 
             if (spacing <= 0)
                 return;
 
-            EditorClock.SeekSmoothlyTo(BeatSnapProvider.SnapTime(placed.StartTime + spacing));
+            EditorClock.SeekSmoothlyTo(BeatSnapProvider.SnapTime(placed.GetEndTime() + spacing));
         }
 
         public void Delete(HitObject hitObject) => EditorBeatmap.Remove(hitObject);
