@@ -25,10 +25,9 @@ namespace osu.Game.Input
         /// impossible, since the drag never starts. This is a field initialiser rather than assigned in the constructor
         /// because <see cref="InputManager"/>'s constructor creates the button event managers before any constructor
         /// body here would run.
-        /// </remarks>
-        /// <remarks>
+        ///
         /// Bound by <see cref="OsuGameBase"/> rather than injected here: this input manager is part of the game's root
-        /// hierarchy and loads before <see cref="OsuConfigManager"/> is available to it.
+        /// hierarchy and loads before the config manager is available to it.
         /// </remarks>
         public readonly Bindable<float> DragStartDistance = new Bindable<float>(10);
 
