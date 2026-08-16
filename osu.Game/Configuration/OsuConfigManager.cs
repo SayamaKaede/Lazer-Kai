@@ -246,8 +246,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorPinnedToolboxGroups, string.Empty);
             SetDefault(OsuSetting.EditorShowSelectionButtons, true);
             SetDefault(OsuSetting.EditorSelectionHandleColour, EditorSelectionAppearance.DEFAULT_COLOUR);
-            SetDefault(OsuSetting.EditorSelectionHandleScale, 1f, 0.5f, 3f, 0.1f);
-            SetDefault(OsuSetting.EditorSliderAnchorScale, 1f, 0.5f, 3f, 0.1f);
+            SetDefault(OsuSetting.EditorSelectionHandleScale, 1f, 0.5f, 1f, 0.1f);
+            SetDefault(OsuSetting.EditorSliderAnchorScale, 1f, 0.5f, 1f, 0.1f);
             SetDefault(OsuSetting.EditorShowTimeline, true);
             SetDefault(OsuSetting.EditorCtrlClickCyclesCurveType, false);
             SetDefault(OsuSetting.SwapRightAndMiddleMouse, false);
@@ -614,7 +614,7 @@ namespace osu.Game.Configuration
         EditorCtrlClickCyclesCurveType,
 
         /// <summary>
-        /// Whether the right and middle mouse buttons are swapped. Applies game-wide.
+        /// Whether the right and middle mouse buttons are swapped while the editor is the active screen.
         /// </summary>
         SwapRightAndMiddleMouse,
     }

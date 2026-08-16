@@ -411,9 +411,9 @@ namespace osu.Game.Localisation
         public static LocalisableString CtrlClickCyclesCurveType => new TranslatableString(getKey(@"ctrl_click_cycles_curve_type"), @"Ctrl+click a slider anchor to cycle its curve type");
 
         /// <summary>
-        /// "Swap right and middle mouse buttons (applies game-wide)"
+        /// "Swap right and middle mouse buttons (editor only)"
         /// </summary>
-        public static LocalisableString SwapRightAndMiddleMouse => new TranslatableString(getKey(@"swap_right_and_middle_mouse"), @"Swap right and middle mouse buttons (applies game-wide)");
+        public static LocalisableString SwapRightAndMiddleMouse => new TranslatableString(getKey(@"swap_right_and_middle_mouse"), @"Swap right and middle mouse buttons (editor only)");
 
         /// <summary>
         /// "Seek animation"

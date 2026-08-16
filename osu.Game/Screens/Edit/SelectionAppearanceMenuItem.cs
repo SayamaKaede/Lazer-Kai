@@ -19,10 +19,11 @@ namespace osu.Game.Screens.Edit
         private static readonly (LocalisableString, float)[] scale_choices =
         {
             ((LocalisableString)@"50%", 0.5f),
+            ((LocalisableString)@"60%", 0.6f),
+            ((LocalisableString)@"70%", 0.7f),
+            ((LocalisableString)@"80%", 0.8f),
+            ((LocalisableString)@"90%", 0.9f),
             ((LocalisableString)@"100%", 1f),
-            ((LocalisableString)@"150%", 1.5f),
-            ((LocalisableString)@"200%", 2f),
-            ((LocalisableString)@"300%", 3f),
         };
 
         private static readonly (LocalisableString, string)[] colour_choices =

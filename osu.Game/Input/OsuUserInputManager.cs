@@ -36,6 +36,11 @@ namespace osu.Game.Input
         /// </summary>
         public readonly Bindable<bool> SwapRightAndMiddleMouse = new Bindable<bool>();
 
+        /// <summary>
+        /// Whether the editor is the active screen. The swap only applies there, so it cannot interfere with play.
+        /// </summary>
+        public readonly BindableBool EditorActive = new BindableBool();
+
         internal OsuUserInputManager()
         {
         }
@@ -44,7 +49,7 @@ namespace osu.Game.Input
         {
             var inputs = base.GetPendingInputs();
 
-            if (!SwapRightAndMiddleMouse.Value)
+            if (!SwapRightAndMiddleMouse.Value || !EditorActive.Value)
                 return inputs;
 
             // swapped at the source rather than per-drawable, so everything downstream (context menus, quick delete,

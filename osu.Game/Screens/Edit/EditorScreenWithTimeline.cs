@@ -19,8 +19,7 @@ namespace osu.Game.Screens.Edit
         public Container MainContent { get; private set; } = null!;
 
         private LoadingSpinner spinner = null!;
-        private Container timelineContent = null!;
-        private Container timelineContainer = null!;
+        private TimelineContentContainer timelineContent = null!;
 
         private readonly Bindable<bool> showTimeline = new Bindable<bool>(true);
 
@@ -49,7 +48,7 @@ namespace osu.Game.Screens.Edit
                 {
                     new Drawable[]
                     {
-                        timelineContainer = new Container
+                        new Container
                         {
                             Name = "Timeline",
                             RelativeSizeAxes = Axes.X,
@@ -65,7 +64,7 @@ namespace osu.Game.Screens.Edit
                                     {
                                         new Drawable[]
                                         {
-                                            timelineContent = new Container
+                                            timelineContent = new TimelineContentContainer
                                             {
                                                 RelativeSizeAxes = Axes.X,
                                                 AutoSizeAxes = Axes.Y,
@@ -106,12 +105,11 @@ namespace osu.Game.Screens.Edit
         {
             base.LoadComplete();
 
+            // hiding leaves the space it occupied alone, so the playfield below does not jump around.
             showTimeline.BindValueChanged(show =>
             {
-                // the row sizes itself to the timeline, so it has to be excluded from that measurement as well as
-                // hidden, otherwise collapsing would leave the gap behind.
-                timelineContainer.Alpha = show.NewValue ? 1 : 0;
-                timelineContainer.BypassAutoSizeAxes = show.NewValue ? Axes.None : Axes.Y;
+                timelineContent.Alpha = show.NewValue ? 1 : 0;
+                timelineContent.Shown.Value = show.NewValue;
             }, true);
 
             LoadComponentAsync(CreateMainContent(), content =>
@@ -131,6 +129,28 @@ namespace osu.Game.Screens.Edit
 
         protected virtual void ConfigureTimeline(TimelineArea timelineArea)
         {
+        }
+
+        /// <summary>
+        /// Holds the timeline, and can be hidden without giving up the room it takes.
+        /// </summary>
+        /// <remarks>
+        /// Fading alone would not be enough: the timeline would keep taking clicks and scrolls aimed at what is now
+        /// empty space. Setting alpha to zero instead would stop that, but the row sizes itself to this container, so
+        /// the playfield below would jump up to fill the gap.
+        /// </remarks>
+        private partial class TimelineContentContainer : Container
+        {
+            public readonly BindableBool Shown = new BindableBool(true);
+
+            public TimelineContentContainer()
+            {
+                AlwaysPresent = true;
+            }
+
+            public override bool PropagatePositionalInputSubTree => Shown.Value && base.PropagatePositionalInputSubTree;
+
+            public override bool PropagateNonPositionalInputSubTree => Shown.Value && base.PropagateNonPositionalInputSubTree;
         }
 
         protected abstract Drawable CreateMainContent();

@@ -200,6 +200,11 @@ namespace osu.Game
 
         protected readonly Bindable<LocalUserPlayingState> UserPlayingState = new Bindable<LocalUserPlayingState>();
 
+        /// <summary>
+        /// Whether the editor is the screen currently being shown.
+        /// </summary>
+        private readonly BindableBool editorActive = new BindableBool();
+
         public OsuScreenStack ScreenStack { get; private set; }
 
         protected BackButton BackButton => screenStackFooter.BackButton;
@@ -345,6 +350,7 @@ namespace osu.Game
         {
             var userInputManager = base.CreateUserInputManager();
             (userInputManager as OsuUserInputManager)?.PlayingState.BindTo(UserPlayingState);
+            (userInputManager as OsuUserInputManager)?.EditorActive.BindTo(editorActive);
             return userInputManager;
         }
 
@@ -1781,6 +1787,10 @@ namespace osu.Game
                     UserPlayingState.Value = LocalUserPlayingState.NotPlaying;
                     break;
             }
+
+            // covers exiting to song select and entering test play, both of which leave the editor on the stack but
+            // no longer showing.
+            editorActive.Value = newScreen is Editor;
 
             switch (newScreen)
             {
