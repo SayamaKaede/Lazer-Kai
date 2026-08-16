@@ -122,16 +122,19 @@ namespace osu.Game.Rulesets.Osu.Edit
 
                 seen.Add(hitObject);
 
-                if (currentMarkers.TryGetValue(hitObject, out var existing))
+                if (!currentMarkers.TryGetValue(hitObject, out var marker))
                 {
-                    ((IOffscreenMarker)existing).UpdateFrom(hitObject);
-                    continue;
+                    marker = createMarker(hitObject);
+
+                    currentMarkers[hitObject] = marker;
+                    markers.Add(marker);
                 }
+                else
+                    ((IOffscreenMarker)marker).UpdateFrom(hitObject);
 
-                var marker = createMarker(hitObject);
-
-                currentMarkers[hitObject] = marker;
-                markers.Add(marker);
+                // an object stays alive well past the point it has faded from view, so the marker takes the object's
+                // own transparency instead of its lifetime. That way the two appear and disappear together.
+                marker.Alpha = drawable.Alpha;
             }
 
             toRemove.Clear();
