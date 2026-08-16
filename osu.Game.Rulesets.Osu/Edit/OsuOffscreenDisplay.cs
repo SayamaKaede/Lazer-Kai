@@ -1,7 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System.Collections.Generic;
+using System;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -35,11 +35,6 @@ namespace osu.Game.Rulesets.Osu.Edit
         private const float ring_padding = 6;
 
         private const float ring_thickness = 3;
-
-        /// <summary>
-        /// Matches the step <see cref="CheckOffscreenObjects"/> walks slider paths with.
-        /// </summary>
-        private const int path_step_size = 5;
 
         [Resolved]
         private EditorBeatmap editorBeatmap { get; set; } = null!;
@@ -125,15 +120,37 @@ namespace osu.Game.Rulesets.Osu.Edit
         /// <summary>
         /// Whether any point along the slider's path leaves the visible area.
         /// </summary>
+        /// <remarks>
+        /// Measured from the bounds of the already-calculated path rather than by stepping along it. This runs for
+        /// every slider in the beatmap on every edit, and stepping meant interpolating a position thousands of times
+        /// per pass. Whichever point reaches an extreme is the one that would leave the area first, so taking the
+        /// extremes directly gives the same answer for the same cost as reading the path once.
+        /// </remarks>
         private static bool isOffscreen(Slider slider)
         {
-            for (int i = 0; i < slider.Distance; i += path_step_size)
+            var path = slider.Path.CalculatedPath;
+
+            if (path.Count == 0)
+                return CheckOffscreenObjects.IsOffscreen(slider.StackedPosition, slider.Radius);
+
+            float minX = float.MaxValue, maxX = float.MinValue;
+            float minY = float.MaxValue, maxY = float.MinValue;
+
+            foreach (var point in path)
             {
-                if (CheckOffscreenObjects.IsOffscreen(slider.StackedPositionAt(i / slider.Distance), slider.Radius))
-                    return true;
+                minX = Math.Min(minX, point.X);
+                maxX = Math.Max(maxX, point.X);
+                minY = Math.Min(minY, point.Y);
+                maxY = Math.Max(maxY, point.Y);
             }
 
-            return CheckOffscreenObjects.IsOffscreen(slider.StackedEndPosition, slider.Radius);
+            var origin = slider.StackedPosition;
+            double radius = slider.Radius;
+
+            return origin.X + minX - radius < CheckOffscreenObjects.MIN_X
+                   || origin.X + maxX + radius > CheckOffscreenObjects.MAX_X
+                   || origin.Y + minY - radius < CheckOffscreenObjects.MIN_Y
+                   || origin.Y + maxY + radius > CheckOffscreenObjects.MAX_Y;
         }
 
         protected override void Dispose(bool isDisposing)

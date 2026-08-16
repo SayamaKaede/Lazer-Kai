@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Game.Configuration;
@@ -24,44 +25,48 @@ namespace osu.Game.Screens.Edit
         /// </summary>
         public const string DEFAULT_COLOUR = "";
 
-        private readonly Bindable<string> colour;
-        private readonly Bindable<float> thickness;
-        private readonly Bindable<float> opacity;
-        private readonly Bindable<string> handleColour;
-        private readonly Bindable<float> handleScale;
-        private readonly Bindable<float> anchorScale;
+        private readonly OsuConfigManager config;
 
         /// <summary>
-        /// Invoked whenever any of the underlying settings change.
+        /// Bindables are fetched on first use rather than up front.
+        /// </summary>
+        /// <remarks>
+        /// One of these is built per drawable that draws a selection, and blueprints are created and thrown away
+        /// constantly as playback brings objects in and out. Each consumer reads two or three of these settings, so
+        /// fetching all six every time was mostly waste.
+        /// </remarks>
+        private readonly Dictionary<OsuSetting, IBindable> bindables = new Dictionary<OsuSetting, IBindable>();
+
+        /// <summary>
+        /// Invoked whenever any of the settings this instance has read change.
         /// </summary>
         public event Action? Changed;
 
         public EditorSelectionAppearance(OsuConfigManager config)
         {
-            colour = config.GetBindable<string>(OsuSetting.EditorSelectionColour);
-            thickness = config.GetBindable<float>(OsuSetting.EditorSelectionThickness);
-            opacity = config.GetBindable<float>(OsuSetting.EditorSelectionOpacity);
+            this.config = config;
+        }
 
-            handleColour = config.GetBindable<string>(OsuSetting.EditorSelectionHandleColour);
-            handleScale = config.GetBindable<float>(OsuSetting.EditorSelectionHandleScale);
-            anchorScale = config.GetBindable<float>(OsuSetting.EditorSliderAnchorScale);
+        private Bindable<T> get<T>(OsuSetting setting)
+        {
+            if (bindables.TryGetValue(setting, out var existing))
+                return (Bindable<T>)existing;
 
-            colour.ValueChanged += _ => Changed?.Invoke();
-            thickness.ValueChanged += _ => Changed?.Invoke();
-            opacity.ValueChanged += _ => Changed?.Invoke();
-            handleColour.ValueChanged += _ => Changed?.Invoke();
-            handleScale.ValueChanged += _ => Changed?.Invoke();
-            anchorScale.ValueChanged += _ => Changed?.Invoke();
+            var bindable = config.GetBindable<T>(setting);
+            bindable.ValueChanged += _ => Changed?.Invoke();
+
+            bindables[setting] = bindable;
+            return bindable;
         }
 
         /// <param name="fallback">The colour to use while the user has not chosen an override.</param>
-        public Color4 GetColour(Color4 fallback) => parseColour(colour.Value, fallback);
+        public Color4 GetColour(Color4 fallback) => parseColour(get<string>(OsuSetting.EditorSelectionColour).Value, fallback);
 
         /// <summary>
         /// The colour of the drag handles on the selection box, which the user sets separately from the outline.
         /// </summary>
         /// <param name="fallback">The colour to use while the user has not chosen an override.</param>
-        public Color4 GetHandleColour(Color4 fallback) => parseColour(handleColour.Value, fallback);
+        public Color4 GetHandleColour(Color4 fallback) => parseColour(get<string>(OsuSetting.EditorSelectionHandleColour).Value, fallback);
 
         private static Color4 parseColour(string value, Color4 fallback)
         {
@@ -80,14 +85,14 @@ namespace osu.Game.Screens.Edit
         }
 
         /// <param name="baseSize">The handle's stock size, which the user's setting scales.</param>
-        public float GetHandleSize(float baseSize) => baseSize * handleScale.Value;
+        public float GetHandleSize(float baseSize) => baseSize * get<float>(OsuSetting.EditorSelectionHandleScale).Value;
 
         /// <param name="baseSize">A slider anchor's stock size, which the user's setting scales.</param>
-        public float GetAnchorSize(float baseSize) => baseSize * anchorScale.Value;
+        public float GetAnchorSize(float baseSize) => baseSize * get<float>(OsuSetting.EditorSliderAnchorScale).Value;
 
         /// <param name="baseThickness">The piece's stock border thickness, which the user's setting scales.</param>
-        public float GetThickness(float baseThickness) => baseThickness * thickness.Value;
+        public float GetThickness(float baseThickness) => baseThickness * get<float>(OsuSetting.EditorSelectionThickness).Value;
 
-        public float Opacity => opacity.Value;
+        public float Opacity => get<float>(OsuSetting.EditorSelectionOpacity).Value;
     }
 }
