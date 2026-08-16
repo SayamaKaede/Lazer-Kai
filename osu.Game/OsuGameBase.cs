@@ -518,7 +518,13 @@ namespace osu.Game
 
                 try
                 {
-                    return new LocaleMapping(new ResourceManagerLocalisationStore(cultureCode));
+                    ILocalisationStore store = new ResourceManagerLocalisationStore(cultureCode);
+
+                    // strings added by this fork are not present in `osu.Game.Resources`, so they are supplied here.
+                    if (language == Language.ja)
+                        store = new LazerKaiJapaneseStore(store);
+
+                    return new LocaleMapping(store);
                 }
                 catch (Exception ex)
                 {

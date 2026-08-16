@@ -2,8 +2,10 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Input.Events;
@@ -45,10 +47,28 @@ namespace osu.Game.Rulesets.Edit
             Expanded.Value = true;
         }
 
+        /// <summary>
+        /// Holds groups the user pinned, above the scrolling area so they stay put.
+        /// </summary>
+        private FillFlowContainer pinnedArea = null!;
+
+        private readonly Dictionary<EditorToolboxGroup, float> originalLayoutPositions = new Dictionary<EditorToolboxGroup, float>();
+
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
             config.BindWith(OsuSetting.EditorContractSidebars, contractSidebars);
+
+            AddInternal(pinnedArea = new FillFlowContainer
+            {
+                Name = @"Pinned groups",
+                Depth = -1,
+                RelativeSizeAxes = Axes.X,
+                AutoSizeAxes = Axes.Y,
+                Direction = FillDirection.Vertical,
+                Spacing = FillFlow.Spacing,
+                Padding = new MarginPadding { Top = 5 },
+            });
         }
 
         protected override OsuScrollContainer CreateScrollContainer() => scrollContainer = new OffsetMaintainingScrollContainer();
@@ -70,11 +90,41 @@ namespace osu.Game.Rulesets.Edit
                     scrollContainer.TargetDrawable = Children.FirstOrDefault(it => it.Contains(position));
                 });
             }
+
+            foreach (var group in Children.OfType<EditorToolboxGroup>().ToArray())
+            {
+                // remembered so unpinning can put the group back where it was rather than at the end.
+                originalLayoutPositions[group] = FillFlow.GetLayoutPosition(group);
+
+                var captured = group;
+                group.Pinned.BindValueChanged(pinned => setPinned(captured, pinned.NewValue));
+            }
+        }
+
+        private void setPinned(EditorToolboxGroup group, bool pinned)
+        {
+            if (pinned)
+            {
+                if (FillFlow.Contains(group))
+                {
+                    FillFlow.Remove(group, false);
+                    pinnedArea.Add(group);
+                }
+            }
+            else if (pinnedArea.Contains(group))
+            {
+                pinnedArea.Remove(group, false);
+                FillFlow.Add(group);
+                FillFlow.SetLayoutPosition(group, originalLayoutPositions[group]);
+            }
         }
 
         protected override void Update()
         {
             base.Update();
+
+            // keeps the scrolling groups clear of whatever is pinned above them.
+            scrollContainer.Padding = new MarginPadding { Top = pinnedArea.DrawHeight };
 
             bool requireContracting = !AlwaysExpanded.Value && (contractSidebars.Value || editor?.DrawSize.X / editor?.DrawSize.Y < 1.7f);
 

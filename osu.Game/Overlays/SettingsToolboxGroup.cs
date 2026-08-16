@@ -55,6 +55,11 @@ namespace osu.Game.Overlays
 
         private Container headerContent = null!;
 
+        /// <summary>
+        /// The group's header row, exposed so subclasses can place their own controls alongside the expand button.
+        /// </summary>
+        protected Container HeaderContent => headerContent;
+
         private Box background = null!;
 
         private IconButton expandButton = null!;
