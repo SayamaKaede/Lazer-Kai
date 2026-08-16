@@ -251,6 +251,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorShowTimeline, true);
             SetDefault(OsuSetting.EditorCtrlClickCyclesCurveType, false);
             SetDefault(OsuSetting.SwapRightAndMiddleMouse, false);
+            SetDefault(OsuSetting.EditorSelectableAfterEndTime, 400.0, 0.0, 700.0, 50.0);
 
             SetDefault(OsuSetting.AlwaysShowHoldForMenuButton, false);
             SetDefault(OsuSetting.AlwaysRequireHoldingForPause, false);
@@ -617,5 +618,10 @@ namespace osu.Game.Configuration
         /// Whether the right and middle mouse buttons are swapped while the editor is the active screen.
         /// </summary>
         SwapRightAndMiddleMouse,
+
+        /// <summary>
+        /// How long in milliseconds an object stays selectable after its time has passed.
+        /// </summary>
+        EditorSelectableAfterEndTime,
     }
 }

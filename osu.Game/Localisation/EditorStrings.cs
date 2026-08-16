@@ -406,6 +406,11 @@ namespace osu.Game.Localisation
         public static LocalisableString ShowTimeline => new TranslatableString(getKey(@"show_timeline"), @"Timeline");
 
         /// <summary>
+        /// "Keep passed objects selectable for"
+        /// </summary>
+        public static LocalisableString SelectableAfterEndTime => new TranslatableString(getKey(@"selectable_after_end_time"), @"Keep passed objects selectable for");
+
+        /// <summary>
         /// "Ctrl+click a slider anchor to cycle its curve type"
         /// </summary>
         public static LocalisableString CtrlClickCyclesCurveType => new TranslatableString(getKey(@"ctrl_click_cycles_curve_type"), @"Ctrl+click a slider anchor to cycle its curve type");

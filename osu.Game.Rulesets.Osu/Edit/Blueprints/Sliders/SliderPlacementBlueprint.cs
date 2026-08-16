@@ -61,6 +61,18 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
 
         private Bindable<bool> freehandPlacement { get; set; } = null!;
 
+        private Bindable<bool> swapRightAndMiddleMouse { get; set; } = null!;
+
+        /// <summary>
+        /// The button which finishes the path.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately tied to the physical right button rather than to <see cref="MouseButton.Right"/>: finishing a
+        /// path is muscle memory, so it stays on the same physical button even when the two are swapped. The swap
+        /// happens at the input source, so that button arrives here as <see cref="MouseButton.Middle"/>.
+        /// </remarks>
+        private MouseButton finishButton => swapRightAndMiddleMouse.Value ? MouseButton.Middle : MouseButton.Right;
+
         private readonly IncrementalBSplineBuilder bSplineBuilder = new IncrementalBSplineBuilder { Degree = 4 };
 
         protected override bool IsValidForPlacement => base.IsValidForPlacement && (PlacementActive == PlacementState.Waiting || HitObject.Path.HasValidLengthForPlacement);
@@ -88,6 +100,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             state = SliderPlacementState.Initial;
             limitedDistanceSnap = config.GetBindable<bool>(OsuSetting.EditorLimitedDistanceSnap);
             freehandPlacement = config.GetBindable<bool>(OsuSetting.EditorFreehandSliderPlacement);
+            swapRightAndMiddleMouse = config.GetBindable<bool>(OsuSetting.SwapRightAndMiddleMouse);
         }
 
         protected override void LoadComplete()
@@ -237,7 +250,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
 
         protected override void OnMouseUp(MouseUpEvent e)
         {
-            if (state == SliderPlacementState.ControlPoints && e.Button == MouseButton.Right)
+            if (state == SliderPlacementState.ControlPoints && e.Button == finishButton)
                 endCurve();
             base.OnMouseUp(e);
         }

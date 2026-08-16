@@ -48,6 +48,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:selection_handle_colour"] = @"ハンドルの色",
             [$@"{editor_prefix}:slider_anchor_size"] = @"スライダーアンカーの大きさ",
             [$@"{editor_prefix}:show_timeline"] = @"タイムライン",
+            [$@"{editor_prefix}:selectable_after_end_time"] = @"通り過ぎたノーツを選択可能にしておく時間",
             [$@"{editor_prefix}:ctrl_click_cycles_curve_type"] = @"Ctrl+クリックでアンカーのカーブ種別を切り替え",
             [$@"{editor_prefix}:swap_right_and_middle_mouse"] = @"右クリックとホイールクリックを入れ替え（エディター内のみ）",
             [$@"{editor_prefix}:seek_animation_duration"] = @"シークのアニメーション",

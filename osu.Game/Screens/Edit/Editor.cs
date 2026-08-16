@@ -252,6 +252,7 @@ namespace osu.Game.Screens.Edit
         private Bindable<bool> editorShowTimeline;
         private Bindable<bool> editorCtrlClickCyclesCurveType;
         private Bindable<bool> swapRightAndMiddleMouse;
+        private Bindable<double> editorSelectableAfterEndTime;
 
         /// <summary>
         /// This controls the opacity of components like the timelines, sidebars, etc.
@@ -397,6 +398,7 @@ namespace osu.Game.Screens.Edit
             editorShowTimeline = config.GetBindable<bool>(OsuSetting.EditorShowTimeline);
             editorCtrlClickCyclesCurveType = config.GetBindable<bool>(OsuSetting.EditorCtrlClickCyclesCurveType);
             swapRightAndMiddleMouse = config.GetBindable<bool>(OsuSetting.SwapRightAndMiddleMouse);
+            editorSelectableAfterEndTime = config.GetBindable<double>(OsuSetting.EditorSelectableAfterEndTime);
 
             // These two settings don't work together. Make them mutually exclusive to let the user know.
             editorAutoSeekOnPlacement.BindValueChanged(enabled =>
@@ -499,6 +501,14 @@ namespace osu.Game.Screens.Edit
                                             {
                                                 State = { BindTarget = editorAlwaysExpandLeftToolbox },
                                             },
+                                            new ChoiceMenuItem<double>(EditorStrings.SelectableAfterEndTime, editorSelectableAfterEndTime, new[]
+                                            {
+                                                ((LocalisableString)@"0ms", 0.0),
+                                                ((LocalisableString)@"100ms", 100.0),
+                                                ((LocalisableString)@"200ms", 200.0),
+                                                ((LocalisableString)@"400ms (default)", 400.0),
+                                                ((LocalisableString)@"700ms (until invisible)", 700.0),
+                                            }),
                                             new ToggleMenuItem(EditorStrings.CtrlClickCyclesCurveType)
                                             {
                                                 State = { BindTarget = editorCtrlClickCyclesCurveType },
