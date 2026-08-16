@@ -15,8 +15,10 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Transforms;
 using osu.Framework.Timing;
 using osu.Framework.Utils;
+using osu.Framework.Allocation;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.ControlPoints;
+using osu.Game.Configuration;
 
 namespace osu.Game.Screens.Edit
 {
@@ -227,7 +229,13 @@ namespace osu.Game.Screens.Edit
                 return;
             }
 
-            transformSeekTo(seekDestination, transform_time, Easing.OutQuint);
+            if (seekAnimationDuration.Value <= 0)
+            {
+                Seek(seekDestination);
+                return;
+            }
+
+            transformSeekTo(seekDestination, seekAnimationDuration.Value, Easing.OutQuint);
         }
 
         public void BindAdjustments() => track.Value?.BindAdjustments(AudioAdjustments);
@@ -272,7 +280,13 @@ namespace osu.Game.Screens.Edit
 
         public IClock Source => underlyingClock.Source;
 
-        private const double transform_time = 300;
+        private readonly Bindable<double> seekAnimationDuration = new Bindable<double>(300);
+
+        [BackgroundDependencyLoader]
+        private void load(OsuConfigManager config)
+        {
+            config.BindWith(OsuSetting.EditorSeekAnimationDuration, seekAnimationDuration);
+        }
 
         protected override void Update()
         {

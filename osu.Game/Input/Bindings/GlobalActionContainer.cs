@@ -145,6 +145,10 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(new[] { InputKey.Control, InputKey.MouseWheelUp }, GlobalAction.EditorCycleNextBeatSnapDivisor),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleMoveControl),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleComposerModPreview),
+            new KeyBinding(new[] { InputKey.BracketLeft }, GlobalAction.EditorDecreaseSliderVelocity),
+            new KeyBinding(new[] { InputKey.BracketRight }, GlobalAction.EditorIncreaseSliderVelocity),
+            new KeyBinding(new[] { InputKey.Alt, InputKey.BracketLeft }, GlobalAction.EditorDecreaseSliderVelocityFine),
+            new KeyBinding(new[] { InputKey.Alt, InputKey.BracketRight }, GlobalAction.EditorIncreaseSliderVelocityFine),
             new KeyBinding(new[] { InputKey.Control, InputKey.R }, GlobalAction.EditorToggleRotateControl),
             new KeyBinding(new[] { InputKey.Control, InputKey.E }, GlobalAction.EditorToggleScaleControl),
             new KeyBinding(new[] { InputKey.Control, InputKey.Left }, GlobalAction.EditorSeekToPreviousHitObject),
@@ -395,9 +399,6 @@ namespace osu.Game.Input.Bindings
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorTestGameplay))]
         EditorTestGameplay,
 
-        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleComposerModPreview))]
-        EditorToggleComposerModPreview,
-
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorFlipHorizontally))]
         EditorFlipHorizontally,
 
@@ -543,7 +544,25 @@ namespace osu.Game.Input.Bindings
         EditorEditExternally,
 
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.FastForwardReplay))]
-        FastForwardReplay
+        FastForwardReplay,
+
+        // IMPORTANT: key bindings are persisted to realm by this enum's integer values, so anything added below this
+        // point must be appended to the end. Inserting into the middle silently remaps every existing binding after it.
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleComposerModPreview))]
+        EditorToggleComposerModPreview,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorDecreaseSliderVelocity))]
+        EditorDecreaseSliderVelocity,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorIncreaseSliderVelocity))]
+        EditorIncreaseSliderVelocity,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorDecreaseSliderVelocityFine))]
+        EditorDecreaseSliderVelocityFine,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorIncreaseSliderVelocityFine))]
+        EditorIncreaseSliderVelocityFine,
     }
 
     public enum GlobalActionCategory

@@ -34,13 +34,52 @@ using osu.Game.Screens.Edit.Compose.Components;
 using osuTK;
 using osuTK.Input;
 
+using osu.Framework.Input.Bindings;
+using osu.Game.Input.Bindings;
+
 namespace osu.Game.Rulesets.Osu.Edit
 {
     [Cached]
-    public partial class OsuHitObjectComposer : HitObjectComposer<OsuHitObject>
+    public partial class OsuHitObjectComposer : HitObjectComposer<OsuHitObject>, IKeyBindingHandler<GlobalAction>
     {
+        /// <summary>
+        /// Amount the slider velocity shortcuts move the velocity by, and the smaller step used when holding the fine modifier.
+        /// </summary>
+        private const double velocity_adjust_step = 0.1;
+
+        private const double velocity_adjust_step_fine = 0.01;
+
         public OsuHitObjectComposer(Ruleset ruleset)
             : base(ruleset)
+        {
+        }
+
+        public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
+        {
+            switch (e.Action)
+            {
+                case GlobalAction.EditorDecreaseSliderVelocity:
+                    sliderVelocityToolboxGroup.AdjustVelocity(-velocity_adjust_step);
+                    return true;
+
+                case GlobalAction.EditorIncreaseSliderVelocity:
+                    sliderVelocityToolboxGroup.AdjustVelocity(velocity_adjust_step);
+                    return true;
+
+                case GlobalAction.EditorDecreaseSliderVelocityFine:
+                    sliderVelocityToolboxGroup.AdjustVelocity(-velocity_adjust_step_fine);
+                    return true;
+
+                case GlobalAction.EditorIncreaseSliderVelocityFine:
+                    sliderVelocityToolboxGroup.AdjustVelocity(velocity_adjust_step_fine);
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
         {
         }
 

@@ -239,6 +239,11 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSelectionThickness, 1f, 0.25f, 3f, 0.25f);
             SetDefault(OsuSetting.EditorSelectionOpacity, 1f, 0.1f, 1f, 0.05f);
             SetDefault(OsuSetting.EditorColourScheme, OverlayColourScheme.Aquamarine);
+            SetDefault(OsuSetting.EditorShowRotateButtons, true);
+            SetDefault(OsuSetting.EditorShowFlipButtons, true);
+            SetDefault(OsuSetting.EditorSeekAnimationDuration, 300.0, 0.0, 300.0, 50.0);
+            SetDefault(OsuSetting.EditorAlwaysExpandLeftToolbox, false);
+            SetDefault(OsuSetting.DragStartDistance, 10f, 1f, 10f, 1f);
 
             SetDefault(OsuSetting.AlwaysShowHoldForMenuButton, false);
             SetDefault(OsuSetting.AlwaysRequireHoldingForPause, false);
@@ -541,5 +546,31 @@ namespace osu.Game.Configuration
         /// Colour scheme the editor's own chrome is tinted with.
         /// </summary>
         EditorColourScheme,
+
+        /// <summary>
+        /// Whether the 90 degree rotation buttons are shown on the selection box.
+        /// </summary>
+        EditorShowRotateButtons,
+
+        /// <summary>
+        /// Whether the horizontal/vertical flip buttons are shown on the selection box.
+        /// </summary>
+        EditorShowFlipButtons,
+
+        /// <summary>
+        /// Duration in milliseconds of the editor's smooth seek animation. Zero seeks instantly.
+        /// </summary>
+        EditorSeekAnimationDuration,
+
+        /// <summary>
+        /// Whether the composer's left toolbox stays expanded rather than expanding on hover.
+        /// </summary>
+        EditorAlwaysExpandLeftToolbox,
+
+        /// <summary>
+        /// Distance in pixels the mouse must travel before a left-button drag begins.
+        /// Lowering it makes small nudges possible in the editor, but applies game-wide.
+        /// </summary>
+        DragStartDistance,
     }
 }

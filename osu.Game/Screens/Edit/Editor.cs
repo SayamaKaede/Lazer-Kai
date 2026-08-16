@@ -241,6 +241,11 @@ namespace osu.Game.Screens.Edit
         private Bindable<string> editorSelectionColour;
         private Bindable<float> editorSelectionThickness;
         private Bindable<float> editorSelectionOpacity;
+        private Bindable<bool> editorShowRotateButtons;
+        private Bindable<bool> editorShowFlipButtons;
+        private Bindable<double> editorSeekAnimationDuration;
+        private Bindable<bool> editorAlwaysExpandLeftToolbox;
+        private Bindable<float> dragStartDistance;
 
         /// <summary>
         /// This controls the opacity of components like the timelines, sidebars, etc.
@@ -375,6 +380,11 @@ namespace osu.Game.Screens.Edit
             editorSelectionColour = config.GetBindable<string>(OsuSetting.EditorSelectionColour);
             editorSelectionThickness = config.GetBindable<float>(OsuSetting.EditorSelectionThickness);
             editorSelectionOpacity = config.GetBindable<float>(OsuSetting.EditorSelectionOpacity);
+            editorShowRotateButtons = config.GetBindable<bool>(OsuSetting.EditorShowRotateButtons);
+            editorShowFlipButtons = config.GetBindable<bool>(OsuSetting.EditorShowFlipButtons);
+            editorSeekAnimationDuration = config.GetBindable<double>(OsuSetting.EditorSeekAnimationDuration);
+            editorAlwaysExpandLeftToolbox = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox);
+            dragStartDistance = config.GetBindable<float>(OsuSetting.DragStartDistance);
 
             // These two settings don't work together. Make them mutually exclusive to let the user know.
             editorAutoSeekOnPlacement.BindValueChanged(enabled =>
@@ -465,6 +475,32 @@ namespace osu.Game.Screens.Edit
                                             new SelectionAppearanceMenuItem(editorSelectionColour, editorSelectionThickness, editorSelectionOpacity),
                                             new ChoiceMenuItem<OverlayColourScheme>(EditorStrings.EditorColourScheme, editorColourScheme,
                                                 Enum.GetValues<OverlayColourScheme>().Select(scheme => ((LocalisableString)scheme.ToString(), scheme))),
+                                            new ChoiceMenuItem<double>(EditorStrings.SeekAnimationDuration, editorSeekAnimationDuration, new[]
+                                            {
+                                                ((LocalisableString)@"Instant", 0d),
+                                                ((LocalisableString)@"100ms", 100d),
+                                                ((LocalisableString)@"150ms", 150d),
+                                                ((LocalisableString)@"300ms", 300d),
+                                            }),
+                                            new ToggleMenuItem(EditorStrings.AlwaysExpandLeftToolbox)
+                                            {
+                                                State = { BindTarget = editorAlwaysExpandLeftToolbox },
+                                            },
+                                            new ChoiceMenuItem<float>(EditorStrings.DragStartDistance, dragStartDistance, new[]
+                                            {
+                                                ((LocalisableString)@"1px", 1f),
+                                                ((LocalisableString)@"3px", 3f),
+                                                ((LocalisableString)@"5px", 5f),
+                                                ((LocalisableString)@"10px (default)", 10f),
+                                            }),
+                                            new ToggleMenuItem(EditorStrings.ShowRotateButtons)
+                                            {
+                                                State = { BindTarget = editorShowRotateButtons },
+                                            },
+                                            new ToggleMenuItem(EditorStrings.ShowFlipButtons)
+                                            {
+                                                State = { BindTarget = editorShowFlipButtons },
+                                            },
                                             new OsuMenuItemSpacer(),
                                             new BackgroundDimMenuItem(editorBackgroundDim),
                                             new ToggleMenuItem(EditorStrings.ShowStoryboard)

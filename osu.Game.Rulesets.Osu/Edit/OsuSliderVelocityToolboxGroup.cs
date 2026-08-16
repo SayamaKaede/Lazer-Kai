@@ -73,6 +73,12 @@ namespace osu.Game.Rulesets.Osu.Edit
         {
         }
 
+        /// <summary>
+        /// Adjusts the displayed velocity by <paramref name="delta"/>, exactly as though the user had dragged the control.
+        /// Applies to the selection when objects are selected, and to new placements otherwise.
+        /// </summary>
+        public void AdjustVelocity(double delta) => sliderControl.Current.Value += delta;
+
         [BackgroundDependencyLoader]
         private void load()
         {

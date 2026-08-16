@@ -226,6 +226,30 @@ namespace osu.Game.Localisation
             new TranslatableString(getKey(@"editor_toggle_composer_mod_preview"), @"Toggle mod preview while composing");
 
         /// <summary>
+        /// "Decrease slider velocity"
+        /// </summary>
+        public static LocalisableString EditorDecreaseSliderVelocity =>
+            new TranslatableString(getKey(@"editor_decrease_slider_velocity"), @"Decrease slider velocity");
+
+        /// <summary>
+        /// "Increase slider velocity"
+        /// </summary>
+        public static LocalisableString EditorIncreaseSliderVelocity =>
+            new TranslatableString(getKey(@"editor_increase_slider_velocity"), @"Increase slider velocity");
+
+        /// <summary>
+        /// "Decrease slider velocity (fine)"
+        /// </summary>
+        public static LocalisableString EditorDecreaseSliderVelocityFine =>
+            new TranslatableString(getKey(@"editor_decrease_slider_velocity_fine"), @"Decrease slider velocity (fine)");
+
+        /// <summary>
+        /// "Increase slider velocity (fine)"
+        /// </summary>
+        public static LocalisableString EditorIncreaseSliderVelocityFine =>
+            new TranslatableString(getKey(@"editor_increase_slider_velocity_fine"), @"Increase slider velocity (fine)");
+
+        /// <summary>
         /// "Hold for HUD"
         /// </summary>
         public static LocalisableString HoldForHUD => new TranslatableString(getKey(@"hold_for_hud"), @"Hold for HUD");

@@ -95,6 +95,7 @@ namespace osu.Game.Rulesets.Edit
         private Bindable<bool> autoSeekOnPlacement;
         private Bindable<bool> advanceByPreviousSpacingOnPlacement;
         private Bindable<bool> liveModPreview;
+        private Bindable<bool> alwaysExpandLeftToolbox;
 
         /// <summary>
         /// Mods being previewed in the composer, if the user opted into previewing their gameplay test mods while editing.
@@ -121,6 +122,7 @@ namespace osu.Game.Rulesets.Edit
             autoSeekOnPlacement = config.GetBindable<bool>(OsuSetting.EditorAutoSeekOnPlacement);
             advanceByPreviousSpacingOnPlacement = config.GetBindable<bool>(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement);
             liveModPreview = config.GetBindable<bool>(OsuSetting.EditorLiveModPreview);
+            alwaysExpandLeftToolbox = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox);
 
             if (editor != null)
             {
@@ -314,6 +316,8 @@ namespace osu.Game.Rulesets.Edit
             base.LoadComplete();
 
             InputManager = GetContainingInputManager();
+
+            LeftToolbox.AlwaysExpanded.BindTo(alwaysExpandLeftToolbox);
 
             if (previewMods.OfType<IApplicableToBeatmap>().Any())
                 EditorBeatmap.BeatmapReprocessed += onBeatmapReprocessed;

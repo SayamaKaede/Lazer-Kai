@@ -380,6 +380,31 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString EditorColourScheme => new TranslatableString(getKey(@"editor_colour_scheme"), @"Editor colour (applies on next open)");
 
+        /// <summary>
+        /// "Show rotate buttons on selection"
+        /// </summary>
+        public static LocalisableString ShowRotateButtons => new TranslatableString(getKey(@"show_rotate_buttons"), @"Show rotate buttons on selection");
+
+        /// <summary>
+        /// "Show flip buttons on selection"
+        /// </summary>
+        public static LocalisableString ShowFlipButtons => new TranslatableString(getKey(@"show_flip_buttons"), @"Show flip buttons on selection");
+
+        /// <summary>
+        /// "Seek animation"
+        /// </summary>
+        public static LocalisableString SeekAnimationDuration => new TranslatableString(getKey(@"seek_animation_duration"), @"Seek animation");
+
+        /// <summary>
+        /// "Keep left toolbox expanded"
+        /// </summary>
+        public static LocalisableString AlwaysExpandLeftToolbox => new TranslatableString(getKey(@"always_expand_left_toolbox"), @"Keep left toolbox expanded");
+
+        /// <summary>
+        /// "Drag threshold (applies game-wide)"
+        /// </summary>
+        public static LocalisableString DragStartDistance => new TranslatableString(getKey(@"drag_start_distance"), @"Drag threshold (applies game-wide)");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

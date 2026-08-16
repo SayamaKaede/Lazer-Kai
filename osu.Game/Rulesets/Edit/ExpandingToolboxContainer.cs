@@ -23,6 +23,11 @@ namespace osu.Game.Rulesets.Edit
 
         private readonly Bindable<bool> contractSidebars = new Bindable<bool>();
 
+        /// <summary>
+        /// When set, this toolbox stays expanded regardless of the contracting behaviour applied to the others.
+        /// </summary>
+        public readonly Bindable<bool> AlwaysExpanded = new Bindable<bool>();
+
         private bool expandOnHover;
         private OffsetMaintainingScrollContainer scrollContainer = null!;
 
@@ -71,7 +76,7 @@ namespace osu.Game.Rulesets.Edit
         {
             base.Update();
 
-            bool requireContracting = contractSidebars.Value || editor?.DrawSize.X / editor?.DrawSize.Y < 1.7f;
+            bool requireContracting = !AlwaysExpanded.Value && (contractSidebars.Value || editor?.DrawSize.X / editor?.DrawSize.Y < 1.7f);
 
             if (expandOnHover != requireContracting)
             {
