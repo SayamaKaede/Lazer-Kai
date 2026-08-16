@@ -145,10 +145,12 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(new[] { InputKey.Control, InputKey.MouseWheelUp }, GlobalAction.EditorCycleNextBeatSnapDivisor),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleMoveControl),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleComposerModPreview),
-            new KeyBinding(new[] { InputKey.BracketLeft }, GlobalAction.EditorDecreaseSliderVelocity),
-            new KeyBinding(new[] { InputKey.BracketRight }, GlobalAction.EditorIncreaseSliderVelocity),
-            new KeyBinding(new[] { InputKey.Alt, InputKey.BracketLeft }, GlobalAction.EditorDecreaseSliderVelocityFine),
-            new KeyBinding(new[] { InputKey.Alt, InputKey.BracketRight }, GlobalAction.EditorIncreaseSliderVelocityFine),
+            // key positions, not characters: these are the two keys a JIS keyboard labels `[` and `]`, which sit one
+            // to the right of where a US keyboard puts them.
+            new KeyBinding(new[] { InputKey.BracketRight }, GlobalAction.EditorDecreaseSliderVelocity),
+            new KeyBinding(new[] { InputKey.BackSlash }, GlobalAction.EditorIncreaseSliderVelocity),
+            new KeyBinding(new[] { InputKey.Alt, InputKey.BracketRight }, GlobalAction.EditorDecreaseSliderVelocityFine),
+            new KeyBinding(new[] { InputKey.Alt, InputKey.BackSlash }, GlobalAction.EditorIncreaseSliderVelocityFine),
             new KeyBinding(new[] { InputKey.Control, InputKey.R }, GlobalAction.EditorToggleRotateControl),
             new KeyBinding(new[] { InputKey.Control, InputKey.E }, GlobalAction.EditorToggleScaleControl),
             new KeyBinding(new[] { InputKey.Control, InputKey.Left }, GlobalAction.EditorSeekToPreviousHitObject),

@@ -1056,7 +1056,9 @@ namespace osu.Game
                 // General expectation that osu! starts in fullscreen by default (also gives the most predictable performance).
                 // However, macOS is bound to have issues when using exclusive fullscreen as it takes full control away from OS, therefore borderless is default there.
                 { FrameworkSetting.WindowMode, RuntimeInfo.OS == RuntimeInfo.Platform.macOS ? WindowMode.Borderless : WindowMode.Fullscreen },
-                { FrameworkSetting.VolumeUniversal, 0.6 },
+                // quieter than stock: this build opens straight into editing work, where a sudden full-volume
+                // start on a fresh install is unwelcome.
+                { FrameworkSetting.VolumeUniversal, 0.2 },
                 { FrameworkSetting.VolumeMusic, 0.6 },
                 { FrameworkSetting.VolumeEffect, 0.6 },
                 { FrameworkSetting.AudioUseExperimentalWasapi, true },
