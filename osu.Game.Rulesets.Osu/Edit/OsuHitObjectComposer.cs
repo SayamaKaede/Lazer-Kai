@@ -133,7 +133,7 @@ namespace osu.Game.Rulesets.Osu.Edit
             // Give a bit of breathing room around the playfield content.
             PlayfieldContentContainer.Padding = new MarginPadding(10);
 
-            LayerBelowRuleset.Add(new OsuOffscreenDisplay());
+            LayerBelowRuleset.Add(new OsuOffscreenDisplay(Playfield));
 
             LayerBelowRuleset.Add(
                 distanceSnapGridContainer = new Container

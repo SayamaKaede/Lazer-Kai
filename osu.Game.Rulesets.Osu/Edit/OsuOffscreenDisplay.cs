@@ -1,19 +1,18 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
-using System.Linq;
+using System.Collections.Generic;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Game.Configuration;
-using osu.Game.Graphics;
+using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu.Edit.Checks;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.Skinning.Default;
-using osu.Game.Screens.Edit;
+using osu.Game.Rulesets.UI;
 using osuTK;
 using osuTK.Graphics;
 
@@ -24,6 +23,10 @@ namespace osu.Game.Rulesets.Osu.Edit
     /// currently break out of it.
     /// </summary>
     /// <remarks>
+    /// Only objects the playfield is currently showing are considered. Marking an object the user cannot see achieves
+    /// nothing, and the handful on screen can be re-checked every frame, so a marker follows an object being dragged
+    /// instead of waiting for the edit to be committed.
+    ///
     /// The bounds and the offscreen test are shared with <see cref="CheckOffscreenObjects"/>, so what is drawn here
     /// always agrees with what beatmap verification reports.
     /// </remarks>
@@ -36,16 +39,31 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         private const float ring_thickness = 3;
 
-        [Resolved]
-        private EditorBeatmap editorBeatmap { get; set; } = null!;
+        private const float border_alpha = 0.35f;
+
+        private readonly Playfield playfield;
 
         private Container<Drawable> markers = null!;
         private Container playAreaBorder = null!;
 
         private readonly Bindable<bool> enabled = new Bindable<bool>();
 
+        private readonly Dictionary<OsuHitObject, Drawable> currentMarkers = new Dictionary<OsuHitObject, Drawable>();
+
+        /// <summary>
+        /// Reused each frame so the sweep below does not allocate.
+        /// </summary>
+        private readonly HashSet<OsuHitObject> seen = new HashSet<OsuHitObject>();
+
+        private readonly List<OsuHitObject> toRemove = new List<OsuHitObject>();
+
+        public OsuOffscreenDisplay(Playfield playfield)
+        {
+            this.playfield = playfield;
+        }
+
         [BackgroundDependencyLoader]
-        private void load(OsuConfigManager config, OsuColour colours)
+        private void load(OsuConfigManager config)
         {
             RelativeSizeAxes = Axes.Both;
 
@@ -57,7 +75,7 @@ namespace osu.Game.Rulesets.Osu.Edit
                     BorderThickness = 2,
                     // matches the composer's grid rather than the warning colour: this is a reference line, not a problem.
                     BorderColour = Color4.White,
-                    Alpha = 0.35f,
+                    Alpha = border_alpha,
                     // positioned in playfield coordinates, which is what the bounds are expressed in.
                     Position = new Vector2(CheckOffscreenObjects.MIN_X, CheckOffscreenObjects.MIN_Y),
                     Size = new Vector2(CheckOffscreenObjects.MAX_X - CheckOffscreenObjects.MIN_X,
@@ -75,59 +93,87 @@ namespace osu.Game.Rulesets.Osu.Edit
             config.BindWith(OsuSetting.EditorShowOffscreenObjects, enabled);
         }
 
-        protected override void LoadComplete()
+        protected override void Update()
         {
-            base.LoadComplete();
+            base.Update();
 
-            editorBeatmap.BeatmapReprocessed += refresh;
-            enabled.BindValueChanged(_ => refresh(), true);
-        }
-
-        private void refresh() => Scheduler.AddOnce(() =>
-        {
-            markers.Clear();
-            playAreaBorder.Alpha = enabled.Value ? 0.35f : 0;
+            playAreaBorder.Alpha = enabled.Value ? border_alpha : 0;
 
             if (!enabled.Value)
-                return;
-
-            foreach (var hitObject in editorBeatmap.HitObjects.OfType<OsuHitObject>())
             {
-                switch (hitObject)
+                if (currentMarkers.Count > 0)
                 {
-                    case Slider slider:
-                        // the whole slider is outlined, not just the end which happens to be out. Marking one end
-                        // alone reads as if only that end were the problem.
-                        if (isOffscreen(slider))
-                            markers.Add(new OffscreenSliderOutline(slider));
-
-                        break;
-
-                    case HitCircle circle:
-                        if (CheckOffscreenObjects.IsOffscreen(circle.StackedPosition, circle.Radius))
-                        {
-                            markers.Add(new OffscreenMarker((float)circle.Radius + ring_padding)
-                            {
-                                Position = circle.StackedPosition,
-                            });
-                        }
-
-                        break;
+                    markers.Clear();
+                    currentMarkers.Clear();
                 }
+
+                return;
             }
-        });
+
+            seen.Clear();
+
+            foreach (var drawable in playfield.HitObjectContainer.AliveObjects)
+            {
+                if (drawable.HitObject is not OsuHitObject hitObject)
+                    continue;
+
+                if (!isOffscreen(hitObject))
+                    continue;
+
+                seen.Add(hitObject);
+
+                if (currentMarkers.TryGetValue(hitObject, out var existing))
+                {
+                    ((IOffscreenMarker)existing).UpdateFrom(hitObject);
+                    continue;
+                }
+
+                var marker = createMarker(hitObject);
+
+                currentMarkers[hitObject] = marker;
+                markers.Add(marker);
+            }
+
+            toRemove.Clear();
+
+            foreach (var (hitObject, marker) in currentMarkers)
+            {
+                if (seen.Contains(hitObject))
+                    continue;
+
+                markers.Remove(marker, true);
+                toRemove.Add(hitObject);
+            }
+
+            foreach (var hitObject in toRemove)
+                currentMarkers.Remove(hitObject);
+        }
+
+        private static Drawable createMarker(OsuHitObject hitObject)
+        {
+            Drawable marker = hitObject is Slider slider
+                // the whole slider is outlined, not just the end which happens to be out. Marking one end alone reads
+                // as if only that end were at fault.
+                ? new OffscreenSliderOutline(slider)
+                : new OffscreenRing((float)hitObject.Radius + ring_padding);
+
+            ((IOffscreenMarker)marker).UpdateFrom(hitObject);
+            return marker;
+        }
 
         /// <summary>
-        /// Whether any point along the slider's path leaves the visible area.
+        /// Whether any part of the object leaves the visible area.
         /// </summary>
         /// <remarks>
-        /// Measured from the bounds of the already-calculated path rather than by stepping along it. This runs for
-        /// every slider in the beatmap on every edit, and stepping meant interpolating a position thousands of times
-        /// per pass. Whichever point reaches an extreme is the one that would leave the area first, so taking the
-        /// extremes directly gives the same answer for the same cost as reading the path once.
+        /// A slider is measured from the bounds of its already-calculated path rather than by stepping along it:
+        /// whichever point reaches an extreme is the one that would leave the play area first, so taking the extremes
+        /// directly gives the same answer for the cost of reading the path once.
         /// </remarks>
-        private static bool isOffscreen(Slider slider)
+        private static bool isOffscreen(OsuHitObject hitObject)
         {
+            if (hitObject is not Slider slider)
+                return CheckOffscreenObjects.IsOffscreen(hitObject.StackedPosition, hitObject.Radius);
+
             var path = slider.Path.CalculatedPath;
 
             if (path.Count == 0)
@@ -138,10 +184,10 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             foreach (var point in path)
             {
-                minX = Math.Min(minX, point.X);
-                maxX = Math.Max(maxX, point.X);
-                minY = Math.Min(minY, point.Y);
-                maxY = Math.Max(maxY, point.Y);
+                if (point.X < minX) minX = point.X;
+                if (point.X > maxX) maxX = point.X;
+                if (point.Y < minY) minY = point.Y;
+                if (point.Y > maxY) maxY = point.Y;
             }
 
             var origin = slider.StackedPosition;
@@ -153,41 +199,55 @@ namespace osu.Game.Rulesets.Osu.Edit
                    || origin.Y + maxY + radius > CheckOffscreenObjects.MAX_Y;
         }
 
-        protected override void Dispose(bool isDisposing)
+        /// <summary>
+        /// Lets a marker follow the object it belongs to while that object is being edited.
+        /// </summary>
+        private interface IOffscreenMarker
         {
-            base.Dispose(isDisposing);
-
-            if (editorBeatmap != null)
-                editorBeatmap.BeatmapReprocessed -= refresh;
+            void UpdateFrom(OsuHitObject hitObject);
         }
 
         /// <summary>
         /// Traces a slider's path so the whole object reads as offscreen, matching how selection outlines it.
         /// </summary>
-        private partial class OffscreenSliderOutline : CompositeDrawable
+        private partial class OffscreenSliderOutline : CompositeDrawable, IOffscreenMarker
         {
+            private readonly ManualSliderBody body;
+
+            private int? lastPathVersion;
+
             public OffscreenSliderOutline(Slider slider)
             {
-                var body = new ManualSliderBody
+                InternalChild = body = new ManualSliderBody
                 {
                     AccentColour = Color4.Transparent,
                     BorderColour = Color4.Red,
                     BorderSize = ring_thickness,
                     PathRadius = slider.Scale * OsuHitObject.OBJECT_RADIUS,
                 };
+            }
 
-                body.SetVertices(slider.Path.CalculatedPath);
+            public void UpdateFrom(OsuHitObject hitObject)
+            {
+                var slider = (Slider)hitObject;
 
-                InternalChild = body;
+                body.PathRadius = slider.Scale * OsuHitObject.OBJECT_RADIUS;
+
+                // rebuilding the path is the expensive part, so it only happens when the shape actually changed.
+                if (lastPathVersion != slider.Path.Version.Value)
+                {
+                    lastPathVersion = slider.Path.Version.Value;
+                    body.SetVertices(slider.Path.CalculatedPath);
+                }
 
                 Position = slider.StackedPosition;
                 OriginPosition = body.PathOffset;
             }
         }
 
-        private partial class OffscreenMarker : CircularContainer
+        private partial class OffscreenRing : CircularContainer, IOffscreenMarker
         {
-            public OffscreenMarker(float radius)
+            public OffscreenRing(float radius)
             {
                 Origin = Anchor.Centre;
                 Size = new Vector2(radius * 2);
@@ -202,6 +262,12 @@ namespace osu.Game.Rulesets.Osu.Edit
                     AlwaysPresent = true,
                     Alpha = 0,
                 };
+            }
+
+            public void UpdateFrom(OsuHitObject hitObject)
+            {
+                Size = new Vector2(((float)hitObject.Radius + ring_padding) * 2);
+                Position = hitObject.StackedPosition;
             }
         }
     }
