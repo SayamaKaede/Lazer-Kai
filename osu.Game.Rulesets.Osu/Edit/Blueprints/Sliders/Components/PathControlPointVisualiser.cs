@@ -76,6 +76,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
         private void load(OsuConfigManager config)
         {
             limitedDistanceSnap = config.GetBindable<bool>(OsuSetting.EditorLimitedDistanceSnap);
+            config.BindWith(OsuSetting.EditorCtrlClickCyclesCurveType, ctrlClickCyclesCurveType);
         }
 
         protected override void LoadComplete()
@@ -363,9 +364,60 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
         private void selectionRequested(PathControlPointPiece<T> piece, MouseButtonEvent e)
         {
             if (e.Button == MouseButton.Left && inputManager.CurrentState.Keyboard.ControlPressed)
-                piece.IsSelected.Toggle();
-            else
-                SetSelectionTo(piece.ControlPoint);
+            {
+                // the two uses of ctrl+click are mutually exclusive by design: cycling the curve type would otherwise
+                // fight with adding to the selection on the same input.
+                if (ctrlClickCyclesCurveType.Value)
+                {
+                    SetSelectionTo(piece.ControlPoint);
+                    CycleCurveType(piece);
+                }
+                else
+                    piece.IsSelected.Toggle();
+
+                return;
+            }
+
+            SetSelectionTo(piece.ControlPoint);
+        }
+
+        /// <summary>
+        /// Advances a single control point to the next curve type in <see cref="path_types"/>, wrapping around.
+        /// </summary>
+        /// <remarks>
+        /// Used by the ctrl+click shortcut, which replaces ctrl's usual add-to-selection role on control points.
+        /// </remarks>
+        public void CycleCurveType(PathControlPointPiece<T> piece)
+        {
+            int index = Array.IndexOf(path_types, piece.ControlPoint.Type);
+            int firstIndex = Pieces.IndexOf(piece);
+
+            PathType? next = null;
+
+            // walks rather than steps once, so an invalid choice (inherit on the first point) is skipped over
+            // instead of leaving the type unchanged.
+            for (int i = 1; i <= path_types.Length; i++)
+            {
+                var candidate = path_types[(index + i + path_types.Length) % path_types.Length];
+
+                // the first control point can never be inherit type.
+                if (firstIndex == 0 && candidate == null)
+                    continue;
+
+                next = candidate;
+                break;
+            }
+
+            changeHandler?.BeginChange();
+
+            double originalDistance = hitObject.Path.Distance;
+
+            piece.ControlPoint.Type = next;
+
+            EnsureValidPathTypes();
+            hitObject.Path.ExpectedDistance.Value = originalDistance;
+
+            changeHandler?.EndChange();
         }
 
         /// <summary>
@@ -412,6 +464,8 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
 
         [Resolved(CanBeNull = true)]
         private IEditorChangeHandler changeHandler { get; set; }
+
+        private readonly Bindable<bool> ctrlClickCyclesCurveType = new Bindable<bool>();
 
         #region Drag handling
 

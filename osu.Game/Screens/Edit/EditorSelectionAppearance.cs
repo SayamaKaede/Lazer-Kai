@@ -27,6 +27,9 @@ namespace osu.Game.Screens.Edit
         private readonly Bindable<string> colour;
         private readonly Bindable<float> thickness;
         private readonly Bindable<float> opacity;
+        private readonly Bindable<string> handleColour;
+        private readonly Bindable<float> handleScale;
+        private readonly Bindable<float> anchorScale;
 
         /// <summary>
         /// Invoked whenever any of the underlying settings change.
@@ -39,20 +42,35 @@ namespace osu.Game.Screens.Edit
             thickness = config.GetBindable<float>(OsuSetting.EditorSelectionThickness);
             opacity = config.GetBindable<float>(OsuSetting.EditorSelectionOpacity);
 
+            handleColour = config.GetBindable<string>(OsuSetting.EditorSelectionHandleColour);
+            handleScale = config.GetBindable<float>(OsuSetting.EditorSelectionHandleScale);
+            anchorScale = config.GetBindable<float>(OsuSetting.EditorSliderAnchorScale);
+
             colour.ValueChanged += _ => Changed?.Invoke();
             thickness.ValueChanged += _ => Changed?.Invoke();
             opacity.ValueChanged += _ => Changed?.Invoke();
+            handleColour.ValueChanged += _ => Changed?.Invoke();
+            handleScale.ValueChanged += _ => Changed?.Invoke();
+            anchorScale.ValueChanged += _ => Changed?.Invoke();
         }
 
         /// <param name="fallback">The colour to use while the user has not chosen an override.</param>
-        public Color4 GetColour(Color4 fallback)
+        public Color4 GetColour(Color4 fallback) => parseColour(colour.Value, fallback);
+
+        /// <summary>
+        /// The colour of the drag handles on the selection box, which the user sets separately from the outline.
+        /// </summary>
+        /// <param name="fallback">The colour to use while the user has not chosen an override.</param>
+        public Color4 GetHandleColour(Color4 fallback) => parseColour(handleColour.Value, fallback);
+
+        private static Color4 parseColour(string value, Color4 fallback)
         {
-            if (string.IsNullOrEmpty(colour.Value))
+            if (string.IsNullOrEmpty(value))
                 return fallback;
 
             try
             {
-                return Color4Extensions.FromHex(colour.Value);
+                return Color4Extensions.FromHex(value);
             }
             catch (Exception)
             {
@@ -60,6 +78,12 @@ namespace osu.Game.Screens.Edit
                 return fallback;
             }
         }
+
+        /// <param name="baseSize">The handle's stock size, which the user's setting scales.</param>
+        public float GetHandleSize(float baseSize) => baseSize * handleScale.Value;
+
+        /// <param name="baseSize">A slider anchor's stock size, which the user's setting scales.</param>
+        public float GetAnchorSize(float baseSize) => baseSize * anchorScale.Value;
 
         /// <param name="baseThickness">The piece's stock border thickness, which the user's setting scales.</param>
         public float GetThickness(float baseThickness) => baseThickness * thickness.Value;

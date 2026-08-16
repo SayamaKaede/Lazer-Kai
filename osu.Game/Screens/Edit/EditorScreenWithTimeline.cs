@@ -2,6 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
+using osu.Game.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
@@ -18,6 +20,9 @@ namespace osu.Game.Screens.Edit
 
         private LoadingSpinner spinner = null!;
         private Container timelineContent = null!;
+        private Container timelineContainer = null!;
+
+        private readonly Bindable<bool> showTimeline = new Bindable<bool>(true);
 
         protected EditorScreenWithTimeline(EditorScreenMode type)
             : base(type)
@@ -25,8 +30,10 @@ namespace osu.Game.Screens.Edit
         }
 
         [BackgroundDependencyLoader(true)]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            config.BindWith(OsuSetting.EditorShowTimeline, showTimeline);
+
             // Grid with only two rows.
             // First is the timeline area, which should be allowed to expand as required.
             // Second is the main editor content, including the playfield and side toolbars (but not the bottom).
@@ -42,7 +49,7 @@ namespace osu.Game.Screens.Edit
                 {
                     new Drawable[]
                     {
-                        new Container
+                        timelineContainer = new Container
                         {
                             Name = "Timeline",
                             RelativeSizeAxes = Axes.X,
@@ -98,6 +105,14 @@ namespace osu.Game.Screens.Edit
         protected override void LoadComplete()
         {
             base.LoadComplete();
+
+            showTimeline.BindValueChanged(show =>
+            {
+                // the row sizes itself to the timeline, so it has to be excluded from that measurement as well as
+                // hidden, otherwise collapsing would leave the gap behind.
+                timelineContainer.Alpha = show.NewValue ? 1 : 0;
+                timelineContainer.BypassAutoSizeAxes = show.NewValue ? Axes.None : Axes.Y;
+            }, true);
 
             LoadComponentAsync(CreateMainContent(), content =>
             {

@@ -241,12 +241,17 @@ namespace osu.Game.Screens.Edit
         private Bindable<string> editorSelectionColour;
         private Bindable<float> editorSelectionThickness;
         private Bindable<float> editorSelectionOpacity;
-        private Bindable<bool> editorShowRotateButtons;
-        private Bindable<bool> editorShowFlipButtons;
+        private Bindable<bool> editorShowSelectionButtons;
+        private Bindable<float> editorSelectionHandleScale;
+        private Bindable<string> editorSelectionHandleColour;
+        private Bindable<float> editorSliderAnchorScale;
         private Bindable<double> editorSeekAnimationDuration;
         private Bindable<bool> editorAlwaysExpandLeftToolbox;
         private Bindable<float> dragStartDistance;
         private Bindable<bool> editorShowOffscreenObjects;
+        private Bindable<bool> editorShowTimeline;
+        private Bindable<bool> editorCtrlClickCyclesCurveType;
+        private Bindable<bool> swapRightAndMiddleMouse;
 
         /// <summary>
         /// This controls the opacity of components like the timelines, sidebars, etc.
@@ -381,12 +386,17 @@ namespace osu.Game.Screens.Edit
             editorSelectionColour = config.GetBindable<string>(OsuSetting.EditorSelectionColour);
             editorSelectionThickness = config.GetBindable<float>(OsuSetting.EditorSelectionThickness);
             editorSelectionOpacity = config.GetBindable<float>(OsuSetting.EditorSelectionOpacity);
-            editorShowRotateButtons = config.GetBindable<bool>(OsuSetting.EditorShowRotateButtons);
-            editorShowFlipButtons = config.GetBindable<bool>(OsuSetting.EditorShowFlipButtons);
+            editorShowSelectionButtons = config.GetBindable<bool>(OsuSetting.EditorShowSelectionButtons);
+            editorSelectionHandleScale = config.GetBindable<float>(OsuSetting.EditorSelectionHandleScale);
+            editorSelectionHandleColour = config.GetBindable<string>(OsuSetting.EditorSelectionHandleColour);
+            editorSliderAnchorScale = config.GetBindable<float>(OsuSetting.EditorSliderAnchorScale);
             editorSeekAnimationDuration = config.GetBindable<double>(OsuSetting.EditorSeekAnimationDuration);
             editorAlwaysExpandLeftToolbox = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox);
             dragStartDistance = config.GetBindable<float>(OsuSetting.DragStartDistance);
             editorShowOffscreenObjects = config.GetBindable<bool>(OsuSetting.EditorShowOffscreenObjects);
+            editorShowTimeline = config.GetBindable<bool>(OsuSetting.EditorShowTimeline);
+            editorCtrlClickCyclesCurveType = config.GetBindable<bool>(OsuSetting.EditorCtrlClickCyclesCurveType);
+            swapRightAndMiddleMouse = config.GetBindable<bool>(OsuSetting.SwapRightAndMiddleMouse);
 
             // These two settings don't work together. Make them mutually exclusive to let the user know.
             editorAutoSeekOnPlacement.BindValueChanged(enabled =>
@@ -474,7 +484,8 @@ namespace osu.Game.Screens.Edit
                                                     },
                                                 ]
                                             },
-                                            new SelectionAppearanceMenuItem(editorSelectionColour, editorSelectionThickness, editorSelectionOpacity),
+                                            new SelectionAppearanceMenuItem(editorSelectionColour, editorSelectionThickness, editorSelectionOpacity,
+                                                editorSelectionHandleScale, editorSelectionHandleColour, editorSliderAnchorScale),
                                             new ChoiceMenuItem<OverlayColourScheme>(EditorStrings.EditorColourScheme, editorColourScheme,
                                                 Enum.GetValues<OverlayColourScheme>().Select(scheme => ((LocalisableString)scheme.ToString(), scheme))),
                                             new ChoiceMenuItem<double>(EditorStrings.SeekAnimationDuration, editorSeekAnimationDuration, new[]
@@ -488,6 +499,14 @@ namespace osu.Game.Screens.Edit
                                             {
                                                 State = { BindTarget = editorAlwaysExpandLeftToolbox },
                                             },
+                                            new ToggleMenuItem(EditorStrings.CtrlClickCyclesCurveType)
+                                            {
+                                                State = { BindTarget = editorCtrlClickCyclesCurveType },
+                                            },
+                                            new ToggleMenuItem(EditorStrings.SwapRightAndMiddleMouse)
+                                            {
+                                                State = { BindTarget = swapRightAndMiddleMouse },
+                                            },
                                             new ChoiceMenuItem<float>(EditorStrings.DragStartDistance, dragStartDistance, new[]
                                             {
                                                 ((LocalisableString)@"1px", 1f),
@@ -499,13 +518,9 @@ namespace osu.Game.Screens.Edit
                                             {
                                                 State = { BindTarget = editorShowOffscreenObjects },
                                             },
-                                            new ToggleMenuItem(EditorStrings.ShowRotateButtons)
+                                            new ToggleMenuItem(EditorStrings.ShowSelectionButtons)
                                             {
-                                                State = { BindTarget = editorShowRotateButtons },
-                                            },
-                                            new ToggleMenuItem(EditorStrings.ShowFlipButtons)
-                                            {
-                                                State = { BindTarget = editorShowFlipButtons },
+                                                State = { BindTarget = editorShowSelectionButtons },
                                             },
                                             new OsuMenuItemSpacer(),
                                             new BackgroundDimMenuItem(editorBackgroundDim),
@@ -570,7 +585,12 @@ namespace osu.Game.Screens.Edit
                                                 State = { BindTarget = editorLiveModPreview },
                                             },
                                         }
-                                    }
+                                    },
+                                    // a leaf item, so it acts as a button sitting immediately right of the Test menu.
+                                    new ToggleMenuItem(EditorStrings.ShowTimeline)
+                                    {
+                                        State = { BindTarget = editorShowTimeline },
+                                    },
                                 }
                             },
                             screenSwitcher = new EditorScreenSwitcherControl

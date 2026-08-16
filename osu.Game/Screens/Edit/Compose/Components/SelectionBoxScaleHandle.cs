@@ -19,7 +19,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
         [BackgroundDependencyLoader]
         private void load()
         {
-            Size = new Vector2(10);
+            Size = new Vector2(Appearance.GetHandleSize(10));
         }
 
         private Anchor originalAnchor;

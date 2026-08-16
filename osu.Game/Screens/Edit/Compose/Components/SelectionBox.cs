@@ -128,19 +128,15 @@ namespace osu.Game.Screens.Edit.Compose.Components
         private Box infoTextBackground = null!;
         private Container border = null!;
 
-        private Bindable<bool> showRotateButtons = null!;
-        private Bindable<bool> showFlipButtons = null!;
+        private Bindable<bool> showSelectionButtons = null!;
 
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
             appearance = new EditorSelectionAppearance(config);
 
-            showRotateButtons = config.GetBindable<bool>(OsuSetting.EditorShowRotateButtons);
-            showFlipButtons = config.GetBindable<bool>(OsuSetting.EditorShowFlipButtons);
-
-            showRotateButtons.BindValueChanged(_ => recreateButtons());
-            showFlipButtons.BindValueChanged(_ => recreateButtons());
+            showSelectionButtons = config.GetBindable<bool>(OsuSetting.EditorShowSelectionButtons);
+            showSelectionButtons.BindValueChanged(_ => recreateButtons());
 
             InternalChildren = new Drawable[]
             {
@@ -344,16 +340,19 @@ namespace osu.Game.Screens.Edit.Compose.Components
             clearButtons();
 
             // hiding the buttons does not disable the actions; the keyboard shortcuts still work.
-            if (canRotate.Value && showRotateButtons.Value)
+            if (!showSelectionButtons.Value)
+                return;
+
+            if (canRotate.Value)
             {
                 rotateCounterClockwiseButton = addButton(FontAwesome.Solid.Undo, "Rotate 90 degrees counter-clockwise (Ctrl-<)", () => rotationHandler?.Rotate(-90));
                 rotateClockwiseButton = addButton(FontAwesome.Solid.Redo, "Rotate 90 degrees clockwise (Ctrl->)", () => rotationHandler?.Rotate(90));
             }
 
-            if (CanFlipX && showFlipButtons.Value)
+            if (CanFlipX)
                 addButton(FontAwesome.Solid.ArrowsAltH, "Flip horizontally", () => OnFlip?.Invoke(Direction.Horizontal, false));
 
-            if (CanFlipY && showFlipButtons.Value)
+            if (CanFlipY)
                 addButton(FontAwesome.Solid.ArrowsAltV, "Flip vertically", () => OnFlip?.Invoke(Direction.Vertical, false));
 
             if (CanReverse)

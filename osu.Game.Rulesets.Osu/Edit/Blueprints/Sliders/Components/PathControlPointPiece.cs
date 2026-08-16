@@ -13,7 +13,9 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
+using osu.Game.Screens.Edit;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Objects;
@@ -45,6 +47,8 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
 
         [Resolved]
         private OsuColour colours { get; set; }
+
+        private EditorSelectionAppearance appearance;
 
         private IBindable<Vector2> hitObjectPosition;
         private IBindable<float> hitObjectScale;
@@ -78,6 +82,13 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
                     Progress = 1
                 }
             };
+        }
+
+        [BackgroundDependencyLoader]
+        private void load(OsuConfigManager config)
+        {
+            appearance = new EditorSelectionAppearance(config);
+            appearance.Changed += updateMarkerDisplay;
         }
 
         protected override void LoadComplete()
@@ -194,7 +205,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
                 colour = colour.Lighten(1);
 
             Colour = colour;
-            Scale = new Vector2(hitObject.Scale);
+            Scale = new Vector2(appearance.GetAnchorSize(hitObject.Scale));
         }
 
         private Color4 getColourFromNodeType()

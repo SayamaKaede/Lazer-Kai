@@ -13,22 +13,37 @@ namespace osu.Game.Screens.Edit
     /// </summary>
     internal class SelectionAppearanceMenuItem : MenuItem
     {
-        public SelectionAppearanceMenuItem(Bindable<string> colour, Bindable<float> thickness, Bindable<float> opacity)
+        /// <summary>
+        /// Offered for both the selection handles and slider anchors, which scale their stock sizes by these factors.
+        /// </summary>
+        private static readonly (LocalisableString, float)[] scale_choices =
+        {
+            ((LocalisableString)@"50%", 0.5f),
+            ((LocalisableString)@"100%", 1f),
+            ((LocalisableString)@"150%", 1.5f),
+            ((LocalisableString)@"200%", 2f),
+            ((LocalisableString)@"300%", 3f),
+        };
+
+        private static readonly (LocalisableString, string)[] colour_choices =
+        {
+            (CommonStrings.Default, EditorSelectionAppearance.DEFAULT_COLOUR),
+            ((LocalisableString)@"Red", @"#FF5555"),
+            ((LocalisableString)@"Orange", @"#FF9C22"),
+            ((LocalisableString)@"Green", @"#88FF55"),
+            ((LocalisableString)@"Cyan", @"#55DDFF"),
+            ((LocalisableString)@"Blue", @"#5599FF"),
+            ((LocalisableString)@"Magenta", @"#FF55CC"),
+            ((LocalisableString)@"White", @"#FFFFFF"),
+        };
+
+        public SelectionAppearanceMenuItem(Bindable<string> colour, Bindable<float> thickness, Bindable<float> opacity,
+                                           Bindable<float> handleScale, Bindable<string> handleColour, Bindable<float> anchorScale)
             : base(EditorStrings.SelectionAppearance)
         {
             Items = new MenuItem[]
             {
-                new ChoiceMenuItem<string>(EditorStrings.SelectionColour, colour, new[]
-                {
-                    (CommonStrings.Default, EditorSelectionAppearance.DEFAULT_COLOUR),
-                    ((LocalisableString)@"Red", @"#FF5555"),
-                    ((LocalisableString)@"Orange", @"#FF9C22"),
-                    ((LocalisableString)@"Green", @"#88FF55"),
-                    ((LocalisableString)@"Cyan", @"#55DDFF"),
-                    ((LocalisableString)@"Blue", @"#5599FF"),
-                    ((LocalisableString)@"Magenta", @"#FF55CC"),
-                    ((LocalisableString)@"White", @"#FFFFFF"),
-                }),
+                new ChoiceMenuItem<string>(EditorStrings.SelectionColour, colour, colour_choices),
                 new ChoiceMenuItem<float>(EditorStrings.SelectionThickness, thickness, new[]
                 {
                     ((LocalisableString)@"50%", 0.5f),
@@ -44,6 +59,9 @@ namespace osu.Game.Screens.Edit
                     ((LocalisableString)@"75%", 0.75f),
                     ((LocalisableString)@"100%", 1f),
                 }),
+                new ChoiceMenuItem<float>(EditorStrings.SelectionHandleSize, handleScale, scale_choices),
+                new ChoiceMenuItem<string>(EditorStrings.SelectionHandleColour, handleColour, colour_choices),
+                new ChoiceMenuItem<float>(EditorStrings.SliderAnchorSize, anchorScale, scale_choices),
             };
         }
 

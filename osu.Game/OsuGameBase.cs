@@ -534,6 +534,14 @@ namespace osu.Game
             }).Where(m => m != null);
 
             Localisation.AddLocaleMappings(localeMappings);
+
+            // bound here rather than inside the input manager, which loads before the config manager is available to
+            // it. Null when a test host supplies its own input manager instead of going through CreateUserInputManager.
+            if (osuUserInputManager != null)
+            {
+                LocalConfig.BindWith(OsuSetting.DragStartDistance, osuUserInputManager.DragStartDistance);
+                LocalConfig.BindWith(OsuSetting.SwapRightAndMiddleMouse, osuUserInputManager.SwapRightAndMiddleMouse);
+            }
         }
 
         protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent) =>
@@ -639,7 +647,9 @@ namespace osu.Game
 
         protected virtual IBeatmapUpdater CreateBeatmapUpdater() => new BeatmapUpdater(BeatmapManager, difficultyCache, API, Storage);
 
-        protected override UserInputManager CreateUserInputManager() => new OsuUserInputManager();
+        private OsuUserInputManager osuUserInputManager;
+
+        protected override UserInputManager CreateUserInputManager() => osuUserInputManager = new OsuUserInputManager();
 
         protected virtual BatteryInfo CreateBatteryInfo() => null;
 

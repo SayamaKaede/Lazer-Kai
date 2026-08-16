@@ -239,12 +239,18 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSelectionThickness, 1f, 0.25f, 3f, 0.25f);
             SetDefault(OsuSetting.EditorSelectionOpacity, 1f, 0.1f, 1f, 0.05f);
             SetDefault(OsuSetting.EditorColourScheme, OverlayColourScheme.Aquamarine);
-            SetDefault(OsuSetting.EditorShowRotateButtons, true);
-            SetDefault(OsuSetting.EditorShowFlipButtons, true);
             SetDefault(OsuSetting.EditorSeekAnimationDuration, 300.0, 0.0, 300.0, 50.0);
             SetDefault(OsuSetting.EditorAlwaysExpandLeftToolbox, false);
             SetDefault(OsuSetting.DragStartDistance, 10f, 1f, 10f, 1f);
             SetDefault(OsuSetting.EditorShowOffscreenObjects, true);
+            SetDefault(OsuSetting.EditorPinnedToolboxGroups, string.Empty);
+            SetDefault(OsuSetting.EditorShowSelectionButtons, true);
+            SetDefault(OsuSetting.EditorSelectionHandleColour, EditorSelectionAppearance.DEFAULT_COLOUR);
+            SetDefault(OsuSetting.EditorSelectionHandleScale, 1f, 0.5f, 3f, 0.1f);
+            SetDefault(OsuSetting.EditorSliderAnchorScale, 1f, 0.5f, 3f, 0.1f);
+            SetDefault(OsuSetting.EditorShowTimeline, true);
+            SetDefault(OsuSetting.EditorCtrlClickCyclesCurveType, false);
+            SetDefault(OsuSetting.SwapRightAndMiddleMouse, false);
 
             SetDefault(OsuSetting.AlwaysShowHoldForMenuButton, false);
             SetDefault(OsuSetting.AlwaysRequireHoldingForPause, false);
@@ -549,16 +555,6 @@ namespace osu.Game.Configuration
         EditorColourScheme,
 
         /// <summary>
-        /// Whether the 90 degree rotation buttons are shown on the selection box.
-        /// </summary>
-        EditorShowRotateButtons,
-
-        /// <summary>
-        /// Whether the horizontal/vertical flip buttons are shown on the selection box.
-        /// </summary>
-        EditorShowFlipButtons,
-
-        /// <summary>
         /// Duration in milliseconds of the editor's smooth seek animation. Zero seeks instantly.
         /// </summary>
         EditorSeekAnimationDuration,
@@ -578,5 +574,48 @@ namespace osu.Game.Configuration
         /// Whether the editor outlines the visible play area and marks objects which go outside it.
         /// </summary>
         EditorShowOffscreenObjects,
+
+        /// <summary>
+        /// Titles of the editor toolbox groups the user pinned to the top, separated by <c>|</c>.
+        /// Stored by title because the groups themselves are created fresh per ruleset and editor session.
+        /// </summary>
+        EditorPinnedToolboxGroups,
+
+        /// <summary>
+        /// Whether the rotate, flip and reverse buttons appear above a selection.
+        /// The keyboard shortcuts work regardless.
+        /// </summary>
+        EditorShowSelectionButtons,
+
+        /// <summary>
+        /// Hex colour of the selection box's drag handles, or empty to keep the stock colour.
+        /// </summary>
+        EditorSelectionHandleColour,
+
+        /// <summary>
+        /// Multiplier applied to the size of the selection box's drag handles.
+        /// </summary>
+        EditorSelectionHandleScale,
+
+        /// <summary>
+        /// Multiplier applied to the size of slider path anchors.
+        /// </summary>
+        EditorSliderAnchorScale,
+
+        /// <summary>
+        /// Whether the timeline is shown above the editor's main content.
+        /// </summary>
+        EditorShowTimeline,
+
+        /// <summary>
+        /// Whether ctrl+clicking a slider control point cycles its curve type.
+        /// While on, ctrl no longer adds control points to the selection.
+        /// </summary>
+        EditorCtrlClickCyclesCurveType,
+
+        /// <summary>
+        /// Whether the right and middle mouse buttons are swapped. Applies game-wide.
+        /// </summary>
+        SwapRightAndMiddleMouse,
     }
 }

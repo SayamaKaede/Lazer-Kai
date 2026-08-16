@@ -381,14 +381,39 @@ namespace osu.Game.Localisation
         public static LocalisableString EditorColourScheme => new TranslatableString(getKey(@"editor_colour_scheme"), @"Editor colour (applies on next open)");
 
         /// <summary>
-        /// "Show rotate buttons on selection"
+        /// "Show buttons on selection"
         /// </summary>
-        public static LocalisableString ShowRotateButtons => new TranslatableString(getKey(@"show_rotate_buttons"), @"Show rotate buttons on selection");
+        public static LocalisableString ShowSelectionButtons => new TranslatableString(getKey(@"show_selection_buttons"), @"Show buttons on selection");
 
         /// <summary>
-        /// "Show flip buttons on selection"
+        /// "Selection handle size"
         /// </summary>
-        public static LocalisableString ShowFlipButtons => new TranslatableString(getKey(@"show_flip_buttons"), @"Show flip buttons on selection");
+        public static LocalisableString SelectionHandleSize => new TranslatableString(getKey(@"selection_handle_size"), @"Selection handle size");
+
+        /// <summary>
+        /// "Selection handle colour"
+        /// </summary>
+        public static LocalisableString SelectionHandleColour => new TranslatableString(getKey(@"selection_handle_colour"), @"Selection handle colour");
+
+        /// <summary>
+        /// "Slider anchor size"
+        /// </summary>
+        public static LocalisableString SliderAnchorSize => new TranslatableString(getKey(@"slider_anchor_size"), @"Slider anchor size");
+
+        /// <summary>
+        /// "Timeline"
+        /// </summary>
+        public static LocalisableString ShowTimeline => new TranslatableString(getKey(@"show_timeline"), @"Timeline");
+
+        /// <summary>
+        /// "Ctrl+click a slider anchor to cycle its curve type"
+        /// </summary>
+        public static LocalisableString CtrlClickCyclesCurveType => new TranslatableString(getKey(@"ctrl_click_cycles_curve_type"), @"Ctrl+click a slider anchor to cycle its curve type");
+
+        /// <summary>
+        /// "Swap right and middle mouse buttons (applies game-wide)"
+        /// </summary>
+        public static LocalisableString SwapRightAndMiddleMouse => new TranslatableString(getKey(@"swap_right_and_middle_mouse"), @"Swap right and middle mouse buttons (applies game-wide)");
 
         /// <summary>
         /// "Seek animation"

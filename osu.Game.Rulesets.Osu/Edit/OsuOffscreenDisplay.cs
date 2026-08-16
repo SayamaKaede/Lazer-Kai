@@ -10,9 +10,9 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
-using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu.Edit.Checks;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Osu.Skinning.Default;
 using osu.Game.Screens.Edit;
 using osuTK;
 using osuTK.Graphics;
@@ -36,6 +36,11 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         private const float ring_thickness = 3;
 
+        /// <summary>
+        /// Matches the step <see cref="CheckOffscreenObjects"/> walks slider paths with.
+        /// </summary>
+        private const int path_step_size = 5;
+
         [Resolved]
         private EditorBeatmap editorBeatmap { get; set; } = null!;
 
@@ -55,7 +60,8 @@ namespace osu.Game.Rulesets.Osu.Edit
                 {
                     Masking = true,
                     BorderThickness = 2,
-                    BorderColour = colours.Red1,
+                    // matches the composer's grid rather than the warning colour: this is a reference line, not a problem.
+                    BorderColour = Color4.White,
                     Alpha = 0.35f,
                     // positioned in playfield coordinates, which is what the bounds are expressed in.
                     Position = new Vector2(CheckOffscreenObjects.MIN_X, CheckOffscreenObjects.MIN_Y),
@@ -92,39 +98,42 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             foreach (var hitObject in editorBeatmap.HitObjects.OfType<OsuHitObject>())
             {
-                foreach (var (position, radius) in offscreenPointsOf(hitObject))
+                switch (hitObject)
                 {
-                    markers.Add(new OffscreenMarker(radius + ring_padding)
-                    {
-                        Position = position,
-                    });
+                    case Slider slider:
+                        // the whole slider is outlined, not just the end which happens to be out. Marking one end
+                        // alone reads as if only that end were the problem.
+                        if (isOffscreen(slider))
+                            markers.Add(new OffscreenSliderOutline(slider));
+
+                        break;
+
+                    case HitCircle circle:
+                        if (CheckOffscreenObjects.IsOffscreen(circle.StackedPosition, circle.Radius))
+                        {
+                            markers.Add(new OffscreenMarker((float)circle.Radius + ring_padding)
+                            {
+                                Position = circle.StackedPosition,
+                            });
+                        }
+
+                        break;
                 }
             }
         });
 
         /// <summary>
-        /// The positions at which an object breaks out of the visible area. Sliders are reported at both ends, since
-        /// either can be the part which goes out.
+        /// Whether any point along the slider's path leaves the visible area.
         /// </summary>
-        private IEnumerable<(Vector2 position, float radius)> offscreenPointsOf(OsuHitObject hitObject)
+        private static bool isOffscreen(Slider slider)
         {
-            switch (hitObject)
+            for (int i = 0; i < slider.Distance; i += path_step_size)
             {
-                case Slider slider:
-                    if (CheckOffscreenObjects.IsOffscreen(slider.StackedPosition, slider.Radius))
-                        yield return (slider.StackedPosition, (float)slider.Radius);
-
-                    if (CheckOffscreenObjects.IsOffscreen(slider.StackedEndPosition, slider.Radius))
-                        yield return (slider.StackedEndPosition, (float)slider.Radius);
-
-                    break;
-
-                case HitCircle circle:
-                    if (CheckOffscreenObjects.IsOffscreen(circle.StackedPosition, circle.Radius))
-                        yield return (circle.StackedPosition, (float)circle.Radius);
-
-                    break;
+                if (CheckOffscreenObjects.IsOffscreen(slider.StackedPositionAt(i / slider.Distance), slider.Radius))
+                    return true;
             }
+
+            return CheckOffscreenObjects.IsOffscreen(slider.StackedEndPosition, slider.Radius);
         }
 
         protected override void Dispose(bool isDisposing)
@@ -133,6 +142,30 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             if (editorBeatmap != null)
                 editorBeatmap.BeatmapReprocessed -= refresh;
+        }
+
+        /// <summary>
+        /// Traces a slider's path so the whole object reads as offscreen, matching how selection outlines it.
+        /// </summary>
+        private partial class OffscreenSliderOutline : CompositeDrawable
+        {
+            public OffscreenSliderOutline(Slider slider)
+            {
+                var body = new ManualSliderBody
+                {
+                    AccentColour = Color4.Transparent,
+                    BorderColour = Color4.Red,
+                    BorderSize = ring_thickness,
+                    PathRadius = slider.Scale * OsuHitObject.OBJECT_RADIUS,
+                };
+
+                body.SetVertices(slider.Path.CalculatedPath);
+
+                InternalChild = body;
+
+                Position = slider.StackedPosition;
+                OriginPosition = body.PathOffset;
+            }
         }
 
         private partial class OffscreenMarker : CircularContainer

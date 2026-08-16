@@ -9,6 +9,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 
 namespace osu.Game.Screens.Edit.Compose.Components
@@ -34,9 +35,17 @@ namespace osu.Game.Screens.Edit.Compose.Components
         [Resolved]
         protected OsuColour Colours { get; private set; }
 
+        /// <summary>
+        /// The user's preferences for how these controls look.
+        /// </summary>
+        protected EditorSelectionAppearance Appearance { get; private set; }
+
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            Appearance = new EditorSelectionAppearance(config);
+            Appearance.Changed += UpdateHoverState;
+
             Origin = Anchor.Centre;
 
             InternalChildren = new Drawable[]
@@ -87,7 +96,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
             if (IsHeld)
                 Circle.FadeColour(Colours.GrayF, TRANSFORM_DURATION, Easing.OutQuint);
             else
-                Circle.FadeColour(IsHovered ? Colours.Red : Colours.YellowDark, TRANSFORM_DURATION, Easing.OutQuint);
+                Circle.FadeColour(IsHovered ? Colours.Red : Appearance.GetHandleColour(Colours.YellowDark), TRANSFORM_DURATION, Easing.OutQuint);
 
             this.ScaleTo(IsHeld || IsHovered ? 1.5f : 1, TRANSFORM_DURATION, Easing.OutQuint);
         }

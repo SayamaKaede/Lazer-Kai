@@ -18,11 +18,17 @@ namespace osu.Game.Rulesets.Edit
         /// </summary>
         public BindableBool Pinned { get; } = new BindableBool();
 
+        /// <summary>
+        /// Identifies this group when persisting its pinned state.
+        /// </summary>
+        public string Title { get; }
+
         private IconButton pinButton = null!;
 
         public EditorToolboxGroup(string title)
             : base(title)
         {
+            Title = title;
             RelativeSizeAxes = Axes.X;
             Width = 1;
         }

@@ -54,10 +54,15 @@ namespace osu.Game.Rulesets.Edit
 
         private readonly Dictionary<EditorToolboxGroup, float> originalLayoutPositions = new Dictionary<EditorToolboxGroup, float>();
 
+        private readonly Bindable<string> pinnedGroups = new Bindable<string>(string.Empty);
+
+        private const char pinned_separator = '|';
+
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
             config.BindWith(OsuSetting.EditorContractSidebars, contractSidebars);
+            config.BindWith(OsuSetting.EditorPinnedToolboxGroups, pinnedGroups);
 
             AddInternal(pinnedArea = new FillFlowContainer
             {
@@ -91,27 +96,60 @@ namespace osu.Game.Rulesets.Edit
                 });
             }
 
-            foreach (var group in Children.OfType<EditorToolboxGroup>().ToArray())
-            {
-                // remembered so unpinning can put the group back where it was rather than at the end.
+            var storedPins = pinnedGroups.Value.Split(pinned_separator, StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+            var groups = Children.OfType<EditorToolboxGroup>().ToArray();
+
+            // every position is recorded before anything moves, so restoring one does not depend on what is pinned.
+            foreach (var group in groups)
                 originalLayoutPositions[group] = FillFlow.GetLayoutPosition(group);
 
+            foreach (var group in groups)
+            {
                 var captured = group;
-                group.Pinned.BindValueChanged(pinned => setPinned(captured, pinned.NewValue));
+
+                group.Pinned.Value = storedPins.Contains(group.Title);
+                group.Pinned.BindValueChanged(pinned =>
+                {
+                    setPinned(captured, pinned.NewValue);
+                    savePinnedState();
+                }, true);
             }
+        }
+
+        /// <summary>
+        /// Writes this toolbox's pinned groups back to config.
+        /// </summary>
+        /// <remarks>
+        /// Both toolboxes share one setting, so entries belonging to groups this container does not own are left
+        /// untouched rather than overwritten.
+        /// </remarks>
+        private void savePinnedState()
+        {
+            var ownGroups = Children.OfType<EditorToolboxGroup>().Concat(pinnedArea.OfType<EditorToolboxGroup>()).ToArray();
+            var ownTitles = ownGroups.Select(g => g.Title).ToHashSet();
+
+            var stored = pinnedGroups.Value.Split(pinned_separator, StringSplitOptions.RemoveEmptyEntries)
+                                     .Where(title => !ownTitles.Contains(title))
+                                     .ToList();
+
+            stored.AddRange(ownGroups.Where(g => g.Pinned.Value).Select(g => g.Title));
+
+            pinnedGroups.Value = string.Join(pinned_separator, stored);
         }
 
         private void setPinned(EditorToolboxGroup group, bool pinned)
         {
+            // membership is tested by parent rather than `Contains`, which throws outright when the drawable belongs
+            // to a different container.
             if (pinned)
             {
-                if (FillFlow.Contains(group))
+                if (ReferenceEquals(group.Parent, FillFlow))
                 {
                     FillFlow.Remove(group, false);
                     pinnedArea.Add(group);
                 }
             }
-            else if (pinnedArea.Contains(group))
+            else if (ReferenceEquals(group.Parent, pinnedArea))
             {
                 pinnedArea.Remove(group, false);
                 FillFlow.Add(group);
