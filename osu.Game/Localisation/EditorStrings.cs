@@ -405,6 +405,11 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString DragStartDistance => new TranslatableString(getKey(@"drag_start_distance"), @"Drag threshold (applies game-wide)");
 
+        /// <summary>
+        /// "Show play area and offscreen objects"
+        /// </summary>
+        public static LocalisableString ShowOffscreenObjects => new TranslatableString(getKey(@"show_offscreen_objects"), @"Show play area and offscreen objects");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

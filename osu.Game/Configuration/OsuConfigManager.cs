@@ -244,6 +244,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSeekAnimationDuration, 300.0, 0.0, 300.0, 50.0);
             SetDefault(OsuSetting.EditorAlwaysExpandLeftToolbox, false);
             SetDefault(OsuSetting.DragStartDistance, 10f, 1f, 10f, 1f);
+            SetDefault(OsuSetting.EditorShowOffscreenObjects, true);
 
             SetDefault(OsuSetting.AlwaysShowHoldForMenuButton, false);
             SetDefault(OsuSetting.AlwaysRequireHoldingForPause, false);
@@ -572,5 +573,10 @@ namespace osu.Game.Configuration
         /// Lowering it makes small nudges possible in the editor, but applies game-wide.
         /// </summary>
         DragStartDistance,
+
+        /// <summary>
+        /// Whether the editor outlines the visible play area and marks objects which go outside it.
+        /// </summary>
+        EditorShowOffscreenObjects,
     }
 }

@@ -246,6 +246,7 @@ namespace osu.Game.Screens.Edit
         private Bindable<double> editorSeekAnimationDuration;
         private Bindable<bool> editorAlwaysExpandLeftToolbox;
         private Bindable<float> dragStartDistance;
+        private Bindable<bool> editorShowOffscreenObjects;
 
         /// <summary>
         /// This controls the opacity of components like the timelines, sidebars, etc.
@@ -385,6 +386,7 @@ namespace osu.Game.Screens.Edit
             editorSeekAnimationDuration = config.GetBindable<double>(OsuSetting.EditorSeekAnimationDuration);
             editorAlwaysExpandLeftToolbox = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox);
             dragStartDistance = config.GetBindable<float>(OsuSetting.DragStartDistance);
+            editorShowOffscreenObjects = config.GetBindable<bool>(OsuSetting.EditorShowOffscreenObjects);
 
             // These two settings don't work together. Make them mutually exclusive to let the user know.
             editorAutoSeekOnPlacement.BindValueChanged(enabled =>
@@ -493,6 +495,10 @@ namespace osu.Game.Screens.Edit
                                                 ((LocalisableString)@"5px", 5f),
                                                 ((LocalisableString)@"10px (default)", 10f),
                                             }),
+                                            new ToggleMenuItem(EditorStrings.ShowOffscreenObjects)
+                                            {
+                                                State = { BindTarget = editorShowOffscreenObjects },
+                                            },
                                             new ToggleMenuItem(EditorStrings.ShowRotateButtons)
                                             {
                                                 State = { BindTarget = editorShowRotateButtons },

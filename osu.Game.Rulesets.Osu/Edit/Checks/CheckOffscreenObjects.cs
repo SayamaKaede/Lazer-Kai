@@ -14,10 +14,23 @@ namespace osu.Game.Rulesets.Osu.Edit.Checks
         // A close approximation for the bounding box of the screen in gameplay on 4:3 aspect ratio.
         // Uses gameplay space coordinates (512 x 384 playfield / 640 x 480 screen area).
         // See https://github.com/ppy/osu/pull/12361#discussion_r612199777 for reference.
-        private const int min_x = -67;
-        private const int min_y = -60;
-        private const int max_x = 579;
-        private const int max_y = 428;
+        // Exposed so the editor can visualise the same bounds it verifies against.
+        public const int MIN_X = -67;
+        public const int MIN_Y = -60;
+        public const int MAX_X = 579;
+        public const int MAX_Y = 428;
+
+        private const int min_x = MIN_X;
+        private const int min_y = MIN_Y;
+        private const int max_x = MAX_X;
+        private const int max_y = MAX_Y;
+
+        /// <summary>
+        /// Whether an object at <paramref name="position"/> would extend past the visible screen area.
+        /// </summary>
+        public static bool IsOffscreen(Vector2 position, double radius) =>
+            position.X - radius < MIN_X || position.X + radius > MAX_X ||
+            position.Y - radius < MIN_Y || position.Y + radius > MAX_Y;
 
         // The amount of milliseconds to step through a slider path at a time
         // (higher = more performant, but higher false-negative chance).
