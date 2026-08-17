@@ -14,7 +14,7 @@ using osu.Framework.Logging;
 using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
-using osu.Game.Graphics.UserInterface;
+using osu.Framework.Graphics.Shapes;
 using osu.Game.Overlays;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Difficulty;
@@ -54,8 +54,8 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
         [Resolved]
         private Bindable<RulesetInfo> ruleset { get; set; } = null!;
 
-        private BufferedContainer graph = null!;
-        private Container<Bar> bars = null!;
+        private Container graph = null!;
+        private Container<Box> bars = null!;
 
         private readonly Bindable<bool> enabled = new Bindable<bool>();
 
@@ -67,12 +67,12 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
         {
             RelativeSizeAxes = Axes.Both;
 
-            InternalChild = graph = new BufferedContainer(cachedFrameBuffer: true)
+            InternalChild = graph = new Container
             {
                 RelativeSizeAxes = Axes.Both,
                 Colour = colourProvider.Highlight1,
                 Alpha = 0,
-                Child = bars = new Container<Bar> { RelativeSizeAxes = Axes.Both },
+                Child = bars = new Container<Box> { RelativeSizeAxes = Axes.Both },
             };
 
             config.BindWith(OsuSetting.EditorShowDifficultyGraph, enabled);
@@ -174,19 +174,20 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
                 if (buckets[i] <= 0)
                     continue;
 
-                bars.Add(new Bar
+                bars.Add(new Box
                 {
                     RelativePositionAxes = Axes.X,
                     RelativeSizeAxes = Axes.Both,
                     Anchor = Anchor.BottomLeft,
                     Origin = Anchor.BottomLeft,
                     X = (float)i / resolution,
-                    Width = 1f / resolution,
+                    // slightly wider than its slot so neighbours meet and the curve reads as one shape.
+                    Width = 1.5f / resolution,
                     Height = (float)(buckets[i] / peak),
                 });
             }
 
-            graph.FadeTo(0.35f, 400, Easing.OutQuint);
+            graph.FadeTo(0.5f, 400, Easing.OutQuint);
         }
 
         protected override void Dispose(bool isDisposing)
