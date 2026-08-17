@@ -539,7 +539,7 @@ namespace osu.Game
             // it. Null when a test host supplies its own input manager instead of going through CreateUserInputManager.
             if (osuUserInputManager != null)
             {
-                LocalConfig.BindWith(OsuSetting.DragStartDistance, osuUserInputManager.DragStartDistance);
+                LocalConfig.BindWith(OsuSetting.RemoveDragThreshold, osuUserInputManager.RemoveDragThreshold);
                 LocalConfig.BindWith(OsuSetting.SwapRightAndMiddleMouse, osuUserInputManager.SwapRightAndMiddleMouse);
             }
         }

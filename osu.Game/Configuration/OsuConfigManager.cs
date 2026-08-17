@@ -241,10 +241,10 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorColourScheme, OverlayColourScheme.Aquamarine);
             SetDefault(OsuSetting.EditorSeekAnimationDuration, 300.0, 0.0, 300.0, 50.0);
             SetDefault(OsuSetting.EditorAlwaysExpandLeftToolbox, false);
-            SetDefault(OsuSetting.DragStartDistance, 10f, 1f, 10f, 1f);
+            SetDefault(OsuSetting.RemoveDragThreshold, false);
             SetDefault(OsuSetting.EditorShowOffscreenObjects, true);
             SetDefault(OsuSetting.EditorPinnedToolboxGroups, string.Empty);
-            SetDefault(OsuSetting.EditorShowSelectionButtons, true);
+            SetDefault(OsuSetting.EditorHideSelectionButtons, false);
             SetDefault(OsuSetting.EditorSelectionHandleColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorSelectionHandleScale, 1f, 0.5f, 1f, 0.1f);
             SetDefault(OsuSetting.EditorSliderAnchorScale, 1f, 0.5f, 1f, 0.1f);
@@ -254,6 +254,9 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSelectableAfterEndTime, 400.0, 0.0, 700.0, 50.0);
             SetDefault(OsuSetting.EditorArcOnAnchorAdd, true);
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
+            SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
+            SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.05f);
+            SetDefault(OsuSetting.EditorLoopPlayback, false);
             SetDefault(OsuSetting.EditorAutoBackup, true);
             SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
             SetDefault(OsuSetting.EditorAutoBackupKeepCount, 20, 5, 200);
@@ -574,7 +577,7 @@ namespace osu.Game.Configuration
         /// Distance in pixels the mouse must travel before a left-button drag begins.
         /// Lowering it makes small nudges possible in the editor, but applies game-wide.
         /// </summary>
-        DragStartDistance,
+        RemoveDragThreshold,
 
         /// <summary>
         /// Whether the editor outlines the visible play area and marks objects which go outside it.
@@ -591,7 +594,7 @@ namespace osu.Game.Configuration
         /// Whether the rotate, flip and reverse buttons appear above a selection.
         /// The keyboard shortcuts work regardless.
         /// </summary>
-        EditorShowSelectionButtons,
+        EditorHideSelectionButtons,
 
         /// <summary>
         /// Hex colour of the selection box's drag handles, or empty to keep the stock colour.
@@ -639,6 +642,21 @@ namespace osu.Game.Configuration
         /// Whether the summary timeline shows where the beatmap's difficulty sits over its length.
         /// </summary>
         EditorShowDifficultyGraph,
+
+        /// <summary>
+        /// Colour of the difficulty graph drawn behind the summary timeline.
+        /// </summary>
+        EditorDifficultyGraphColour,
+
+        /// <summary>
+        /// Opacity of the difficulty graph.
+        /// </summary>
+        EditorDifficultyGraphOpacity,
+
+        /// <summary>
+        /// Whether editor playback returns to the start of the beatmap on reaching the end rather than stopping.
+        /// </summary>
+        EditorLoopPlayback,
 
         /// <summary>
         /// Whether the editor periodically writes a copy of the beatmap being edited to the backups directory.

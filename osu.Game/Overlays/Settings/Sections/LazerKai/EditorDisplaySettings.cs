@@ -7,6 +7,7 @@ using osu.Framework.Localisation;
 using osu.Game.Configuration;
 using osu.Game.Localisation;
 using osu.Game.Overlays.Settings.Sections.LazerKai.Controls;
+using osu.Game.Screens.Edit;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
 {
@@ -28,6 +29,21 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 {
                     LabelText = EditorStrings.ShowDifficultyGraph,
                     Current = config.GetBindable<bool>(OsuSetting.EditorShowDifficultyGraph)
+                },
+                new SettingsEnumDropdown<EditorSelectionColour>
+                {
+                    LabelText = EditorStrings.DifficultyGraphColour,
+                    Current = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorDifficultyGraphColour)
+                },
+                new SettingsSlider<float, PercentageSlider>
+                {
+                    LabelText = EditorStrings.DifficultyGraphOpacity,
+                    Current = config.GetBindable<float>(OsuSetting.EditorDifficultyGraphOpacity)
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.LoopPlayback,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorLoopPlayback)
                 },
                 new SettingsCheckbox
                 {

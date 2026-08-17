@@ -12,8 +12,11 @@ using osu.Framework.Input.Events;
 using osu.Framework.Utils;
 using osu.Game.Configuration;
 using osu.Game.Graphics.Containers;
+using osu.Framework.Graphics.Shapes;
+using osu.Game.Overlays;
 using osu.Game.Screens.Edit;
 using osuTK;
+using osuTK.Graphics;
 
 namespace osu.Game.Rulesets.Edit
 {
@@ -52,6 +55,11 @@ namespace osu.Game.Rulesets.Edit
         /// </summary>
         private FillFlowContainer pinnedArea = null!;
 
+        private Container pinnedContainer = null!;
+
+        [Resolved(CanBeNull = true)]
+        private OverlayColourProvider? colourProvider { get; set; }
+
         private readonly Dictionary<EditorToolboxGroup, float> originalLayoutPositions = new Dictionary<EditorToolboxGroup, float>();
 
         private readonly Bindable<string> pinnedGroups = new Bindable<string>(string.Empty);
@@ -64,15 +72,29 @@ namespace osu.Game.Rulesets.Edit
             config.BindWith(OsuSetting.EditorContractSidebars, contractSidebars);
             config.BindWith(OsuSetting.EditorPinnedToolboxGroups, pinnedGroups);
 
-            AddInternal(pinnedArea = new FillFlowContainer
+            AddInternal(pinnedContainer = new Container
             {
                 Name = @"Pinned groups",
                 Depth = -1,
                 RelativeSizeAxes = Axes.X,
                 AutoSizeAxes = Axes.Y,
-                Direction = FillDirection.Vertical,
-                Spacing = FillFlow.Spacing,
-                Padding = new MarginPadding { Top = 5 },
+                Children = new Drawable[]
+                {
+                    // pinned groups sit over the scrolling ones, so they need something solid behind them.
+                    new Box
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Colour = colourProvider?.Background5 ?? Color4.Black,
+                    },
+                    pinnedArea = new FillFlowContainer
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        AutoSizeAxes = Axes.Y,
+                        Direction = FillDirection.Vertical,
+                        Spacing = FillFlow.Spacing,
+                        Padding = new MarginPadding { Top = 5 },
+                    },
+                }
             });
         }
 
@@ -162,7 +184,7 @@ namespace osu.Game.Rulesets.Edit
             base.Update();
 
             // keeps the scrolling groups clear of whatever is pinned above them.
-            scrollContainer.Padding = new MarginPadding { Top = pinnedArea.DrawHeight };
+            scrollContainer.Padding = new MarginPadding { Top = pinnedContainer.DrawHeight };
 
             bool requireContracting = !AlwaysExpanded.Value && (contractSidebars.Value || editor?.DrawSize.X / editor?.DrawSize.Y < 1.7f);
 

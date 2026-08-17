@@ -383,7 +383,7 @@ namespace osu.Game.Localisation
         /// <summary>
         /// "Show buttons on selection"
         /// </summary>
-        public static LocalisableString ShowSelectionButtons => new TranslatableString(getKey(@"show_selection_buttons"), @"Show buttons on selection");
+        public static LocalisableString HideSelectionButtons => new TranslatableString(getKey(@"hide_selection_buttons"), @"Hide the shortcut buttons on a selection");
 
         /// <summary>
         /// "Selection handle size"
@@ -456,6 +456,21 @@ namespace osu.Game.Localisation
         public static LocalisableString ShowDifficultyGraph => new TranslatableString(getKey(@"show_difficulty_graph"), @"Show difficulty over the song");
 
         /// <summary>
+        /// "Difficulty graph colour"
+        /// </summary>
+        public static LocalisableString DifficultyGraphColour => new TranslatableString(getKey(@"difficulty_graph_colour"), @"Difficulty graph colour");
+
+        /// <summary>
+        /// "Difficulty graph opacity"
+        /// </summary>
+        public static LocalisableString DifficultyGraphOpacity => new TranslatableString(getKey(@"difficulty_graph_opacity"), @"Difficulty graph opacity");
+
+        /// <summary>
+        /// "Loop playback"
+        /// </summary>
+        public static LocalisableString LoopPlayback => new TranslatableString(getKey(@"loop_playback"), @"Loop playback");
+
+        /// <summary>
         /// "New slider anchors make a perfect curve"
         /// </summary>
         public static LocalisableString ArcOnAnchorAdd => new TranslatableString(getKey(@"arc_on_anchor_add"), @"New slider anchors make a perfect curve");
@@ -518,7 +533,7 @@ namespace osu.Game.Localisation
         /// <summary>
         /// "Drag threshold (applies game-wide)"
         /// </summary>
-        public static LocalisableString DragStartDistance => new TranslatableString(getKey(@"drag_start_distance"), @"Drag threshold");
+        public static LocalisableString RemoveDragThreshold => new TranslatableString(getKey(@"remove_drag_threshold"), @"Remove the catch when starting a drag");
 
         /// <summary>
         /// "Show play area and offscreen objects"

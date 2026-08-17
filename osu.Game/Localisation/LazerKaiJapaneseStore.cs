@@ -21,7 +21,7 @@ namespace osu.Game.Localisation
     /// language setting in control: pick Japanese and these follow, pick anything else and they do not.
     ///
     /// Wording is kept short and noun-led, the way the rest of a settings list reads, and uses the words a mapper
-    /// would use out loud — ノーツ for hit objects, アンカー for path control points.
+    /// says out loud rather than literal translations of the code's terms.
     /// </remarks>
     public class LazerKaiJapaneseStore : ILocalisationStore
     {
@@ -43,7 +43,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:live_mod_preview"] = @"編集中もModの表示を更新",
 
             // composing
-            [$@"{editor_prefix}:advance_by_previous_spacing_on_placement"] = @"配置後に直前の間隔ぶん進む",
+            [$@"{editor_prefix}:advance_by_previous_spacing_on_placement"] = @"オブジェクト配置後に自動で次へシーク",
             [$@"{editor_prefix}:freehand_slider_placement"] = @"ドラッグでスライダーを描く",
             [$@"{editor_prefix}:arc_on_anchor_add"] = @"追加したアンカーをパーフェクトカーブに",
             [$@"{editor_prefix}:ctrl_click_cycles_curve_type"] = @"Ctrl+クリックでカーブ種別を変更",
@@ -51,6 +51,9 @@ namespace osu.Game.Localisation
             // display
             [$@"{editor_prefix}:show_offscreen_objects"] = @"プレイ範囲と画面外ノーツ",
             [$@"{editor_prefix}:show_difficulty_graph"] = @"難易度グラフ",
+            [$@"{editor_prefix}:difficulty_graph_colour"] = @"難易度グラフの色",
+            [$@"{editor_prefix}:difficulty_graph_opacity"] = @"難易度グラフの不透明度",
+            [$@"{editor_prefix}:loop_playback"] = @"ループ再生",
             [$@"{editor_prefix}:show_timeline"] = @"タイムライン",
             [$@"{editor_prefix}:always_expand_left_toolbox"] = @"左ツールボックスを常に展開",
             [$@"{editor_prefix}:always_expand_timeline_point_labels"] = @"タイムラインのラベルを常に展開",
@@ -65,18 +68,18 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:selection_handle_colour"] = @"ハンドルの色",
             [$@"{editor_prefix}:selection_handle_size"] = @"ハンドルの大きさ",
             [$@"{editor_prefix}:slider_anchor_size"] = @"アンカーの大きさ",
-            [$@"{editor_prefix}:show_selection_buttons"] = @"選択時のボタン",
+            [$@"{editor_prefix}:hide_selection_buttons"] = @"選択時のショートカットボタンの非表示",
             [$@"{editor_prefix}:selectable_after_end_time"] = @"通過後の選択可能時間",
 
             // input
-            [$@"{editor_prefix}:drag_start_distance"] = @"ドラッグ開始距離",
+            [$@"{editor_prefix}:remove_drag_threshold"] = @"ドラッグ時の引っかかりを無くす",
             [$@"{editor_prefix}:swap_right_and_middle_mouse"] = @"右クリックとホイールを入れ替え",
 
             // backups
             [$@"{editor_prefix}:auto_backup"] = @"自動バックアップ",
             [$@"{editor_prefix}:auto_backup_enabled"] = @"編集中に自動バックアップ",
             [$@"{editor_prefix}:auto_backup_interval"] = @"バックアップの間隔",
-            [$@"{editor_prefix}:auto_backup_keep_count"] = @"保持する世代数",
+            [$@"{editor_prefix}:auto_backup_keep_count"] = @"保持する個数",
             [$@"{editor_prefix}:backup_now"] = @"いますぐバックアップ",
             [$@"{editor_prefix}:open_backup_folder"] = @"バックアップ先を開く",
 

@@ -19,12 +19,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
         {
             Children = new Drawable[]
             {
-                new SettingsSlider<float, PixelsSlider>
+                new SettingsCheckbox
                 {
-                    LabelText = EditorStrings.DragStartDistance,
+                    LabelText = EditorStrings.RemoveDragThreshold,
                     // the only setting here that is not confined to the editor, which is worth saying plainly.
                     TooltipText = LazerKaiSettingsStrings.AppliesGameWide,
-                    Current = config.GetBindable<float>(OsuSetting.DragStartDistance)
+                    Current = config.GetBindable<bool>(OsuSetting.RemoveDragThreshold)
                 },
                 new SettingsCheckbox
                 {

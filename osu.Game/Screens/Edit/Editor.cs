@@ -48,6 +48,7 @@ using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Screens.Backgrounds;
 using osu.Game.Screens.Edit.Components.Menus;
+using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
 using osu.Game.Screens.Edit.Compose;
 using osu.Game.Screens.Edit.Compose.Components.Timeline;
 using osu.Game.Screens.Edit.Design;
@@ -241,23 +242,16 @@ namespace osu.Game.Screens.Edit
         private Bindable<EditorSelectionColour> editorSelectionColour;
         private Bindable<float> editorSelectionThickness;
         private Bindable<float> editorSelectionOpacity;
-        private Bindable<bool> editorShowSelectionButtons;
         private Bindable<float> editorSelectionHandleScale;
         private Bindable<EditorSelectionColour> editorSelectionHandleColour;
         private Bindable<float> editorSliderAnchorScale;
         private Bindable<double> editorSeekAnimationDuration;
         private Bindable<bool> editorAlwaysExpandLeftToolbox;
-        private Bindable<float> dragStartDistance;
         private Bindable<bool> editorShowOffscreenObjects;
         private Bindable<bool> editorShowTimeline;
-        private Bindable<bool> editorCtrlClickCyclesCurveType;
-        private Bindable<bool> swapRightAndMiddleMouse;
         private Bindable<double> editorSelectableAfterEndTime;
-        private Bindable<bool> editorArcOnAnchorAdd;
         private Bindable<bool> editorShowDifficultyGraph;
         private Bindable<bool> editorAutoBackup;
-        private Bindable<double> editorAutoBackupInterval;
-        private Bindable<int> editorAutoBackupKeepCount;
 
         private EditorAutoBackup autoBackup;
 
@@ -397,23 +391,16 @@ namespace osu.Game.Screens.Edit
             editorSelectionColour = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorSelectionColour);
             editorSelectionThickness = config.GetBindable<float>(OsuSetting.EditorSelectionThickness);
             editorSelectionOpacity = config.GetBindable<float>(OsuSetting.EditorSelectionOpacity);
-            editorShowSelectionButtons = config.GetBindable<bool>(OsuSetting.EditorShowSelectionButtons);
             editorSelectionHandleScale = config.GetBindable<float>(OsuSetting.EditorSelectionHandleScale);
             editorSelectionHandleColour = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorSelectionHandleColour);
             editorSliderAnchorScale = config.GetBindable<float>(OsuSetting.EditorSliderAnchorScale);
             editorSeekAnimationDuration = config.GetBindable<double>(OsuSetting.EditorSeekAnimationDuration);
             editorAlwaysExpandLeftToolbox = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox);
-            dragStartDistance = config.GetBindable<float>(OsuSetting.DragStartDistance);
             editorShowOffscreenObjects = config.GetBindable<bool>(OsuSetting.EditorShowOffscreenObjects);
             editorShowTimeline = config.GetBindable<bool>(OsuSetting.EditorShowTimeline);
-            editorCtrlClickCyclesCurveType = config.GetBindable<bool>(OsuSetting.EditorCtrlClickCyclesCurveType);
-            swapRightAndMiddleMouse = config.GetBindable<bool>(OsuSetting.SwapRightAndMiddleMouse);
             editorSelectableAfterEndTime = config.GetBindable<double>(OsuSetting.EditorSelectableAfterEndTime);
-            editorArcOnAnchorAdd = config.GetBindable<bool>(OsuSetting.EditorArcOnAnchorAdd);
             editorShowDifficultyGraph = config.GetBindable<bool>(OsuSetting.EditorShowDifficultyGraph);
             editorAutoBackup = config.GetBindable<bool>(OsuSetting.EditorAutoBackup);
-            editorAutoBackupInterval = config.GetBindable<double>(OsuSetting.EditorAutoBackupInterval);
-            editorAutoBackupKeepCount = config.GetBindable<int>(OsuSetting.EditorAutoBackupKeepCount);
 
             // These two settings don't work together. Make them mutually exclusive to let the user know.
             editorAutoSeekOnPlacement.BindValueChanged(enabled =>
@@ -528,32 +515,9 @@ namespace osu.Game.Screens.Edit
                                             {
                                                 State = { BindTarget = editorShowDifficultyGraph },
                                             },
-                                            new ToggleMenuItem(EditorStrings.ArcOnAnchorAdd)
-                                            {
-                                                State = { BindTarget = editorArcOnAnchorAdd },
-                                            },
-                                            new ToggleMenuItem(EditorStrings.CtrlClickCyclesCurveType)
-                                            {
-                                                State = { BindTarget = editorCtrlClickCyclesCurveType },
-                                            },
-                                            new ToggleMenuItem(EditorStrings.SwapRightAndMiddleMouse)
-                                            {
-                                                State = { BindTarget = swapRightAndMiddleMouse },
-                                            },
-                                            new ChoiceMenuItem<float>(EditorStrings.DragStartDistance, dragStartDistance, new[]
-                                            {
-                                                ((LocalisableString)@"1px", 1f),
-                                                ((LocalisableString)@"3px", 3f),
-                                                ((LocalisableString)@"5px", 5f),
-                                                ((LocalisableString)@"10px (default)", 10f),
-                                            }),
                                             new ToggleMenuItem(EditorStrings.ShowOffscreenObjects)
                                             {
                                                 State = { BindTarget = editorShowOffscreenObjects },
-                                            },
-                                            new ToggleMenuItem(EditorStrings.ShowSelectionButtons)
-                                            {
-                                                State = { BindTarget = editorShowSelectionButtons },
                                             },
                                             new OsuMenuItemSpacer(),
                                             new BackgroundDimMenuItem(editorBackgroundDim),
@@ -638,6 +602,7 @@ namespace osu.Game.Screens.Edit
                     bottomBar = new BottomBar(),
                     MutationTracker,
                     autoBackup = new EditorAutoBackup(),
+                    new EditorPlaybackLoop(),
                 }
             });
 
@@ -789,6 +754,9 @@ namespace osu.Game.Screens.Edit
             updateLastSavedHash();
             onScreenDisplay?.Display(new BeatmapEditorToast(ToastStrings.BeatmapSaved, editorBeatmap.BeatmapInfo.GetDisplayTitle()));
             Saved?.Invoke();
+
+            // a save is a deliberate stopping point, so the graph is brought up to date without waiting.
+            bottomBar?.ChildrenOfType<DifficultyGraphPart>().SingleOrDefault()?.RecalculateNow();
 
             // This triggers an update to the window title post-save (ie if the difficulty name changed).
             Activity.Value = getCurrentUserActivity();
@@ -1522,21 +1490,6 @@ namespace osu.Game.Screens.Edit
                     {
                         State = { BindTarget = editorAutoBackup },
                     },
-                    new ChoiceMenuItem<double>(EditorStrings.AutoBackupInterval, editorAutoBackupInterval, new[]
-                    {
-                        ((LocalisableString)@"1分", 1.0),
-                        ((LocalisableString)@"3分", 3.0),
-                        ((LocalisableString)@"5分", 5.0),
-                        ((LocalisableString)@"10分", 10.0),
-                        ((LocalisableString)@"30分", 30.0),
-                    }),
-                    new ChoiceMenuItem<int>(EditorStrings.AutoBackupKeepCount, editorAutoBackupKeepCount, new[]
-                    {
-                        ((LocalisableString)@"10", 10),
-                        ((LocalisableString)@"20", 20),
-                        ((LocalisableString)@"50", 50),
-                        ((LocalisableString)@"100", 100),
-                    }),
                     new OsuMenuItemSpacer(),
                     new EditorMenuItem(EditorStrings.BackupNow, MenuItemType.Standard, () => autoBackup.Backup()),
                     new EditorMenuItem(EditorStrings.OpenBackupFolder, MenuItemType.Standard, openBackupFolder),

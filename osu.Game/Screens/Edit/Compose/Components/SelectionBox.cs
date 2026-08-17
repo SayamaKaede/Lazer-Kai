@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -128,15 +128,15 @@ namespace osu.Game.Screens.Edit.Compose.Components
         private Box infoTextBackground = null!;
         private Container border = null!;
 
-        private Bindable<bool> showSelectionButtons = null!;
+        private Bindable<bool> hideSelectionButtons = null!;
 
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
             appearance = new EditorSelectionAppearance(config);
 
-            showSelectionButtons = config.GetBindable<bool>(OsuSetting.EditorShowSelectionButtons);
-            showSelectionButtons.BindValueChanged(_ => recreateButtons());
+            hideSelectionButtons = config.GetBindable<bool>(OsuSetting.EditorHideSelectionButtons);
+            hideSelectionButtons.BindValueChanged(_ => recreateButtons());
 
             InternalChildren = new Drawable[]
             {
@@ -340,7 +340,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
             clearButtons();
 
             // hiding the buttons does not disable the actions; the keyboard shortcuts still work.
-            if (!showSelectionButtons.Value)
+            if (hideSelectionButtons.Value)
                 return;
 
             if (canRotate.Value)

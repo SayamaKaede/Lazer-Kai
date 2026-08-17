@@ -22,8 +22,8 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
             {
                 new SettingsCheckbox
                 {
-                    LabelText = EditorStrings.ShowSelectionButtons,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorShowSelectionButtons)
+                    LabelText = EditorStrings.HideSelectionButtons,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorHideSelectionButtons)
                 },
                 new SettingsSlider<double, MillisecondsSlider>
                 {

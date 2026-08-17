@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -18,6 +18,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Game.Overlays;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Difficulty;
+using osuTK.Graphics;
 
 namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
 {
@@ -55,9 +56,17 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
         private Bindable<RulesetInfo> ruleset { get; set; } = null!;
 
         private Container graph = null!;
+        private Color4 defaultColour;
         private Container<Box> bars = null!;
 
         private readonly Bindable<bool> enabled = new Bindable<bool>();
+        private readonly Bindable<EditorSelectionColour> colour = new Bindable<EditorSelectionColour>();
+        private readonly Bindable<float> opacity = new Bindable<float>();
+
+        /// <summary>
+        /// Whether the graph currently has anything to show, so appearance changes do not reveal an empty one.
+        /// </summary>
+        private bool hasContent;
 
         private CancellationTokenSource? calculationCancellation;
         private ScheduledDelegate? scheduledRecalculation;
@@ -67,15 +76,18 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
         {
             RelativeSizeAxes = Axes.Both;
 
+            defaultColour = colourProvider.Highlight1;
+
             InternalChild = graph = new Container
             {
                 RelativeSizeAxes = Axes.Both,
-                Colour = colourProvider.Highlight1,
                 Alpha = 0,
                 Child = bars = new Container<Box> { RelativeSizeAxes = Axes.Both },
             };
 
             config.BindWith(OsuSetting.EditorShowDifficultyGraph, enabled);
+            config.BindWith(OsuSetting.EditorDifficultyGraphColour, colour);
+            config.BindWith(OsuSetting.EditorDifficultyGraphOpacity, opacity);
         }
 
         protected override void LoadComplete()
@@ -83,20 +95,45 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
             base.LoadComplete();
 
             editorBeatmap.BeatmapReprocessed += scheduleRecalculation;
-            enabled.BindValueChanged(_ => scheduleRecalculation(), true);
+            enabled.BindValueChanged(_ => RecalculateNow(), true);
+
+            colour.BindValueChanged(_ => updateAppearance());
+            opacity.BindValueChanged(_ => updateAppearance(), true);
         }
 
+        /// <summary>
+        /// Recalculates after a pause, so a burst of edits costs one pass rather than one each.
+        /// </summary>
         private void scheduleRecalculation()
         {
             scheduledRecalculation?.Cancel();
 
             if (!enabled.Value)
             {
-                graph.FadeOut(200, Easing.OutQuint);
+                hasContent = false;
+
+                updateAppearance();
                 return;
             }
 
             scheduledRecalculation = Scheduler.AddDelayed(recalculate, recalculate_debounce);
+        }
+
+        /// <summary>
+        /// Recalculates now.
+        /// </summary>
+        /// <remarks>
+        /// Used when opening a beatmap and on save. Neither is a moment worth making the user wait through: opening
+        /// has nothing to coalesce, and a save is a deliberate stop.
+        /// </remarks>
+        public void RecalculateNow()
+        {
+            scheduledRecalculation?.Cancel();
+
+            if (!enabled.Value)
+                return;
+
+            recalculate();
         }
 
         private void recalculate()
@@ -139,7 +176,9 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
 
             if (difficulties.Length == 0)
             {
-                graph.FadeOut(200, Easing.OutQuint);
+                hasContent = false;
+
+                updateAppearance();
                 return;
             }
 
@@ -165,7 +204,9 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
 
             if (peak <= 0)
             {
-                graph.FadeOut(200, Easing.OutQuint);
+                hasContent = false;
+
+                updateAppearance();
                 return;
             }
 
@@ -187,7 +228,14 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
                 });
             }
 
-            graph.FadeTo(0.5f, 400, Easing.OutQuint);
+            hasContent = true;
+            updateAppearance();
+        }
+
+        private void updateAppearance()
+        {
+            graph.Colour = colour.Value.ToColour() ?? defaultColour;
+            graph.FadeTo(hasContent ? opacity.Value : 0, 400, Easing.OutQuint);
         }
 
         protected override void Dispose(bool isDisposing)

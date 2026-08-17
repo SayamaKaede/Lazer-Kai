@@ -18,18 +18,18 @@ namespace osu.Game.Input
         public readonly IBindable<LocalUserPlayingState> PlayingState = new Bindable<LocalUserPlayingState>();
 
         /// <summary>
-        /// How far the mouse must travel before a left-button drag begins.
+        /// Whether a left-button drag begins as soon as the mouse moves at all.
         /// </summary>
         /// <remarks>
-        /// The framework's default makes nudging an object (or a slider control point) by a few pixels in the editor
-        /// impossible, since the drag never starts. This is a field initialiser rather than assigned in the constructor
-        /// because <see cref="InputManager"/>'s constructor creates the button event managers before any constructor
-        /// body here would run.
+        /// The framework waits for the mouse to travel a set distance first, which makes nudging an object (or a
+        /// slider control point) by a few pixels in the editor impossible, since the drag never starts.
         ///
-        /// Bound by <see cref="OsuGameBase"/> rather than injected here: this input manager is part of the game's root
+        /// This is a field initialiser rather than assigned in the constructor because <see cref="InputManager"/>'s
+        /// constructor creates the button event managers before any constructor body here would run. It is bound by
+        /// <see cref="OsuGameBase"/> rather than injected, since this input manager is part of the game's root
         /// hierarchy and loads before the config manager is available to it.
         /// </remarks>
-        public readonly Bindable<float> DragStartDistance = new Bindable<float>(10);
+        public readonly Bindable<bool> RemoveDragThreshold = new Bindable<bool>();
 
         /// <summary>
         /// Whether the right and middle mouse buttons trade places before anything sees them.
@@ -86,7 +86,7 @@ namespace osu.Game.Input
                     return new RightMouseManager(button);
 
                 case MouseButton.Left:
-                    return new LeftMouseManager(button, DragStartDistance);
+                    return new LeftMouseManager(button, RemoveDragThreshold);
             }
 
             return base.CreateButtonEventManagerFor(button);
@@ -94,19 +94,29 @@ namespace osu.Game.Input
 
         private class LeftMouseManager : MouseButtonEventManager
         {
-            private readonly Bindable<float> dragStartDistance;
+            /// <summary>
+            /// What the framework uses when nothing overrides it.
+            /// </summary>
+            private const float default_drag_distance = 10;
 
-            public LeftMouseManager(MouseButton button, Bindable<float> dragStartDistance)
+            /// <summary>
+            /// Small enough to feel immediate, but not zero: a click with an unsteady hand should still be a click.
+            /// </summary>
+            private const float minimal_drag_distance = 1;
+
+            private readonly Bindable<bool> removeDragThreshold;
+
+            public LeftMouseManager(MouseButton button, Bindable<bool> removeDragThreshold)
                 : base(button)
             {
-                this.dragStartDistance = dragStartDistance;
+                this.removeDragThreshold = removeDragThreshold;
             }
 
             public override bool EnableDrag => true;
             public override bool EnableClick => true;
             public override bool ChangeFocusOnClick => true;
 
-            public override float ClickDragDistance => dragStartDistance.Value;
+            public override float ClickDragDistance => removeDragThreshold.Value ? minimal_drag_distance : default_drag_distance;
         }
 
         private class RightMouseManager : MouseButtonEventManager
