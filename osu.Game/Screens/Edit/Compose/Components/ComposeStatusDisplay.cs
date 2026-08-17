@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Linq;
@@ -10,6 +10,7 @@ using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Graphics;
+using osu.Game.Utils;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
@@ -102,7 +103,10 @@ namespace osu.Game.Screens.Edit.Compose.Components
             if (starRatingTracker == null)
                 starRating.Text = @"-";
             else
-                starRatingTracker.Current.BindValueChanged(stars => starRating.Text = stars.NewValue == null ? @"-" : @$"{stars.NewValue:0.00}*", true);
+                // formatted the way the rest of the game does, which floors rather than rounds.
+                starRatingTracker.Current.BindValueChanged(stars => starRating.Text = stars.NewValue == null
+                    ? @"-"
+                    : LocalisableString.Interpolate($@"{stars.NewValue.Value.FormatStarRating()}*"), true);
         }
 
         private double? lastTime;

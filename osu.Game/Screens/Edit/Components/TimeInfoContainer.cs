@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Graphics;
+using osu.Framework.Localisation;
 using osu.Game.Graphics.Sprites;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Containers;
@@ -10,6 +11,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Extensions;
 using osu.Game.Graphics;
+using osu.Game.Utils;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
@@ -83,7 +85,11 @@ namespace osu.Game.Screens.Edit.Components
             if (starRatingTracker == null)
                 starRating.Text = @"-";
             else
-                starRatingTracker.Current.BindValueChanged(stars => starRating.Text = stars.NewValue == null ? @"-" : @$"{stars.NewValue:0.00}*", true);
+                // formatted the way the rest of the game does, which floors rather than rounds: a 6.9999* beatmap
+                // showing as 7.00* here but 6.99* everywhere else is worse than the lost hundredth.
+                starRatingTracker.Current.BindValueChanged(stars => starRating.Text = stars.NewValue == null
+                    ? @"-"
+                    : LocalisableString.Interpolate($@"{stars.NewValue.Value.FormatStarRating()}*"), true);
         }
 
         private double? lastBPM;
