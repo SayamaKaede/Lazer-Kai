@@ -38,21 +38,32 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints
             config.BindWith(OsuSetting.EditorIgnoreFadedObjects, ignoreFadedObjects);
         }
 
+        /// <summary>
+        /// Below this, an object has faded far enough to count as gone.
+        /// </summary>
+        /// <remarks>
+        /// Not zero: the last of the fade is spent at an opacity nothing can be picked out at, and an object that
+        /// cannot be seen should not be caught by a drag across empty space.
+        /// </remarks>
+        private const float faded_alpha = 0.06f;
+
         public override bool IsSelectable =>
             // Bypass fade out extension from hit markers for selection purposes.
             // This is to match stable, where even when the afterimage hit markers are still visible, objects are not selectable.
             base.ShouldBeAlive
-            // Objects stay selectable long after they have gone from the screen, which drags them into drag
-            // selections and clicks aimed at what is there now.
+            // Objects stay selectable after they have gone from the screen, which drags them into selections aimed
+            // at what is there now.
             //
-            // The cut-off is the editor's own fade-out length rather than a duration of its own: that is how long an
-            // object remains on screen after its time, whatever the approach rate or tempo, and it is the same window
-            // the hit markers use. Enabling hit animations makes an object disappear sooner than this, so the cut-off
-            // errs on the side of an object still being visible rather than cutting one off early.
+            // Read from how visible the object actually is rather than from a duration. The editor fades an object
+            // out over its own window (see DrawableHitCircle.SuppressHitAnimations), turning hit animations back on
+            // makes it go sooner, and hit markers change what is left behind — the drawable's own opacity already
+            // accounts for all three, where any duration would have to be kept in step with them by hand.
             //
-            // It applies only on the way out. Objects which have not appeared yet are equally invisible, but the
+            // It applies only on the way out. Objects which have not appeared yet are equally transparent, but the
             // editor routinely shows and manipulates upcoming objects.
-            && (!ignoreFadedObjects.Value || editorClock.CurrentTime <= Item.GetEndTime() + HitCircleOverlapMarker.FADE_OUT_EXTENSION);
+            && (!ignoreFadedObjects.Value
+                || editorClock.CurrentTime <= Item.GetEndTime()
+                || DrawableObject.Alpha > faded_alpha);
 
         protected OsuSelectionBlueprint(T hitObject)
             : base(hitObject)

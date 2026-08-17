@@ -15,6 +15,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osuTK;
+using osu.Framework.Input.Events;
 using osu.Game.Configuration;
 using osuTK.Graphics;
 
@@ -61,6 +62,7 @@ namespace osu.Game.Screens.Edit.Components.TernaryButtons
         {
             AddInternal(new EditorButtonSquareness(this, OsuSetting.EditorToggleButtonSquareness));
 
+
             defaultBackgroundColour = colourProvider.Background3;
             selectedBackgroundColour = colourProvider.Background1;
 
@@ -76,6 +78,15 @@ namespace osu.Game.Screens.Edit.Components.TernaryButtons
                 b.X = 10;
             }));
         }
+
+        /// <summary>
+        /// Claims drags starting on the button so the toolbox behind it does not scroll instead.
+        /// </summary>
+        /// <remarks>
+        /// A press that wanders by a pixel was being read as a drag of the scrolling toolbox, and the click never
+        /// arrived. The toolbox still scrolls from the space around the buttons, and from the wheel.
+        /// </remarks>
+        protected override bool OnDragStart(DragStartEvent e) => true;
 
         protected override void LoadComplete()
         {
