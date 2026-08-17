@@ -72,7 +72,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:selection_handle_size"] = @"ハンドルの大きさ",
             [$@"{editor_prefix}:slider_anchor_size"] = @"アンカーの大きさ",
             [$@"{editor_prefix}:hide_selection_buttons"] = @"選択時のショートカットボタンの非表示",
-            [$@"{editor_prefix}:ignore_faded_objects"] = @"既に消えたノーツを選択に巻き込まない",
+            [$@"{editor_prefix}:selectable_after_end_time"] = @"通過後の選択可能時間",
 
             // input
             [$@"{editor_prefix}:remove_drag_threshold"] = @"ドラッグ時の引っかかりを無くす",

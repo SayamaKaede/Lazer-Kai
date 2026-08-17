@@ -250,7 +250,6 @@ namespace osu.Game.Screens.Edit
         private Bindable<bool> editorShowPlayAreaBorder;
         private Bindable<bool> editorDetectOffscreen;
         private Bindable<bool> editorShowTimeline;
-        private Bindable<bool> editorIgnoreFadedObjects;
         private Bindable<bool> editorShowDifficultyGraph;
         private Bindable<bool> editorAutoBackup;
 
@@ -400,7 +399,6 @@ namespace osu.Game.Screens.Edit
             editorShowPlayAreaBorder = config.GetBindable<bool>(OsuSetting.EditorShowPlayAreaBorder);
             editorDetectOffscreen = config.GetBindable<bool>(OsuSetting.EditorDetectOffscreen);
             editorShowTimeline = config.GetBindable<bool>(OsuSetting.EditorShowTimeline);
-            editorIgnoreFadedObjects = config.GetBindable<bool>(OsuSetting.EditorIgnoreFadedObjects);
             editorShowDifficultyGraph = config.GetBindable<bool>(OsuSetting.EditorShowDifficultyGraph);
             editorAutoBackup = config.GetBindable<bool>(OsuSetting.EditorAutoBackup);
 
@@ -504,10 +502,6 @@ namespace osu.Game.Screens.Edit
                                             new ToggleMenuItem(EditorStrings.AlwaysExpandLeftToolbox)
                                             {
                                                 State = { BindTarget = editorAlwaysExpandLeftToolbox },
-                                            },
-                                            new ToggleMenuItem(EditorStrings.IgnoreFadedObjects)
-                                            {
-                                                State = { BindTarget = editorIgnoreFadedObjects },
                                             },
                                             new ToggleMenuItem(EditorStrings.ShowDifficultyGraph)
                                             {

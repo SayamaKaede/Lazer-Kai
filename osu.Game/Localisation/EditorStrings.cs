@@ -508,7 +508,7 @@ namespace osu.Game.Localisation
         /// <summary>
         /// "Keep passed objects selectable for"
         /// </summary>
-        public static LocalisableString IgnoreFadedObjects => new TranslatableString(getKey(@"ignore_faded_objects"), @"Leave objects that have faded away out of selections");
+        public static LocalisableString SelectableAfterEndTime => new TranslatableString(getKey(@"selectable_after_end_time"), @"Keep passed objects selectable for");
 
         /// <summary>
         /// "Ctrl+click a slider anchor to cycle its curve type"

@@ -255,7 +255,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorShowTimeline, true);
             SetDefault(OsuSetting.EditorCtrlClickCyclesCurveType, false);
             SetDefault(OsuSetting.SwapRightAndMiddleMouse, false);
-            SetDefault(OsuSetting.EditorIgnoreFadedObjects, true);
+            SetDefault(OsuSetting.EditorSelectableAfterEndTime, 400.0, 0.0, 2000.0, 50.0);
             SetDefault(OsuSetting.EditorArcOnAnchorAdd, true);
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
@@ -652,9 +652,9 @@ namespace osu.Game.Configuration
         SwapRightAndMiddleMouse,
 
         /// <summary>
-        /// Whether objects that have finished fading from view are left out of selections.
+        /// How long in milliseconds an object stays selectable after its time has passed.
         /// </summary>
-        EditorIgnoreFadedObjects,
+        EditorSelectableAfterEndTime,
 
         /// <summary>
         /// Whether adding a slider anchor turns the segment it lands in into a perfect curve, where that segment
