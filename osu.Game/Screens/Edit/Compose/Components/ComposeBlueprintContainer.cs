@@ -84,6 +84,33 @@ namespace osu.Game.Screens.Edit.Compose.Components
             dependencies.CacheAs(SelectionHandler);
         }
 
+        /// <summary>
+        /// Degrees the selection turns per wheel notch, and the finer step taken while alt is held.
+        /// </summary>
+        private const float rotation_step = 3;
+
+        private const float rotation_step_fine = 1;
+
+        protected override bool OnScroll(ScrollEvent e)
+        {
+            // ctrl alone already cycles the beat snap divisor. Global actions match modifiers exactly, so adding
+            // shift here does not also trigger that.
+            if (e.ControlPressed && e.ShiftPressed)
+            {
+                var rotationHandler = SelectionHandler.RotationHandler;
+
+                if (rotationHandler.CanRotateAroundSelectionOrigin.Value)
+                {
+                    float step = e.AltPressed ? rotation_step_fine : rotation_step;
+
+                    rotationHandler.Rotate(step * Math.Sign(e.ScrollDelta.Y));
+                    return true;
+                }
+            }
+
+            return base.OnScroll(e);
+        }
+
         protected override void LoadComplete()
         {
             base.LoadComplete();

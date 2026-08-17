@@ -3,8 +3,10 @@
 
 using System;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Input.Events;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Osu.Edit.Blueprints.Spinners.Components;
 using osu.Game.Rulesets.Osu.Objects;
@@ -24,10 +26,28 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Spinners
         [Resolved]
         private IBeatSnapProvider? beatSnapProvider { get; set; }
 
+        private Bindable<bool> swapRightAndMiddleMouse { get; set; } = null!;
+
+        /// <summary>
+        /// The button which finishes the spinner, matching how a slider path is finished.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately tied to the physical right button rather than to <see cref="MouseButton.Right"/>: finishing a
+        /// placement is muscle memory, so it stays on the same physical button even when the two are swapped. The swap
+        /// happens at the input source, so that button arrives here as <see cref="MouseButton.Middle"/>.
+        /// </remarks>
+        private MouseButton finishButton => swapRightAndMiddleMouse.Value ? MouseButton.Middle : MouseButton.Right;
+
         public SpinnerPlacementBlueprint()
             : base(new Spinner { Position = OsuPlayfield.BASE_SIZE / 2 })
         {
             InternalChild = piece = new SpinnerPiece { Alpha = 0.5f };
+        }
+
+        [BackgroundDependencyLoader]
+        private void load(OsuConfigManager config)
+        {
+            swapRightAndMiddleMouse = config.GetBindable<bool>(OsuSetting.SwapRightAndMiddleMouse);
         }
 
         protected override void Update()
@@ -52,7 +72,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Spinners
                 // which *may* also cause the removal of the object whose selection was attempted
                 // (happens when the start time of this spinner is the same as the start time of clicked object),
                 // and that last possibility *will* result in a hard crash.
-                if (e.Button != MouseButton.Right)
+                if (e.Button != finishButton)
                     return true;
 
                 updateEndTimeFromCurrent();
