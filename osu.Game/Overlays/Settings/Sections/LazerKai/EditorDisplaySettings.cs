@@ -47,11 +47,6 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 },
                 new SettingsCheckbox
                 {
-                    LabelText = EditorStrings.ShowTimeline,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorShowTimeline)
-                },
-                new SettingsCheckbox
-                {
                     LabelText = EditorStrings.AlwaysExpandLeftToolbox,
                     Current = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox)
                 },
