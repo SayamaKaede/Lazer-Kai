@@ -253,6 +253,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.SwapRightAndMiddleMouse, false);
             SetDefault(OsuSetting.EditorSelectableAfterEndTime, 400.0, 0.0, 700.0, 50.0);
             SetDefault(OsuSetting.EditorArcOnAnchorAdd, true);
+            SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorAutoBackup, true);
             SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
             SetDefault(OsuSetting.EditorAutoBackupKeepCount, 20, 5, 200);
@@ -633,6 +634,11 @@ namespace osu.Game.Configuration
         /// ends up with the three points a perfect curve needs.
         /// </summary>
         EditorArcOnAnchorAdd,
+
+        /// <summary>
+        /// Whether the summary timeline shows where the beatmap's difficulty sits over its length.
+        /// </summary>
+        EditorShowDifficultyGraph,
 
         /// <summary>
         /// Whether the editor periodically writes a copy of the beatmap being edited to the backups directory.

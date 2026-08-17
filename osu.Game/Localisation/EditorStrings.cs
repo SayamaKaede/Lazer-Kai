@@ -406,6 +406,11 @@ namespace osu.Game.Localisation
         public static LocalisableString ShowTimeline => new TranslatableString(getKey(@"show_timeline"), @"Timeline");
 
         /// <summary>
+        /// "Show difficulty over the song"
+        /// </summary>
+        public static LocalisableString ShowDifficultyGraph => new TranslatableString(getKey(@"show_difficulty_graph"), @"Show difficulty over the song");
+
+        /// <summary>
         /// "New slider anchors make a perfect curve"
         /// </summary>
         public static LocalisableString ArcOnAnchorAdd => new TranslatableString(getKey(@"arc_on_anchor_add"), @"New slider anchors make a perfect curve");

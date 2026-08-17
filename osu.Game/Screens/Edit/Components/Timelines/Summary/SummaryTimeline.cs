@@ -23,6 +23,8 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary
 
             Children = new Drawable[]
             {
+                // sits behind everything else: it is a backdrop for the markers, not something to read precisely.
+                new DifficultyGraphPart(),
                 new Container
                 {
                     Name = "centre line",

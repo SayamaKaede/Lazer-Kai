@@ -148,6 +148,39 @@ namespace osu.Game.Rulesets.Difficulty
         }
 
         /// <summary>
+        /// Runs the calculation and reports what each skill made of every object along the way, rather than only the
+        /// single rating the whole beatmap boils down to.
+        /// </summary>
+        /// <remarks>
+        /// Intended for showing where a beatmap's difficulty actually sits in time. Values are in the same order as
+        /// the returned times, one entry per object each skill processed.
+        /// </remarks>
+        public DifficultyBreakdown CalculateBreakdown([NotNull] IEnumerable<Mod> mods, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            // ReSharper disable once PossiblyMistakenUseOfCancellationToken
+            preProcess(mods, cancellationToken);
+
+            var skills = CreateSkills(Beatmap, playableMods);
+            var times = new List<double>();
+
+            double clockRate = ModUtils.CalculateRateWithMods(playableMods);
+
+            foreach (var hitObject in getDifficultyHitObjects())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // difficulty objects run on rate-adjusted time; the caller works in beatmap time.
+                times.Add(hitObject.StartTime * clockRate);
+
+                foreach (var skill in skills)
+                    skill.Process(hitObject);
+            }
+
+            return new DifficultyBreakdown(times.ToArray(), skills);
+        }
+
+        /// <summary>
         /// Calculates the difficulty of the beatmap using all mod combinations applicable to the beatmap.
         /// </summary>
         /// <remarks>
