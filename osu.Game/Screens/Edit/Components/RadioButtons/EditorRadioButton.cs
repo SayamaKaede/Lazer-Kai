@@ -17,6 +17,7 @@ using osuTK;
 using osu.Framework.Input.Events;
 using osu.Game.Configuration;
 using osuTK.Graphics;
+using osuTK.Input;
 
 namespace osu.Game.Screens.Edit.Components.RadioButtons
 {
@@ -81,7 +82,31 @@ namespace osu.Game.Screens.Edit.Components.RadioButtons
         /// A press that wanders by a pixel was being read as a drag of the scrolling toolbox, and the click never
         /// arrived. The toolbox still scrolls from the space around the buttons, and from the wheel.
         /// </remarks>
-        protected override bool OnDragStart(DragStartEvent e) => true;
+        private bool draggedSincePress;
+
+        protected override bool OnDragStart(DragStartEvent e)
+        {
+            draggedSincePress = true;
+            return true;
+        }
+
+        /// <summary>
+        /// Treats a press and release within the button as a press, however much the mouse wandered between them.
+        /// </summary>
+        /// <remarks>
+        /// The framework drops a click once the mouse moves further than its drag distance. That distance is small,
+        /// and smaller still when the editor's drag threshold is removed for nudging objects, so an ordinary press
+        /// on a toolbox button was landing nowhere.
+        /// </remarks>
+        protected override void OnMouseUp(MouseUpEvent e)
+        {
+            if (draggedSincePress && e.Button == MouseButton.Left && ReceivePositionalInputAt(e.ScreenSpaceMousePosition))
+                TriggerClick();
+
+            draggedSincePress = false;
+
+            base.OnMouseUp(e);
+        }
 
         protected override void LoadComplete()
         {

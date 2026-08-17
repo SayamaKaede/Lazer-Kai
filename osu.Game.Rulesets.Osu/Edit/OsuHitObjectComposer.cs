@@ -135,6 +135,9 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             LayerBelowRuleset.Add(new OsuOffscreenDisplay(Playfield));
 
+            // temporary: logging the real numbers rather than guessing at them. Draws nothing.
+            LayerBelowRuleset.Add(new OsuEditorDiagnostics(Playfield));
+
             LayerBelowRuleset.Add(
                 distanceSnapGridContainer = new Container
                 {
