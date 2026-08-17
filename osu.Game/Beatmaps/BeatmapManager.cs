@@ -519,6 +519,15 @@ namespace osu.Game.Beatmaps
 
         public Task ExportLegacy(BeatmapInfo beatmap) => legacyBeatmapExporter.ExportAsync(beatmap.ToLive(Realm));
 
+        /// <summary>
+        /// Writes one difficulty out as a bare <c>.osu</c> file converted for stable, and reveals it.
+        /// </summary>
+        public void ExportLegacyBeatmapFile(BeatmapInfo beatmap)
+        {
+            legacyBeatmapExporter.ExportBeatmapFile(beatmap);
+            legacyBeatmapExporter.PresentExportedFiles();
+        }
+
         private void updateHashAndMarkDirty(BeatmapSetInfo setInfo)
         {
             setInfo.Hash = beatmapImporter.ComputeHash(setInfo);

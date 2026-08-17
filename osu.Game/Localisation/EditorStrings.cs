@@ -406,6 +406,11 @@ namespace osu.Game.Localisation
         public static LocalisableString ShowTimeline => new TranslatableString(getKey(@"show_timeline"), @"Timeline");
 
         /// <summary>
+        /// "Export this difficulty as .osu (v14)"
+        /// </summary>
+        public static LocalisableString ExportBeatmapFile => new TranslatableString(getKey(@"export_beatmap_file"), @"Export this difficulty as .osu (v14)");
+
+        /// <summary>
         /// "Show difficulty over the song"
         /// </summary>
         public static LocalisableString ShowDifficultyGraph => new TranslatableString(getKey(@"show_difficulty_graph"), @"Show difficulty over the song");

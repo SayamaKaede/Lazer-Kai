@@ -1588,6 +1588,11 @@ namespace osu.Game.Screens.Edit
                 new EditorMenuItem(EditorStrings.ExportForEditing, MenuItemType.Standard, () => runExport(manager => manager.Export(Beatmap.Value.BeatmapSetInfo))),
                 new EditorMenuItem(EditorStrings.ExportForCompatibility, MenuItemType.Standard, () => runExport(manager => manager.ExportLegacy(Beatmap.Value.BeatmapSetInfo))),
                 new EditorMenuItem(EditorStrings.ExportGuestDifficulty, MenuItemType.Standard, () => runExport(manager => manager.ExportLegacy(Beatmap.Value.BeatmapInfo))),
+                new EditorMenuItem(EditorStrings.ExportBeatmapFile, MenuItemType.Standard, () => runExport(manager =>
+                {
+                    manager.ExportLegacyBeatmapFile(Beatmap.Value.BeatmapInfo);
+                    return Task.CompletedTask;
+                })),
             };
 
             return new EditorMenuItem(CommonStrings.Export) { Items = exportItems };
