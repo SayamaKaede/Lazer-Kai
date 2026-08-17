@@ -14,7 +14,9 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osuTK;
+using System.Linq;
 using osu.Framework.Input.Events;
+using osu.Framework.Testing;
 using osu.Game.Configuration;
 using osuTK.Graphics;
 using osuTK.Input;
@@ -101,7 +103,11 @@ namespace osu.Game.Screens.Edit.Components.RadioButtons
         protected override void OnMouseUp(MouseUpEvent e)
         {
             if (draggedSincePress && e.Button == MouseButton.Left && ReceivePositionalInputAt(e.ScreenSpaceMousePosition))
+            {
+                // the sounds are a sibling listening for the same click, so they miss it for the same reason.
+                this.ChildrenOfType<HoverClickSounds>().FirstOrDefault()?.PlayClickSample();
                 TriggerClick();
+            }
 
             draggedSincePress = false;
 
