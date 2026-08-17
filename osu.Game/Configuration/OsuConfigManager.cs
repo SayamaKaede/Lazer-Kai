@@ -252,6 +252,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorCtrlClickCyclesCurveType, false);
             SetDefault(OsuSetting.SwapRightAndMiddleMouse, false);
             SetDefault(OsuSetting.EditorSelectableAfterEndTime, 400.0, 0.0, 700.0, 50.0);
+            SetDefault(OsuSetting.EditorArcOnAnchorAdd, true);
             SetDefault(OsuSetting.EditorAutoBackup, true);
             SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
             SetDefault(OsuSetting.EditorAutoBackupKeepCount, 20, 5, 200);
@@ -626,6 +627,12 @@ namespace osu.Game.Configuration
         /// How long in milliseconds an object stays selectable after its time has passed.
         /// </summary>
         EditorSelectableAfterEndTime,
+
+        /// <summary>
+        /// Whether adding a slider anchor turns the segment it lands in into a perfect curve, where that segment
+        /// ends up with the three points a perfect curve needs.
+        /// </summary>
+        EditorArcOnAnchorAdd,
 
         /// <summary>
         /// Whether the editor periodically writes a copy of the beatmap being edited to the backups directory.

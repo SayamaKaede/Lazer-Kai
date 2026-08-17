@@ -253,6 +253,7 @@ namespace osu.Game.Screens.Edit
         private Bindable<bool> editorCtrlClickCyclesCurveType;
         private Bindable<bool> swapRightAndMiddleMouse;
         private Bindable<double> editorSelectableAfterEndTime;
+        private Bindable<bool> editorArcOnAnchorAdd;
         private Bindable<bool> editorAutoBackup;
         private Bindable<double> editorAutoBackupInterval;
         private Bindable<int> editorAutoBackupKeepCount;
@@ -407,6 +408,7 @@ namespace osu.Game.Screens.Edit
             editorCtrlClickCyclesCurveType = config.GetBindable<bool>(OsuSetting.EditorCtrlClickCyclesCurveType);
             swapRightAndMiddleMouse = config.GetBindable<bool>(OsuSetting.SwapRightAndMiddleMouse);
             editorSelectableAfterEndTime = config.GetBindable<double>(OsuSetting.EditorSelectableAfterEndTime);
+            editorArcOnAnchorAdd = config.GetBindable<bool>(OsuSetting.EditorArcOnAnchorAdd);
             editorAutoBackup = config.GetBindable<bool>(OsuSetting.EditorAutoBackup);
             editorAutoBackupInterval = config.GetBindable<double>(OsuSetting.EditorAutoBackupInterval);
             editorAutoBackupKeepCount = config.GetBindable<int>(OsuSetting.EditorAutoBackupKeepCount);
@@ -520,6 +522,10 @@ namespace osu.Game.Screens.Edit
                                                 ((LocalisableString)@"400ms (default)", 400.0),
                                                 ((LocalisableString)@"700ms (until invisible)", 700.0),
                                             }),
+                                            new ToggleMenuItem(EditorStrings.ArcOnAnchorAdd)
+                                            {
+                                                State = { BindTarget = editorArcOnAnchorAdd },
+                                            },
                                             new ToggleMenuItem(EditorStrings.CtrlClickCyclesCurveType)
                                             {
                                                 State = { BindTarget = editorCtrlClickCyclesCurveType },
