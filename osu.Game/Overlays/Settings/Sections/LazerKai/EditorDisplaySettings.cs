@@ -55,6 +55,16 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     LabelText = EditorStrings.AlwaysExpandLeftToolbox,
                     Current = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox)
                 },
+                new SettingsSlider<float, PercentageSlider>
+                {
+                    LabelText = EditorStrings.ToolButtonSquareness,
+                    Current = config.GetBindable<float>(OsuSetting.EditorToolButtonSquareness)
+                },
+                new SettingsSlider<float, PercentageSlider>
+                {
+                    LabelText = EditorStrings.ToggleButtonSquareness,
+                    Current = config.GetBindable<float>(OsuSetting.EditorToggleButtonSquareness)
+                },
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.AlwaysExpandTimelinePointLabels,

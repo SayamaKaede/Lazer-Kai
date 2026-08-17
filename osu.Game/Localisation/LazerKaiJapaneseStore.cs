@@ -57,6 +57,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:loop_playback"] = @"ループ再生",
             [$@"{editor_prefix}:show_timeline"] = @"タイムライン",
             [$@"{editor_prefix}:always_expand_left_toolbox"] = @"左ツールボックスを常に展開",
+            [$@"{editor_prefix}:tool_button_squareness"] = @"Toolboxのボタンの高さ",
+            [$@"{editor_prefix}:toggle_button_squareness"] = @"Togglesのボタンの高さ",
             [$@"{editor_prefix}:always_expand_timeline_point_labels"] = @"タイムラインのラベルを常に展開",
             [$@"{editor_prefix}:seek_animation_duration"] = @"シークのアニメーション",
             [$@"{editor_prefix}:editor_colour_scheme"] = @"エディターのテーマ色",

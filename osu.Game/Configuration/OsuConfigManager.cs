@@ -245,6 +245,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorShowPlayAreaBorder, true);
             SetDefault(OsuSetting.EditorDetectOffscreen, true);
             SetDefault(OsuSetting.EditorNotifyOnBackup, true);
+            SetDefault(OsuSetting.EditorToolButtonSquareness, 0f, 0f, 1f, 0.05f);
+            SetDefault(OsuSetting.EditorToggleButtonSquareness, 0f, 0f, 1f, 0.05f);
             SetDefault(OsuSetting.EditorPinnedToolboxGroups, string.Empty);
             SetDefault(OsuSetting.EditorHideSelectionButtons, false);
             SetDefault(OsuSetting.EditorSelectionHandleColour, EditorSelectionColour.Default);
@@ -595,6 +597,16 @@ namespace osu.Game.Configuration
         /// Whether a notification is posted each time a backup is written.
         /// </summary>
         EditorNotifyOnBackup,
+
+        /// <summary>
+        /// How far the tool buttons are stretched towards being square, from 0 (stock) to 1 (square).
+        /// </summary>
+        EditorToolButtonSquareness,
+
+        /// <summary>
+        /// How far the toggle buttons are stretched towards being square, from 0 (stock) to 1 (square).
+        /// </summary>
+        EditorToggleButtonSquareness,
 
         /// <summary>
         /// Titles of the editor toolbox groups the user pinned to the top, separated by <c>|</c>.

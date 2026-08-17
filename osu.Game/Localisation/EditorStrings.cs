@@ -546,6 +546,16 @@ namespace osu.Game.Localisation
         public static LocalisableString DetectOffscreen => new TranslatableString(getKey(@"detect_offscreen"), @"Offscreen detection");
 
         /// <summary>
+        /// "Tool button height"
+        /// </summary>
+        public static LocalisableString ToolButtonSquareness => new TranslatableString(getKey(@"tool_button_squareness"), @"Tool button height");
+
+        /// <summary>
+        /// "Toggle button height"
+        /// </summary>
+        public static LocalisableString ToggleButtonSquareness => new TranslatableString(getKey(@"toggle_button_squareness"), @"Toggle button height");
+
+        /// <summary>
         /// "Backup written"
         /// </summary>
         public static LocalisableString BackupWritten => new TranslatableString(getKey(@"backup_written"), @"Backup written");

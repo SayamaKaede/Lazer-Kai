@@ -14,6 +14,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osuTK;
+using osu.Game.Configuration;
 using osuTK.Graphics;
 
 namespace osu.Game.Screens.Edit.Components.RadioButtons
@@ -53,6 +54,8 @@ namespace osu.Game.Screens.Edit.Components.RadioButtons
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colourProvider)
         {
+            AddInternal(new EditorButtonSquareness(this, OsuSetting.EditorToolButtonSquareness));
+
             defaultBackgroundColour = colourProvider.Background3;
             selectedBackgroundColour = colourProvider.Background1;
 
