@@ -235,7 +235,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement, false);
             SetDefault(OsuSetting.EditorFreehandSliderPlacement, true);
             SetDefault(OsuSetting.EditorAlwaysExpandTimelinePointLabels, false);
-            SetDefault(OsuSetting.EditorSelectionColour, EditorSelectionAppearance.DEFAULT_COLOUR);
+            SetDefault(OsuSetting.EditorSelectionColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorSelectionThickness, 1f, 0.25f, 3f, 0.25f);
             SetDefault(OsuSetting.EditorSelectionOpacity, 1f, 0.1f, 1f, 0.05f);
             SetDefault(OsuSetting.EditorColourScheme, OverlayColourScheme.Aquamarine);
@@ -245,7 +245,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorShowOffscreenObjects, true);
             SetDefault(OsuSetting.EditorPinnedToolboxGroups, string.Empty);
             SetDefault(OsuSetting.EditorShowSelectionButtons, true);
-            SetDefault(OsuSetting.EditorSelectionHandleColour, EditorSelectionAppearance.DEFAULT_COLOUR);
+            SetDefault(OsuSetting.EditorSelectionHandleColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorSelectionHandleScale, 1f, 0.5f, 1f, 0.1f);
             SetDefault(OsuSetting.EditorSliderAnchorScale, 1f, 0.5f, 1f, 0.1f);
             SetDefault(OsuSetting.EditorShowTimeline, true);

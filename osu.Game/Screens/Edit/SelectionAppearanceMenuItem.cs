@@ -1,16 +1,17 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
+using System.Linq;
 using osu.Framework.Bindables;
-using osu.Framework.Graphics.UserInterface;
+using osu.Framework.Extensions;
 using osu.Framework.Localisation;
+using osu.Framework.Graphics.UserInterface;
+using osu.Game.Graphics.UserInterface;
 using osu.Game.Localisation;
 
 namespace osu.Game.Screens.Edit
 {
-    /// <summary>
-    /// Menu controlling how selection outlines look in the editor.
-    /// </summary>
     internal class SelectionAppearanceMenuItem : MenuItem
     {
         /// <summary>
@@ -26,25 +27,16 @@ namespace osu.Game.Screens.Edit
             ((LocalisableString)@"100%", 1f),
         };
 
-        private static readonly (LocalisableString, string)[] colour_choices =
-        {
-            (CommonStrings.Default, EditorSelectionAppearance.DEFAULT_COLOUR),
-            ((LocalisableString)@"Red", @"#FF5555"),
-            ((LocalisableString)@"Orange", @"#FF9C22"),
-            ((LocalisableString)@"Green", @"#88FF55"),
-            ((LocalisableString)@"Cyan", @"#55DDFF"),
-            ((LocalisableString)@"Blue", @"#5599FF"),
-            ((LocalisableString)@"Magenta", @"#FF55CC"),
-            ((LocalisableString)@"White", @"#FFFFFF"),
-        };
+        private static (LocalisableString, EditorSelectionColour)[] colourChoices =>
+            Enum.GetValues<EditorSelectionColour>().Select(c => (c.GetLocalisableDescription(), c)).ToArray();
 
-        public SelectionAppearanceMenuItem(Bindable<string> colour, Bindable<float> thickness, Bindable<float> opacity,
-                                           Bindable<float> handleScale, Bindable<string> handleColour, Bindable<float> anchorScale)
+        public SelectionAppearanceMenuItem(Bindable<EditorSelectionColour> colour, Bindable<float> thickness, Bindable<float> opacity,
+                                           Bindable<float> handleScale, Bindable<EditorSelectionColour> handleColour, Bindable<float> anchorScale)
             : base(EditorStrings.SelectionAppearance)
         {
             Items = new MenuItem[]
             {
-                new ChoiceMenuItem<string>(EditorStrings.SelectionColour, colour, colour_choices),
+                new ChoiceMenuItem<EditorSelectionColour>(EditorStrings.SelectionColour, colour, colourChoices),
                 new ChoiceMenuItem<float>(EditorStrings.SelectionThickness, thickness, new[]
                 {
                     ((LocalisableString)@"50%", 0.5f),
@@ -61,10 +53,9 @@ namespace osu.Game.Screens.Edit
                     ((LocalisableString)@"100%", 1f),
                 }),
                 new ChoiceMenuItem<float>(EditorStrings.SelectionHandleSize, handleScale, scale_choices),
-                new ChoiceMenuItem<string>(EditorStrings.SelectionHandleColour, handleColour, colour_choices),
+                new ChoiceMenuItem<EditorSelectionColour>(EditorStrings.SelectionHandleColour, handleColour, colourChoices),
                 new ChoiceMenuItem<float>(EditorStrings.SliderAnchorSize, anchorScale, scale_choices),
             };
         }
-
     }
 }

@@ -406,6 +406,46 @@ namespace osu.Game.Localisation
         public static LocalisableString ShowTimeline => new TranslatableString(getKey(@"show_timeline"), @"Timeline");
 
         /// <summary>
+        /// "Default"
+        /// </summary>
+        public static LocalisableString ColourDefault => new TranslatableString(getKey(@"colour_default"), @"Default");
+
+        /// <summary>
+        /// "Red"
+        /// </summary>
+        public static LocalisableString ColourRed => new TranslatableString(getKey(@"colour_red"), @"Red");
+
+        /// <summary>
+        /// "Orange"
+        /// </summary>
+        public static LocalisableString ColourOrange => new TranslatableString(getKey(@"colour_orange"), @"Orange");
+
+        /// <summary>
+        /// "Green"
+        /// </summary>
+        public static LocalisableString ColourGreen => new TranslatableString(getKey(@"colour_green"), @"Green");
+
+        /// <summary>
+        /// "Cyan"
+        /// </summary>
+        public static LocalisableString ColourCyan => new TranslatableString(getKey(@"colour_cyan"), @"Cyan");
+
+        /// <summary>
+        /// "Blue"
+        /// </summary>
+        public static LocalisableString ColourBlue => new TranslatableString(getKey(@"colour_blue"), @"Blue");
+
+        /// <summary>
+        /// "Magenta"
+        /// </summary>
+        public static LocalisableString ColourMagenta => new TranslatableString(getKey(@"colour_magenta"), @"Magenta");
+
+        /// <summary>
+        /// "White"
+        /// </summary>
+        public static LocalisableString ColourWhite => new TranslatableString(getKey(@"colour_white"), @"White");
+
+        /// <summary>
         /// "Export this difficulty as .osu (v14)"
         /// </summary>
         public static LocalisableString ExportBeatmapFile => new TranslatableString(getKey(@"export_beatmap_file"), @"Export this difficulty as .osu (v14)");
@@ -463,7 +503,7 @@ namespace osu.Game.Localisation
         /// <summary>
         /// "Swap right and middle mouse buttons (editor only)"
         /// </summary>
-        public static LocalisableString SwapRightAndMiddleMouse => new TranslatableString(getKey(@"swap_right_and_middle_mouse"), @"Swap right and middle mouse buttons (editor only)");
+        public static LocalisableString SwapRightAndMiddleMouse => new TranslatableString(getKey(@"swap_right_and_middle_mouse"), @"Swap right and middle mouse buttons");
 
         /// <summary>
         /// "Seek animation"
@@ -478,7 +518,7 @@ namespace osu.Game.Localisation
         /// <summary>
         /// "Drag threshold (applies game-wide)"
         /// </summary>
-        public static LocalisableString DragStartDistance => new TranslatableString(getKey(@"drag_start_distance"), @"Drag threshold (applies game-wide)");
+        public static LocalisableString DragStartDistance => new TranslatableString(getKey(@"drag_start_distance"), @"Drag threshold");
 
         /// <summary>
         /// "Show play area and offscreen objects"

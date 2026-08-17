@@ -20,11 +20,6 @@ namespace osu.Game.Screens.Edit
     /// </remarks>
     public class EditorSelectionAppearance
     {
-        /// <summary>
-        /// Colour setting value meaning "leave each piece at its own default colour".
-        /// </summary>
-        public const string DEFAULT_COLOUR = "";
-
         private readonly OsuConfigManager config;
 
         /// <summary>
@@ -60,29 +55,13 @@ namespace osu.Game.Screens.Edit
         }
 
         /// <param name="fallback">The colour to use while the user has not chosen an override.</param>
-        public Color4 GetColour(Color4 fallback) => parseColour(get<string>(OsuSetting.EditorSelectionColour).Value, fallback);
+        public Color4 GetColour(Color4 fallback) => get<EditorSelectionColour>(OsuSetting.EditorSelectionColour).Value.ToColour() ?? fallback;
 
         /// <summary>
         /// The colour of the drag handles on the selection box, which the user sets separately from the outline.
         /// </summary>
         /// <param name="fallback">The colour to use while the user has not chosen an override.</param>
-        public Color4 GetHandleColour(Color4 fallback) => parseColour(get<string>(OsuSetting.EditorSelectionHandleColour).Value, fallback);
-
-        private static Color4 parseColour(string value, Color4 fallback)
-        {
-            if (string.IsNullOrEmpty(value))
-                return fallback;
-
-            try
-            {
-                return Color4Extensions.FromHex(value);
-            }
-            catch (Exception)
-            {
-                // a malformed value should never take the editor down; fall back to the stock colour.
-                return fallback;
-            }
-        }
+        public Color4 GetHandleColour(Color4 fallback) => get<EditorSelectionColour>(OsuSetting.EditorSelectionHandleColour).Value.ToColour() ?? fallback;
 
         /// <param name="baseSize">The handle's stock size, which the user's setting scales.</param>
         public float GetHandleSize(float baseSize) => baseSize * get<float>(OsuSetting.EditorSelectionHandleScale).Value;
