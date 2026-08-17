@@ -459,54 +459,13 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             controlPoints.Insert(insertionIndex, pathControlPoint);
 
             if (arcOnAnchorAdd.Value)
-                makeSegmentArcIfPossible(insertionIndex);
+                SliderAnchorInsertion.MakeArcAroundInsertion(controlPoints, insertionIndex);
 
             ControlPointVisualiser?.EnsureValidPathTypes();
 
             HitObject.SnapTo(distanceSnapProvider);
 
             return pathControlPoint;
-        }
-
-        /// <summary>
-        /// Turns the segment an anchor was just added to into an arc, where that segment can hold one.
-        /// </summary>
-        /// <remarks>
-        /// An anchor is nearly always added to bend the path, but a new anchor carries no type of its own, so it
-        /// simply extends whatever the segment already was — adding one to a straight segment left it straight.
-        ///
-        /// Three points is the only count a perfect curve accepts, so any other count is left untouched. That keeps
-        /// deliberate bezier work intact, and a fourth point added to an arc still degrades to bezier through
-        /// <see cref="PathControlPointVisualiser{T}.EnsureValidPathTypes"/> as it always has.
-        /// </remarks>
-        private void makeSegmentArcIfPossible(int insertionIndex)
-        {
-            // a typed control point closes the segment it belongs to and starts the next, so the segment around the
-            // insertion runs between the nearest typed point on either side.
-            int start = 0;
-
-            for (int i = insertionIndex - 1; i > 0; i--)
-            {
-                if (controlPoints[i].Type != null)
-                {
-                    start = i;
-                    break;
-                }
-            }
-
-            int end = controlPoints.Count - 1;
-
-            for (int i = insertionIndex + 1; i < controlPoints.Count; i++)
-            {
-                if (controlPoints[i].Type != null)
-                {
-                    end = i;
-                    break;
-                }
-            }
-
-            if (end - start + 1 == 3)
-                controlPoints[start].Type = PathType.PERFECT_CURVE;
         }
 
         private void removeControlPoints(List<PathControlPoint> toRemove)
