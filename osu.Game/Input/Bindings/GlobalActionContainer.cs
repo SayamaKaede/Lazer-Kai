@@ -151,6 +151,9 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(new[] { InputKey.BackSlash }, GlobalAction.EditorIncreaseSliderVelocity),
             new KeyBinding(new[] { InputKey.Alt, InputKey.BracketRight }, GlobalAction.EditorDecreaseSliderVelocityFine),
             new KeyBinding(new[] { InputKey.Alt, InputKey.BackSlash }, GlobalAction.EditorIncreaseSliderVelocityFine),
+            // registered unbound: these are conveniences, and every obvious editor combination is already taken.
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimeline),
+            new KeyBinding(InputKey.None, GlobalAction.EditorBackupNow),
             new KeyBinding(new[] { InputKey.Control, InputKey.R }, GlobalAction.EditorToggleRotateControl),
             new KeyBinding(new[] { InputKey.Control, InputKey.E }, GlobalAction.EditorToggleScaleControl),
             new KeyBinding(new[] { InputKey.Control, InputKey.Left }, GlobalAction.EditorSeekToPreviousHitObject),
@@ -565,6 +568,12 @@ namespace osu.Game.Input.Bindings
 
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorIncreaseSliderVelocityFine))]
         EditorIncreaseSliderVelocityFine,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleTimeline))]
+        EditorToggleTimeline,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorBackupNow))]
+        EditorBackupNow,
     }
 
     public enum GlobalActionCategory

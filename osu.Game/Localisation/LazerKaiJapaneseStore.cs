@@ -109,6 +109,8 @@ namespace osu.Game.Localisation
 
             // key bindings
             [$@"{binding_prefix}:editor_toggle_composer_mod_preview"] = @"編集画面のModプレビューを切り替え",
+            [$@"{binding_prefix}:editor_toggle_timeline"] = @"タイムラインの表示を切り替え",
+            [$@"{binding_prefix}:editor_backup_now"] = @"いますぐバックアップ",
             [$@"{binding_prefix}:editor_decrease_slider_velocity"] = @"SVを下げる",
             [$@"{binding_prefix}:editor_increase_slider_velocity"] = @"SVを上げる",
             [$@"{binding_prefix}:editor_decrease_slider_velocity_fine"] = @"SVを下げる（微調整）",

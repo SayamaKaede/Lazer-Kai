@@ -576,6 +576,7 @@ namespace osu.Game.Screens.Edit
                                             new ToggleMenuItem(EditorStrings.ApplyTestPlayModsToComposer)
                                             {
                                                 State = { BindTarget = editorApplyTestPlayModsToComposer },
+                                                Hotkey = new Hotkey(GlobalAction.EditorToggleComposerModPreview),
                                             },
                                             new ToggleMenuItem(EditorStrings.LiveModPreview)
                                             {
@@ -587,6 +588,7 @@ namespace osu.Game.Screens.Edit
                                     new ToggleMenuItem(EditorStrings.ShowTimeline)
                                     {
                                         State = { BindTarget = editorShowTimeline },
+                                        Hotkey = new Hotkey(GlobalAction.EditorToggleTimeline),
                                     },
                                 }
                             },
@@ -986,6 +988,14 @@ namespace osu.Game.Screens.Edit
 
                 case GlobalAction.EditorToggleComposerModPreview:
                     editorApplyTestPlayModsToComposer.Value = !editorApplyTestPlayModsToComposer.Value;
+                    return true;
+
+                case GlobalAction.EditorToggleTimeline:
+                    editorShowTimeline.Value = !editorShowTimeline.Value;
+                    return true;
+
+                case GlobalAction.EditorBackupNow:
+                    autoBackup.Backup();
                     return true;
 
                 case GlobalAction.EditorDiscardUnsavedChanges:
@@ -1491,7 +1501,10 @@ namespace osu.Game.Screens.Edit
                         State = { BindTarget = editorAutoBackup },
                     },
                     new OsuMenuItemSpacer(),
-                    new EditorMenuItem(EditorStrings.BackupNow, MenuItemType.Standard, () => autoBackup.Backup()),
+                    new EditorMenuItem(EditorStrings.BackupNow, MenuItemType.Standard, () => autoBackup.Backup())
+                    {
+                        Hotkey = new Hotkey(GlobalAction.EditorBackupNow)
+                    },
                     new EditorMenuItem(EditorStrings.OpenBackupFolder, MenuItemType.Standard, openBackupFolder),
                 }
             };

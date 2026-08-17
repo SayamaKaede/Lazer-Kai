@@ -226,6 +226,16 @@ namespace osu.Game.Localisation
             new TranslatableString(getKey(@"editor_toggle_composer_mod_preview"), @"Toggle mod preview while composing");
 
         /// <summary>
+        /// "Toggle timeline"
+        /// </summary>
+        public static LocalisableString EditorToggleTimeline => new TranslatableString(getKey(@"editor_toggle_timeline"), @"Toggle timeline");
+
+        /// <summary>
+        /// "Back up now"
+        /// </summary>
+        public static LocalisableString EditorBackupNow => new TranslatableString(getKey(@"editor_backup_now"), @"Back up now");
+
+        /// <summary>
         /// "Decrease slider velocity"
         /// </summary>
         public static LocalisableString EditorDecreaseSliderVelocity =>
