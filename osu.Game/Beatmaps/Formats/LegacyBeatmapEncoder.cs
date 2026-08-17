@@ -24,6 +24,13 @@ namespace osu.Game.Beatmaps.Formats
     {
         public const int FIRST_LAZER_VERSION = 128;
 
+        /// <summary>
+        /// The last format version osu!stable wrote, and the highest it fully understands.
+        /// </summary>
+        public const int STABLE_VERSION = 14;
+
+        private readonly int formatVersion;
+
         private readonly IBeatmap beatmap;
         private readonly ISkin? skin;
         private readonly LegacyStoryboardEncoder? storyboardEncoder;
@@ -39,10 +46,17 @@ namespace osu.Game.Beatmaps.Formats
         /// The combined storyboard, loaded from both the <c>.osu</c> and the <c>.osz</c>.
         /// Only elements from the <c>.osu</c> (marked via <see cref="StoryboardElementSource.Beatmap"/>) will be encoded to the beatmap.
         /// </param>
-        public LegacyBeatmapEncoder(IBeatmap beatmap, ISkin? skin, Storyboard? storyboard)
+        /// <param name="formatVersion">
+        /// The format version to stamp on the file. Only lower it to <see cref="STABLE_VERSION"/> for content that has
+        /// already been converted to suit it, since the version tells a reader how to interpret what follows: below
+        /// <see cref="FIRST_LAZER_VERSION"/>, coordinates are read as integers and multi-segment paths are not
+        /// understood. <see cref="Database.LegacyBeatmapExporter"/> performs that conversion.
+        /// </param>
+        public LegacyBeatmapEncoder(IBeatmap beatmap, ISkin? skin, Storyboard? storyboard, int formatVersion = FIRST_LAZER_VERSION)
         {
             this.beatmap = beatmap;
             this.skin = skin;
+            this.formatVersion = formatVersion;
 
             if (storyboard != null)
                 storyboardEncoder = new LegacyStoryboardEncoder(storyboard);
@@ -55,7 +69,7 @@ namespace osu.Game.Beatmaps.Formats
 
         public void Encode(TextWriter writer)
         {
-            writer.WriteLine($"osu file format v{FIRST_LAZER_VERSION}");
+            writer.WriteLine($"osu file format v{formatVersion}");
 
             writer.WriteLine();
             handleGeneral(writer);

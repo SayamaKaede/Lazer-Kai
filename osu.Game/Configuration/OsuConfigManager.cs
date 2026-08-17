@@ -252,6 +252,9 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorCtrlClickCyclesCurveType, false);
             SetDefault(OsuSetting.SwapRightAndMiddleMouse, false);
             SetDefault(OsuSetting.EditorSelectableAfterEndTime, 400.0, 0.0, 700.0, 50.0);
+            SetDefault(OsuSetting.EditorAutoBackup, true);
+            SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
+            SetDefault(OsuSetting.EditorAutoBackupKeepCount, 20, 5, 200);
 
             SetDefault(OsuSetting.AlwaysShowHoldForMenuButton, false);
             SetDefault(OsuSetting.AlwaysRequireHoldingForPause, false);
@@ -623,5 +626,20 @@ namespace osu.Game.Configuration
         /// How long in milliseconds an object stays selectable after its time has passed.
         /// </summary>
         EditorSelectableAfterEndTime,
+
+        /// <summary>
+        /// Whether the editor periodically writes a copy of the beatmap being edited to the backups directory.
+        /// </summary>
+        EditorAutoBackup,
+
+        /// <summary>
+        /// Minutes between automatic backups.
+        /// </summary>
+        EditorAutoBackupInterval,
+
+        /// <summary>
+        /// How many backups to keep per difficulty before the oldest are deleted.
+        /// </summary>
+        EditorAutoBackupKeepCount,
     }
 }

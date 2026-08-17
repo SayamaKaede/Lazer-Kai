@@ -253,6 +253,14 @@ namespace osu.Game.Screens.Edit
         private Bindable<bool> editorCtrlClickCyclesCurveType;
         private Bindable<bool> swapRightAndMiddleMouse;
         private Bindable<double> editorSelectableAfterEndTime;
+        private Bindable<bool> editorAutoBackup;
+        private Bindable<double> editorAutoBackupInterval;
+        private Bindable<int> editorAutoBackupKeepCount;
+
+        private EditorAutoBackup autoBackup;
+
+        [Resolved]
+        private osu.Framework.Platform.Storage storage { get; set; }
 
         /// <summary>
         /// This controls the opacity of components like the timelines, sidebars, etc.
@@ -399,6 +407,9 @@ namespace osu.Game.Screens.Edit
             editorCtrlClickCyclesCurveType = config.GetBindable<bool>(OsuSetting.EditorCtrlClickCyclesCurveType);
             swapRightAndMiddleMouse = config.GetBindable<bool>(OsuSetting.SwapRightAndMiddleMouse);
             editorSelectableAfterEndTime = config.GetBindable<double>(OsuSetting.EditorSelectableAfterEndTime);
+            editorAutoBackup = config.GetBindable<bool>(OsuSetting.EditorAutoBackup);
+            editorAutoBackupInterval = config.GetBindable<double>(OsuSetting.EditorAutoBackupInterval);
+            editorAutoBackupKeepCount = config.GetBindable<int>(OsuSetting.EditorAutoBackupKeepCount);
 
             // These two settings don't work together. Make them mutually exclusive to let the user know.
             editorAutoSeekOnPlacement.BindValueChanged(enabled =>
@@ -614,6 +625,7 @@ namespace osu.Game.Screens.Edit
                     },
                     bottomBar = new BottomBar(),
                     MutationTracker,
+                    autoBackup = new EditorAutoBackup(),
                 }
             });
 
@@ -1464,6 +1476,11 @@ namespace osu.Game.Screens.Edit
             lastSavedHash = changeHandler?.CurrentStateHash;
         }
 
+        private void openBackupFolder()
+        {
+            storage.GetStorageForDirectory(EditorAutoBackup.BACKUP_DIRECTORY).PresentExternally();
+        }
+
         private IEnumerable<MenuItem> createFileMenuItems()
         {
             yield return createDifficultyCreationMenu();
@@ -1484,6 +1501,35 @@ namespace osu.Game.Screens.Edit
             var export = createExportMenu();
             saveRelatedMenuItems.AddRange(export.Items);
             yield return export;
+
+            yield return new MenuItem(EditorStrings.AutoBackup)
+            {
+                Items = new MenuItem[]
+                {
+                    new ToggleMenuItem(EditorStrings.AutoBackupEnabled)
+                    {
+                        State = { BindTarget = editorAutoBackup },
+                    },
+                    new ChoiceMenuItem<double>(EditorStrings.AutoBackupInterval, editorAutoBackupInterval, new[]
+                    {
+                        ((LocalisableString)@"1分", 1.0),
+                        ((LocalisableString)@"3分", 3.0),
+                        ((LocalisableString)@"5分", 5.0),
+                        ((LocalisableString)@"10分", 10.0),
+                        ((LocalisableString)@"30分", 30.0),
+                    }),
+                    new ChoiceMenuItem<int>(EditorStrings.AutoBackupKeepCount, editorAutoBackupKeepCount, new[]
+                    {
+                        ((LocalisableString)@"10", 10),
+                        ((LocalisableString)@"20", 20),
+                        ((LocalisableString)@"50", 50),
+                        ((LocalisableString)@"100", 100),
+                    }),
+                    new OsuMenuItemSpacer(),
+                    new EditorMenuItem(EditorStrings.BackupNow, MenuItemType.Standard, () => autoBackup.Backup()),
+                    new EditorMenuItem(EditorStrings.OpenBackupFolder, MenuItemType.Standard, openBackupFolder),
+                }
+            };
 
             if (RuntimeInfo.IsDesktop)
             {

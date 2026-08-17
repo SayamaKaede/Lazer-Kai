@@ -406,6 +406,36 @@ namespace osu.Game.Localisation
         public static LocalisableString ShowTimeline => new TranslatableString(getKey(@"show_timeline"), @"Timeline");
 
         /// <summary>
+        /// "Automatic backups"
+        /// </summary>
+        public static LocalisableString AutoBackup => new TranslatableString(getKey(@"auto_backup"), @"Automatic backups");
+
+        /// <summary>
+        /// "Back up while editing"
+        /// </summary>
+        public static LocalisableString AutoBackupEnabled => new TranslatableString(getKey(@"auto_backup_enabled"), @"Back up while editing");
+
+        /// <summary>
+        /// "Backup interval"
+        /// </summary>
+        public static LocalisableString AutoBackupInterval => new TranslatableString(getKey(@"auto_backup_interval"), @"Backup interval");
+
+        /// <summary>
+        /// "Backups to keep"
+        /// </summary>
+        public static LocalisableString AutoBackupKeepCount => new TranslatableString(getKey(@"auto_backup_keep_count"), @"Backups to keep");
+
+        /// <summary>
+        /// "Back up now"
+        /// </summary>
+        public static LocalisableString BackupNow => new TranslatableString(getKey(@"backup_now"), @"Back up now");
+
+        /// <summary>
+        /// "Open backup folder"
+        /// </summary>
+        public static LocalisableString OpenBackupFolder => new TranslatableString(getKey(@"open_backup_folder"), @"Open backup folder");
+
+        /// <summary>
         /// "Keep passed objects selectable for"
         /// </summary>
         public static LocalisableString SelectableAfterEndTime => new TranslatableString(getKey(@"selectable_after_end_time"), @"Keep passed objects selectable for");

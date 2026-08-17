@@ -88,7 +88,10 @@ namespace osu.Game.Database
                 // If we don't do that, uploads to BSS may show changes where there are none.
                 sw.NewLine = "\r\n";
 
-                new LegacyBeatmapEncoder(playableBeatmap, beatmapSkin, beatmapStoryboard).Encode(sw);
+                // `MutateBeatmap` above has already brought the content in line with what stable understands, so the
+                // file is stamped accordingly. Leaving it claiming a lazer version made tools trust float coordinates
+                // and multi-segment paths that are no longer present.
+                new LegacyBeatmapEncoder(playableBeatmap, beatmapSkin, beatmapStoryboard, LegacyBeatmapEncoder.STABLE_VERSION).Encode(sw);
             }
 
             stream.Seek(0, SeekOrigin.Begin);
