@@ -25,10 +25,10 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     LabelText = EditorStrings.HideSelectionButtons,
                     Current = config.GetBindable<bool>(OsuSetting.EditorHideSelectionButtons)
                 },
-                new SettingsSlider<double, MillisecondsSlider>
+                new SettingsCheckbox
                 {
-                    LabelText = EditorStrings.SelectableAfterEndTime,
-                    Current = config.GetBindable<double>(OsuSetting.EditorSelectableAfterEndTime)
+                    LabelText = EditorStrings.IgnoreFadedObjects,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorIgnoreFadedObjects)
                 },
                 new SettingsEnumDropdown<EditorSelectionColour>
                 {

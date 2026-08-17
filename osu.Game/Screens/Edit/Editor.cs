@@ -247,9 +247,10 @@ namespace osu.Game.Screens.Edit
         private Bindable<float> editorSliderAnchorScale;
         private Bindable<double> editorSeekAnimationDuration;
         private Bindable<bool> editorAlwaysExpandLeftToolbox;
-        private Bindable<bool> editorShowOffscreenObjects;
+        private Bindable<bool> editorShowPlayAreaBorder;
+        private Bindable<bool> editorDetectOffscreen;
         private Bindable<bool> editorShowTimeline;
-        private Bindable<double> editorSelectableAfterEndTime;
+        private Bindable<bool> editorIgnoreFadedObjects;
         private Bindable<bool> editorShowDifficultyGraph;
         private Bindable<bool> editorAutoBackup;
 
@@ -396,9 +397,10 @@ namespace osu.Game.Screens.Edit
             editorSliderAnchorScale = config.GetBindable<float>(OsuSetting.EditorSliderAnchorScale);
             editorSeekAnimationDuration = config.GetBindable<double>(OsuSetting.EditorSeekAnimationDuration);
             editorAlwaysExpandLeftToolbox = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox);
-            editorShowOffscreenObjects = config.GetBindable<bool>(OsuSetting.EditorShowOffscreenObjects);
+            editorShowPlayAreaBorder = config.GetBindable<bool>(OsuSetting.EditorShowPlayAreaBorder);
+            editorDetectOffscreen = config.GetBindable<bool>(OsuSetting.EditorDetectOffscreen);
             editorShowTimeline = config.GetBindable<bool>(OsuSetting.EditorShowTimeline);
-            editorSelectableAfterEndTime = config.GetBindable<double>(OsuSetting.EditorSelectableAfterEndTime);
+            editorIgnoreFadedObjects = config.GetBindable<bool>(OsuSetting.EditorIgnoreFadedObjects);
             editorShowDifficultyGraph = config.GetBindable<bool>(OsuSetting.EditorShowDifficultyGraph);
             editorAutoBackup = config.GetBindable<bool>(OsuSetting.EditorAutoBackup);
 
@@ -503,21 +505,21 @@ namespace osu.Game.Screens.Edit
                                             {
                                                 State = { BindTarget = editorAlwaysExpandLeftToolbox },
                                             },
-                                            new ChoiceMenuItem<double>(EditorStrings.SelectableAfterEndTime, editorSelectableAfterEndTime, new[]
+                                            new ToggleMenuItem(EditorStrings.IgnoreFadedObjects)
                                             {
-                                                ((LocalisableString)@"0ms", 0.0),
-                                                ((LocalisableString)@"100ms", 100.0),
-                                                ((LocalisableString)@"200ms", 200.0),
-                                                ((LocalisableString)@"400ms (default)", 400.0),
-                                                ((LocalisableString)@"700ms (until invisible)", 700.0),
-                                            }),
+                                                State = { BindTarget = editorIgnoreFadedObjects },
+                                            },
                                             new ToggleMenuItem(EditorStrings.ShowDifficultyGraph)
                                             {
                                                 State = { BindTarget = editorShowDifficultyGraph },
                                             },
-                                            new ToggleMenuItem(EditorStrings.ShowOffscreenObjects)
+                                            new ToggleMenuItem(EditorStrings.ShowPlayAreaBorder)
                                             {
-                                                State = { BindTarget = editorShowOffscreenObjects },
+                                                State = { BindTarget = editorShowPlayAreaBorder },
+                                            },
+                                            new ToggleMenuItem(EditorStrings.DetectOffscreen)
+                                            {
+                                                State = { BindTarget = editorDetectOffscreen },
                                             },
                                             new OsuMenuItemSpacer(),
                                             new BackgroundDimMenuItem(editorBackgroundDim),

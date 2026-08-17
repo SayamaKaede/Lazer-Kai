@@ -508,7 +508,7 @@ namespace osu.Game.Localisation
         /// <summary>
         /// "Keep passed objects selectable for"
         /// </summary>
-        public static LocalisableString SelectableAfterEndTime => new TranslatableString(getKey(@"selectable_after_end_time"), @"Keep passed objects selectable for");
+        public static LocalisableString IgnoreFadedObjects => new TranslatableString(getKey(@"ignore_faded_objects"), @"Leave objects that have faded away out of selections");
 
         /// <summary>
         /// "Ctrl+click a slider anchor to cycle its curve type"
@@ -538,7 +538,22 @@ namespace osu.Game.Localisation
         /// <summary>
         /// "Show play area and offscreen objects"
         /// </summary>
-        public static LocalisableString ShowOffscreenObjects => new TranslatableString(getKey(@"show_offscreen_objects"), @"Show play area and offscreen objects");
+        public static LocalisableString ShowPlayAreaBorder => new TranslatableString(getKey(@"show_play_area_border"), @"Show the play area border");
+
+        /// <summary>
+        /// "Offscreen detection"
+        /// </summary>
+        public static LocalisableString DetectOffscreen => new TranslatableString(getKey(@"detect_offscreen"), @"Offscreen detection");
+
+        /// <summary>
+        /// "Backup written"
+        /// </summary>
+        public static LocalisableString BackupWritten => new TranslatableString(getKey(@"backup_written"), @"Backup written");
+
+        /// <summary>
+        /// "Notify when a backup is written"
+        /// </summary>
+        public static LocalisableString NotifyOnBackup => new TranslatableString(getKey(@"notify_on_backup"), @"Notify when a backup is written");
 
         private static string getKey(string key) => $@"{prefix}:{key}";
     }

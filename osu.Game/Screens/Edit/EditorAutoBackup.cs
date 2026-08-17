@@ -11,8 +11,12 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Logging;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Platform;
 using osu.Framework.Threading;
+using osu.Game.Localisation;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Beatmaps.Formats;
 using osu.Game.Configuration;
 using osu.Game.Extensions;
@@ -41,7 +45,11 @@ namespace osu.Game.Screens.Edit
         [Resolved]
         private Storage storage { get; set; } = null!;
 
+        [Resolved(CanBeNull = true)]
+        private INotificationOverlay? notifications { get; set; }
+
         private readonly Bindable<bool> enabled = new Bindable<bool>();
+        private readonly Bindable<bool> notifyOnBackup = new Bindable<bool>();
         private readonly Bindable<double> intervalMinutes = new Bindable<double>();
         private readonly Bindable<int> keepCount = new Bindable<int>();
 
@@ -58,6 +66,7 @@ namespace osu.Game.Screens.Edit
             config.BindWith(OsuSetting.EditorAutoBackup, enabled);
             config.BindWith(OsuSetting.EditorAutoBackupInterval, intervalMinutes);
             config.BindWith(OsuSetting.EditorAutoBackupKeepCount, keepCount);
+            config.BindWith(OsuSetting.EditorNotifyOnBackup, notifyOnBackup);
         }
 
         protected override void LoadComplete()
@@ -121,6 +130,9 @@ namespace osu.Game.Screens.Edit
                     }
 
                     prune(directory);
+
+                    if (notifyOnBackup.Value)
+                        notifications?.Post(new SimpleNotification { Text = EditorStrings.BackupWritten, Icon = FontAwesome.Solid.Save });
                 }
                 catch (Exception e)
                 {

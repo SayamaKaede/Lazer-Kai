@@ -49,7 +49,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:ctrl_click_cycles_curve_type"] = @"Ctrl+クリックでカーブ種別を変更",
 
             // display
-            [$@"{editor_prefix}:show_offscreen_objects"] = @"プレイ範囲と画面外ノーツ",
+            [$@"{editor_prefix}:show_play_area_border"] = @"プレイ画面の枠を表示",
+            [$@"{editor_prefix}:detect_offscreen"] = @"Offscreen検知",
             [$@"{editor_prefix}:show_difficulty_graph"] = @"難易度グラフ",
             [$@"{editor_prefix}:difficulty_graph_colour"] = @"難易度グラフの色",
             [$@"{editor_prefix}:difficulty_graph_opacity"] = @"難易度グラフの不透明度",
@@ -58,7 +59,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:always_expand_left_toolbox"] = @"左ツールボックスを常に展開",
             [$@"{editor_prefix}:always_expand_timeline_point_labels"] = @"タイムラインのラベルを常に展開",
             [$@"{editor_prefix}:seek_animation_duration"] = @"シークのアニメーション",
-            [$@"{editor_prefix}:editor_colour_scheme"] = @"エディターの配色",
+            [$@"{editor_prefix}:editor_colour_scheme"] = @"エディターのテーマ色",
 
             // selection
             [$@"{editor_prefix}:selection_appearance"] = @"選択枠",
@@ -69,7 +70,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:selection_handle_size"] = @"ハンドルの大きさ",
             [$@"{editor_prefix}:slider_anchor_size"] = @"アンカーの大きさ",
             [$@"{editor_prefix}:hide_selection_buttons"] = @"選択時のショートカットボタンの非表示",
-            [$@"{editor_prefix}:selectable_after_end_time"] = @"通過後の選択可能時間",
+            [$@"{editor_prefix}:ignore_faded_objects"] = @"既に消えたノーツを選択に巻き込まない",
 
             // input
             [$@"{editor_prefix}:remove_drag_threshold"] = @"ドラッグ時の引っかかりを無くす",
@@ -81,7 +82,9 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:auto_backup_interval"] = @"バックアップの間隔",
             [$@"{editor_prefix}:auto_backup_keep_count"] = @"保持する個数",
             [$@"{editor_prefix}:backup_now"] = @"いますぐバックアップ",
-            [$@"{editor_prefix}:open_backup_folder"] = @"バックアップ先を開く",
+            [$@"{editor_prefix}:open_backup_folder"] = @"バックアップフォルダを開く",
+            [$@"{editor_prefix}:notify_on_backup"] = @"バックアップ完了時に通知を出す",
+            [$@"{editor_prefix}:backup_written"] = @"バックアップしました",
 
             // colours
             [$@"{editor_prefix}:colour_default"] = @"既定",
@@ -104,7 +107,7 @@ namespace osu.Game.Localisation
             [$@"{settings_prefix}:applies_game_wide"] = @"エディター外にも適用されます",
             [$@"{settings_prefix}:editor_only"] = @"エディターを開いている間だけ有効です",
             [$@"{settings_prefix}:takes_effect_on_reopen"] = @"次にエディターを開いたときに反映されます",
-            [$@"{settings_prefix}:no_delay"] = @"なし",
+            [$@"{settings_prefix}:no_delay"] = @"無し",
             [$@"{settings_prefix}:minutes"] = @"{0}分",
 
             // key bindings

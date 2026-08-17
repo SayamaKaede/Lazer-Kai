@@ -22,8 +22,13 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
             {
                 new SettingsCheckbox
                 {
-                    LabelText = EditorStrings.ShowOffscreenObjects,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorShowOffscreenObjects)
+                    LabelText = EditorStrings.ShowPlayAreaBorder,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorShowPlayAreaBorder)
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.DetectOffscreen,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorDetectOffscreen)
                 },
                 new SettingsCheckbox
                 {

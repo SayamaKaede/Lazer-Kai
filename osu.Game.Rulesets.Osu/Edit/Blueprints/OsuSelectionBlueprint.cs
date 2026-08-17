@@ -28,30 +28,31 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints
                                                      && editorClock.CurrentTime - Item.GetEndTime() < HitCircleOverlapMarker.FADE_OUT_EXTENSION);
 
         /// <summary>
-        /// How long an object stays selectable after its time has passed.
+        /// Whether an object stops being selectable once it has finished fading from view.
         /// </summary>
-        /// <remarks>
-        /// Objects fade out gradually once passed, leaving them barely visible yet still selectable for a long
-        /// stretch, which causes accidental selections. Cutting selection off by time rather than by how faded the
-        /// object looks keeps this predictable: the drawable's own alpha is not a reliable signal in the editor,
-        /// where objects are kept visible for editing regardless of where the clock sits.
-        /// It also makes circles and sliders behave alike, which they otherwise do not because their fade-outs differ.
-        /// </remarks>
-        private readonly Bindable<double> selectableAfterEndTime = new Bindable<double>();
+        private readonly Bindable<bool> ignoreFadedObjects = new Bindable<bool>();
 
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
-            config.BindWith(OsuSetting.EditorSelectableAfterEndTime, selectableAfterEndTime);
+            config.BindWith(OsuSetting.EditorIgnoreFadedObjects, ignoreFadedObjects);
         }
 
         public override bool IsSelectable =>
             // Bypass fade out extension from hit markers for selection purposes.
             // This is to match stable, where even when the afterimage hit markers are still visible, objects are not selectable.
             base.ShouldBeAlive
-            // The cut-off deliberately only applies on the way out. Objects which have not appeared yet are also
-            // invisible, but the editor routinely shows and manipulates upcoming objects.
-            && editorClock.CurrentTime <= Item.GetEndTime() + selectableAfterEndTime.Value;
+            // Objects stay selectable long after they have gone from the screen, which drags them into drag
+            // selections and clicks aimed at what is there now.
+            //
+            // The cut-off is the editor's own fade-out length rather than a duration of its own: that is how long an
+            // object remains on screen after its time, whatever the approach rate or tempo, and it is the same window
+            // the hit markers use. Enabling hit animations makes an object disappear sooner than this, so the cut-off
+            // errs on the side of an object still being visible rather than cutting one off early.
+            //
+            // It applies only on the way out. Objects which have not appeared yet are equally invisible, but the
+            // editor routinely shows and manipulates upcoming objects.
+            && (!ignoreFadedObjects.Value || editorClock.CurrentTime <= Item.GetEndTime() + HitCircleOverlapMarker.FADE_OUT_EXTENSION);
 
         protected OsuSelectionBlueprint(T hitObject)
             : base(hitObject)

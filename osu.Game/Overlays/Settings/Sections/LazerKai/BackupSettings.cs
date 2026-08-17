@@ -45,6 +45,11 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 },
                 interval,
                 keepCount,
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.NotifyOnBackup,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorNotifyOnBackup)
+                },
                 new SettingsButton
                 {
                     Text = EditorStrings.OpenBackupFolder,

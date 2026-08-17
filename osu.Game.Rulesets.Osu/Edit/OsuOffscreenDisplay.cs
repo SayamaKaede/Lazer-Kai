@@ -46,7 +46,8 @@ namespace osu.Game.Rulesets.Osu.Edit
         private Container<Drawable> markers = null!;
         private Container playAreaBorder = null!;
 
-        private readonly Bindable<bool> enabled = new Bindable<bool>();
+        private readonly Bindable<bool> showBorder = new Bindable<bool>();
+        private readonly Bindable<bool> detectOffscreen = new Bindable<bool>();
 
         private readonly Dictionary<OsuHitObject, Drawable> currentMarkers = new Dictionary<OsuHitObject, Drawable>();
 
@@ -90,16 +91,17 @@ namespace osu.Game.Rulesets.Osu.Edit
                 markers = new Container { RelativeSizeAxes = Axes.Both },
             };
 
-            config.BindWith(OsuSetting.EditorShowOffscreenObjects, enabled);
+            config.BindWith(OsuSetting.EditorShowPlayAreaBorder, showBorder);
+            config.BindWith(OsuSetting.EditorDetectOffscreen, detectOffscreen);
         }
 
         protected override void Update()
         {
             base.Update();
 
-            playAreaBorder.Alpha = enabled.Value ? border_alpha : 0;
+            playAreaBorder.Alpha = showBorder.Value ? border_alpha : 0;
 
-            if (!enabled.Value)
+            if (!detectOffscreen.Value)
             {
                 if (currentMarkers.Count > 0)
                 {

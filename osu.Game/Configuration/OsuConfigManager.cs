@@ -242,7 +242,9 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSeekAnimationDuration, 300.0, 0.0, 300.0, 50.0);
             SetDefault(OsuSetting.EditorAlwaysExpandLeftToolbox, false);
             SetDefault(OsuSetting.RemoveDragThreshold, false);
-            SetDefault(OsuSetting.EditorShowOffscreenObjects, true);
+            SetDefault(OsuSetting.EditorShowPlayAreaBorder, true);
+            SetDefault(OsuSetting.EditorDetectOffscreen, true);
+            SetDefault(OsuSetting.EditorNotifyOnBackup, true);
             SetDefault(OsuSetting.EditorPinnedToolboxGroups, string.Empty);
             SetDefault(OsuSetting.EditorHideSelectionButtons, false);
             SetDefault(OsuSetting.EditorSelectionHandleColour, EditorSelectionColour.Default);
@@ -251,7 +253,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorShowTimeline, true);
             SetDefault(OsuSetting.EditorCtrlClickCyclesCurveType, false);
             SetDefault(OsuSetting.SwapRightAndMiddleMouse, false);
-            SetDefault(OsuSetting.EditorSelectableAfterEndTime, 400.0, 0.0, 700.0, 50.0);
+            SetDefault(OsuSetting.EditorIgnoreFadedObjects, true);
             SetDefault(OsuSetting.EditorArcOnAnchorAdd, true);
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
@@ -580,9 +582,19 @@ namespace osu.Game.Configuration
         RemoveDragThreshold,
 
         /// <summary>
-        /// Whether the editor outlines the visible play area and marks objects which go outside it.
+        /// Whether the editor outlines the area that stays visible during gameplay.
         /// </summary>
-        EditorShowOffscreenObjects,
+        EditorShowPlayAreaBorder,
+
+        /// <summary>
+        /// Whether the editor marks objects which leave the visible play area.
+        /// </summary>
+        EditorDetectOffscreen,
+
+        /// <summary>
+        /// Whether a notification is posted each time a backup is written.
+        /// </summary>
+        EditorNotifyOnBackup,
 
         /// <summary>
         /// Titles of the editor toolbox groups the user pinned to the top, separated by <c>|</c>.
@@ -628,9 +640,9 @@ namespace osu.Game.Configuration
         SwapRightAndMiddleMouse,
 
         /// <summary>
-        /// How long in milliseconds an object stays selectable after its time has passed.
+        /// Whether objects that have finished fading from view are left out of selections.
         /// </summary>
-        EditorSelectableAfterEndTime,
+        EditorIgnoreFadedObjects,
 
         /// <summary>
         /// Whether adding a slider anchor turns the segment it lands in into a perfect curve, where that segment
