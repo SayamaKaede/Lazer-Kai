@@ -164,7 +164,7 @@ namespace osu.Game.Screens.Edit
             if (!(incoming is LegacyControlPointInfo))
                 return incoming;
 
-            var newControlPoints = new ControlPointInfo();
+            var newControlPoints = new PreservedLegacyControlPoints();
 
             foreach (var controlPoint in incoming.AllControlPoints)
             {
@@ -172,7 +172,11 @@ namespace osu.Game.Screens.Edit
                 {
                     case DifficultyControlPoint:
                     case SampleControlPoint:
-                        // skip legacy types.
+                        // Skip legacy types, but keep hold of them. Some describe things no object can carry —
+                        // a volume change part way through a slider, or inside a spinner — and dropping those
+                        // loses hitsounding done in stable that cannot be redone here. Set aside, they stay out
+                        // of the way of editing and are written back out on save.
+                        newControlPoints.Preserve(controlPoint);
                         continue;
 
                     default:

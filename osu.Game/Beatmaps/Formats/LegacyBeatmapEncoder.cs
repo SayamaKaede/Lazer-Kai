@@ -213,6 +213,8 @@ namespace osu.Game.Beatmaps.Formats
             extractDifficultyControlPoints(beatmap.HitObjects);
             extractSampleControlPoints(beatmap.HitObjects);
 
+            restorePreservedControlPoints();
+
             if (scrollSpeedEncodedAsSliderVelocity)
             {
                 foreach (var point in legacyControlPoints.EffectPoints)
@@ -344,6 +346,37 @@ namespace osu.Game.Beatmaps.Formats
                         lastRelevantDifficultyPoint = hDifficultyPoint;
                     }
                 }
+            }
+
+            // The editor sets aside the legacy control points it cannot represent when a beatmap is opened. Those
+            // describing something no object carries — a volume change part way through a slider, or inside a
+            // spinner — are put back here, but only where the beatmap did not already produce a line at that time.
+            // Anything the user changed while editing therefore wins; what they had no way to touch is kept.
+            void restorePreservedControlPoints()
+            {
+                if (beatmap.ControlPointInfo is not PreservedLegacyControlPoints preserved)
+                    return;
+
+                foreach (var point in preserved.Preserved)
+                {
+                    switch (point)
+                    {
+                        case SampleControlPoint sample:
+                            if (legacyControlPoints.SamplePoints.All(p => !almostEqual(p.Time, sample.Time)))
+                                legacyControlPoints.Add(sample.Time, sample.DeepClone());
+
+                            break;
+
+                        case DifficultyControlPoint difficulty:
+                            if (legacyControlPoints.DifficultyPoints.All(p => !almostEqual(p.Time, difficulty.Time)))
+                                legacyControlPoints.Add(difficulty.Time, difficulty.DeepClone());
+
+                            break;
+                    }
+                }
+
+                // times are compared loosely because the editor rounds them as objects are moved around.
+                static bool almostEqual(double a, double b) => Math.Abs(a - b) < 1;
             }
 
             IEnumerable<SampleControlPoint> collectSampleControlPoints(IEnumerable<HitObject> hitObjects)

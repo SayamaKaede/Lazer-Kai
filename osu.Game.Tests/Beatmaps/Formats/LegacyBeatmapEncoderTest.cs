@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -24,6 +24,7 @@ using osu.Game.Rulesets.Mania;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu;
+using osu.Game.Screens.Edit;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Taiko;
 using osu.Game.Skinning;
@@ -361,6 +362,79 @@ Mode: 0
 
             Assert.That(times, Does.Contain(13583), "the line on the spinner's tail should stay where it was put");
             Assert.That(times, Has.None.InRange(11250, 13582), "nothing should appear part way through the spinner");
+        }
+
+        /// <summary>
+        /// Green lines part way through a slider, which is how stable beatmaps change volume mid-slide. They have no
+        /// per-object home in this format, so they survive only as control points.
+        /// </summary>
+        [Test]
+        public void TestGreenLinesInsideSliderSurviveEditing()
+        {
+            const string beatmap = @"osu file format v14
+
+[General]
+Mode: 0
+
+[TimingPoints]
+0,333.333333333333,4,2,1,90,1,0
+16249,-100,4,2,2,5,0,0
+16416,-100,4,2,1,90,0,0
+
+[HitObjects]
+139,113,15916,2,2,P|246:123|531:225,1,400.0000000000001,0|0,2:0|2:0,2:1:0:0:
+292,107,16916,1,0,2:0:0:0:
+";
+
+            var decoded = convert(decodeFromString(beatmap));
+
+            // stand in for the user editing something: the editor applies defaults to objects as they are changed.
+            foreach (var hitObject in decoded.HitObjects)
+                hitObject.ApplyDefaults(decoded.ControlPointInfo, decoded.Difficulty);
+
+            double[] times = ((LegacyControlPointInfo)decodeFromString(encodeToString(decoded)).ControlPointInfo)
+                             .SamplePoints.Select(p => p.Time).ToArray();
+
+            Assert.That(times, Does.Contain(16249), "the first line inside the slider should survive editing");
+            Assert.That(times, Does.Contain(16416), "the second line inside the slider should survive editing");
+        }
+
+        /// <summary>
+        /// Opening a beatmap in the editor must not cost it the green lines the editor has no way to represent.
+        /// </summary>
+        /// <remarks>
+        /// The editor drops legacy control points on load, since leaving them in place would let them overwrite
+        /// per-object edits. The lines that no object can hold — part way through a slider, inside a spinner — have
+        /// nowhere else to live, and were being lost the moment a beatmap was touched.
+        /// </remarks>
+        [Test]
+        public void TestGreenLinesSurviveOpeningInEditor()
+        {
+            const string beatmap = @"osu file format v14
+
+[General]
+Mode: 0
+
+[TimingPoints]
+0,333.333333333333,4,2,1,90,1,0
+16249,-100,4,2,2,5,0,0
+16416,-100,4,2,1,90,0,0
+
+[HitObjects]
+139,113,15916,2,2,P|246:123|531:225,1,400.0000000000001,0|0,2:0|2:0,2:1:0:0:
+292,107,16916,1,0,2:0:0:0:
+";
+
+            var playable = convert(decodeFromString(beatmap));
+
+            // this is what the editor does to a beatmap as it opens it.
+            var editorBeatmap = new EditorBeatmap(playable);
+
+            double[] times = ((LegacyControlPointInfo)decodeFromString(encodeToString(editorBeatmap.PlayableBeatmap)).ControlPointInfo)
+                             .SamplePoints.Select(p => p.Time).ToArray();
+
+            Assert.That(times, Does.Contain(16249), "the line part way through the slider should survive being opened");
+            Assert.That(times, Does.Contain(16416), "the line on the slider's tail should survive being opened");
         }
 
         private static IBeatmap decodeFromString(string contents)
