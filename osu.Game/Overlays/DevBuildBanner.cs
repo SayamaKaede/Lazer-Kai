@@ -51,7 +51,7 @@ namespace osu.Game.Overlays
                             Origin = Anchor.BottomLeft,
                             Font = OsuFont.Numeric.With(weight: FontWeight.Bold, size: 12),
                             Colour = colours.YellowDark.Opacity(0.6f),
-                            Text = game.Version,
+                            Text = $@"Lazer-Kai-{game.Version}",
                         },
                     }
                 },
