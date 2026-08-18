@@ -3,9 +3,11 @@
 
 #nullable disable
 
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
 using osu.Framework.Allocation;
+using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -115,10 +117,22 @@ namespace osu.Game.Screens.Edit.Compose
             if (composer == null)
                 return;
 
-            EditorBeatmap.SelectedHitObjects.BindCollectionChanged((_, _) => updateClipboardActionAvailability());
+            EditorBeatmap.SelectedHitObjects.CollectionChanged += selectionChanged;
             clipboard.BindValueChanged(_ => updateClipboardActionAvailability());
             composer.OnLoadComplete += _ => updateClipboardActionAvailability();
             updateClipboardActionAvailability();
+        }
+
+        private void selectionChanged(object sender, NotifyCollectionChangedEventArgs e) => updateClipboardActionAvailability();
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            // the editor rebuilds this screen while keeping its beatmap; a subscription left behind would hold the
+            // whole screen for the rest of the session.
+            if (EditorBeatmap.IsNotNull())
+                EditorBeatmap.SelectedHitObjects.CollectionChanged -= selectionChanged;
         }
 
         #region Clipboard operations

@@ -7,6 +7,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using Humanizer;
 using osu.Framework.Allocation;
+using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Bindings;
@@ -44,9 +45,20 @@ namespace osu.Game.Screens.Edit.Compose.Components
             createStateBindables();
 
             // bring in updates from selection changes
-            EditorBeatmap.HitObjectUpdated += _ => Scheduler.AddOnce(UpdateTernaryStates);
+            EditorBeatmap.HitObjectUpdated += hitObjectUpdated;
 
             SelectedItems.CollectionChanged += onSelectedItemsChanged;
+        }
+
+        private void hitObjectUpdated(HitObject _) => Scheduler.AddOnce(UpdateTernaryStates);
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            // the editor rebuilds the composer while keeping its beatmap, so this has to let go on the way out.
+            if (EditorBeatmap.IsNotNull())
+                EditorBeatmap.HitObjectUpdated -= hitObjectUpdated;
         }
 
         protected override bool ShouldQuickDelete(MouseButtonEvent e)

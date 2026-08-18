@@ -2,6 +2,9 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Specialized;
+using osu.Framework.Bindables;
+using osu.Framework.Extensions.ObjectExtensions;
 using System.Linq;
 using osu.Framework.Threading;
 using osu.Game.Rulesets.Objects;
@@ -15,11 +18,32 @@ namespace osu.Game.Screens.Edit.Compose.Components
         {
             base.LoadComplete();
 
-            EditorBeatmap.SelectedHitObjects.CollectionChanged += (_, _) => updateInspectorText();
-            EditorBeatmap.PlacementObject.BindValueChanged(_ => updateInspectorText());
+            EditorBeatmap.SelectedHitObjects.CollectionChanged += selectionChanged;
+            placementObject.BindTo(EditorBeatmap.PlacementObject);
+            placementObject.BindValueChanged(_ => updateInspectorText());
             EditorBeatmap.TransactionBegan += updateInspectorText;
             EditorBeatmap.TransactionEnded += updateInspectorText;
             updateInspectorText();
+        }
+
+        /// <summary>
+        /// A bound copy, so leaving takes the subscription with it. The editor rebuilds the composer while keeping its
+        /// beatmap, and anything still listening afterwards keeps this inspector alive for the rest of the session.
+        /// </summary>
+        private readonly Bindable<HitObject?> placementObject = new Bindable<HitObject?>();
+
+        private void selectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => updateInspectorText();
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            if (EditorBeatmap.IsNotNull())
+            {
+                EditorBeatmap.SelectedHitObjects.CollectionChanged -= selectionChanged;
+                EditorBeatmap.TransactionBegan -= updateInspectorText;
+                EditorBeatmap.TransactionEnded -= updateInspectorText;
+            }
         }
 
         private ScheduledDelegate? rollingTextUpdate;
