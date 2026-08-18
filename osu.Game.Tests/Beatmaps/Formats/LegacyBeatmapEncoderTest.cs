@@ -332,6 +332,51 @@ namespace osu.Game.Tests.Beatmaps.Formats
             }
         }
 
+        /// <summary>
+        /// A green line sitting on a spinner's tail, as stable beatmaps commonly use to quieten the spin.
+        /// </summary>
+        [Test]
+        public void TestGreenLineOnSpinnerTailSurvivesRoundTrip()
+        {
+            const string beatmap = @"osu file format v14
+
+[General]
+Mode: 0
+
+[TimingPoints]
+0,500,4,2,1,90,1,0
+13583,-100,4,2,1,5,0,0
+13916,-100,4,2,1,90,0,0
+
+[HitObjects]
+256,192,11249,12,0,13583,0:0:0:0:
+181,184,13916,1,0,0:0:0:0:
+";
+
+            var decoded = decodeFromString(beatmap);
+            string encoded = encodeToString(convert(decoded));
+
+            double[] times = ((LegacyControlPointInfo)decodeFromString(encoded).ControlPointInfo)
+                             .SamplePoints.Select(p => p.Time).ToArray();
+
+            Assert.That(times, Does.Contain(13583), "the line on the spinner's tail should stay where it was put");
+            Assert.That(times, Has.None.InRange(11250, 13582), "nothing should appear part way through the spinner");
+        }
+
+        private static IBeatmap decodeFromString(string contents)
+        {
+            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(contents)))
+            using (var reader = new LineBufferedReader(stream))
+                return new LegacyBeatmapDecoder { ApplyOffsets = false }.Decode(reader);
+        }
+
+        private static string encodeToString(IBeatmap beatmap)
+        {
+            var writer = new StringWriter();
+            new LegacyBeatmapEncoder(beatmap, null, null).Encode(writer);
+            return writer.ToString();
+        }
+
         public class TestLegacySkin : LegacySkin
         {
             public TestLegacySkin(IResourceStore<byte[]> fallbackStore, string fileName)
@@ -396,6 +441,8 @@ namespace osu.Game.Tests.Beatmaps.Formats
             protected internal override ISkin GetSkin() => throw new NotImplementedException();
 
             public override Stream GetStream(string storagePath) => throw new NotImplementedException();
-        }
+    
+
+    }
     }
 }

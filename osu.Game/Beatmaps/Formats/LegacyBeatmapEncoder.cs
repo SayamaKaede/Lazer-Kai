@@ -370,9 +370,19 @@ namespace osu.Game.Beatmaps.Formats
                         yield return createSampleControlPointFor(hitObject.GetEndTime(), hitObject.Samples);
                     }
 
-                    foreach (var nested in collectSampleControlPoints(hitObject.NestedHitObjects))
+                    foreach (var nested in collectSampleControlPoints(hitObject.NestedHitObjects.Where(isAuthored)))
                         yield return nested;
                 }
+
+                // Rulesets give some of their own nested objects samples — a spinner's bonus
+                // ticks carry one. Those sit at times worked out from a duration rather than at anything
+                // a mapper placed, so a control point for them lands part way through the object. Worse, the
+                // line the mapper did put on the tail then reads as redundant and is dropped. Only the sounds
+                // a mapper can actually place are followed.
+                bool isAuthored(HitObject nested) => nested.Samples.Any(sample => sample.Name is HitSampleInfo.HIT_NORMAL
+                                                                              or HitSampleInfo.HIT_WHISTLE
+                                                                              or HitSampleInfo.HIT_FINISH
+                                                                              or HitSampleInfo.HIT_CLAP);
 
                 SampleControlPoint createSampleControlPointFor(double time, IList<HitSampleInfo> samples)
                 {
