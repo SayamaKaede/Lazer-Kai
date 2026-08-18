@@ -1175,8 +1175,8 @@ namespace osu.Game
                 Margin = new MarginPadding(5),
             }, topMostOverlayContent.Add);
 
-            if (!IsDeployedBuild)
-                loadComponentSingleFile(devBuildBanner = new DevBuildBanner(), ScreenContainer.Add);
+            // shown whatever the version, since this build carries one and the banner is where it is displayed.
+            loadComponentSingleFile(devBuildBanner = new DevBuildBanner(), ScreenContainer.Add);
 
             loadComponentSingleFile(osuLogo, _ =>
             {
