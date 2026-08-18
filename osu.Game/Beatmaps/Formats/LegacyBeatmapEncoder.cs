@@ -105,7 +105,7 @@ namespace osu.Game.Beatmaps.Formats
             writer.WriteLine(FormattableString.Invariant($"PreviewTime: {beatmap.Metadata.PreviewTime}"));
             writer.WriteLine(FormattableString.Invariant($"Countdown: {(int)beatmap.Countdown}"));
             writer.WriteLine(FormattableString.Invariant(
-                $"SampleSet: {toLegacySampleBank(((beatmap.ControlPointInfo as LegacyControlPointInfo)?.SamplePoints.FirstOrDefault() ?? SampleControlPoint.DEFAULT).SampleBank)}"));
+                $"SampleSet: {toLegacySampleBank((firstSamplePoint() ?? SampleControlPoint.DEFAULT).SampleBank)}"));
             writer.WriteLine(FormattableString.Invariant($"StackLeniency: {beatmap.StackLeniency}"));
             writer.WriteLine(FormattableString.Invariant($"Mode: {onlineRulesetID}"));
             writer.WriteLine(FormattableString.Invariant($"LetterboxInBreaks: {(beatmap.LetterboxInBreaks ? '1' : '0')}"));
@@ -131,6 +131,28 @@ namespace osu.Game.Beatmaps.Formats
 
             if (beatmap.SamplesMatchPlaybackRate)
                 writer.WriteLine(@"SamplesMatchPlaybackRate: 1");
+        }
+
+        /// <summary>
+        /// The sample bank the beatmap starts on, which decides which set of hit sounds a reader looks for.
+        /// </summary>
+        /// <remarks>
+        /// Also read from the points the editor set aside. Without that, a beatmap that had been opened for editing
+        /// was written out claiming the default bank, sending readers after sounds it never used.
+        /// </remarks>
+        private SampleControlPoint? firstSamplePoint()
+        {
+            switch (beatmap.ControlPointInfo)
+            {
+                case LegacyControlPointInfo legacy:
+                    return legacy.SamplePoints.FirstOrDefault();
+
+                case PreservedLegacyControlPoints preserved:
+                    return preserved.Preserved.OfType<SampleControlPoint>().FirstOrDefault();
+
+                default:
+                    return null;
+            }
         }
 
         private void handleEditor(TextWriter writer)

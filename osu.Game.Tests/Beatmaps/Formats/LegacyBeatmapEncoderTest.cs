@@ -437,6 +437,30 @@ Mode: 0
             Assert.That(times, Does.Contain(16416), "the line on the slider's tail should survive being opened");
         }
 
+        /// <summary>
+        /// The beatmap's own sample bank has to come back out, or a reader goes looking for sounds it never used.
+        /// </summary>
+        [Test]
+        public void TestSampleSetSurvivesOpeningInEditor()
+        {
+            const string beatmap = @"osu file format v14
+
+[General]
+Mode: 0
+SampleSet: Soft
+
+[TimingPoints]
+0,333.333333333333,4,2,1,90,1,0
+
+[HitObjects]
+292,107,16916,1,0,2:0:0:0:
+";
+
+            var editorBeatmap = new EditorBeatmap(convert(decodeFromString(beatmap)));
+
+            Assert.That(encodeToString(editorBeatmap.PlayableBeatmap), Does.Contain("SampleSet: Soft"));
+        }
+
         private static IBeatmap decodeFromString(string contents)
         {
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(contents)))
