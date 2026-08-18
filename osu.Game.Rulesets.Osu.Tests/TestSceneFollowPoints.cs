@@ -44,6 +44,21 @@ namespace osu.Game.Rulesets.Osu.Tests
             assertGroups();
         }
 
+        /// <summary>
+        /// The renderer stays subscribed to the start time of every object it was given, so it has to let go of them when
+        /// it goes away. The editor disposes and rebuilds the composer while the beatmap's objects live on, and a leftover
+        /// subscription from a disposed renderer used to bring the whole editor down the next time an object was moved.
+        /// </summary>
+        [Test]
+        public void TestObjectMovedAfterRendererDisposed()
+        {
+            addMultipleObjectsStep();
+
+            AddStep("dispose renderer", () => Remove(followPointRenderer, true));
+
+            AddStep("move an object", () => getObject(1).HitObject.StartTime += 100);
+        }
+
         [Test]
         public void TestRemoveObject()
         {

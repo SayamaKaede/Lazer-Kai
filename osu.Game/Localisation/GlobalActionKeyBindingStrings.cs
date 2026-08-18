@@ -236,6 +236,16 @@ namespace osu.Game.Localisation
         public static LocalisableString EditorBackupNow => new TranslatableString(getKey(@"editor_backup_now"), @"Back up now");
 
         /// <summary>
+        /// "Toggle hitsounds"
+        /// </summary>
+        public static LocalisableString EditorToggleHitsounds => new TranslatableString(getKey(@"editor_toggle_hitsounds"), @"Toggle hitsounds");
+
+        /// <summary>
+        /// "Toggle music"
+        /// </summary>
+        public static LocalisableString EditorToggleMusic => new TranslatableString(getKey(@"editor_toggle_music"), @"Toggle music");
+
+        /// <summary>
         /// "Decrease slider velocity"
         /// </summary>
         public static LocalisableString EditorDecreaseSliderVelocity =>

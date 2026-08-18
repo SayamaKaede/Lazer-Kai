@@ -2,6 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +20,10 @@ using osu.Framework.Graphics.Shapes;
 using osu.Game.Overlays;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Difficulty;
+using osu.Game.Rulesets.Mods;
+using osu.Game.Skinning;
+using osu.Framework.Audio.Track;
+using osu.Framework.Graphics.Textures;
 using osuTK.Graphics;
 
 namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
@@ -143,7 +149,9 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
 
             var token = calculationCancellation.Token;
             var rulesetInstance = ruleset.Value.CreateInstance();
-            var beatmap = workingBeatmap.Value;
+            // taken from the editor rather than the working beatmap: the latter re-reads what is on disk, so the curve
+            // would be missing everything placed or deleted since the beatmap was opened.
+            var beatmap = new EditorStateWorkingBeatmap(editorBeatmap.PlayableBeatmap);
 
             Task.Run(() =>
             {
@@ -236,6 +244,45 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
         {
             graph.Colour = colour.Value.ToColour() ?? defaultColour;
             graph.FadeTo(hasContent ? opacity.Value : 0, 400, Easing.OutQuint);
+        }
+
+        /// <summary>
+        /// Hands the difficulty calculator the beatmap as it currently stands in the editor.
+        /// </summary>
+        /// <remarks>
+        /// The objects are copied into a list of their own first, because the calculation runs off the update thread
+        /// and the editor is free to keep changing its own list while it does.
+        /// </remarks>
+        // this exists for the same reason as the identical wrapper in `PerformancePointsCounter`: a difficulty
+        // calculator can only be handed an `IWorkingBeatmap`, never an `IBeatmap`.
+        private class EditorStateWorkingBeatmap : WorkingBeatmap
+        {
+            private readonly IBeatmap snapshot;
+
+            public EditorStateWorkingBeatmap(IBeatmap editorState)
+                : base(editorState.BeatmapInfo, null)
+            {
+                var copy = new Beatmap
+                {
+                    BeatmapInfo = editorState.BeatmapInfo,
+                    ControlPointInfo = editorState.ControlPointInfo.DeepClone(),
+                };
+
+                copy.HitObjects.AddRange(editorState.HitObjects);
+                snapshot = copy;
+            }
+
+            public override IBeatmap GetPlayableBeatmap(IRulesetInfo ruleset, IReadOnlyList<Mod> mods, CancellationToken cancellationToken) => snapshot;
+
+            protected override IBeatmap GetBeatmap() => snapshot;
+
+            public override Texture GetBackground() => throw new NotImplementedException();
+
+            protected override Track GetBeatmapTrack() => throw new NotImplementedException();
+
+            protected internal override ISkin GetSkin() => throw new NotImplementedException();
+
+            public override Stream GetStream(string storagePath) => throw new NotImplementedException();
         }
 
         protected override void Dispose(bool isDisposing)

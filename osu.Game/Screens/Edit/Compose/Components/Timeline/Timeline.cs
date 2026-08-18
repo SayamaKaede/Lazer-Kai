@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
 using osu.Game.Beatmaps;
+using osu.Game.Input;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Overlays;
@@ -22,7 +23,7 @@ using osuTK.Input;
 namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 {
     [Cached]
-    public partial class Timeline : ZoomableScrollContainer
+    public partial class Timeline : ZoomableScrollContainer, IFineDragArea
     {
         private const float timeline_height = 80;
 

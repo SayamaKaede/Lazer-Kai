@@ -101,12 +101,9 @@ namespace osu.Game.Online.API
             log.Add($@"API endpoint root: {Endpoints.APIUrl}");
             log.Add($@"API request version: {APIVersion}");
 
-            // This build is for local beatmap editing only, so signing in is deliberately unavailable.
-            // Saved credentials are discarded rather than restored, which also covers a `game.ini` copied in from a
-            // regular osu! installation carrying a still-valid token.
-            ProvidedUsername = string.Empty;
-            config.SetValue(OsuSetting.Username, string.Empty);
-            config.SetValue(OsuSetting.Token, string.Empty);
+            ProvidedUsername = config.Get<string>(OsuSetting.Username);
+
+            authentication.TokenString = config.Get<string>(OsuSetting.Token);
 
             authentication.Token.ValueChanged += onTokenChanged;
 
@@ -469,6 +466,13 @@ namespace osu.Game.Online.API
             try
             {
                 request.AttachAPI(this);
+
+                if (UnsendableRequests.IsUnsendable(request))
+                {
+                    request.Fail(new NotSupportedException(UnsendableRequests.REASON));
+                    return;
+                }
+
                 request.Perform();
             }
             catch (Exception e)
@@ -496,8 +500,14 @@ namespace osu.Game.Online.API
             SecondFactorCode = code;
         }
 
-        public IHubClientConnector GetHubConnector(string clientName, string endpoint) =>
-            new HubClientConnector(clientName, endpoint, this, versionHash);
+        public IHubClientConnector GetHubConnector(string clientName, string endpoint)
+        {
+            // osu!'s realtime server refuses this build outright — every call comes back with "Realtime online
+            // functionality is not supported on this version of the game." The metadata client retries on a timer, so
+            // connecting at all means a steady trickle of failures the user can do nothing about. Spectating goes with
+            // it, since it runs over the same server.
+            return null;
+        }
 
         public IChatClient GetChatClient() => new WebSocketChatClient(this);
 
@@ -663,6 +673,12 @@ namespace osu.Game.Online.API
             lock (queue)
             {
                 request.AttachAPI(this);
+
+                if (UnsendableRequests.IsUnsendable(request))
+                {
+                    request.Fail(new NotSupportedException(UnsendableRequests.REASON));
+                    return;
+                }
 
                 if (state.Value == APIState.Offline)
                 {

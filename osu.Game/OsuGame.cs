@@ -180,6 +180,12 @@ namespace osu.Game
 
         private SentryLogger sentryLogger;
 
+        /// <summary>
+        /// Whether unhandled errors are sent to the osu! team. Lazer-Kai is a personal build with nowhere to report to,
+        /// so the reporter is never started — which is also what keeps the error notification from claiming otherwise.
+        /// </summary>
+        private readonly bool errorReportingEnabled = false;
+
         public virtual StableStorage GetStorageForStableInstall() => null;
 
         private float toolbarOffset => (Toolbar?.Position.Y ?? 0) + (Toolbar?.DrawHeight ?? 0);
@@ -365,7 +371,9 @@ namespace osu.Game
         public override void SetupLogging(Storage gameStorage, Storage cacheStorage)
         {
             base.SetupLogging(gameStorage, cacheStorage);
-            sentryLogger = new SentryLogger(this, cacheStorage);
+
+            if (errorReportingEnabled)
+                sentryLogger = new SentryLogger(this, cacheStorage);
         }
 
         public override void SetHost(GameHost host)
@@ -417,7 +425,7 @@ namespace osu.Game
         [BackgroundDependencyLoader]
         private void load()
         {
-            sentryLogger.AttachUser(API.LocalUser);
+            sentryLogger?.AttachUser(API.LocalUser);
 
             if (SeasonalUIConfig.ENABLED)
                 dependencies.CacheAs(osuLogo = new OsuLogoChristmas { Alpha = 0 });
@@ -1040,7 +1048,7 @@ namespace osu.Game
 
             base.Dispose(isDisposing);
 
-            sentryLogger.Dispose();
+            sentryLogger?.Dispose();
 
             if (Host?.Window != null)
                 Host.Window.DragDrop -= onWindowDragDrop;
@@ -1456,7 +1464,7 @@ namespace osu.Game
             {
                 LocalisableString message;
 
-                if (entry.Exception != null && IsDeployedBuild)
+                if (entry.Exception != null && sentryLogger != null)
                     message = LocalisableString.Interpolate($"{entry.Message.Truncate(256)}\n\n{NotificationsStrings.ErrorAutomaticallyReported}");
                 else
                     message = entry.Message.Truncate(256);

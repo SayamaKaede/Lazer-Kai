@@ -68,9 +68,8 @@ namespace osu.Game.Tests.Visual.UserInterface
         }
 
         [TestCase(Key.P, Key.P)]
-        [TestCase(Key.M, Key.M, Key.L)]
-        [TestCase(Key.M, Key.M, Key.M)]
-        [TestCase(Key.L, Key.L)]
+        // no cases for the multiplayer, playlists or lounge shortcuts: this build leaves those buttons out, since it
+        // does not submit scores (see `UnsendableRequests`).
         [TestCase(Key.B, Key.E, Key.B)]
         [TestCase(Key.S, Key.E, Key.S)]
         [TestCase(Key.D)]

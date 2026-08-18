@@ -6,7 +6,6 @@ using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
 using osu.Game.Localisation;
-using osu.Game.Overlays.Settings.Sections.LazerKai.Controls;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
 {

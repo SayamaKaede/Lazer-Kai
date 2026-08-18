@@ -14,6 +14,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Framework.Audio.Track;
 using osu.Framework.Bindables;
+using osu.Framework.Extensions.LocalisationExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
@@ -150,6 +151,31 @@ namespace osu.Game.Screens.Edit
         private bool workingBeatmapUpdated;
 
         private readonly Bindable<bool> samplePlaybackDisabled = new Bindable<bool>();
+
+        /// <summary>
+        /// Whether hitsounds and the music are heard. Deliberately not persisted: silence is something a mapper turns on
+        /// to get through a passage, not a state they should find waiting for them next time.
+        /// </summary>
+        private readonly BindableBool hitsoundsAudible = new BindableBool(true);
+
+        private readonly BindableBool musicAudible = new BindableBool(true);
+
+        /// <summary>
+        /// Laid over the track's volume rather than replacing it, so the volume the user set is never touched and comes
+        /// back exactly as it was — including any change made while the music was off.
+        /// </summary>
+        private readonly BindableDouble trackMute = new BindableDouble();
+
+        /// <summary>
+        /// The track <see cref="trackMute"/> is currently applied to, if any.
+        /// </summary>
+        private Track mutedTrack;
+
+        /// <summary>
+        /// Whether the editor currently owns the track. False while a gameplay test is in front, which is why muting
+        /// the music here does not follow the mapper into the test.
+        /// </summary>
+        private bool trackHeld;
 
         private bool canSave;
         private readonly List<MenuItem> saveRelatedMenuItems = new List<MenuItem>();
@@ -580,11 +606,21 @@ namespace osu.Game.Screens.Edit
                                             },
                                         }
                                     },
-                                    // a leaf item, so it acts as a button sitting immediately right of the Test menu.
+                                    // leaf items, so they act as buttons sitting immediately right of the Test menu.
                                     new ToggleMenuItem(EditorStrings.ShowTimeline)
                                     {
                                         State = { BindTarget = editorShowTimeline },
                                         Hotkey = new Hotkey(GlobalAction.EditorToggleTimeline),
+                                    },
+                                    new ToggleMenuItem(EditorStrings.Hitsounds)
+                                    {
+                                        State = { BindTarget = hitsoundsAudible },
+                                        Hotkey = new Hotkey(GlobalAction.EditorToggleHitsounds),
+                                    },
+                                    new ToggleMenuItem(EditorStrings.Music)
+                                    {
+                                        State = { BindTarget = musicAudible },
+                                        Hotkey = new Hotkey(GlobalAction.EditorToggleMusic),
                                     },
                                 }
                             },
@@ -621,6 +657,18 @@ namespace osu.Game.Screens.Edit
             Mode.Value = isNewBeatmap ? EditorScreenMode.SongSetup : EditorScreenMode.Compose;
             Mode.BindValueChanged(onModeChanged, true);
 
+            hitsoundsAudible.BindValueChanged(audible =>
+            {
+                updateSampleDisabledState();
+                announceAudioState(EditorStrings.Hitsounds, audible.NewValue);
+            });
+
+            musicAudible.BindValueChanged(audible =>
+            {
+                updateTrackMute();
+                announceAudioState(EditorStrings.Music, audible.NewValue);
+            });
+
             // the composer reads the mod preview settings when it is constructed, so it has to be rebuilt for a change to take effect.
             editorApplyTestPlayModsToComposer.BindValueChanged(_ => reloadComposeScreen());
             testPlayModsController.Mods.BindValueChanged(_ =>
@@ -644,7 +692,13 @@ namespace osu.Game.Screens.Edit
             musicController.TrackChanged -= onTrackChanged;
         }
 
-        private void onTrackChanged(WorkingBeatmap working, TrackChangeDirection direction) => clock.ChangeSource(working.Track);
+        private void onTrackChanged(WorkingBeatmap working, TrackChangeDirection direction)
+        {
+            clock.ChangeSource(working.Track);
+
+            // the mute belongs to whichever track is playing now, not the one it was put on.
+            updateTrackMute();
+        }
 
         /// <summary>
         /// Creates an <see cref="EditorState"/> instance representing the current state of the editor.
@@ -750,7 +804,7 @@ namespace osu.Game.Screens.Edit
             // no longer new after first user-triggered save.
             isNewBeatmap = false;
             updateLastSavedHash();
-            onScreenDisplay?.Display(new BeatmapEditorToast(ToastStrings.BeatmapSaved, editorBeatmap.BeatmapInfo.GetDisplayTitle()));
+            onScreenDisplay?.Display(new EditorToast(ToastStrings.BeatmapSaved, editorBeatmap.BeatmapInfo.GetDisplayTitle()));
             Saved?.Invoke();
 
             // a save is a deliberate stopping point, so the graph is brought up to date without waiting.
@@ -994,6 +1048,14 @@ namespace osu.Game.Screens.Edit
                     autoBackup.Backup();
                     return true;
 
+                case GlobalAction.EditorToggleHitsounds:
+                    hitsoundsAudible.Toggle();
+                    return true;
+
+                case GlobalAction.EditorToggleMusic:
+                    musicAudible.Toggle();
+                    return true;
+
                 case GlobalAction.EditorDiscardUnsavedChanges:
                     DiscardUnsavedChanges();
                     return true;
@@ -1231,6 +1293,9 @@ namespace osu.Game.Screens.Edit
 
             clock.BindAdjustments();
             musicController.TrackChanged += onTrackChanged;
+
+            trackHeld = true;
+            updateTrackMute();
         }
 
         private void resetTrack()
@@ -1238,6 +1303,31 @@ namespace osu.Game.Screens.Edit
             clock.Stop();
             clock.UnbindAdjustments();
             musicController.TrackChanged -= onTrackChanged;
+
+            trackHeld = false;
+            updateTrackMute();
+        }
+
+        /// <summary>
+        /// Puts the mute on the track the editor is playing, or takes it off.
+        /// </summary>
+        /// <summary>
+        /// Calls out a switch the same way every other editor shortcut does, since the menu bar may not be where the
+        /// user is looking when a key binding flips it.
+        /// </summary>
+        private void announceAudioState(LocalisableString what, bool audible)
+            => onScreenDisplay?.Display(new EditorToast(what, audible ? CommonStrings.Enabled.ToLower() : CommonStrings.Disabled.ToLower()));
+
+        private void updateTrackMute()
+        {
+            var target = trackHeld && !musicAudible.Value ? Beatmap.Value.Track : null;
+
+            if (ReferenceEquals(mutedTrack, target))
+                return;
+
+            mutedTrack?.RemoveAdjustment(AdjustableProperty.Volume, trackMute);
+            mutedTrack = target;
+            mutedTrack?.AddAdjustment(AdjustableProperty.Volume, trackMute);
         }
 
         /// <summary>
@@ -1343,7 +1433,8 @@ namespace osu.Game.Screens.Edit
 
         private void updateSampleDisabledState()
         {
-            bool shouldDisableSamples = clock.SeekingOrStopped.Value
+            bool shouldDisableSamples = !hitsoundsAudible.Value
+                                        || clock.SeekingOrStopped.Value
                                         || currentScreen is not ComposeScreen
                                         || editorBeatmap.UpdateInProgress.Value
                                         || dialogOverlay?.CurrentDialog != null;
@@ -1519,7 +1610,7 @@ namespace osu.Game.Screens.Edit
                                                     || (!isNewBeatmap && Beatmap.Value.BeatmapSetInfo.Beatmaps.All(b => b.Ruleset.IsLegacyRuleset()));
             bool submissionAvailable = api.Endpoints.BeatmapSubmissionServiceUrl != null;
 
-            if (isSetMadeOfLegacyRulesetBeatmaps && submissionAvailable)
+            if (isSetMadeOfLegacyRulesetBeatmaps && submissionAvailable && beatmapUploadEnabled)
             {
                 var upload = new EditorMenuItem(EditorStrings.SubmitBeatmap, MenuItemType.Standard, submitBeatmap)
                 {
@@ -1584,8 +1675,22 @@ namespace osu.Game.Screens.Edit
             }
         }
 
+        /// <summary>
+        /// Whether this build may upload beatmaps. It may not: its encoder deliberately writes control points the
+        /// official one drops, so what it would upload is not what osu! would have written. The requests are refused
+        /// outright in <see cref="UnsendableRequests"/>; this keeps the menu entry away and gives the key binding
+        /// something to say. Flip it to restore upstream behaviour.
+        /// </summary>
+        private readonly bool beatmapUploadEnabled = false;
+
         private void submitBeatmap()
         {
+            if (!beatmapUploadEnabled)
+            {
+                notifications?.Post(new SimpleNotification { Text = EditorStrings.BeatmapUploadUnavailable });
+                return;
+            }
+
             if (api.State.Value != APIState.Online)
             {
                 loginOverlay?.Show();
@@ -1848,15 +1953,6 @@ namespace osu.Game.Screens.Edit
         ControlPointInfo IBeatSyncProvider.ControlPoints => editorBeatmap.ControlPointInfo;
         IClock IBeatSyncProvider.Clock => clock;
         ChannelAmplitudes IHasAmplitudes.CurrentAmplitudes => Beatmap.Value.TrackLoaded ? Beatmap.Value.Track.CurrentAmplitudes : ChannelAmplitudes.Empty;
-
-        private partial class BeatmapEditorToast : Toast
-        {
-            public BeatmapEditorToast(LocalisableString value, string beatmapDisplayName)
-                : base(InputSettingsStrings.EditorSection, value)
-            {
-                ExtraText = beatmapDisplayName;
-            }
-        }
 
         private partial class ScreenContainer : Container<EditorScreen>
         {

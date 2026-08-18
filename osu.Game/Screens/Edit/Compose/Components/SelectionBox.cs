@@ -129,6 +129,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
         private Container border = null!;
 
         private Bindable<bool> hideSelectionButtons = null!;
+        private Bindable<bool> hideRotationHandles = null!;
 
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
@@ -137,6 +138,9 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
             hideSelectionButtons = config.GetBindable<bool>(OsuSetting.EditorHideSelectionButtons);
             hideSelectionButtons.BindValueChanged(_ => recreateButtons());
+
+            hideRotationHandles = config.GetBindable<bool>(OsuSetting.EditorHideRotationHandles);
+            hideRotationHandles.BindValueChanged(_ => recreateRotationHandles());
 
             InternalChildren = new Drawable[]
             {
@@ -233,28 +237,44 @@ namespace osu.Game.Screens.Edit.Compose.Components
             switch (e.Key)
             {
                 case Key.G:
-                    if (!CanReverse || reverseButton == null)
+                    if (!CanReverse)
                         return false;
 
-                    reverseButton.TriggerAction();
+                    run(reverseButton, () => OnReverse?.Invoke());
                     return true;
 
                 case Key.Comma:
-                    if (!canRotate.Value || rotateCounterClockwiseButton == null)
+                    if (!canRotate.Value)
                         return false;
 
-                    rotateCounterClockwiseButton.TriggerAction();
+                    run(rotateCounterClockwiseButton, () => rotationHandler?.Rotate(-90));
                     return true;
 
                 case Key.Period:
-                    if (!canRotate.Value || rotateClockwiseButton == null)
+                    if (!canRotate.Value)
                         return false;
 
-                    rotateClockwiseButton.TriggerAction();
+                    run(rotateClockwiseButton, () => rotationHandler?.Rotate(90));
                     return true;
             }
 
             return base.OnKeyDown(e);
+        }
+
+        /// <summary>
+        /// Carries out one of the selection's actions, through its button when there is one so the press is seen, and
+        /// directly when the buttons are hidden.
+        /// </summary>
+        /// <remarks>
+        /// The action cannot be reached through the button alone: with the buttons turned off there is no button to
+        /// reach it through, and the shortcut would do nothing.
+        /// </remarks>
+        private static void run(SelectionBoxButton? button, Action action)
+        {
+            if (button != null)
+                button.TriggerAction();
+            else
+                action();
         }
 
         protected override void Update()
@@ -311,7 +331,8 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
             dragHandles.ClearRotationHandles();
 
-            if (canRotate.Value)
+            // turning by ctrl+shift+wheel and the precise rotation popover are unaffected; only the corner grips go.
+            if (canRotate.Value && !hideRotationHandles.Value)
             {
                 addRotateHandle(Anchor.TopLeft);
                 addRotateHandle(Anchor.TopRight);
@@ -339,7 +360,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
             clearButtons();
 
-            // hiding the buttons does not disable the actions; the keyboard shortcuts still work.
+            // the shortcuts for these actions keep working while hidden; see `run` above.
             if (hideSelectionButtons.Value)
                 return;
 

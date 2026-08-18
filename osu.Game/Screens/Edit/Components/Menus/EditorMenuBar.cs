@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
@@ -86,6 +87,15 @@ namespace osu.Game.Screens.Edit.Components.Menus
             private HoverClickSounds hoverClickSounds = null!;
             private TextContainer text = null!;
 
+            /// <summary>
+            /// The state of this item, when it is one that toggles.
+            /// </summary>
+            /// <remarks>
+            /// A toggle sitting directly in the bar has no tick beside it the way one in a dropdown does, so it is dimmed
+            /// while off. Without that there is nothing at all to read the state from.
+            /// </remarks>
+            private readonly Bindable<bool> toggleState = new Bindable<bool>(true);
+
             public DrawableEditorBarMenuItem(MenuItem item)
                 : base(item)
             {
@@ -108,6 +118,11 @@ namespace osu.Game.Screens.Edit.Components.Menus
 
                 Foreground.Anchor = Anchor.CentreLeft;
                 Foreground.Origin = Anchor.CentreLeft;
+                if (Item is ToggleMenuItem toggle)
+                    toggleState.BindTo(toggle.State);
+
+                toggleState.BindValueChanged(_ => updateState());
+
                 Item.Action.BindDisabledChanged(_ => updateState(), true);
             }
 
@@ -126,7 +141,11 @@ namespace osu.Game.Screens.Edit.Components.Menus
             private void updateState()
             {
                 hoverClickSounds.Enabled.Value = IsActionable;
-                Alpha = IsActionable ? 1 : 0.2f;
+
+                if (!IsActionable)
+                    Alpha = 0.2f;
+                else
+                    Alpha = toggleState.Value ? 1 : 0.5f;
 
                 if (IsHovered && IsActionable)
                 {

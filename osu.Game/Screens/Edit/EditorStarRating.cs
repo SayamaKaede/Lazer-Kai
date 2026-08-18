@@ -20,8 +20,8 @@ namespace osu.Game.Screens.Edit
     /// </summary>
     /// <remarks>
     /// Star rating is only recalculated as part of saving, so this deliberately does not follow edits.
-    /// When gameplay test mods are being previewed in the composer, the rating is calculated with those mods applied,
-    /// matching what the composer is showing.
+    /// The mods chosen for gameplay test are always applied: the rating a mapper wants to read is the rating of what
+    /// they are about to play, whether or not those mods are also being previewed in the composer.
     /// </remarks>
     public partial class EditorStarRating : Component
     {
@@ -71,9 +71,7 @@ namespace osu.Game.Screens.Edit
             calculationCancellation?.Cancel();
             calculationCancellation = new CancellationTokenSource();
 
-            var mods = applyModsToComposer.Value && editor != null
-                ? editor.TestPlayMods.Mods.Value.Select(m => m.DeepClone()).ToArray()
-                : Array.Empty<Mod>();
+            var mods = editor?.TestPlayMods.Mods.Value.Select(m => m.DeepClone()).ToArray() ?? Array.Empty<Mod>();
 
             // the beatmap on disk is what the difficulty cache reads, so this reflects the state as of the last save.
             difficultyCache.GetDifficultyAsync(editorBeatmap.BeatmapInfo, editorBeatmap.BeatmapInfo.Ruleset, mods, calculationCancellation.Token)

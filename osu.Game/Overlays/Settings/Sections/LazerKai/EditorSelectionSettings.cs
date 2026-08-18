@@ -6,7 +6,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
 using osu.Game.Localisation;
-using osu.Game.Overlays.Settings.Sections.LazerKai.Controls;
+using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Screens.Edit;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
@@ -25,41 +25,52 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     LabelText = EditorStrings.HideSelectionButtons,
                     Current = config.GetBindable<bool>(OsuSetting.EditorHideSelectionButtons)
                 },
-                new SettingsSlider<double, MillisecondsSlider>
+                new SettingsCheckbox
                 {
-                    LabelText = EditorStrings.SelectableAfterEndTime,
-                    Current = config.GetBindable<double>(OsuSetting.EditorSelectableAfterEndTime)
+                    LabelText = EditorStrings.HideRotationHandles,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorHideRotationHandles)
                 },
+                new SettingsItemV2(new FormSliderBar<double>
+                {
+                    Caption = EditorStrings.SelectableAfterEndTime,
+                    Current = config.GetBindable<double>(OsuSetting.EditorSelectableAfterEndTime),
+                    KeyboardStep = 10,
+                    LabelFormat = v => v == 0 ? LazerKaiSettingsStrings.NoDelay : $"{v:N0} ms",
+                }),
                 new SettingsEnumDropdown<EditorSelectionColour>
                 {
                     LabelText = EditorStrings.SelectionColour,
                     Current = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorSelectionColour)
                 },
-                new SettingsSlider<float, PercentageSlider>
+                new SettingsItemV2(new FormSliderBar<float>
                 {
-                    LabelText = EditorStrings.SelectionThickness,
-                    Current = config.GetBindable<float>(OsuSetting.EditorSelectionThickness)
-                },
-                new SettingsSlider<float, PercentageSlider>
+                    Caption = EditorStrings.SelectionThickness,
+                    Current = config.GetBindable<float>(OsuSetting.EditorSelectionThickness),
+                    DisplayAsPercentage = true,
+                }),
+                new SettingsItemV2(new FormSliderBar<float>
                 {
-                    LabelText = EditorStrings.SelectionOpacity,
-                    Current = config.GetBindable<float>(OsuSetting.EditorSelectionOpacity)
-                },
+                    Caption = EditorStrings.SelectionOpacity,
+                    Current = config.GetBindable<float>(OsuSetting.EditorSelectionOpacity),
+                    DisplayAsPercentage = true,
+                }),
                 new SettingsEnumDropdown<EditorSelectionColour>
                 {
                     LabelText = EditorStrings.SelectionHandleColour,
                     Current = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorSelectionHandleColour)
                 },
-                new SettingsSlider<float, PercentageSlider>
+                new SettingsItemV2(new FormSliderBar<float>
                 {
-                    LabelText = EditorStrings.SelectionHandleSize,
-                    Current = config.GetBindable<float>(OsuSetting.EditorSelectionHandleScale)
-                },
-                new SettingsSlider<float, PercentageSlider>
+                    Caption = EditorStrings.SelectionHandleSize,
+                    Current = config.GetBindable<float>(OsuSetting.EditorSelectionHandleScale),
+                    DisplayAsPercentage = true,
+                }),
+                new SettingsItemV2(new FormSliderBar<float>
                 {
-                    LabelText = EditorStrings.SliderAnchorSize,
-                    Current = config.GetBindable<float>(OsuSetting.EditorSliderAnchorScale)
-                },
+                    Caption = EditorStrings.SliderAnchorSize,
+                    Current = config.GetBindable<float>(OsuSetting.EditorSliderAnchorScale),
+                    DisplayAsPercentage = true,
+                }),
             };
         }
     }

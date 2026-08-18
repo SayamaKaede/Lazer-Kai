@@ -236,8 +236,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorFreehandSliderPlacement, true);
             SetDefault(OsuSetting.EditorAlwaysExpandTimelinePointLabels, false);
             SetDefault(OsuSetting.EditorSelectionColour, EditorSelectionColour.Default);
-            SetDefault(OsuSetting.EditorSelectionThickness, 1f, 0.25f, 3f, 0.25f);
-            SetDefault(OsuSetting.EditorSelectionOpacity, 1f, 0.1f, 1f, 0.05f);
+            SetDefault(OsuSetting.EditorSelectionThickness, 1f, 0.25f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorSelectionOpacity, 1f, 0.1f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorColourScheme, OverlayColourScheme.Aquamarine);
             SetDefault(OsuSetting.EditorSeekAnimationDuration, 300.0, 0.0, 300.0, 50.0);
             SetDefault(OsuSetting.EditorAlwaysExpandLeftToolbox, false);
@@ -245,13 +245,14 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorShowPlayAreaBorder, true);
             SetDefault(OsuSetting.EditorDetectOffscreen, true);
             SetDefault(OsuSetting.EditorNotifyOnBackup, true);
-            SetDefault(OsuSetting.EditorToolButtonSquareness, 0f, 0f, 1f, 0.05f);
-            SetDefault(OsuSetting.EditorToggleButtonSquareness, 0f, 0f, 1f, 0.05f);
+            SetDefault(OsuSetting.EditorToolButtonSquareness, 0f, 0f, 0.3f, 0.01f);
+            SetDefault(OsuSetting.EditorToggleButtonSquareness, 0f, 0f, 0.3f, 0.01f);
             SetDefault(OsuSetting.EditorPinnedToolboxGroups, string.Empty);
             SetDefault(OsuSetting.EditorHideSelectionButtons, false);
+            SetDefault(OsuSetting.EditorHideRotationHandles, false);
             SetDefault(OsuSetting.EditorSelectionHandleColour, EditorSelectionColour.Default);
-            SetDefault(OsuSetting.EditorSelectionHandleScale, 1f, 0.5f, 1f, 0.1f);
-            SetDefault(OsuSetting.EditorSliderAnchorScale, 1f, 0.5f, 1f, 0.1f);
+            SetDefault(OsuSetting.EditorSelectionHandleScale, 1f, 0.5f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorSliderAnchorScale, 1f, 0.5f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorShowTimeline, true);
             SetDefault(OsuSetting.EditorCtrlClickCyclesCurveType, false);
             SetDefault(OsuSetting.SwapRightAndMiddleMouse, false);
@@ -259,7 +260,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorArcOnAnchorAdd, true);
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
-            SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.05f);
+            SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorLoopPlayback, false);
             SetDefault(OsuSetting.EditorAutoBackup, true);
             SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
@@ -296,6 +297,18 @@ namespace osu.Game.Configuration
         {
             return new TrackedSettings
             {
+                new TrackedSetting<bool>(OsuSetting.EditorApplyTestPlayModsToComposer, state => new SettingDescription(
+                    rawValue: state,
+                    name: GlobalActionKeyBindingStrings.EditorToggleComposerModPreview,
+                    value: state ? CommonStrings.Enabled.ToLower() : CommonStrings.Disabled.ToLower(),
+                    shortcut: LookupKeyBindings(GlobalAction.EditorToggleComposerModPreview))
+                ),
+                new TrackedSetting<bool>(OsuSetting.EditorShowTimeline, state => new SettingDescription(
+                    rawValue: state,
+                    name: GlobalActionKeyBindingStrings.EditorToggleTimeline,
+                    value: state ? CommonStrings.Enabled.ToLower() : CommonStrings.Disabled.ToLower(),
+                    shortcut: LookupKeyBindings(GlobalAction.EditorToggleTimeline))
+                ),
                 new TrackedSetting<bool>(OsuSetting.ShowFpsDisplay, state => new SettingDescription(
                     rawValue: state,
                     name: GlobalActionKeyBindingStrings.ToggleFPSCounter,
@@ -696,5 +709,10 @@ namespace osu.Game.Configuration
         /// How many backups to keep per difficulty before the oldest are deleted.
         /// </summary>
         EditorAutoBackupKeepCount,
+
+        /// <summary>
+        /// Whether the handles for turning a selection by dragging its corners are left off the selection box.
+        /// </summary>
+        EditorHideRotationHandles,
     }
 }

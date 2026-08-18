@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Localisation;
@@ -93,6 +93,16 @@ namespace osu.Game.Localisation
         /// "Submit beatmap"
         /// </summary>
         public static LocalisableString SubmitBeatmap => new TranslatableString(getKey(@"submit_beatmap"), @"Submit beatmap");
+
+        /// <summary>
+        /// "SV {0:0.00}x"
+        /// </summary>
+        public static LocalisableString SliderVelocityAdjusted(double velocity) => new TranslatableString(getKey(@"slider_velocity_adjusted"), @"SV {0:0.00}x", velocity);
+
+        /// <summary>
+        /// "This build does not upload beatmaps."
+        /// </summary>
+        public static LocalisableString BeatmapUploadUnavailable => new TranslatableString(getKey(@"beatmap_upload_unavailable"), @"This build does not upload beatmaps.");
 
         /// <summary>
         /// "setup"
@@ -381,9 +391,14 @@ namespace osu.Game.Localisation
         public static LocalisableString EditorColourScheme => new TranslatableString(getKey(@"editor_colour_scheme"), @"Editor colour (applies on next open)");
 
         /// <summary>
-        /// "Show buttons on selection"
+        /// "Hide the shortcut buttons on a selection"
         /// </summary>
         public static LocalisableString HideSelectionButtons => new TranslatableString(getKey(@"hide_selection_buttons"), @"Hide the shortcut buttons on a selection");
+
+        /// <summary>
+        /// "Hide the rotation handles on a selection"
+        /// </summary>
+        public static LocalisableString HideRotationHandles => new TranslatableString(getKey(@"hide_rotation_handles"), @"Hide the rotation handles on a selection");
 
         /// <summary>
         /// "Selection handle size"
@@ -404,6 +419,16 @@ namespace osu.Game.Localisation
         /// "Timeline"
         /// </summary>
         public static LocalisableString ShowTimeline => new TranslatableString(getKey(@"show_timeline"), @"Timeline");
+
+        /// <summary>
+        /// "Hitsounds"
+        /// </summary>
+        public static LocalisableString Hitsounds => new TranslatableString(getKey(@"hitsounds"), @"Hitsounds");
+
+        /// <summary>
+        /// "Music"
+        /// </summary>
+        public static LocalisableString Music => new TranslatableString(getKey(@"music"), @"Music");
 
         /// <summary>
         /// "Default"
@@ -516,7 +541,7 @@ namespace osu.Game.Localisation
         public static LocalisableString CtrlClickCyclesCurveType => new TranslatableString(getKey(@"ctrl_click_cycles_curve_type"), @"Ctrl+click a slider anchor to cycle its curve type");
 
         /// <summary>
-        /// "Swap right and middle mouse buttons (editor only)"
+        /// "Swap right and middle mouse buttons"
         /// </summary>
         public static LocalisableString SwapRightAndMiddleMouse => new TranslatableString(getKey(@"swap_right_and_middle_mouse"), @"Swap right and middle mouse buttons");
 
@@ -531,12 +556,12 @@ namespace osu.Game.Localisation
         public static LocalisableString AlwaysExpandLeftToolbox => new TranslatableString(getKey(@"always_expand_left_toolbox"), @"Keep left toolbox expanded");
 
         /// <summary>
-        /// "Drag threshold (applies game-wide)"
+        /// "Remove the catch when starting a drag"
         /// </summary>
         public static LocalisableString RemoveDragThreshold => new TranslatableString(getKey(@"remove_drag_threshold"), @"Remove the catch when starting a drag");
 
         /// <summary>
-        /// "Show play area and offscreen objects"
+        /// "Show the play area border"
         /// </summary>
         public static LocalisableString ShowPlayAreaBorder => new TranslatableString(getKey(@"show_play_area_border"), @"Show the play area border");
 

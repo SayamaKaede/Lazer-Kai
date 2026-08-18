@@ -28,6 +28,7 @@ namespace osu.Game.Tests.Visual.Menus
         }
 
         [Test]
+        [Ignore("This build leaves the daily challenge button out, since it does not submit scores (see `UnsendableRequests`).")]
         public void TestDailyChallenge()
         {
             AddStep("set up API", () => ((DummyAPIAccess)API).HandleRequest = req =>

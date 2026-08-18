@@ -153,19 +153,11 @@ namespace osu.Game.Screens.Menu
             {
                 Padding = new MarginPadding { Left = WEDGE_WIDTH },
             });
-            buttonsPlay.Add(new MainMenuButton(ButtonSystemStrings.Multi, @"button-default-select", OsuIcon.Online, new Color4(94, 63, 186, 255), (_, _) => State = ButtonSystemState.Multi, Key.M));
-            buttonsPlay.Add(new MainMenuButton(ButtonSystemStrings.Playlists, @"button-default-select", OsuIcon.Tournament, new Color4(94, 63, 186, 255), onPlaylists, Key.L));
-            buttonsPlay.Add(new DailyChallengeButton(@"button-daily-select", new Color4(94, 63, 186, 255), onDailyChallenge, Key.D));
+            // Multiplayer, playlists and the daily challenge all end in a score being submitted, and this build does
+            // not submit scores (see `UnsendableRequests`), so taking part would leave nothing behind for the user or
+            // anyone sharing the room. They are left out entirely rather than offered and then quietly failing.
+            // Spectating is untouched — it is reached from a user's profile and sends nothing.
             buttonsPlay.ForEach(b => b.VisibleState = ButtonSystemState.Play);
-
-            buttonsMulti.Add(new MainMenuButton(ButtonSystemStrings.Lounge, @"button-default-select", FontAwesome.Solid.Couch, new Color4(94, 63, 186, 255), onMultiplayer, Key.L, Key.M)
-            {
-                Padding = new MarginPadding { Left = WEDGE_WIDTH }
-            });
-            buttonsMulti.Add(new MainMenuButton(ButtonSystemStrings.RankedPlay, @"button-daily-select", FontAwesome.Solid.Crown, new Color4(94, 63, 186, 255), onRankedPlay, Key.R));
-            // disabled for now to give ranked play space.
-            // buttonsMulti.Add(new MainMenuButton(ButtonSystemStrings.QuickPlay, @"button-daily-select", FontAwesome.Solid.Bolt, new Color4(94, 63, 186, 255), onQuickPlay, Key.Q));
-            buttonsMulti.ForEach(b => b.VisibleState = ButtonSystemState.Multi);
 
             buttonsEdit.Add(new MainMenuButton(EditorStrings.BeatmapEditor.ToLower(), @"button-default-select", OsuIcon.Beatmap, new Color4(238, 170, 0, 255), (_, _) => OnEditBeatmap?.Invoke(), Key.B,
                 Key.E)

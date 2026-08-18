@@ -18,6 +18,7 @@ using osu.Framework.Input.Events;
 using osu.Game.Audio;
 using osu.Game.Graphics;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Input;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Edit.Tools;
 using osu.Game.Rulesets.Objects;
@@ -31,7 +32,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
     /// <summary>
     /// A blueprint container generally displayed as an overlay to a ruleset's playfield.
     /// </summary>
-    public abstract partial class ComposeBlueprintContainer : EditorBlueprintContainer
+    public abstract partial class ComposeBlueprintContainer : EditorBlueprintContainer, IFineDragArea
     {
         private DependencyContainer dependencies = null!;
 
@@ -91,6 +92,17 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
         private const float rotation_step_fine = 1;
 
+        /// <summary>
+        /// Whether a turn is being made with the wheel right now, and how far it has come so far.
+        /// </summary>
+        /// <remarks>
+        /// Every notch of the wheel is part of one turn, ended by letting go of the modifiers. Committing each notch
+        /// on its own would leave the user undoing a long turn three degrees at a time.
+        /// </remarks>
+        private bool rotatingByScroll;
+
+        private float rotationSoFar;
+
         protected override bool OnScroll(ScrollEvent e)
         {
             // ctrl alone already cycles the beat snap divisor. Global actions match modifiers exactly, so adding
@@ -99,16 +111,58 @@ namespace osu.Game.Screens.Edit.Compose.Components
             {
                 var rotationHandler = SelectionHandler.RotationHandler;
 
-                if (rotationHandler.CanRotateAroundSelectionOrigin.Value)
+                // holding shift makes the framework hand the notch over on the horizontal axis instead, so both are
+                // read. `Editor.OnScroll` sums them for the same reason.
+                int direction = Math.Sign(e.ScrollDelta.X + e.ScrollDelta.Y);
+
+                if (direction != 0 && rotationHandler.CanRotateAroundSelectionOrigin.Value)
                 {
                     float step = e.AltPressed ? rotation_step_fine : rotation_step;
 
-                    rotationHandler.Rotate(step * Math.Sign(e.ScrollDelta.Y));
+                    // never joins a turn someone else started, such as a drag of the rotation handle.
+                    if (!rotatingByScroll && rotationHandler.OperationInProgress.Value)
+                        return true;
+
+                    if (!rotatingByScroll)
+                    {
+                        rotatingByScroll = true;
+                        rotationSoFar = 0;
+                        rotationHandler.Begin();
+                    }
+
+                    rotationSoFar += step * direction;
+                    rotationHandler.Update(rotationSoFar);
                     return true;
                 }
             }
 
             return base.OnScroll(e);
+        }
+
+        /// <summary>
+        /// Ends the turn started by the wheel, writing it to the undo history as a single step.
+        /// </summary>
+        private void commitScrollRotation()
+        {
+            if (!rotatingByScroll)
+                return;
+
+            rotatingByScroll = false;
+            SelectionHandler.RotationHandler.Commit();
+        }
+
+        /// <summary>
+        /// Whether the modifiers which hold a wheel turn open are still down. Read from the input state rather than
+        /// from key events, which only arrive while this container has focus.
+        /// </summary>
+        private bool rotationModifiersHeld
+        {
+            get
+            {
+                var keyboard = GetContainingInputManager()?.CurrentState.Keyboard;
+
+                return keyboard != null && keyboard.ControlPressed && keyboard.ShiftPressed;
+            }
         }
 
         protected override void LoadComplete()
@@ -303,6 +357,9 @@ namespace osu.Game.Screens.Edit.Compose.Components
         {
             base.Update();
 
+            if (rotatingByScroll && !rotationModifiersHeld)
+                commitScrollRotation();
+
             if (CurrentPlacement != null)
             {
                 switch (CurrentPlacement.PlacementActive)
@@ -407,6 +464,9 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
         protected override void Dispose(bool isDisposing)
         {
+            // leaving a turn open would leave the editor's change handler mid-transaction for good.
+            commitScrollRotation();
+
             base.Dispose(isDisposing);
 
             if (Beatmap.IsNotNull())

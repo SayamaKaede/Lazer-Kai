@@ -154,6 +154,8 @@ namespace osu.Game.Input.Bindings
             // registered unbound: these are conveniences, and every obvious editor combination is already taken.
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimeline),
             new KeyBinding(InputKey.None, GlobalAction.EditorBackupNow),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleHitsounds),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleMusic),
             new KeyBinding(new[] { InputKey.Control, InputKey.R }, GlobalAction.EditorToggleRotateControl),
             new KeyBinding(new[] { InputKey.Control, InputKey.E }, GlobalAction.EditorToggleScaleControl),
             new KeyBinding(new[] { InputKey.Control, InputKey.Left }, GlobalAction.EditorSeekToPreviousHitObject),
@@ -574,6 +576,12 @@ namespace osu.Game.Input.Bindings
 
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorBackupNow))]
         EditorBackupNow,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleHitsounds))]
+        EditorToggleHitsounds,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleMusic))]
+        EditorToggleMusic,
     }
 
     public enum GlobalActionCategory

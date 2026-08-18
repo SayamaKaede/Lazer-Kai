@@ -5,6 +5,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Game.Input;
 using osu.Game.Overlays;
 using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
 using osuTK;
@@ -14,8 +15,14 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary
     /// <summary>
     /// The timeline that sits at the bottom of the editor.
     /// </summary>
-    public partial class SummaryTimeline : BottomBarContainer
+    public partial class SummaryTimeline : BottomBarContainer, IFineDragArea
     {
+        /// <summary>
+        /// Nothing here reads the mouse itself — the markers inside do — so this would otherwise be left out of
+        /// the positional input queue entirely, and <see cref="IFineDragArea"/> would never be seen on it.
+        /// </summary>
+        public override bool HandlePositionalInput => true;
+
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colourProvider)
         {

@@ -143,6 +143,13 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables.Connections
             foreach (var entry in lifetimeEntries)
                 entry.UnbindEvents();
             lifetimeEntries.Clear();
+
+            // the renderer stays subscribed to every object's start time for as long as it lives. the editor keeps its
+            // beatmap around while rebuilding the composer, so a subscription left behind here would fire on a disposed
+            // renderer the next time an object was moved, and index into the list just cleared above.
+            foreach (var startTimeBindable in startTimeMap.Values)
+                startTimeBindable.UnbindAll();
+            startTimeMap.Clear();
         }
     }
 }

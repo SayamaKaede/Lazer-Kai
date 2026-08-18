@@ -129,7 +129,14 @@ namespace osu.Game.Rulesets.Edit
                 composerFocusMode.BindTo(editor.ComposerFocusMode);
 
                 if (config.Get<bool>(OsuSetting.EditorApplyTestPlayModsToComposer))
-                    previewMods = editor.TestPlayMods.Mods.Value.Select(m => m.DeepClone()).ToArray();
+                {
+                    // mods which drive the playfield every frame are written for a gameplay screen and reach for parts of
+                    // one the composer has no reason to show — the cursor above all — so previewing them would take the
+                    // editor down on the very next frame. What a mapper wants to see is the objects themselves anyway.
+                    previewMods = editor.TestPlayMods.Mods.Value
+                                        .Where(m => m is not IUpdatableByPlayfield)
+                                        .Select(m => m.DeepClone()).ToArray();
+                }
             }
 
             // must happen before the drawable ruleset is constructed so that hit objects are already in their modded state.
@@ -668,6 +675,7 @@ namespace osu.Game.Rulesets.Edit
                 return;
 
             EditorBeatmap.BeatmapReprocessed -= onBeatmapReprocessed;
+            EditorBeatmap.SelectedHitObjects.CollectionChanged -= selectionChanged;
 
             // leave the beatmap in its unmodded state for whatever uses it next.
             if (previewMods.OfType<IApplicableToBeatmap>().Any())

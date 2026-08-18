@@ -6,13 +6,19 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
-using osu.Framework.Extensions.Color4Extensions;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osuTK;
 
 namespace osu.Game.Overlays
 {
+    /// <summary>
+    /// Names the build under the title, so a copy handed to someone else can be identified.
+    /// </summary>
+    /// <remarks>
+    /// Upstream reads "DEVELOPER BUILD" here. Every build of this fork is one, and it already says so by carrying its
+    /// own name, so only the name is shown.
+    /// </remarks>
     public partial class DevBuildBanner : VisibilityContainer
     {
         [BackgroundDependencyLoader]
@@ -27,33 +33,13 @@ namespace osu.Game.Overlays
 
             AddRange(new Drawable[]
             {
-                new FillFlowContainer
+                new OsuSpriteText
                 {
-                    AutoSizeAxes = Axes.Both,
-                    Direction = FillDirection.Horizontal,
-                    Spacing = new Vector2(6, 0),
                     Anchor = Anchor.BottomCentre,
                     Origin = Anchor.BottomCentre,
-                    Children = new Drawable[]
-                    {
-                        new OsuSpriteText
-                        {
-                            Anchor = Anchor.BottomLeft,
-                            Origin = Anchor.BottomLeft,
-                            Font = OsuFont.Numeric.With(weight: FontWeight.Bold, size: 12),
-                            Colour = colours.YellowDark,
-                            Text = @"DEVELOPER BUILD",
-                        },
-                        // which build this is, so a copy handed to someone else can be identified.
-                        new OsuSpriteText
-                        {
-                            Anchor = Anchor.BottomLeft,
-                            Origin = Anchor.BottomLeft,
-                            Font = OsuFont.Numeric.With(weight: FontWeight.Bold, size: 12),
-                            Colour = colours.YellowDark.Opacity(0.6f),
-                            Text = $@"Lazer-Kai-{game.Version}",
-                        },
-                    }
+                    Font = OsuFont.Numeric.With(weight: FontWeight.Bold, size: 12),
+                    Colour = colours.YellowDark,
+                    Text = $@"Lazer-Kai {game.Version}",
                 },
                 new Sprite
                 {

@@ -21,6 +21,9 @@ using osu.Game.Beatmaps;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Cursor;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Localisation;
+using osu.Game.Overlays;
+using osu.Game.Screens.Edit;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Edit.Tools;
 using osu.Game.Rulesets.Mods;
@@ -49,6 +52,10 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         private const double velocity_adjust_step_fine = 0.01;
 
+        // not present in test scenes which build the composer without a game around it.
+        [Resolved(CanBeNull = true)]
+        private OnScreenDisplay onScreenDisplay { get; set; }
+
         public OsuHitObjectComposer(Ruleset ruleset)
             : base(ruleset)
         {
@@ -59,19 +66,19 @@ namespace osu.Game.Rulesets.Osu.Edit
             switch (e.Action)
             {
                 case GlobalAction.EditorDecreaseSliderVelocity:
-                    sliderVelocityToolboxGroup.AdjustVelocity(-velocity_adjust_step);
+                    adjustSliderVelocity(-velocity_adjust_step);
                     return true;
 
                 case GlobalAction.EditorIncreaseSliderVelocity:
-                    sliderVelocityToolboxGroup.AdjustVelocity(velocity_adjust_step);
+                    adjustSliderVelocity(velocity_adjust_step);
                     return true;
 
                 case GlobalAction.EditorDecreaseSliderVelocityFine:
-                    sliderVelocityToolboxGroup.AdjustVelocity(-velocity_adjust_step_fine);
+                    adjustSliderVelocity(-velocity_adjust_step_fine);
                     return true;
 
                 case GlobalAction.EditorIncreaseSliderVelocityFine:
-                    sliderVelocityToolboxGroup.AdjustVelocity(velocity_adjust_step_fine);
+                    adjustSliderVelocity(velocity_adjust_step_fine);
                     return true;
 
                 default:
@@ -82,6 +89,13 @@ namespace osu.Game.Rulesets.Osu.Edit
         public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
         {
         }
+
+        /// <summary>
+        /// The velocity control lives in the right-hand toolbox, which is not where the eye is while placing objects,
+        /// so the value landed on is called out over the playfield as well.
+        /// </summary>
+        private void adjustSliderVelocity(double delta)
+            => onScreenDisplay?.Display(new EditorToast(EditorStrings.SliderVelocityAdjusted(sliderVelocityToolboxGroup.AdjustVelocity(delta))));
 
         protected override DrawableRuleset<OsuHitObject> CreateDrawableRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod> mods)
             => new DrawableOsuEditorRuleset(ruleset, beatmap, mods);

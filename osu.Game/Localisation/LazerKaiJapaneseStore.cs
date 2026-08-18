@@ -56,6 +56,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:difficulty_graph_opacity"] = @"難易度グラフの不透明度",
             [$@"{editor_prefix}:loop_playback"] = @"ループ再生",
             [$@"{editor_prefix}:show_timeline"] = @"タイムライン",
+            [$@"{editor_prefix}:hitsounds"] = @"効果音",
+            [$@"{editor_prefix}:music"] = @"音楽",
             [$@"{editor_prefix}:always_expand_left_toolbox"] = @"左ツールボックスを常に展開",
             [$@"{editor_prefix}:tool_button_squareness"] = @"Toolboxのボタンの高さ",
             [$@"{editor_prefix}:toggle_button_squareness"] = @"Togglesのボタンの高さ",
@@ -72,9 +74,11 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:selection_handle_size"] = @"ハンドルの大きさ",
             [$@"{editor_prefix}:slider_anchor_size"] = @"アンカーの大きさ",
             [$@"{editor_prefix}:hide_selection_buttons"] = @"選択時のショートカットボタンの非表示",
+            [$@"{editor_prefix}:hide_rotation_handles"] = @"選択時の回転ハンドルの非表示",
             [$@"{editor_prefix}:selectable_after_end_time"] = @"通過後の選択可能時間",
 
             // input
+            [$@"{editor_prefix}:beatmap_upload_unavailable"] = @"このビルドは譜面をアップロードしません",
             [$@"{editor_prefix}:remove_drag_threshold"] = @"ドラッグ時の引っかかりを無くす",
             [$@"{editor_prefix}:swap_right_and_middle_mouse"] = @"右クリックとホイールを入れ替え",
 
@@ -113,8 +117,14 @@ namespace osu.Game.Localisation
             [$@"{settings_prefix}:minutes"] = @"{0}分",
 
             // key bindings
+            // shown as the value on the toasts the shortcuts raise.
+            [$@"{common_prefix}:enabled"] = @"オン",
+            [$@"{common_prefix}:disabled"] = @"オフ",
+
             [$@"{binding_prefix}:editor_toggle_composer_mod_preview"] = @"編集画面のModプレビューを切り替え",
             [$@"{binding_prefix}:editor_toggle_timeline"] = @"タイムラインの表示を切り替え",
+            [$@"{binding_prefix}:editor_toggle_hitsounds"] = @"効果音のミュート切り替え",
+            [$@"{binding_prefix}:editor_toggle_music"] = @"音楽のミュート切り替え",
             [$@"{binding_prefix}:editor_backup_now"] = @"いますぐバックアップ",
             [$@"{binding_prefix}:editor_decrease_slider_velocity"] = @"SVを下げる",
             [$@"{binding_prefix}:editor_increase_slider_velocity"] = @"SVを上げる",
@@ -125,6 +135,7 @@ namespace osu.Game.Localisation
         private const string editor_prefix = @"osu.Game.Resources.Localisation.Editor";
         private const string settings_prefix = @"osu.Game.Resources.Localisation.LazerKaiSettings";
         private const string binding_prefix = @"osu.Game.Resources.Localisation.GlobalActionKeyBinding";
+        private const string common_prefix = @"osu.Game.Resources.Localisation.Common";
 
         public LazerKaiJapaneseStore(ILocalisationStore fallback)
         {

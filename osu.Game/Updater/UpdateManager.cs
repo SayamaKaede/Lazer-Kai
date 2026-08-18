@@ -62,16 +62,13 @@ namespace osu.Game.Updater
                 if (FixedReleaseStream != null)
                     config.SetValue(OsuSetting.ReleaseStream, FixedReleaseStream.Value);
 
-                // notify the user if they're using a build that is not officially sanctioned.
-                if (RuntimeInfo.EntryAssembly.GetCustomAttribute<OfficialBuildAttribute>() == null)
-                    Notifications.Post(new SimpleNotification { Text = NotificationsStrings.NotOfficialBuild });
             }
-            else
-            {
-                // log that this is not an official build, for if users build their own game without an assembly version.
-                // this is only logged because a notification would be too spammy in local test builds.
+
+            // upstream posts a notification here when the build is not one osu! published. This build never will be, and
+            // says so on the title screen, so a notification every launch would only be telling the user what they
+            // already chose. Logged instead, the same way upstream handles it for local builds.
+            if (RuntimeInfo.EntryAssembly.GetCustomAttribute<OfficialBuildAttribute>() == null)
                 Logger.Log(NotificationsStrings.NotOfficialBuild.ToString());
-            }
 
             config.BindWith(OsuSetting.ReleaseStream, releaseStream);
             releaseStream.BindValueChanged(_ => CheckForUpdate());
@@ -230,26 +227,19 @@ namespace osu.Game.Updater
 
     public partial class UpdateCompleteNotification : SimpleNotification
     {
-        private readonly string version;
-
         public UpdateCompleteNotification(string version)
         {
-            this.version = version;
             Text = NotificationsStrings.GameVersionAfterUpdate(version);
         }
 
         [BackgroundDependencyLoader]
-        private void load(OsuColour colours, ChangelogOverlay changelog, INotificationOverlay notificationOverlay)
+        private void load(OsuColour colours)
         {
             Icon = FontAwesome.Solid.CheckSquare;
             IconContent.Colour = colours.BlueDark;
 
-            Activated = delegate
-            {
-                notificationOverlay.Hide();
-                changelog.ShowBuild(version);
-                return true;
-            };
+            // upstream opens the changelog for the version just installed. Lazer-Kai's versions are its own and have no
+            // entry there, so clicking the notification just dismisses it.
         }
     }
 }

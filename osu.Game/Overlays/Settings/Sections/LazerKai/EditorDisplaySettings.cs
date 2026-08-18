@@ -6,7 +6,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
 using osu.Game.Localisation;
-using osu.Game.Overlays.Settings.Sections.LazerKai.Controls;
+using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Screens.Edit;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
@@ -40,11 +40,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     LabelText = EditorStrings.DifficultyGraphColour,
                     Current = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorDifficultyGraphColour)
                 },
-                new SettingsSlider<float, PercentageSlider>
+                new SettingsItemV2(new FormSliderBar<float>
                 {
-                    LabelText = EditorStrings.DifficultyGraphOpacity,
-                    Current = config.GetBindable<float>(OsuSetting.EditorDifficultyGraphOpacity)
-                },
+                    Caption = EditorStrings.DifficultyGraphOpacity,
+                    Current = config.GetBindable<float>(OsuSetting.EditorDifficultyGraphOpacity),
+                    DisplayAsPercentage = true,
+                }),
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.LoopPlayback,
@@ -55,26 +56,30 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     LabelText = EditorStrings.AlwaysExpandLeftToolbox,
                     Current = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox)
                 },
-                new SettingsSlider<float, PercentageSlider>
+                new SettingsItemV2(new FormSliderBar<float>
                 {
-                    LabelText = EditorStrings.ToolButtonSquareness,
-                    Current = config.GetBindable<float>(OsuSetting.EditorToolButtonSquareness)
-                },
-                new SettingsSlider<float, PercentageSlider>
+                    Caption = EditorStrings.ToolButtonSquareness,
+                    Current = config.GetBindable<float>(OsuSetting.EditorToolButtonSquareness),
+                    DisplayAsPercentage = true,
+                }),
+                new SettingsItemV2(new FormSliderBar<float>
                 {
-                    LabelText = EditorStrings.ToggleButtonSquareness,
-                    Current = config.GetBindable<float>(OsuSetting.EditorToggleButtonSquareness)
-                },
+                    Caption = EditorStrings.ToggleButtonSquareness,
+                    Current = config.GetBindable<float>(OsuSetting.EditorToggleButtonSquareness),
+                    DisplayAsPercentage = true,
+                }),
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.AlwaysExpandTimelinePointLabels,
                     Current = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandTimelinePointLabels)
                 },
-                new SettingsSlider<double, MillisecondsSlider>
+                new SettingsItemV2(new FormSliderBar<double>
                 {
-                    LabelText = EditorStrings.SeekAnimationDuration,
-                    Current = config.GetBindable<double>(OsuSetting.EditorSeekAnimationDuration)
-                },
+                    Caption = EditorStrings.SeekAnimationDuration,
+                    Current = config.GetBindable<double>(OsuSetting.EditorSeekAnimationDuration),
+                    KeyboardStep = 10,
+                    LabelFormat = v => v == 0 ? LazerKaiSettingsStrings.NoDelay : $"{v:N0} ms",
+                }),
                 new SettingsEnumDropdown<OverlayColourScheme>
                 {
                     LabelText = EditorStrings.EditorColourScheme,

@@ -15,6 +15,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Screens.Edit.Compose.Components.Timeline;
+using osu.Game.Screens.Play.HUD;
 using osuTK;
 
 namespace osu.Game.Screens.Edit.Compose.Components
@@ -35,11 +36,16 @@ namespace osu.Game.Screens.Edit.Compose.Components
         [Resolved(canBeNull: true)]
         private EditorStarRating? starRatingTracker { get; set; }
 
+        [Resolved(canBeNull: true)]
+        private Editor? editor { get; set; }
+
         private OsuSpriteText starRating = null!;
         private OsuSpriteText sliderVelocity = null!;
         private OsuSpriteText normalBank = null!;
         private OsuSpriteText additionBank = null!;
         private OsuSpriteText sampleVolume = null!;
+        private Drawable modsRow = null!;
+        private ModDisplay modDisplay = null!;
 
         [BackgroundDependencyLoader]
         private void load(OsuColour colours)
@@ -60,6 +66,41 @@ namespace osu.Game.Screens.Edit.Compose.Components
                     createRow(@"Normal", out normalBank, colours.Pink1),
                     createRow(@"Addition", out additionBank, colours.Pink2),
                     createRow(@"Volume", out sampleVolume, colours.Pink1),
+                    createModRow(),
+                }
+            };
+        }
+
+        /// <summary>
+        /// The mods a test play would run with, which are also the mods the star rating above is calculated with.
+        /// </summary>
+        /// <remarks>
+        /// The icons sit on top of one another until hovered, the same way they do everywhere else in the game, so a
+        /// long list does not push the panel wide.
+        /// </remarks>
+        private Drawable createModRow()
+        {
+            return modsRow = new Container
+            {
+                RelativeSizeAxes = Axes.X,
+                AutoSizeAxes = Axes.Y,
+                Children = new Drawable[]
+                {
+                    new OsuSpriteText
+                    {
+                        Text = @"Mods",
+                        Font = OsuFont.Default.With(size: 12, weight: FontWeight.SemiBold),
+                        Alpha = 0.6f,
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreLeft,
+                    },
+                    modDisplay = new ModDisplay(showExtendedInformation: false)
+                    {
+                        Anchor = Anchor.CentreRight,
+                        Origin = Anchor.CentreRight,
+                        // the panel is a narrow column, and a mod icon is drawn at a size meant for the gameplay HUD.
+                        Scale = new Vector2(0.4f),
+                    }
                 }
             };
         }
@@ -99,6 +140,20 @@ namespace osu.Game.Screens.Edit.Compose.Components
         protected override void LoadComplete()
         {
             base.LoadComplete();
+
+            if (editor != null)
+            {
+                modDisplay.Current = editor.TestPlayMods.Mods;
+
+                // with nothing selected the row would be a label with nothing beside it, so it steps out of the flow.
+                editor.TestPlayMods.Mods.BindValueChanged(mods =>
+                {
+                    modsRow.Alpha = mods.NewValue.Any() ? 1 : 0;
+                    modsRow.AlwaysPresent = false;
+                }, true);
+            }
+            else
+                modsRow.Alpha = 0;
 
             if (starRatingTracker == null)
                 starRating.Text = @"-";

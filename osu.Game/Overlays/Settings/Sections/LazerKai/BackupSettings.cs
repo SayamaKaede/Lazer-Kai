@@ -8,7 +8,8 @@ using osu.Framework.Localisation;
 using osu.Framework.Platform;
 using osu.Game.Configuration;
 using osu.Game.Localisation;
-using osu.Game.Overlays.Settings.Sections.LazerKai.Controls;
+using System.Globalization;
+using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Screens.Edit;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
@@ -24,16 +25,17 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
         {
             config.BindWith(OsuSetting.EditorAutoBackup, enabled);
 
-            var interval = new SettingsSlider<double, MinutesSlider>
+            var interval = new FormSliderBar<double>
             {
-                LabelText = EditorStrings.AutoBackupInterval,
-                Current = config.GetBindable<double>(OsuSetting.EditorAutoBackupInterval)
+                Caption = EditorStrings.AutoBackupInterval,
+                Current = config.GetBindable<double>(OsuSetting.EditorAutoBackupInterval),
+                LabelFormat = v => LazerKaiSettingsStrings.Minutes(v.ToString("N0", NumberFormatInfo.CurrentInfo)),
             };
 
-            var keepCount = new SettingsSlider<int>
+            var keepCount = new FormSliderBar<int>
             {
-                LabelText = EditorStrings.AutoBackupKeepCount,
-                Current = config.GetBindable<int>(OsuSetting.EditorAutoBackupKeepCount)
+                Caption = EditorStrings.AutoBackupKeepCount,
+                Current = config.GetBindable<int>(OsuSetting.EditorAutoBackupKeepCount),
             };
 
             Children = new Drawable[]
@@ -43,8 +45,8 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     LabelText = EditorStrings.AutoBackupEnabled,
                     Current = enabled
                 },
-                interval,
-                keepCount,
+                new SettingsItemV2(interval),
+                new SettingsItemV2(keepCount),
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.NotifyOnBackup,
