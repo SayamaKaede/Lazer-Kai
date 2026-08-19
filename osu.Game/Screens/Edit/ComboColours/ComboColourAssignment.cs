@@ -110,8 +110,14 @@ namespace osu.Game.Screens.Edit.ComboColours
 
         /// <summary>
         /// Builds the combo list from a beatmap's objects: every object which starts a combo, with how long that combo
-        /// runs. Spinners are left out, matching how the game skips them when advancing the colour.
+        /// runs.
         /// </summary>
+        /// <remarks>
+        /// Which objects start a combo is read from what the game already worked out (`IndexInCurrentCombo`) rather
+        /// than from the new combo flag. The rules are not obvious — a spinner never starts one however it is flagged,
+        /// and the object after a spinner always does — and they live in the ruleset, out of reach from here. Reading
+        /// the answer keeps this in step with whatever the game decided.
+        /// </remarks>
         public static (List<Combo> Combos, List<IHasComboInformation> Objects) CombosOf(IReadOnlyList<HitObject> hitObjects)
         {
             var combos = new List<Combo>();
@@ -121,21 +127,16 @@ namespace osu.Game.Screens.Edit.ComboColours
 
             for (int i = 0; i < hitObjects.Count; i++)
             {
-                if (hitObjects[i] is IHasComboInformation combo && (combo.NewCombo || starts.Count == 0))
+                if (hitObjects[i] is IHasComboInformation { IndexInCurrentCombo: 0 })
                     starts.Add(i);
             }
 
             for (int s = 0; s < starts.Count; s++)
             {
-                var hitObject = hitObjects[starts[s]];
-
-                if (hitObject is not IHasComboInformation combo || hitObject is IHasDuration and not IHasPath)
-                    continue;
-
                 int end = s + 1 < starts.Count ? starts[s + 1] : hitObjects.Count;
 
-                combos.Add(new Combo(hitObject.StartTime, end - starts[s]));
-                objects.Add(combo);
+                combos.Add(new Combo(hitObjects[starts[s]].StartTime, end - starts[s]));
+                objects.Add((IHasComboInformation)hitObjects[starts[s]]);
             }
 
             return (combos, objects);

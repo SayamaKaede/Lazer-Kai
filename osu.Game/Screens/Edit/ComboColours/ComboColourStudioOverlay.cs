@@ -11,6 +11,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Input.Events;
 using osu.Framework.Platform;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
@@ -312,6 +313,26 @@ namespace osu.Game.Screens.Edit.ComboColours
                 save();
             }));
         }
+
+        /// <summary>
+        /// Swallows anything the panel's own controls did not take, so a click meant for the panel cannot fall through
+        /// to the playfield or the timelines behind it.
+        /// </summary>
+        /// <remarks>
+        /// Children are offered the event first, so this only catches what lands on the panel's background. Being
+        /// non-modal, the panel deliberately blocks nothing outside its own bounds.
+        /// </remarks>
+        protected override bool OnMouseDown(MouseDownEvent e) => true;
+
+        protected override bool OnClick(ClickEvent e) => true;
+
+        protected override bool OnDoubleClick(DoubleClickEvent e) => true;
+
+        protected override bool OnDragStart(DragStartEvent e) => true;
+
+        protected override bool OnScroll(ScrollEvent e) => true;
+
+        protected override bool OnHover(HoverEvent e) => true;
 
         protected override void PopIn() => this.FadeIn(200, Easing.OutQuint);
 

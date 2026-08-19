@@ -55,6 +55,28 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddAssert("the row is still there", rowCount, () => Is.EqualTo(1));
         }
 
+        /// <summary>
+        /// Input aimed at the panel must stop there. Whatever sits behind it — the composer, a toolbox, a timeline —
+        /// is still in the queue underneath, and would otherwise react to the same click.
+        /// </summary>
+        [Test]
+        public void TestInputDoesNotFallThroughToWhatIsBehind()
+        {
+            AddStep("open the panel", openFromMenu);
+            AddStep("point at the panel", () => InputManager.MoveMouseTo(panel()));
+
+            AddUntilStep("the panel took the pointer", () => InputManager.HoveredDrawables.Contains(panel()), () => Is.True);
+
+            AddAssert("nothing behind it did", () =>
+            {
+                var queue = InputManager.PositionalInputQueue.ToList();
+                int panelPosition = queue.IndexOf(panel());
+
+                // the queue runs front to back, so anything past the panel is behind it on screen.
+                return queue.Skip(panelPosition + 1).Any(d => InputManager.HoveredDrawables.Contains(d));
+            }, () => Is.False);
+        }
+
         private void openFromMenu()
             => Editor.ChildrenOfType<EditorMenuBar>().Single()
                      .Items.Single(i => i.Text.Value.Equals(CommonStrings.MenuBarEdit))
