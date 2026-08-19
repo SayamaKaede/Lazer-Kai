@@ -6,6 +6,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
 using osu.Game.Localisation;
+using osu.Game.Screens.Edit;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
 {
@@ -18,6 +19,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
         {
             Children = new Drawable[]
             {
+                new SettingsEnumDropdown<EditorAdditionBank>
+                {
+                    LabelText = EditorStrings.DefaultAdditionBank,
+                    TooltipText = EditorStrings.DefaultAdditionBankDescription,
+                    Current = config.GetBindable<EditorAdditionBank>(OsuSetting.EditorDefaultAdditionBank)
+                },
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.AdvanceByPreviousSpacingOnPlacement,

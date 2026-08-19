@@ -45,6 +45,12 @@ namespace osu.Game.Localisation
             // composing
             [$@"{editor_prefix}:advance_by_previous_spacing_on_placement"] = @"オブジェクト配置後に自動で次へシーク",
             [$@"{editor_prefix}:freehand_slider_placement"] = @"ドラッグでスライダーを描く",
+            [$@"{editor_prefix}:default_addition_bank"] = @"Add bankの初期値",
+            [$@"{editor_prefix}:default_addition_bank_description"] = @"Add bankを持たないノーツにWhistle・Finish・Clapを付けたとき、このbankになります",
+            [$@"{editor_prefix}:addition_bank_auto"] = @"Auto",
+            [$@"{editor_prefix}:addition_bank_normal"] = @"Normal",
+            [$@"{editor_prefix}:addition_bank_soft"] = @"Soft",
+            [$@"{editor_prefix}:addition_bank_drum"] = @"Drum",
             [$@"{editor_prefix}:arc_on_anchor_add"] = @"追加したアンカーをパーフェクトカーブに",
             [$@"{editor_prefix}:ctrl_click_cycles_curve_type"] = @"Ctrl+クリックでカーブ種別を変更",
 

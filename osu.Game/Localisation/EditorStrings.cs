@@ -305,6 +305,37 @@ namespace osu.Game.Localisation
         public static LocalisableString AdditionBank => new TranslatableString(getKey(@"addition_bank"), @"Addition bank");
 
         /// <summary>
+        /// "Default addition bank"
+        /// </summary>
+        public static LocalisableString DefaultAdditionBank => new TranslatableString(getKey(@"default_addition_bank"), @"Default addition bank");
+
+        /// <summary>
+        /// "Used when a whistle, finish or clap is added to a note which had none."
+        /// </summary>
+        public static LocalisableString DefaultAdditionBankDescription => new TranslatableString(getKey(@"default_addition_bank_description"),
+            @"Used when a whistle, finish or clap is added to a note which had none.");
+
+        /// <summary>
+        /// "Auto"
+        /// </summary>
+        public static LocalisableString AdditionBankAuto => new TranslatableString(getKey(@"addition_bank_auto"), @"Auto");
+
+        /// <summary>
+        /// "Normal"
+        /// </summary>
+        public static LocalisableString AdditionBankNormal => new TranslatableString(getKey(@"addition_bank_normal"), @"Normal");
+
+        /// <summary>
+        /// "Soft"
+        /// </summary>
+        public static LocalisableString AdditionBankSoft => new TranslatableString(getKey(@"addition_bank_soft"), @"Soft");
+
+        /// <summary>
+        /// "Drum"
+        /// </summary>
+        public static LocalisableString AdditionBankDrum => new TranslatableString(getKey(@"addition_bank_drum"), @"Drum");
+
+        /// <summary>
         /// "Volume"
         /// </summary>
         public static LocalisableString SampleVolume => new TranslatableString(getKey(@"sample_volume"), @"Volume");

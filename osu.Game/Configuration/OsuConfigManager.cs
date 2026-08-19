@@ -250,6 +250,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorPinnedToolboxGroups, string.Empty);
             SetDefault(OsuSetting.EditorHideSelectionButtons, false);
             SetDefault(OsuSetting.EditorHideRotationHandles, false);
+            SetDefault(OsuSetting.EditorDefaultAdditionBank, EditorAdditionBank.Auto);
             SetDefault(OsuSetting.EditorSelectionHandleColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorSelectionHandleScale, 1f, 0.5f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorSliderAnchorScale, 1f, 0.5f, 1f, 0.01f);
@@ -714,5 +715,10 @@ namespace osu.Game.Configuration
         /// Whether the handles for turning a selection by dragging its corners are left off the selection box.
         /// </summary>
         EditorHideRotationHandles,
+
+        /// <summary>
+        /// The addition bank a selection starts on, which is the bank handed to a whistle, finish or clap as it is added.
+        /// </summary>
+        EditorDefaultAdditionBank,
     }
 }

@@ -13,6 +13,7 @@ using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Game.Audio;
+using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Localisation;
 using osu.Game.Rulesets.Edit;
@@ -39,9 +40,16 @@ namespace osu.Game.Screens.Edit.Compose.Components
         [Resolved]
         protected EditorBeatmap EditorBeatmap { get; private set; } = null!;
 
+        private readonly Bindable<EditorAdditionBank> defaultAdditionBank = new Bindable<EditorAdditionBank>();
+
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            config.BindWith(OsuSetting.EditorDefaultAdditionBank, defaultAdditionBank);
+
+            // a change only takes hold once nothing is selected, which is also the moment the user would look for it.
+            defaultAdditionBank.BindValueChanged(_ => resetTernaryStates());
+
             createStateBindables();
 
             // bring in updates from selection changes
@@ -290,7 +298,11 @@ namespace osu.Game.Screens.Edit.Compose.Components
             SelectionNewComboState.Value = TernaryState.False;
             AutoSelectionBankEnabled.Value = true;
             SelectionBankStates[HIT_BANK_AUTO].Value = TernaryState.True;
-            SelectionAdditionBankStates[HIT_BANK_AUTO].Value = TernaryState.True;
+
+            // an addition bank cannot live on an object until an addition sample does, so the editor carries a
+            // pre-selected one and hands it over as the addition is added. Starting that on something other than auto
+            // is what saves setting the bank on every note by hand.
+            SelectionAdditionBankStates[defaultAdditionBank.Value.ToBankName()].Value = TernaryState.True;
             foreach (var (_, sampleState) in SelectionSampleStates)
                 sampleState.Value = TernaryState.False;
         }
