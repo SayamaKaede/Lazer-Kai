@@ -10,7 +10,10 @@ using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Screens.Edit;
+using osu.Game.Graphics.UserInterface;
+using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Screens.Edit.Compose.Components;
+using osuTK.Input;
 using osu.Game.Tests.Beatmaps;
 using osuTK;
 
@@ -79,6 +82,43 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddAssert("the whistle took drum", () => whistleBank(), () => Is.EqualTo(HitSampleInfo.BANK_DRUM));
         }
 
+        /// <summary>
+        /// The same has to hold for a note placed with a whistle already switched on, which goes through the placement
+        /// path rather than through the selection.
+        /// </summary>
+        /// <remarks>
+        /// The objects already in the beatmap are put on the drum bank first. Auto takes the addition bank from the
+        /// note's own normal sample, so without this the placed whistle would come out soft either way and the test
+        /// would agree with a broken build.
+        /// </remarks>
+        [Test]
+        public void TestPlacedNoteTakesTheDefaultBank()
+        {
+            setDefault(EditorAdditionBank.Soft);
+
+            AddStep("put everything on drum", () =>
+            {
+                foreach (var hitObject in EditorBeatmap.HitObjects)
+                {
+                    hitObject.Samples = hitObject.Samples.Select(sample => sample.With(newBank: HitSampleInfo.BANK_DRUM, newEditorAutoBank: false)).ToList();
+                    EditorBeatmap.Update(hitObject);
+                }
+            });
+
+            AddStep("remember how many there are", () => countBefore = EditorBeatmap.HitObjects.Count);
+            AddStep("seek past the last one", () => EditorClock.Seek(EditorBeatmap.HitObjects.Last().StartTime + 2000));
+            AddStep("switch whistle on", () => selectionHandler().SelectionSampleStates[HitSampleInfo.HIT_WHISTLE].Value = TernaryState.True);
+
+            AddStep("take the circle tool", () => InputManager.Key(Key.Number2));
+            AddStep("point at the composer", () => InputManager.MoveMouseTo(Editor.ChildrenOfType<OsuHitObjectComposer>().Single()));
+            AddUntilStep("placement started", () => EditorBeatmap.PlacementObject.Value, () => Is.Not.Null);
+
+            AddStep("place one", () => InputManager.Click(MouseButton.Left));
+
+            AddUntilStep("a note went down", () => EditorBeatmap.HitObjects.Count, () => Is.GreaterThan(countBefore));
+            AddAssert("its whistle is soft, not the drum it would inherit", () => whistleBank(), () => Is.EqualTo(HitSampleInfo.BANK_SOFT));
+        }
+
         private void setDefault(EditorAdditionBank bank)
             => AddStep($"default bank is {bank}", () => config.SetValue(OsuSetting.EditorDefaultAdditionBank, bank));
 
@@ -97,7 +137,9 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             });
         }
 
-        private string whistleBank() => EditorBeatmap.HitObjects.First().Samples.Single(s => s.Name == HitSampleInfo.HIT_WHISTLE).Bank;
+        private int countBefore;
+
+        private string whistleBank() => EditorBeatmap.HitObjects.Last().Samples.Single(s => s.Name == HitSampleInfo.HIT_WHISTLE).Bank;
 
         private EditorSelectionHandler selectionHandler() => Editor.ChildrenOfType<EditorSelectionHandler>().First();
     }
