@@ -79,9 +79,14 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         /// </summary>
         private int[] coloursOfCombos()
         {
-            int colour = 0;
+            int indexWithOffsets = 0;
 
-            return offsets().Select(skip => colour = (colour + skip + 1) % colours).ToArray();
+            return offsets().Select(skip =>
+            {
+                indexWithOffsets += skip + 1;
+                // the editor's palette is rotated one against the running combo index; see `EditorBeatmapSkin`.
+                return (indexWithOffsets + colours - 1) % colours;
+            }).ToArray();
         }
     }
 }

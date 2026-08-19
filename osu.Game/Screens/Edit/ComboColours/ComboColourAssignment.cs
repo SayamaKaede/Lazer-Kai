@@ -54,7 +54,12 @@ namespace osu.Game.Screens.Edit.ComboColours
 
             ComboColourPoint? lastPoint = null;
             int lastSequenceIndex = -1;
-            int lastColour = 0;
+
+            // where the palette pointer sits before the first combo. The game adds one per new combo and the
+            // editor's palette is rotated one against that, which together put the first combo on exactly the
+            // entry its skip names — so counting has to start one below the first entry, not at it. Starting at 0
+            // instead lands every colour one place early.
+            int lastColour = colourCount - 1;
 
             for (int i = 0; i < combos.Count; i++)
             {

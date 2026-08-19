@@ -14,13 +14,23 @@ namespace osu.Game.Tests.Editing
         private const int colours = 4;
 
         /// <summary>
-        /// Walks the skips back into the colour each combo actually ends up with, which is what a mapper sees.
+        /// Walks the skips back into the palette entry each combo actually shows, the way the game does.
         /// </summary>
+        /// <remarks>
+        /// Two steps, both taken from the game: `IHasComboInformation.UpdateComboInformation` adds `skip + 1` per new
+        /// combo, and the editor's palette is rotated one against that count, so the entry on screen is one below the
+        /// running total. Modelled here rather than assumed, because getting it wrong is exactly the mistake that puts
+        /// every colour one place off.
+        /// </remarks>
         private static int[] coloursFrom(int[] skips)
         {
-            int colour = 0;
+            int indexWithOffsets = 0;
 
-            return skips.Select(skip => colour = (colour + skip + 1) % colours).ToArray();
+            return skips.Select(skip =>
+            {
+                indexWithOffsets += skip + 1;
+                return (indexWithOffsets + colours - 1) % colours;
+            }).ToArray();
         }
 
         private static ComboColourAssignment.Combo[] combosOfLength(int count, int length = 4)
