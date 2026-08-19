@@ -48,6 +48,7 @@ using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Screens.Backgrounds;
+using osu.Game.Screens.Edit.ComboColours;
 using osu.Game.Screens.Edit.Components.Menus;
 using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
 using osu.Game.Screens.Edit.Compose;
@@ -214,6 +215,7 @@ namespace osu.Game.Screens.Edit
         private EditorBeatmap editorBeatmap;
 
         private BottomBar bottomBar;
+        private ComboColourStudioOverlay comboColourStudio;
 
         [CanBeNull] // Should be non-null once it can support custom rulesets.
         private EditorChangeHandler changeHandler;
@@ -485,6 +487,8 @@ namespace osu.Game.Screens.Edit
                                             copyMenuItem = new EditorMenuItem(CommonStrings.Copy, MenuItemType.Standard, Copy) { Hotkey = new Hotkey(PlatformAction.Copy) },
                                             pasteMenuItem = new EditorMenuItem(CommonStrings.Paste, MenuItemType.Standard, Paste) { Hotkey = new Hotkey(PlatformAction.Paste) },
                                             cloneMenuItem = new EditorMenuItem(CommonStrings.Clone, MenuItemType.Standard, Clone) { Hotkey = new Hotkey(GlobalAction.EditorCloneSelection) },
+                                            new OsuMenuItemSpacer(),
+                                            new EditorMenuItem(ComboColourStudioStrings.ComboColourStudio, MenuItemType.Standard, () => comboColourStudio?.ToggleVisibility()),
                                         }
                                     },
                                     new MenuItem(CommonStrings.MenuBarView)
@@ -634,6 +638,9 @@ namespace osu.Game.Screens.Edit
                         },
                     },
                     bottomBar = new BottomBar(),
+                    // sits above the screens so it stays readable, but takes no input away from them: the layout is
+                    // built while listening to the song and watching the playfield.
+                    comboColourStudio = new ComboColourStudioOverlay { State = { Value = Visibility.Hidden } },
                     MutationTracker,
                     autoBackup = new EditorAutoBackup(),
                     new EditorPlaybackLoop(),
