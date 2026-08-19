@@ -45,12 +45,16 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints
         }
 
         public override bool IsSelectable =>
+            // whatever is already in the selection stays in reach. The cut-off below is about what a drag may pick up,
+            // not about keeping hold of something the user has already taken: moving a selection from far down the
+            // timeline is ordinary editing, and dropping it there would be a trap.
+            IsSelected
             // Bypass fade out extension from hit markers for selection purposes.
             // This is to match stable, where even when the afterimage hit markers are still visible, objects are not selectable.
-            base.ShouldBeAlive
-            // Applies only on the way out. Objects which have not appeared yet have equally little of themselves on
-            // screen, but the editor routinely shows and manipulates upcoming objects.
-            && editorClock.CurrentTime <= Item.GetEndTime() + selectableAfterEndTime.Value;
+            || (base.ShouldBeAlive
+                // Applies only on the way out. Objects which have not appeared yet have equally little of themselves on
+                // screen, but the editor routinely shows and manipulates upcoming objects.
+                && editorClock.CurrentTime <= Item.GetEndTime() + selectableAfterEndTime.Value);
 
         protected OsuSelectionBlueprint(T hitObject)
             : base(hitObject)
