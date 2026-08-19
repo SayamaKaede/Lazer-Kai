@@ -13,6 +13,8 @@ using osu.Game.Screens.Edit;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Screens.Edit.Compose.Components;
+using osu.Game.Screens.Edit.Components.TernaryButtons;
+using osu.Game.Screens.Edit.Compose.Components.Timeline;
 using osuTK.Input;
 using osu.Game.Tests.Beatmaps;
 using osuTK;
@@ -116,6 +118,42 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddStep("place one", () => InputManager.Click(MouseButton.Left));
 
             AddUntilStep("a note went down", () => EditorBeatmap.HitObjects.Count, () => Is.GreaterThan(countBefore));
+            AddAssert("its whistle is soft, not the drum it would inherit", () => whistleBank(), () => Is.EqualTo(HitSampleInfo.BANK_SOFT));
+        }
+
+        /// <summary>
+        /// Adding a whistle from the timeline's sample popover is a third path of its own, and the one a mapper reaches
+        /// for on a single note.
+        /// </summary>
+        /// <remarks>
+        /// The note is put on the drum bank first: with no addition to inherit from, this path took the bank off the
+        /// note's own normal sample, so a soft result can only come from the default.
+        /// </remarks>
+        [Test]
+        public void TestPopoverAddedWhistleTakesTheDefaultBank()
+        {
+            setDefault(EditorAdditionBank.Soft);
+
+            AddStep("place a drum circle with no additions", () =>
+            {
+                EditorBeatmap.RemoveRange(EditorBeatmap.HitObjects.ToArray());
+
+                var circle = new HitCircle { StartTime = 1000, Position = new Vector2(100, 100) };
+                circle.Samples = [new HitSampleInfo(HitSampleInfo.HIT_NORMAL, HitSampleInfo.BANK_DRUM)];
+                EditorBeatmap.Add(circle);
+            });
+
+            AddStep("add a whistle through the popover path", () =>
+            {
+                var piece = Editor.ChildrenOfType<SamplePointPiece>().First(p => p.HitObject == EditorBeatmap.HitObjects.First());
+                piece.TriggerClick();
+            });
+
+            AddUntilStep("the popover is up", () => Editor.ChildrenOfType<SamplePointPiece.SampleEditPopover>().Any(), () => Is.True);
+
+            AddStep("switch whistle on", () => Editor.ChildrenOfType<SamplePointPiece.SampleEditPopover>().Single()
+                                                     .ChildrenOfType<DrawableTernaryButton>().First().TriggerClick());
+
             AddAssert("its whistle is soft, not the drum it would inherit", () => whistleBank(), () => Is.EqualTo(HitSampleInfo.BANK_SOFT));
         }
 

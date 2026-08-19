@@ -18,6 +18,7 @@ using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Framework.Utils;
 using osu.Game.Audio;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
@@ -198,6 +199,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             private SkinnableSound demoSample = null!;
 
             private FillFlowContainer togglesCollection = null!;
+
+            [Resolved]
+            private OsuConfigManager config { get; set; } = null!;
 
             private HitObject[] relevantObjects = null!;
             private (HitObject hitObject, IList<HitSampleInfo> samples)[] allRelevantSamples = null!;
@@ -610,6 +614,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 if (string.IsNullOrEmpty(sampleName))
                     return;
 
+                var defaultBank = config.Get<EditorAdditionBank>(OsuSetting.EditorDefaultAdditionBank);
+
                 updateAllRelevantSamples((h, relevantSamples) =>
                 {
                     // Make sure there isn't already an existing sample
@@ -617,8 +623,17 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                         return;
 
                     // First try inheriting the sample info from the node samples instead of the samples of the hitobject
-                    var relevantSample = relevantSamples.FirstOrDefault(s => s.Name != HitSampleInfo.HIT_NORMAL) ?? relevantSamples.FirstOrDefault();
-                    relevantSamples.Add(relevantSample?.With(sampleName) ?? h.CreateHitSampleInfo(sampleName));
+                    var existingAddition = relevantSamples.FirstOrDefault(s => s.Name != HitSampleInfo.HIT_NORMAL);
+                    var relevantSample = existingAddition ?? relevantSamples.FirstOrDefault();
+
+                    var sample = relevantSample?.With(sampleName) ?? h.CreateHitSampleInfo(sampleName);
+
+                    // with no addition already on the object there is nothing to inherit a bank from, and it would
+                    // otherwise take the normal sample's. That is the moment the chosen default is for.
+                    if (existingAddition == null && defaultBank != EditorAdditionBank.Auto)
+                        sample = sample.With(newBank: defaultBank.ToBankName(), newEditorAutoBank: false);
+
+                    relevantSamples.Add(sample);
                 });
 
                 updateAdditionBankState();
