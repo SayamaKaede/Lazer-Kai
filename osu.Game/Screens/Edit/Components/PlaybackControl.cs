@@ -36,6 +36,11 @@ namespace osu.Game.Screens.Edit.Components
         private readonly Bindable<EditorScreenMode> currentScreenMode = new Bindable<EditorScreenMode>();
         private readonly BindableNumber<double> tempoAdjustment = new BindableDouble(1);
 
+        /// <summary>
+        /// Whether a previewed mod is deciding the playback speed, leaving nothing here to adjust.
+        /// </summary>
+        private readonly IBindable<bool> rateDrivenByMods = new BindableBool();
+
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colourProvider, Editor? editor)
         {
@@ -80,28 +85,51 @@ namespace osu.Game.Screens.Edit.Components
 
             if (editor != null)
                 currentScreenMode.BindTo(editor.Mode);
+
+            if (modRatePreview != null)
+                rateDrivenByMods.BindTo(modRatePreview.RateDrivenByMods);
         }
+
+        [Resolved(canBeNull: true)]
+        private EditorModRatePreview? modRatePreview { get; set; }
 
         protected override void LoadComplete()
         {
             base.LoadComplete();
 
-            currentScreenMode.BindValueChanged(_ =>
+            currentScreenMode.BindValueChanged(_ => updateSpeedAvailability());
+            rateDrivenByMods.BindValueChanged(_ => updateSpeedAvailability());
+        }
+
+        private void updateSpeedAvailability()
+        {
+            if (currentScreenMode.Value == EditorScreenMode.Timing)
             {
-                if (currentScreenMode.Value == EditorScreenMode.Timing)
-                {
-                    tempoAdjustment.Value = 1;
-                    tempoAdjustment.Disabled = true;
-                    playbackSpeedControl.FadeTo(0.5f, 400, Easing.OutQuint);
-                    playbackSpeedControl.TooltipText = "Speed adjustment is unavailable in timing mode. Timing at slower speeds is inaccurate due to resampling artifacts.";
-                }
-                else
-                {
-                    tempoAdjustment.Disabled = false;
-                    playbackSpeedControl.FadeTo(1, 400, Easing.OutQuint);
-                    playbackSpeedControl.TooltipText = default;
-                }
-            });
+                takeSpeedAway("Speed adjustment is unavailable in timing mode. Timing at slower speeds is inaccurate due to resampling artifacts.");
+                return;
+            }
+
+            if (rateDrivenByMods.Value)
+            {
+                takeSpeedAway(EditorStrings.PlaybackSpeedDrivenByMods);
+                return;
+            }
+
+            tempoAdjustment.Disabled = false;
+            playbackSpeedControl.FadeTo(1, 400, Easing.OutQuint);
+            playbackSpeedControl.TooltipText = default;
+        }
+
+        private void takeSpeedAway(LocalisableString reason)
+        {
+            // there is more than one reason to take it away, so it may well be disabled already, and a disabled
+            // bindable cannot be written to.
+            tempoAdjustment.Disabled = false;
+            tempoAdjustment.Value = 1;
+            tempoAdjustment.Disabled = true;
+
+            playbackSpeedControl.FadeTo(0.5f, 400, Easing.OutQuint);
+            playbackSpeedControl.TooltipText = reason;
         }
 
         protected override void Dispose(bool isDisposing)

@@ -53,7 +53,7 @@ namespace osu.Game.Tests.Visual
 
             // We intentionally switch away from the metadata screen, else there is a feedback loop with the textbox handling which causes metadata changes below to get overwritten.
 
-            AddStep("Enter compose mode", () => InputManager.Key(Key.F1));
+            AddStep("Enter compose mode", () => Editor.Mode.Value = EditorScreenMode.Compose);
             AddUntilStep("Wait for compose mode load", () => Editor.ChildrenOfType<HitObjectComposer>().FirstOrDefault()?.IsLoaded == true);
         }
 

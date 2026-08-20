@@ -587,6 +587,12 @@ namespace osu.Game.Localisation
         public static LocalisableString AlwaysExpandLeftToolbox => new TranslatableString(getKey(@"always_expand_left_toolbox"), @"Keep left toolbox expanded");
 
         /// <summary>
+        /// "Speed adjustment is unavailable while a mod that changes the speed is being previewed."
+        /// </summary>
+        public static LocalisableString PlaybackSpeedDrivenByMods => new TranslatableString(getKey(@"playback_speed_driven_by_mods"),
+            @"Speed adjustment is unavailable while a mod that changes the speed is being previewed.");
+
+        /// <summary>
         /// "Share the mod selection with song select"
         /// </summary>
         public static LocalisableString CarryOverSongSelectMods => new TranslatableString(getKey(@"carry_over_song_select_mods"), @"Share the mod selection with song select");

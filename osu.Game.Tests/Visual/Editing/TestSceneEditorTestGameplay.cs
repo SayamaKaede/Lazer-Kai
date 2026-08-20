@@ -134,6 +134,24 @@ namespace osu.Game.Tests.Visual.Editing
                 () => Is.EqualTo(1.25));
         }
 
+        /// <summary>
+        /// F1 switches to the composer, which is also the only screen mods mean anything on. Once it is already up,
+        /// the key does what it does at song select instead.
+        /// </summary>
+        [Test]
+        public void TestF1OpensTheModScreenFromTheComposer()
+        {
+            AddStep("go to timing", () => Editor.Mode.Value = EditorScreenMode.Timing);
+
+            AddStep("press F1", () => InputManager.Key(Key.F1));
+            AddUntilStep("it went to the composer", () => Editor.Mode.Value, () => Is.EqualTo(EditorScreenMode.Compose));
+            AddAssert("and left the mod screen alone", () => modSelect().State.Value, () => Is.EqualTo(Visibility.Hidden));
+
+            AddStep("press F1 again", () => InputManager.Key(Key.F1));
+            AddUntilStep("now the mod screen is up", () => modSelect().State.Value, () => Is.EqualTo(Visibility.Visible));
+            AddAssert("still on the composer", () => Editor.Mode.Value, () => Is.EqualTo(EditorScreenMode.Compose));
+        }
+
         private void openModSelect()
         {
             AddStep("click Test", () => this.ChildrenOfType<EditorMenuBar.DrawableEditorBarMenuItem>()

@@ -418,6 +418,10 @@ namespace osu.Game.Screens.Edit
             AddInternal(starRating);
             dependencies.Cache(starRating);
 
+            var modRatePreview = new EditorModRatePreview();
+            AddInternal(modRatePreview);
+            dependencies.Cache(modRatePreview);
+
             OsuMenuItem undoMenuItem;
             OsuMenuItem redoMenuItem;
 
@@ -1052,7 +1056,13 @@ namespace osu.Game.Screens.Edit
                     return true;
 
                 case GlobalAction.EditorComposeMode:
-                    screenSwitcher.SelectItem(EditorScreenMode.Compose);
+                    // mods are only previewed in the composer and only reachable from it, so once already there the
+                    // key is free to do what it does at song select.
+                    if (Mode.Value == EditorScreenMode.Compose)
+                        modSelect.ToggleVisibility();
+                    else
+                        screenSwitcher.SelectItem(EditorScreenMode.Compose);
+
                     return true;
 
                 case GlobalAction.EditorDesignMode:
