@@ -4,36 +4,29 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Humanizer;
 using Newtonsoft.Json;
 using osu.Framework.Bindables;
-using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Logging;
 using osu.Game.Configuration;
-using osu.Game.Graphics.UserInterface;
-using osu.Game.Localisation;
 using osu.Game.Online.API;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
-using osu.Game.Screens.Edit.Components.Menus;
 using osu.Game.Utils;
 
 namespace osu.Game.Screens.Edit.GameplayTest
 {
     /// <summary>
-    /// Holds the set of mods to apply when entering gameplay test from the editor, and exposes a menu for toggling them.
+    /// Holds the set of mods to apply when entering gameplay test from the editor.
     /// The selection is persisted per ruleset so it survives across editor sessions.
     /// </summary>
+    /// <remarks>
+    /// Choosing the mods is left to <see cref="EditorModSelectOverlay"/>, which writes into <see cref="Mods"/>.
+    /// Because the store is a list of <see cref="APIMod"/>, each mod's settings are carried along with it.
+    /// </remarks>
     public class TestPlayModsController
     {
         /// <summary>
-        /// Mods menu item (with submenus containing all mods applicable to the current ruleset).
-        /// Should be added to the <see cref="Editor"/>'s global menu.
-        /// </summary>
-        public EditorMenuItem Menu { get; }
-
-        /// <summary>
-        /// The mods to apply when entering gameplay test. Writes are persisted and reflected in <see cref="Menu"/>.
+        /// The mods to apply when entering gameplay test. Writes are persisted.
         /// </summary>
         public Bindable<IReadOnlyList<Mod>> Mods => mods;
 
@@ -42,83 +35,19 @@ namespace osu.Game.Screens.Edit.GameplayTest
         private readonly Bindable<string> persistedMods;
         private readonly string rulesetShortName;
 
-        private readonly Dictionary<Type, ToggleMenuItem> toggles = new Dictionary<Type, ToggleMenuItem>();
-
-        /// <summary>
-        /// Guards against <see cref="setModState"/> being re-entered while toggle states are being synchronised with <see cref="mods"/>.
-        /// </summary>
-        private bool synchronisingToggles;
-
         public TestPlayModsController(OsuConfigManager config, RulesetInfo rulesetInfo)
         {
             rulesetShortName = rulesetInfo.ShortName;
             persistedMods = config.GetBindable<string>(OsuSetting.EditorTestPlayMods);
 
-            var ruleset = rulesetInfo.CreateInstance();
-
-            var typeMenuItems = new List<MenuItem>();
-
-            foreach (var group in ruleset.CreateAllMods()
-                                         .Where(m => m.HasImplementation && m.UserPlayable)
-                                         .GroupBy(m => m.Type))
-            {
-                var modMenuItems = new List<MenuItem>();
-
-                foreach (var mod in group)
-                {
-                    var toggle = new ToggleMenuItem($"{mod.Name} ({mod.Acronym})");
-
-                    // capturing `mod` here is safe: it is only ever used as a template to clone from.
-                    toggle.State.BindValueChanged(state => setModState(mod, state.NewValue));
-
-                    toggles[mod.GetType()] = toggle;
-                    modMenuItems.Add(toggle);
-                }
-
-                typeMenuItems.Add(new MenuItem(group.Key.Humanize(LetterCasing.Title)) { Items = modMenuItems });
-            }
-
-            Menu = new EditorMenuItem(EditorStrings.TestPlayMods) { Items = typeMenuItems };
-
-            mods.Value = readPersistedMods(ruleset);
-            mods.BindValueChanged(_ =>
-            {
-                synchroniseToggles();
-                writePersistedMods();
-            }, true);
+            mods.Value = readPersistedMods(rulesetInfo.CreateInstance());
+            mods.BindValueChanged(_ => writePersistedMods(), true);
         }
 
         /// <summary>
         /// Clears the current selection.
         /// </summary>
         public void DeselectAll() => mods.Value = Array.Empty<Mod>();
-
-        private void setModState(Mod mod, bool enabled)
-        {
-            if (synchronisingToggles)
-                return;
-
-            var newSelection = mods.Value.Where(m => m.GetType() != mod.GetType()).ToList();
-
-            if (enabled)
-            {
-                // deselect anything the newly enabled mod cannot be played alongside, mirroring how mod selection behaves elsewhere.
-                newSelection.RemoveAll(m => !ModUtils.CheckCompatibleSet(new[] { m, mod }));
-                newSelection.Add(mod.DeepClone());
-            }
-
-            mods.Value = newSelection;
-        }
-
-        private void synchroniseToggles()
-        {
-            synchronisingToggles = true;
-
-            foreach ((var type, var toggle) in toggles)
-                toggle.State.Value = mods.Value.Any(m => m.GetType() == type);
-
-            synchronisingToggles = false;
-        }
 
         private IReadOnlyList<Mod> readPersistedMods(Ruleset ruleset)
         {

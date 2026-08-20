@@ -4,6 +4,7 @@
 #nullable disable
 
 using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.ObjectExtensions;
@@ -62,6 +63,15 @@ namespace osu.Game.Screens.Edit
             });
         }
 
+        /// <summary>
+        /// What was selected on the way in, before this screen cleared it.
+        /// </summary>
+        /// <remarks>
+        /// The editor itself is loaded after the clearing below, so it has no other way of seeing what the player had
+        /// chosen. Kept here so that the editor can start its test play mods from it when asked to.
+        /// </remarks>
+        public IReadOnlyList<Mod> ModsOnEntry { get; private set; } = Array.Empty<Mod>();
+
         protected override void LoadComplete()
         {
             base.LoadComplete();
@@ -69,6 +79,8 @@ namespace osu.Game.Screens.Edit
             // will be restored via lease, see `DisallowExternalBeatmapRulesetChanges`.
             if (!(Beatmap.Value is DummyWorkingBeatmap))
                 Ruleset.Value = Beatmap.Value.BeatmapInfo.Ruleset;
+
+            ModsOnEntry = Mods.Value;
             Mods.Value = Array.Empty<Mod>();
         }
 

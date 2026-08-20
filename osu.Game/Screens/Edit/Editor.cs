@@ -113,6 +113,12 @@ namespace osu.Game.Screens.Edit
         [Resolved(canBeNull: true)]
         private IDialogOverlay dialogOverlay { get; set; }
 
+        [Resolved(CanBeNull = true)]
+        private IOverlayManager overlayManager { get; set; }
+
+        [Resolved(CanBeNull = true)]
+        private TestPlayModCarryOver modCarryOver { get; set; }
+
         [Resolved(canBeNull: true)]
         private INotificationOverlay notifications { get; set; }
 
@@ -196,6 +202,14 @@ namespace osu.Game.Screens.Edit
 
         private TestPlayModsController testPlayModsController;
 
+        private EditorModSelectOverlay modSelect;
+
+        /// <summary>
+        /// The mod screen is not part of the editor's own hierarchy: it is handed to the game so it lands in the layer
+        /// that carries the footer its buttons live on. This releases it again.
+        /// </summary>
+        private IDisposable modSelectRegistration;
+
         /// <summary>
         /// Mods which will be applied when entering gameplay test.
         /// </summary>
@@ -249,6 +263,8 @@ namespace osu.Game.Screens.Edit
         private readonly OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Aquamarine);
 
         private Bindable<OverlayColourScheme> editorColourScheme;
+
+        private Bindable<bool> carryOverMods;
 
         [Resolved(canBeNull: true)]
         private OnScreenDisplay onScreenDisplay { get; set; }
@@ -307,6 +323,7 @@ namespace osu.Game.Screens.Edit
         private void load(OsuConfigManager config)
         {
             editorColourScheme = config.GetBindable<OverlayColourScheme>(OsuSetting.EditorColourScheme);
+            carryOverMods = config.GetBindable<bool>(OsuSetting.EditorCarryOverSongSelectMods);
 
             // `OverlayColourProvider` does not signal drawables when its hue changes, so this is only applied on load.
             // A change to the setting therefore takes effect the next time the editor is opened.
@@ -394,6 +411,8 @@ namespace osu.Game.Screens.Edit
             AddInternal(bookmarkController);
 
             testPlayModsController = new TestPlayModsController(config, editorBeatmap.BeatmapInfo.Ruleset);
+
+            LoadComponent(modSelect = new EditorModSelectOverlay(editorColourScheme.Value));
 
             var starRating = new EditorStarRating();
             AddInternal(starRating);
@@ -596,7 +615,7 @@ namespace osu.Game.Screens.Edit
                                                 Hotkey = new Hotkey(GlobalAction.EditorTestGameplay)
                                             },
                                             new OsuMenuItemSpacer(),
-                                            testPlayModsController.Menu,
+                                            new EditorMenuItem(EditorStrings.TestPlayMods, MenuItemType.Standard, () => modSelect.ToggleVisibility()),
                                             new EditorMenuItem(EditorStrings.TestPlayDeselectAllMods, MenuItemType.Destructive, testPlayModsController.DeselectAll),
                                             new OsuMenuItemSpacer(),
                                             new ToggleMenuItem(EditorStrings.ApplyTestPlayModsToComposer)
@@ -661,6 +680,18 @@ namespace osu.Game.Screens.Edit
             base.LoadComplete();
             setUpClipboardActionAvailability();
 
+            // handing the mod screen over has to wait for the update thread: it is moved into the game's own layer.
+            modSelect.Beatmap.BindTo(Beatmap);
+            modSelect.Ruleset.BindTo(Ruleset);
+            modSelect.SelectedMods.BindTo(testPlayModsController.Mods);
+            modSelectRegistration = overlayManager?.RegisterBlockingOverlay(modSelect);
+
+            // taken from the loader rather than from `Mods`, which it empties on the way in so that the editor itself
+            // runs unmodded. Cloned rather than shared: the mods here get their settings edited, and those edits must
+            // not reach back into the selection song select is still holding.
+            if (carryOverMods.Value && loader != null)
+                testPlayModsController.Mods.Value = loader.ModsOnEntry.Select(m => m.DeepClone()).ToArray();
+
             Mode.Value = isNewBeatmap ? EditorScreenMode.SongSetup : EditorScreenMode.Compose;
             Mode.BindValueChanged(onModeChanged, true);
 
@@ -697,6 +728,8 @@ namespace osu.Game.Screens.Edit
 
             // redundant (should have happened via a `resetTrack()` call in `OnExiting()`), but done for safety
             musicController.TrackChanged -= onTrackChanged;
+
+            modSelectRegistration?.Dispose();
         }
 
         private void onTrackChanged(WorkingBeatmap working, TrackChangeDirection direction)
@@ -1134,6 +1167,10 @@ namespace osu.Game.Screens.Edit
             // which would cause `EditorClock` to reload the track and automatically reapply adjustments to it if not preceded by `resetTrack()`.
             resetTrack();
             refetchBeatmap();
+
+            // the lease on `Mods` reverts as this screen goes away, so the handover cannot be done from here directly.
+            if (carryOverMods.Value)
+                modCarryOver?.HandOver(testPlayModsController.Mods.Value.Select(m => m.DeepClone()).ToArray());
 
             return base.OnExiting(e);
         }

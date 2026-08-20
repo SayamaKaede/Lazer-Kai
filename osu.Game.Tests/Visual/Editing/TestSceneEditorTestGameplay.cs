@@ -9,10 +9,12 @@ using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
@@ -25,6 +27,7 @@ using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Components;
 using osu.Game.Screens.Edit.Components.Menus;
 using osu.Game.Screens.Edit.Components.Timelines.Summary;
+using osu.Game.Overlays.Mods;
 using osu.Game.Screens.Edit.GameplayTest;
 using osu.Game.Screens.Play;
 using osu.Game.Storyboards;
@@ -45,11 +48,16 @@ namespace osu.Game.Tests.Visual.Editing
         [Resolved]
         private BeatmapManager beatmaps { get; set; }
 
+        [Resolved]
+        private OsuConfigManager config { get; set; }
+
         private BeatmapSetInfo importedBeatmapSet;
 
         public override void SetUpSteps()
         {
             AddStep("import test beatmap", () => importedBeatmapSet = BeatmapImportHelper.LoadOszIntoOsu(game).GetResultSafely());
+            // config outlives a single test, so a test that turns this on would otherwise change what every test after it does.
+            AddStep("stop sharing the mod selection", () => config.SetValue(OsuSetting.EditorCarryOverSongSelectMods, false));
             base.SetUpSteps();
         }
 
@@ -87,16 +95,56 @@ namespace osu.Game.Tests.Visual.Editing
             // the selection is persisted to config, so it can carry over from a previously run test in this fixture.
             AddStep("clear test play mods", () => Editor.TestPlayMods.DeselectAll());
 
+            openModSelect();
+
+            AddStep("click Freeze Frame", () => panelForMod(typeof(OsuModFreezeFrame)).TriggerClick());
+
+            AddAssert("freeze frame selected for test play", () => Editor.TestPlayMods.Mods.Value.OfType<OsuModFreezeFrame>().Any());
+
+            // the mod screen is the one song select uses, so it has to be writing to the editor's own selection and
+            // not to the one the player left behind at song select.
+            AddAssert("song select mods left alone", () => SelectedMods.Value, () => Is.Empty);
+        }
+
+        /// <summary>
+        /// The reason for using the mod screen at all: a mod's own settings can be changed, and have to be kept.
+        /// </summary>
+        [Test]
+        public void TestCustomisedModSurvivesTheEditorSession()
+        {
+            Editor firstEditor = null;
+
+            AddStep("pick double time at 1.25x", () =>
+            {
+                firstEditor = Editor;
+                Editor.TestPlayMods.Mods.Value = new[] { new OsuModDoubleTime { SpeedChange = { Value = 1.25 } } };
+            });
+
+            AddStep("exit editor", () => Editor.Exit());
+            AddUntilStep("wait for editor exit", () => !firstEditor.IsCurrentScreen());
+
+            AddStep("reload editor", LoadEditor);
+            AddUntilStep("wait for new editor", () => Editor != firstEditor && Editor?.ReadyForUse == true);
+
+            AddAssert("the speed came back with it", () => Editor.TestPlayMods.Mods.Value.OfType<OsuModDoubleTime>().Single().SpeedChange.Value,
+                () => Is.EqualTo(1.25));
+        }
+
+        private void openModSelect()
+        {
             AddStep("click Test", () => this.ChildrenOfType<EditorMenuBar.DrawableEditorBarMenuItem>()
                                             .Single(item => hasText(item, "Test")).TriggerClick());
 
             hoverMenuItem("Mods");
-            hoverMenuItem("Fun");
-            hoverMenuItem("Freeze Frame (FR)");
-            AddStep("click Freeze Frame", () => getMenuItem("Freeze Frame (FR)").TriggerClick());
+            AddStep("click Mods", () => getMenuItem("Mods").TriggerClick());
 
-            AddAssert("freeze frame selected for test play", () => Editor.TestPlayMods.Mods.Value.OfType<OsuModFreezeFrame>().Any());
+            AddUntilStep("mod screen is up", () => modSelect().State.Value, () => Is.EqualTo(Visibility.Visible));
+            AddUntilStep("its panels are loaded", () => modSelect().ChildrenOfType<ModPanel>().Any(), () => Is.True);
         }
+
+        private EditorModSelectOverlay modSelect() => this.ChildrenOfType<EditorModSelectOverlay>().Single();
+
+        private ModPanel panelForMod(Type modType) => modSelect().ChildrenOfType<ModPanel>().Single(panel => panel.Mod.GetType() == modType);
 
         private void hoverMenuItem(string text)
         {

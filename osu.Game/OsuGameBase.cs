@@ -62,6 +62,7 @@ using osu.Game.Overlays.Settings.Sections.Input;
 using osu.Game.Resources;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Screens.Edit.GameplayTest;
 using osu.Game.Scoring;
 using osu.Game.Skinning;
 using osu.Game.Utils;
@@ -376,6 +377,10 @@ namespace osu.Game
 
             dependencies.Cache(LeaderboardManager = new LeaderboardManager());
             base.Content.Add(LeaderboardManager);
+
+            TestPlayModCarryOver testPlayModCarryOver;
+            dependencies.Cache(testPlayModCarryOver = new TestPlayModCarryOver());
+            base.Content.Add(testPlayModCarryOver);
 
             // add api components to hierarchy.
             if (API is APIAccess apiAccess)

@@ -20,6 +20,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
             {
                 new SettingsCheckbox
                 {
+                    LabelText = EditorStrings.CarryOverSongSelectMods,
+                    TooltipText = EditorStrings.CarryOverSongSelectModsDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorCarryOverSongSelectMods)
+                },
+                new SettingsCheckbox
+                {
                     LabelText = EditorStrings.ApplyTestPlayModsToComposer,
                     Current = config.GetBindable<bool>(OsuSetting.EditorApplyTestPlayModsToComposer)
                 },
