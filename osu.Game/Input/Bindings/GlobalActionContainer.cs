@@ -34,6 +34,7 @@ namespace osu.Game.Input.Bindings
         /// </remarks>
         public override IEnumerable<IKeyBinding> DefaultKeyBindings => globalKeyBindings
                                                                        .Concat(editorKeyBindings)
+                                                                       .Concat(lazerKaiEditorKeyBindings)
                                                                        .Concat(editorTestPlayKeyBindings)
                                                                        .Concat(inGameKeyBindings)
                                                                        .Concat(replayKeyBindings)
@@ -72,6 +73,9 @@ namespace osu.Game.Input.Bindings
                 case GlobalActionCategory.EditorTestPlay:
                     return editorTestPlayKeyBindings;
 
+                case GlobalActionCategory.EditorLazerKai:
+                    return lazerKaiEditorKeyBindings;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(category), category, $"Unexpected {nameof(GlobalActionCategory)}");
             }
@@ -83,6 +87,31 @@ namespace osu.Game.Input.Bindings
         public bool OnPressed(KeyBindingPressEvent<GlobalAction> e) => handler?.OnPressed(e) == true;
 
         public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e) => handler?.OnReleased(e);
+
+        /// <summary>
+        /// This fork's own editor bindings, kept apart from the stock ones only so that they can be given a heading of
+        /// their own in the key bindings panel.
+        /// </summary>
+        /// <remarks>
+        /// Which list an action sits in is a matter of presentation: bindings are stored against the action's number,
+        /// so moving one between these lists leaves whatever the user bound to it alone. The order these are checked in
+        /// still matters though, which is why this stays next to the stock editor bindings.
+        /// </remarks>
+        private static IEnumerable<KeyBinding> lazerKaiEditorKeyBindings => new[]
+        {
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleComposerModPreview),
+            // key positions, not characters: these are the two keys a JIS keyboard labels `[` and `]`, which sit one
+            // to the right of where a US keyboard puts them.
+            new KeyBinding(new[] { InputKey.BracketRight }, GlobalAction.EditorDecreaseSliderVelocity),
+            new KeyBinding(new[] { InputKey.BackSlash }, GlobalAction.EditorIncreaseSliderVelocity),
+            new KeyBinding(new[] { InputKey.Alt, InputKey.BracketRight }, GlobalAction.EditorDecreaseSliderVelocityFine),
+            new KeyBinding(new[] { InputKey.Alt, InputKey.BackSlash }, GlobalAction.EditorIncreaseSliderVelocityFine),
+            // registered unbound: these are conveniences, and every obvious editor combination is already taken.
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimeline),
+            new KeyBinding(InputKey.None, GlobalAction.EditorBackupNow),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleHitsounds),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleMusic),
+        };
 
         private static IEnumerable<KeyBinding> globalKeyBindings => new[]
         {
@@ -145,18 +174,6 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(new[] { InputKey.Control, InputKey.MouseWheelDown }, GlobalAction.EditorCyclePreviousBeatSnapDivisor),
             new KeyBinding(new[] { InputKey.Control, InputKey.MouseWheelUp }, GlobalAction.EditorCycleNextBeatSnapDivisor),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleMoveControl),
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleComposerModPreview),
-            // key positions, not characters: these are the two keys a JIS keyboard labels `[` and `]`, which sit one
-            // to the right of where a US keyboard puts them.
-            new KeyBinding(new[] { InputKey.BracketRight }, GlobalAction.EditorDecreaseSliderVelocity),
-            new KeyBinding(new[] { InputKey.BackSlash }, GlobalAction.EditorIncreaseSliderVelocity),
-            new KeyBinding(new[] { InputKey.Alt, InputKey.BracketRight }, GlobalAction.EditorDecreaseSliderVelocityFine),
-            new KeyBinding(new[] { InputKey.Alt, InputKey.BackSlash }, GlobalAction.EditorIncreaseSliderVelocityFine),
-            // registered unbound: these are conveniences, and every obvious editor combination is already taken.
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimeline),
-            new KeyBinding(InputKey.None, GlobalAction.EditorBackupNow),
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleHitsounds),
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleMusic),
             new KeyBinding(new[] { InputKey.Control, InputKey.R }, GlobalAction.EditorToggleRotateControl),
             new KeyBinding(new[] { InputKey.Control, InputKey.E }, GlobalAction.EditorToggleScaleControl),
             new KeyBinding(new[] { InputKey.Control, InputKey.Left }, GlobalAction.EditorSeekToPreviousHitObject),
@@ -599,5 +616,6 @@ namespace osu.Game.Input.Bindings
         AudioControl,
         Overlays,
         EditorTestPlay,
+        EditorLazerKai,
     }
 }

@@ -61,6 +61,7 @@ namespace osu.Game.Overlays.Settings.Sections.Input
                 {
                     new GlobalKeyBindingsSubsection(CommonStrings.General, GlobalActionCategory.Editor),
                     new GlobalKeyBindingsSubsection(InputSettingsStrings.EditorTestPlaySection, GlobalActionCategory.EditorTestPlay),
+                    new GlobalKeyBindingsSubsection(LazerKaiSettingsStrings.SectionHeader, GlobalActionCategory.EditorLazerKai),
                 }.Concat(rulesetEditorVariants),
             });
         }
