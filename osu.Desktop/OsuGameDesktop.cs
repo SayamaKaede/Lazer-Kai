@@ -120,7 +120,9 @@ namespace osu.Desktop
             if (IsPackageManaged)
                 return new NoActionUpdateManager();
 
-            return new VelopackUpdateManager();
+            // this fork is handed out as a folder to copy over an existing one, so velopack has nothing to install
+            // into and its check fails on every run. Knowing a release happened is all that is wanted here.
+            return new LazerKaiUpdateManager();
         }
 
         public override bool RestartAppWhenExited()
