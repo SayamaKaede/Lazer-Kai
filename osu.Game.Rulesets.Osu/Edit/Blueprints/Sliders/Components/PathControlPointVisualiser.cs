@@ -219,6 +219,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
                             if (allowSelection)
                                 d.RequestSelection = selectionRequested;
 
+                            d.CtrlClickCyclesCurveType.BindTo(ctrlClickCyclesCurveType);
                             d.ControlPoint.Changed += controlPointChanged;
                             d.DragStarted = DragStarted;
                             d.DragInProgress = DragInProgress;

@@ -7,7 +7,9 @@ using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.UserInterface;
+using osu.Framework.Allocation;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
@@ -22,6 +24,10 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
     public partial class TestScenePathControlPointVisualiser : OsuManualInputManagerTestScene
     {
         private Slider slider;
+
+        [Resolved]
+        private OsuConfigManager config { get; set; }
+
         private PathControlPointVisualiser<Slider> visualiser;
 
         [SetUp]
@@ -258,6 +264,41 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                 () => !Is.EqualTo(points.ElementAt(index))
             );
         }
+
+        /// <summary>
+        /// Cycling selects the point it just changed, and a ctrl+click on an already selected point used to be ignored
+        /// so as not to disturb a multi-selection. Together that left every second click doing nothing.
+        /// </summary>
+        [Test]
+        public void TestCtrlClickCyclesOnEveryClick()
+        {
+            AddStep("cycle the curve type on ctrl+click", () => config.SetValue(OsuSetting.EditorCtrlClickCyclesCurveType, true));
+
+            createVisualiser(true);
+
+            addControlPointStep(new Vector2(200), PathType.LINEAR);
+            addControlPointStep(new Vector2(300));
+            addControlPointStep(new Vector2(500, 300));
+
+            moveMouseToControlPoint(1);
+
+            // the point starts on inherit, so the cycle runs from the top of the list.
+            ctrlClick();
+            assertControlPointPathType(1, PathType.LINEAR);
+
+            ctrlClick();
+            assertControlPointPathType(1, PathType.BEZIER);
+
+            ctrlClick();
+            assertControlPointPathType(1, PathType.PERFECT_CURVE);
+        }
+
+        private void ctrlClick() => AddStep("ctrl+click", () =>
+        {
+            InputManager.PressKey(Key.LControl);
+            InputManager.Click(MouseButton.Left);
+            InputManager.ReleaseKey(Key.LControl);
+        });
 
         private void createVisualiser(bool allowSelection) => AddStep("create visualiser", () => Child = visualiser = new PathControlPointVisualiser<Slider>(slider, allowSelection)
         {

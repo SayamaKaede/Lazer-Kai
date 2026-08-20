@@ -127,6 +127,11 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
         // to avoid deselecting the piece by accident when the mouse up corresponding to the mouse down/drag fires.
         private bool keepSelection;
 
+        /// <summary>
+        /// Whether ctrl+click cycles this piece's curve type instead of adding it to the selection.
+        /// </summary>
+        public readonly BindableBool CtrlClickCyclesCurveType = new BindableBool();
+
         protected override bool OnMouseDown(MouseDownEvent e)
         {
             if (RequestSelection == null)
@@ -138,7 +143,11 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
                     // if control is pressed, do not do anything as the user may be adding to current selection
                     // or dragging all currently selected control points.
                     // if it isn't and the user's intent is to deselect, deselection will happen on mouse up.
-                    if (e.ControlPressed && IsSelected.Value)
+                    //
+                    // none of that applies while ctrl+click is cycling the curve type: there is no multi-selection for
+                    // it to protect, and since cycling selects what it just changed, bailing out here left every second
+                    // click doing nothing but deselecting.
+                    if (!CtrlClickCyclesCurveType.Value && e.ControlPressed && IsSelected.Value)
                         return true;
 
                     RequestSelection.Invoke(this, e);
@@ -227,6 +236,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
 
                 case SplineType.PerfectCurve:
                     return colours.PurpleDark;
+
 
                 default:
                     return colours.Red;
