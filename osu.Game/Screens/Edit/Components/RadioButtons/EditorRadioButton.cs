@@ -36,6 +36,8 @@ namespace osu.Game.Screens.Edit.Components.RadioButtons
         /// </summary>
         public readonly Func<Drawable?>? CreateIcon;
 
+        public Hotkey? Hotkey { get; init; }
+
         private readonly Action? action;
 
         private Color4 defaultBackgroundColour;
@@ -45,7 +47,7 @@ namespace osu.Game.Screens.Edit.Components.RadioButtons
 
         private Drawable icon = null!;
 
-        public EditorRadioButton(string label, Action? action, Func<Drawable?>? createIcon = null)
+        public EditorRadioButton(LocalisableString label, Action? action, Func<Drawable?>? createIcon = null)
         {
             Text = label;
             CreateIcon = createIcon;
@@ -75,6 +77,21 @@ namespace osu.Game.Screens.Edit.Components.RadioButtons
                 b.Size = new Vector2(20);
                 b.X = 10;
             }));
+
+            if (Hotkey != null)
+            {
+                SpriteText.Origin = Anchor.BottomLeft;
+                SpriteText.Y = -1;
+
+                Add(new HotkeyDisplay
+                {
+                    Hotkey = Hotkey.Value,
+                    Anchor = Anchor.CentreLeft,
+                    Origin = Anchor.TopLeft,
+                    X = 40,
+                    Y = 1,
+                });
+            }
         }
 
         /// <summary>

@@ -130,6 +130,7 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(new[] { InputKey.F3 }, GlobalAction.EditorTimingMode),
             new KeyBinding(new[] { InputKey.F4 }, GlobalAction.EditorSetupMode),
             new KeyBinding(new[] { InputKey.Control, InputKey.Shift, InputKey.A }, GlobalAction.EditorVerifyMode),
+            new KeyBinding(new[] { InputKey.Number1 }, GlobalAction.EditorSelectTool),
             new KeyBinding(new[] { InputKey.Control, InputKey.D }, GlobalAction.EditorCloneSelection),
             new KeyBinding(new[] { InputKey.J }, GlobalAction.EditorNudgeLeft),
             new KeyBinding(new[] { InputKey.K }, GlobalAction.EditorNudgeRight),
@@ -555,6 +556,7 @@ namespace osu.Game.Input.Bindings
 
         // IMPORTANT: key bindings are persisted to realm by this enum's integer values, so anything added below this
         // point must be appended to the end. Inserting into the middle silently remaps every existing binding after it.
+        // On merging upstream, its new entries go after this block for the same reason.
 
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleComposerModPreview))]
         EditorToggleComposerModPreview,
@@ -582,6 +584,9 @@ namespace osu.Game.Input.Bindings
 
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleMusic))]
         EditorToggleMusic,
+
+        [LocalisableDescription(typeof(EditorStrings), nameof(EditorStrings.SelectTool))]
+        EditorSelectTool,
     }
 
     public enum GlobalActionCategory

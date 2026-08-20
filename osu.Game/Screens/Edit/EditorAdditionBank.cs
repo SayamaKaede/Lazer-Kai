@@ -4,7 +4,7 @@
 using osu.Framework.Localisation;
 using osu.Game.Audio;
 using osu.Game.Localisation;
-using osu.Game.Screens.Edit.Compose.Components;
+using osu.Game.Rulesets.Edit;
 
 namespace osu.Game.Screens.Edit
 {
@@ -50,7 +50,7 @@ namespace osu.Game.Screens.Edit
                     return HitSampleInfo.BANK_DRUM;
 
                 default:
-                    return EditorSelectionHandler.HIT_BANK_AUTO;
+                    return HitObjectComposer.HIT_BANK_AUTO;
             }
         }
 

@@ -44,7 +44,7 @@ using osu.Game.Input.Bindings;
 namespace osu.Game.Rulesets.Osu.Edit
 {
     [Cached]
-    public partial class OsuHitObjectComposer : HitObjectComposer<OsuHitObject>, IKeyBindingHandler<GlobalAction>
+    public partial class OsuHitObjectComposer : HitObjectComposer<OsuHitObject, OsuAction>, IKeyBindingHandler<GlobalAction>
     {
         /// <summary>
         /// Amount the slider velocity shortcuts move the velocity by, and the smaller step used when holding the fine modifier.
@@ -61,6 +61,8 @@ namespace osu.Game.Rulesets.Osu.Edit
             : base(ruleset)
         {
         }
+
+        public override Bindable<TernaryState> SelectionNewComboState { get; } = new Bindable<TernaryState>();
 
         public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
         {
@@ -106,7 +108,7 @@ namespace osu.Game.Rulesets.Osu.Edit
         /// </summary>
         private readonly GridFromPointsTool gridFromPointsTool = new GridFromPointsTool();
 
-        protected override IReadOnlyList<CompositionTool> CompositionTools => new CompositionTool[]
+        protected override IReadOnlyList<CompositionTool<OsuAction>> CompositionTools => new CompositionTool<OsuAction>[]
         {
             new HitCircleCompositionTool(),
             new SliderCompositionTool(),
@@ -455,8 +457,7 @@ namespace osu.Game.Rulesets.Osu.Edit
 
                 if (!osuSelectionHandler.SelectedItems.Any())
                 {
-                    osuSelectionHandler.SelectionNewComboState.Value =
-                        osuSelectionHandler.SelectionNewComboState.Value == TernaryState.False ? TernaryState.True : TernaryState.False;
+                    SelectionNewComboState!.Value = SelectionNewComboState.Value == TernaryState.False ? TernaryState.True : TernaryState.False;
                     return true;
                 }
             }

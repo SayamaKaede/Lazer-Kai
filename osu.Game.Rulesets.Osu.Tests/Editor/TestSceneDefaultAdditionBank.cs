@@ -12,7 +12,7 @@ using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Screens.Edit;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Rulesets.Osu.Edit;
-using osu.Game.Screens.Edit.Compose.Components;
+using osu.Game.Rulesets.Edit;
 using osu.Game.Screens.Edit.Components.TernaryButtons;
 using osu.Game.Screens.Edit.Compose.Components.Timeline;
 using osuTK.Input;
@@ -43,7 +43,7 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             setDefault(setting);
             placeAndSelectAPlainCircle();
 
-            AddStep("add a whistle", () => selectionHandler().AddHitSample(HitSampleInfo.HIT_WHISTLE));
+            AddStep("add a whistle", () => composer().AddHitSample(HitSampleInfo.HIT_WHISTLE));
 
             AddAssert("the whistle took the default bank", () => whistleBank(), () => Is.EqualTo(expected));
         }
@@ -57,7 +57,7 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             setDefault(EditorAdditionBank.Auto);
             placeAndSelectAPlainCircle();
 
-            AddStep("add a whistle", () => selectionHandler().AddHitSample(HitSampleInfo.HIT_WHISTLE));
+            AddStep("add a whistle", () => composer().AddHitSample(HitSampleInfo.HIT_WHISTLE));
 
             AddAssert("the whistle was left on auto", () => EditorBeatmap.HitObjects.First().Samples
                                                                         .Single(s => s.Name == HitSampleInfo.HIT_WHISTLE).EditorAutoBank,
@@ -80,7 +80,7 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddStep("deselect", () => EditorBeatmap.SelectedHitObjects.Clear());
             AddStep("select again", () => EditorBeatmap.SelectedHitObjects.Add(EditorBeatmap.HitObjects.First()));
 
-            AddStep("add a whistle", () => selectionHandler().AddHitSample(HitSampleInfo.HIT_WHISTLE));
+            AddStep("add a whistle", () => composer().AddHitSample(HitSampleInfo.HIT_WHISTLE));
             AddAssert("the whistle took drum", () => whistleBank(), () => Is.EqualTo(HitSampleInfo.BANK_DRUM));
         }
 
@@ -109,7 +109,7 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
             AddStep("remember how many there are", () => countBefore = EditorBeatmap.HitObjects.Count);
             AddStep("seek past the last one", () => EditorClock.Seek(EditorBeatmap.HitObjects.Last().StartTime + 2000));
-            AddStep("switch whistle on", () => selectionHandler().SelectionSampleStates[HitSampleInfo.HIT_WHISTLE].Value = TernaryState.True);
+            AddStep("switch whistle on", () => composer().SelectionSampleStates[HitSampleInfo.HIT_WHISTLE].Value = TernaryState.True);
 
             AddStep("take the circle tool", () => InputManager.Key(Key.Number2));
             AddStep("point at the composer", () => InputManager.MoveMouseTo(Editor.ChildrenOfType<OsuHitObjectComposer>().Single()));
@@ -179,6 +179,6 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
         private string whistleBank() => EditorBeatmap.HitObjects.Last().Samples.Single(s => s.Name == HitSampleInfo.HIT_WHISTLE).Bank;
 
-        private EditorSelectionHandler selectionHandler() => Editor.ChildrenOfType<EditorSelectionHandler>().First();
+        private OsuHitObjectComposer composer() => Editor.ChildrenOfType<OsuHitObjectComposer>().First();
     }
 }
