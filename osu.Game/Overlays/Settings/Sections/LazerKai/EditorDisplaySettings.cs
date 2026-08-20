@@ -56,6 +56,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     LabelText = EditorStrings.AlwaysExpandLeftToolbox,
                     Current = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox)
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.HideGridFromPointsTool,
+                    TooltipText = EditorStrings.HideGridFromPointsToolDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorHideGridFromPointsTool)
+                },
                 new SettingsItemV2(new FormSliderBar<float>
                 {
                     Caption = EditorStrings.ToolButtonSquareness,

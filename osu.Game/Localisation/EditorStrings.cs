@@ -587,6 +587,28 @@ namespace osu.Game.Localisation
         public static LocalisableString AlwaysExpandLeftToolbox => new TranslatableString(getKey(@"always_expand_left_toolbox"), @"Keep left toolbox expanded");
 
         /// <summary>
+        /// "Share the mod selection with song select"
+        /// </summary>
+        public static LocalisableString CarryOverSongSelectMods => new TranslatableString(getKey(@"carry_over_song_select_mods"), @"Share the mod selection with song select");
+
+        /// <summary>
+        /// "Test play starts from the mods chosen at song select, and what is chosen here is left selected on leaving."
+        /// </summary>
+        public static LocalisableString CarryOverSongSelectModsDescription => new TranslatableString(getKey(@"carry_over_song_select_mods_description"),
+            @"Test play starts from the mods chosen at song select, and what is chosen here is left selected on leaving.");
+
+        /// <summary>
+        /// "Hide the grid from points tool"
+        /// </summary>
+        public static LocalisableString HideGridFromPointsTool => new TranslatableString(getKey(@"hide_grid_from_points_tool"), @"Hide the grid from points tool");
+
+        /// <summary>
+        /// "Its number key stops selecting it too. The grid can still be set up from the grid section on the right."
+        /// </summary>
+        public static LocalisableString HideGridFromPointsToolDescription => new TranslatableString(getKey(@"hide_grid_from_points_tool_description"),
+            @"Its number key stops selecting it too. The grid can still be set up from the grid section on the right.");
+
+        /// <summary>
         /// "Remove the catch when starting a drag"
         /// </summary>
         public static LocalisableString RemoveDragThreshold => new TranslatableString(getKey(@"remove_drag_threshold"), @"Remove the catch when starting a drag");

@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Game.Configuration;
 using osu.Framework.Caching;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -100,13 +101,20 @@ namespace osu.Game.Rulesets.Osu.Edit
         protected override DrawableRuleset<OsuHitObject> CreateDrawableRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod> mods)
             => new DrawableOsuEditorRuleset(ruleset, beatmap, mods);
 
+        /// <summary>
+        /// Held rather than created inline so its button can be found again when the user asks for it to be hidden.
+        /// </summary>
+        private readonly GridFromPointsTool gridFromPointsTool = new GridFromPointsTool();
+
         protected override IReadOnlyList<CompositionTool> CompositionTools => new CompositionTool[]
         {
             new HitCircleCompositionTool(),
             new SliderCompositionTool(),
             new SpinnerCompositionTool(),
-            new GridFromPointsTool()
+            gridFromPointsTool
         };
+
+        private readonly Bindable<bool> hideGridFromPointsTool = new Bindable<bool>();
 
         private readonly Bindable<TernaryState> rectangularGridSnapToggle = new Bindable<TernaryState>();
 
@@ -139,8 +147,12 @@ namespace osu.Game.Rulesets.Osu.Edit
         protected readonly FreehandSliderToolboxGroup FreehandSliderToolboxGroup = new FreehandSliderToolboxGroup();
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            // the toolbox buttons are added by the base composer, which has already run by this point.
+            config.BindWith(OsuSetting.EditorHideGridFromPointsTool, hideGridFromPointsTool);
+            hideGridFromPointsTool.BindValueChanged(hidden => SetToolVisibility(gridFromPointsTool, !hidden.NewValue), true);
+
             AddInternal(DistanceSnapProvider);
             DistanceSnapProvider.AttachToToolbox(RightToolbox);
 

@@ -512,7 +512,8 @@ namespace osu.Game.Rulesets.Edit
             {
                 var item = toolboxCollection.Items.ElementAtOrDefault(leftIndex);
 
-                if (item != null)
+                // a hidden tool counts as absent here: see SetToolVisibility for why its number key must not reach it.
+                if (item?.IsPresent == true)
                 {
                     if (!item.Selected.Disabled)
                         item.Select();
@@ -624,6 +625,30 @@ namespace osu.Game.Rulesets.Edit
         public void SetSelectTool() => toolboxCollection.Items.First().Select();
 
         public void SetLastTool() => (lastTool ?? toolboxCollection.Items.First()).Select();
+
+        /// <summary>
+        /// Takes a tool's button out of the toolbox, or puts it back.
+        /// </summary>
+        /// <remarks>
+        /// A hidden tool takes up no room and cannot be reached by its number key either. A tool is hidden precisely
+        /// because it is in the way, and a stray keypress switching to it would leave the mapper composing with a tool
+        /// they cannot see they are holding.
+        /// </remarks>
+        protected void SetToolVisibility(CompositionTool tool, bool visible)
+        {
+            var button = toolboxCollection.Items.OfType<HitObjectCompositionToolButton>().Single(b => b.Tool == tool);
+
+            if (visible)
+            {
+                button.Show();
+                return;
+            }
+
+            if (button.Selected.Value)
+                SetSelectTool();
+
+            button.Hide();
+        }
 
         private void toolSelected(CompositionTool tool)
         {
