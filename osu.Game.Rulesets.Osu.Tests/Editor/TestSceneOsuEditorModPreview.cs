@@ -8,6 +8,7 @@ using osu.Framework.Testing;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Tests.Visual;
 
@@ -94,6 +95,38 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddStep("clear mods", () => Editor.TestPlayMods.Mods.Value = []);
             AddStep("stop previewing test play mods", () => config.SetValue(OsuSetting.EditorApplyTestPlayModsToComposer, false));
         }
+
+        /// <summary>
+        /// The preview writes into the beatmap's own objects, so it has to write them back before the composer goes.
+        /// </summary>
+        /// <remarks>
+        /// Left to disposal this ran on the disposal thread, where touching a hit object throws: the drawables still
+        /// bound to it react to being given fresh defaults, and they may only be touched from the update thread.
+        /// </remarks>
+        [Test]
+        public void TestBeatmapLeftUnmoddedAfterThePreviewIsTurnedOff()
+        {
+            double preemptWhenUnmodded = 0;
+
+            // freeze frame stretches an object's preempt by how far it sits into its combo, so a combo of one would
+            // come out unchanged and the test would agree with a broken build.
+            AddStep("start a combo", () => EditorBeatmap.Add(new HitCircle { StartTime = 10000, NewCombo = true }));
+            AddStep("add a second object to it", () => EditorBeatmap.Add(new HitCircle { StartTime = 10500 }));
+            AddStep("remember its preempt", () => preemptWhenUnmodded = circle().TimePreempt);
+
+            AddStep("preview test play mods", () => config.SetValue(OsuSetting.EditorApplyTestPlayModsToComposer, true));
+            AddStep("pick freeze frame", () => Editor.TestPlayMods.Mods.Value = new Mod[] { new OsuModFreezeFrame() });
+            waitForComposerReload();
+
+            AddUntilStep("freeze frame stretched the preempt", () => circle().TimePreempt, () => Is.Not.EqualTo(preemptWhenUnmodded));
+
+            AddStep("stop previewing test play mods", () => config.SetValue(OsuSetting.EditorApplyTestPlayModsToComposer, false));
+            waitForComposerReload();
+
+            AddUntilStep("the preempt is back", () => circle().TimePreempt, () => Is.EqualTo(preemptWhenUnmodded));
+        }
+
+        private HitCircle circle() => (HitCircle)EditorBeatmap.PlayableBeatmap.HitObjects.Single(h => h.StartTime == 10500);
 
         private void waitForComposerReload() =>
             AddUntilStep("composer rebuilt", () => Editor.ChildrenOfType<HitObjectComposer>().SingleOrDefault()?.IsLoaded == true);

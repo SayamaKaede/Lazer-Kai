@@ -4,6 +4,7 @@
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
@@ -79,6 +80,32 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
             AddStep("back to compose", () => Editor.Mode.Value = EditorScreenMode.Compose);
             AddUntilStep("song sped up again", rate, () => Is.EqualTo(1.5).Within(0.001));
+        }
+
+        /// <summary>
+        /// The mods survive into the next editor session, so the editor can be opened with one already on. Nothing
+        /// changes at that point, so anything waiting for a change would sit out the whole session.
+        /// </summary>
+        [Test]
+        public void TestSpeedIsAlreadyTakenAwayOnEnteringWithARateModOn()
+        {
+            TestEditor firstEditor = null!;
+
+            setPreview(true);
+            AddStep("pick double time", () => Editor.TestPlayMods.Mods.Value = new Mod[] { new OsuModDoubleTime() });
+
+            AddStep("exit editor", () =>
+            {
+                firstEditor = Editor;
+                Editor.Exit();
+            });
+            AddUntilStep("wait for editor exit", () => !firstEditor.IsCurrentScreen());
+
+            AddStep("reload editor", LoadEditor);
+            AddUntilStep("wait for new editor", () => Editor != firstEditor && Editor?.ReadyForUse == true);
+
+            AddAssert("the control was already taken away", () => speedControl().Current.Disabled, () => Is.True);
+            AddUntilStep("and the song is already sped up", rate, () => Is.EqualTo(1.5).Within(0.001));
         }
 
         private void setPreview(bool enabled)

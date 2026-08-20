@@ -99,6 +99,10 @@ namespace osu.Game.Screens.Edit.Components
 
             currentScreenMode.BindValueChanged(_ => updateSpeedAvailability());
             rateDrivenByMods.BindValueChanged(_ => updateSpeedAvailability());
+
+            // the editor can be entered with a rate changing mod already on, in which case neither of the above ever
+            // fires and the control would sit there looking usable.
+            updateSpeedAvailability();
         }
 
         private void updateSpeedAvailability()

@@ -1180,6 +1180,9 @@ namespace osu.Game.Screens.Edit
                     beatmap.EditorTimestamp = clock.CurrentTime;
             });
 
+            // leave the beatmap unmodded for whatever picks it up next, while there is still an update thread to do it on.
+            currentScreen?.ChildrenOfType<HitObjectComposer>().SingleOrDefault()?.RevertBeatmapPreviewMods();
+
             // `resetTrack()` MUST happen before `refetchBeatmap()`, because along other things, `refetchBeatmap()` causes a global working beatmap change,
             // which would cause `EditorClock` to reload the track and automatically reapply adjustments to it if not preceded by `resetTrack()`.
             resetTrack();
@@ -1455,6 +1458,9 @@ namespace osu.Game.Screens.Edit
 
             if (existing == null)
                 return;
+
+            // before the screen goes away rather than as it is disposed: see `RevertBeatmapPreviewMods`.
+            existing.ChildrenOfType<HitObjectComposer>().SingleOrDefault()?.RevertBeatmapPreviewMods();
 
             bool wasCurrent = currentScreen == existing;
 

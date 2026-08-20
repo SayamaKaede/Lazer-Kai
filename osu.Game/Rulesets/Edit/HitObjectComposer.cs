@@ -714,6 +714,15 @@ namespace osu.Game.Rulesets.Edit
                 Scheduler.AddOnce(applyBeatmapPreviewMods);
         }
 
+        public override void RevertBeatmapPreviewMods()
+        {
+            if (!previewMods.OfType<IApplicableToBeatmap>().Any())
+                return;
+
+            foreach (var hitObject in EditorBeatmap.PlayableBeatmap.HitObjects)
+                hitObject.ApplyDefaults(EditorBeatmap.ControlPointInfo, EditorBeatmap.PlayableBeatmap.Difficulty);
+        }
+
         /// <summary>
         /// Applies the beatmap-level effects of <see cref="previewMods"/> to the beatmap being edited, so that the composer
         /// shows what gameplay would look like with those mods active.
@@ -792,13 +801,6 @@ namespace osu.Game.Rulesets.Edit
                 EditorBeatmap.HitObjectUpdated -= hitObjectUpdated;
                 EditorBeatmap.SelectedHitObjects.CollectionChanged -= selectionChanged;
                 EditorBeatmap.BeatmapReprocessed -= onBeatmapReprocessed;
-
-                // leave the beatmap in its unmodded state for whatever uses it next.
-                if (previewMods.OfType<IApplicableToBeatmap>().Any())
-                {
-                    foreach (var hitObject in EditorBeatmap.PlayableBeatmap.HitObjects)
-                        hitObject.ApplyDefaults(EditorBeatmap.ControlPointInfo, EditorBeatmap.PlayableBeatmap.Difficulty);
-                }
             }
 
             base.Dispose(isDisposing);
@@ -812,6 +814,18 @@ namespace osu.Game.Rulesets.Edit
     [Cached]
     public abstract partial class HitObjectComposer : CompositeDrawable
     {
+        /// <summary>
+        /// Puts the beatmap back the way it was before any mods were previewed on it.
+        /// </summary>
+        /// <remarks>
+        /// Has to be called while this composer is still in use, on the update thread. Leaving it to disposal is not an
+        /// option: that happens on a thread of its own, and the drawables still bound to these hit objects react to
+        /// being given fresh defaults.
+        /// </remarks>
+        public virtual void RevertBeatmapPreviewMods()
+        {
+        }
+
         public const float TOOLBOX_CONTRACTED_SIZE_LEFT = 60;
         public const float TOOLBOX_CONTRACTED_SIZE_RIGHT = 120;
 
