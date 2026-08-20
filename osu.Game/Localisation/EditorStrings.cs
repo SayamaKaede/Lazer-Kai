@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Localisation;
@@ -307,15 +307,15 @@ namespace osu.Game.Localisation
         public static LocalisableString AdditionBank => new TranslatableString(getKey(@"addition_bank"), @"Addition bank");
 
         /// <summary>
-        /// "Default addition bank"
+        /// "Addition bankの初期値"
         /// </summary>
-        public static LocalisableString DefaultAdditionBank => new TranslatableString(getKey(@"default_addition_bank"), @"Default addition bank");
+        public static LocalisableString DefaultAdditionBank => new TranslatableString(getKey(@"default_addition_bank"), @"Addition bankの初期値");
 
         /// <summary>
-        /// "Used when a whistle, finish or clap is added to a note which had none."
+        /// "Whistle・Finish・Clapを、まだ付いていないノーツに追加したときに使われます。"
         /// </summary>
         public static LocalisableString DefaultAdditionBankDescription => new TranslatableString(getKey(@"default_addition_bank_description"),
-            @"Used when a whistle, finish or clap is added to a note which had none.");
+            @"Whistle・Finish・Clapを、まだ付いていないノーツに追加したときに使われます。");
 
         /// <summary>
         /// "Auto"
@@ -595,26 +595,26 @@ namespace osu.Game.Localisation
             @"Speed adjustment is unavailable while a mod that changes the speed is being previewed.");
 
         /// <summary>
-        /// "Share the mod selection with song select"
+        /// "曲選択画面とエディターでのMod情報を共有する"
         /// </summary>
-        public static LocalisableString CarryOverSongSelectMods => new TranslatableString(getKey(@"carry_over_song_select_mods"), @"Share the mod selection with song select");
+        public static LocalisableString CarryOverSongSelectMods => new TranslatableString(getKey(@"carry_over_song_select_mods"), @"曲選択画面とエディターでのMod情報を共有する");
 
         /// <summary>
-        /// "Test play starts from the mods chosen at song select, and what is chosen here is left selected on leaving."
+        /// "テストプレイが曲選択画面で選んだModから始まり、ここで選んだModは出たあとも選ばれたままになります。"
         /// </summary>
         public static LocalisableString CarryOverSongSelectModsDescription => new TranslatableString(getKey(@"carry_over_song_select_mods_description"),
-            @"Test play starts from the mods chosen at song select, and what is chosen here is left selected on leaving.");
+            @"テストプレイが曲選択画面で選んだModから始まり、ここで選んだModは出たあとも選ばれたままになります。");
 
         /// <summary>
-        /// "Hide the grid from points tool"
+        /// "ToolsのGRIDボタンを非表示"
         /// </summary>
-        public static LocalisableString HideGridFromPointsTool => new TranslatableString(getKey(@"hide_grid_from_points_tool"), @"Hide the grid from points tool");
+        public static LocalisableString HideGridFromPointsTool => new TranslatableString(getKey(@"hide_grid_from_points_tool"), @"ToolsのGRIDボタンを非表示");
 
         /// <summary>
-        /// "Its number key stops selecting it too. The grid can still be set up from the grid section on the right."
+        /// "割り当てられたキーでも選択されなくなります。グリッドは右のGrid欄から設定できます。"
         /// </summary>
         public static LocalisableString HideGridFromPointsToolDescription => new TranslatableString(getKey(@"hide_grid_from_points_tool_description"),
-            @"Its number key stops selecting it too. The grid can still be set up from the grid section on the right.");
+            @"割り当てられたキーでも選択されなくなります。グリッドは右のGrid欄から設定できます。");
 
         /// <summary>
         /// "Remove the catch when starting a drag"
