@@ -132,7 +132,14 @@ namespace osu.Game.Screens.Edit
                     prune(directory);
 
                     if (notifyOnBackup.Value)
-                        notifications?.Post(new SimpleNotification { Text = EditorStrings.BackupWritten, Icon = FontAwesome.Solid.Save });
+                        notifications?.Post(new SimpleNotification
+                        {
+                            Text = EditorStrings.BackupWritten,
+                            Icon = FontAwesome.Solid.Save,
+                            // a backup is routine. It should get out of the way after a couple of seconds rather than
+                            // sitting there for twelve and flashing the taskbar as an important notification would.
+                            IsImportant = false,
+                        });
                 }
                 catch (Exception e)
                 {
