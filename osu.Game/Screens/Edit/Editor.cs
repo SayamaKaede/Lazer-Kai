@@ -709,11 +709,7 @@ namespace osu.Game.Screens.Edit
 
             // the composer reads the mod preview settings when it is constructed, so it has to be rebuilt for a change to take effect.
             editorApplyTestPlayModsToComposer.BindValueChanged(_ => reloadComposeScreen());
-            testPlayModsController.Mods.BindValueChanged(_ =>
-            {
-                if (editorApplyTestPlayModsToComposer.Value)
-                    reloadComposeScreen();
-            });
+            testPlayModsController.SelectionChanged += onTestPlayModsChanged;
 
             MutationTracker.InProgress.BindValueChanged(_ =>
             {
@@ -730,6 +726,9 @@ namespace osu.Game.Screens.Edit
             musicController.TrackChanged -= onTrackChanged;
 
             modSelectRegistration?.Dispose();
+
+            testPlayModsController.SelectionChanged -= onTestPlayModsChanged;
+            testPlayModsController.Dispose();
         }
 
         private void onTrackChanged(WorkingBeatmap working, TrackChangeDirection direction)
@@ -1378,6 +1377,18 @@ namespace osu.Game.Screens.Edit
         /// Discards the cached compose screen so it is rebuilt from scratch on next display.
         /// Needed for settings which the composer only reads while being constructed, such as the mods it previews.
         /// </summary>
+        private ScheduledDelegate composerReloadDebounce;
+
+        private void onTestPlayModsChanged()
+        {
+            if (!editorApplyTestPlayModsToComposer.Value)
+                return;
+
+            // dragging a mod's setting changes it every frame, and rebuilding the composer is far from free.
+            composerReloadDebounce?.Cancel();
+            composerReloadDebounce = Scheduler.AddDelayed(reloadComposeScreen, 200);
+        }
+
         private void reloadComposeScreen()
         {
             var existing = screenContainer.SingleOrDefault(s => s.Type == EditorScreenMode.Compose);

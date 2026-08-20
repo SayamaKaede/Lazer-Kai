@@ -114,11 +114,15 @@ namespace osu.Game.Tests.Visual.Editing
         {
             Editor firstEditor = null;
 
-            AddStep("pick double time at 1.25x", () =>
+            AddStep("pick double time", () =>
             {
                 firstEditor = Editor;
-                Editor.TestPlayMods.Mods.Value = new[] { new OsuModDoubleTime { SpeedChange = { Value = 1.25 } } };
+                Editor.TestPlayMods.Mods.Value = new[] { new OsuModDoubleTime() };
             });
+
+            // edited in place, the way the mod screen's customisation panel does it: the selection itself does not
+            // change, so nothing would be written out if only the list were being watched.
+            AddStep("slow it to 1.25x", () => Editor.TestPlayMods.Mods.Value.OfType<OsuModDoubleTime>().Single().SpeedChange.Value = 1.25);
 
             AddStep("exit editor", () => Editor.Exit());
             AddUntilStep("wait for editor exit", () => !firstEditor.IsCurrentScreen());

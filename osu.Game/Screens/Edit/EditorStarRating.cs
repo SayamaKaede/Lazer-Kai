@@ -9,6 +9,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
+using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Mods;
@@ -56,14 +57,26 @@ namespace osu.Game.Screens.Edit
             base.LoadComplete();
 
             if (editor != null)
+            {
                 editor.Saved += recalculate;
+                editor.TestPlayMods.SelectionChanged += onModsChanged;
+            }
 
             applyModsToComposer.BindValueChanged(_ => recalculate());
 
-            if (editor != null)
-                editor.TestPlayMods.Mods.BindValueChanged(_ => recalculate());
-
             recalculate();
+        }
+
+        private ScheduledDelegate? recalculateDebounce;
+
+        /// <summary>
+        /// Held off briefly, because a mod's settings change with every frame of a slider drag and each change would
+        /// otherwise start a difficulty calculation of its own.
+        /// </summary>
+        private void onModsChanged()
+        {
+            recalculateDebounce?.Cancel();
+            recalculateDebounce = Scheduler.AddDelayed(recalculate, 200);
         }
 
         private void recalculate() => Schedule(() =>
@@ -87,9 +100,13 @@ namespace osu.Game.Screens.Edit
             base.Dispose(isDisposing);
 
             calculationCancellation?.Cancel();
+            recalculateDebounce?.Cancel();
 
             if (editor != null)
+            {
                 editor.Saved -= recalculate;
+                editor.TestPlayMods.SelectionChanged -= onModsChanged;
+            }
         }
     }
 }

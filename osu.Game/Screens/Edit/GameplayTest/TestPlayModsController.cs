@@ -23,8 +23,17 @@ namespace osu.Game.Screens.Edit.GameplayTest
     /// Choosing the mods is left to <see cref="EditorModSelectOverlay"/>, which writes into <see cref="Mods"/>.
     /// Because the store is a list of <see cref="APIMod"/>, each mod's settings are carried along with it.
     /// </remarks>
-    public class TestPlayModsController
+    public class TestPlayModsController : IDisposable
     {
+        /// <summary>
+        /// Fired when the selection changes, including when a mod already in it has one of its own settings edited.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="Mods"/> only signals when the list itself is replaced. Editing a mod's settings leaves the list
+        /// as it was, so anything reading what the mods will actually do has to watch this instead.
+        /// </remarks>
+        public event Action? SelectionChanged;
+
         /// <summary>
         /// The mods to apply when entering gameplay test. Writes are persisted.
         /// </summary>
@@ -41,8 +50,25 @@ namespace osu.Game.Screens.Edit.GameplayTest
             persistedMods = config.GetBindable<string>(OsuSetting.EditorTestPlayMods);
 
             mods.Value = readPersistedMods(rulesetInfo.CreateInstance());
-            mods.BindValueChanged(_ => writePersistedMods(), true);
+            mods.BindValueChanged(m =>
+            {
+                settingTracker?.Dispose();
+                settingTracker = new ModSettingChangeTracker(m.NewValue);
+                settingTracker.SettingChanged += _ => selectionChanged();
+
+                selectionChanged();
+            }, true);
         }
+
+        private ModSettingChangeTracker? settingTracker;
+
+        private void selectionChanged()
+        {
+            writePersistedMods();
+            SelectionChanged?.Invoke();
+        }
+
+        public void Dispose() => settingTracker?.Dispose();
 
         /// <summary>
         /// Clears the current selection.

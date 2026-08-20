@@ -83,6 +83,22 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddUntilStep("icons gone", () => modIcons(), () => Is.Empty);
         }
 
+        /// <summary>
+        /// A mod's own settings can be edited without the selection itself changing, and the rating has to follow.
+        /// </summary>
+        [Test]
+        public void TestSettingChangeReachesTheRating()
+        {
+            AddStep("pick double time", () => Editor.TestPlayMods.Mods.Value = new Mod[] { new OsuModDoubleTime() });
+            AddUntilStep("rating asked for at 1.5x", lastSpeed, () => Is.EqualTo(1.5));
+
+            // reached for through the selection rather than held onto: the mod screen swaps in instances of its own.
+            AddStep("slow it to 1.25x", () => Editor.TestPlayMods.Mods.Value.OfType<OsuModDoubleTime>().Single().SpeedChange.Value = 1.25);
+            AddUntilStep("rating asked for at 1.25x", lastSpeed, () => Is.EqualTo(1.25));
+        }
+
+        private double? lastSpeed() => difficultyCache.LastMods?.OfType<OsuModDoubleTime>().SingleOrDefault()?.SpeedChange.Value;
+
         private string[] modIcons() => Editor.ChildrenOfType<ComposeStatusDisplay>()
                                              .SelectMany(d => d.ChildrenOfType<ModIcon>())
                                              .Select(i => i.Mod.Acronym)
