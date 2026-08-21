@@ -248,6 +248,12 @@ namespace osu.Game.Screens.Select
                 cancellationSource?.Cancel();
                 cancellationSource = new CancellationTokenSource();
 
+                // moving to another beatmap with the keyboard never clicks anything, so the list of authors would
+                // otherwise stay open over a beatmap it does not belong to.
+                mapperLink.HidePopover();
+
+                authors = Array.Empty<APIBeatmap.BeatmapOwner>();
+
                 if (beatmap.IsDefault)
                 {
                     ratingAndNameContainer.FadeOut(300, Easing.OutQuint);
