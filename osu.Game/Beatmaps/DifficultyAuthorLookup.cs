@@ -8,7 +8,6 @@ using osu.Framework.Allocation;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Game.Database;
-using osu.Game.Online;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Users;
 
@@ -34,7 +33,7 @@ namespace osu.Game.Beatmaps
         /// The user an owner refers to, in the shape opening a profile expects.
         /// </summary>
         /// <remarks>
-        /// <see cref="LinkAction.OpenUserProfile"/> casts its argument to <see cref="IUser"/>, and an id on its own
+        /// Opening a user profile casts its argument to <see cref="IUser"/>, and an id on its own
         /// throws there rather than failing to compile.
         /// </remarks>
         public static APIUser AsUser(APIBeatmap.BeatmapOwner owner) => new APIUser { Id = owner.Id, Username = owner.Username };
