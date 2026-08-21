@@ -606,6 +606,17 @@ namespace osu.Game.Localisation
             @"テストプレイが曲選択画面で選んだModから始まり、ここで選んだModは出たあとも選ばれたままになります。");
 
         /// <summary>
+        /// "Kiaiのフラッシュを非表示"
+        /// </summary>
+        public static LocalisableString HideKiaiFlash => new TranslatableString(getKey(@"hide_kiai_flash"), @"Kiaiのフラッシュを非表示");
+
+        /// <summary>
+        /// "エディター内でのみ非表示になります。テストプレイでは今までどおり光ります。"
+        /// </summary>
+        public static LocalisableString HideKiaiFlashDescription => new TranslatableString(getKey(@"hide_kiai_flash_description"),
+            @"エディター内でのみ非表示になります。テストプレイでは今までどおり光ります。");
+
+        /// <summary>
         /// "ToolsのGRIDボタンを非表示"
         /// </summary>
         public static LocalisableString HideGridFromPointsTool => new TranslatableString(getKey(@"hide_grid_from_points_tool"), @"ToolsのGRIDボタンを非表示");

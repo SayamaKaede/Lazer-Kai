@@ -253,6 +253,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorDefaultAdditionBank, EditorAdditionBank.Auto);
             SetDefault(OsuSetting.EditorHideGridFromPointsTool, false);
             SetDefault(OsuSetting.EditorCarryOverSongSelectMods, false);
+            SetDefault(OsuSetting.EditorHideKiaiFlash, false);
             SetDefault(OsuSetting.EditorSelectionHandleColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorSelectionHandleScale, 1f, 0.5f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorSliderAnchorScale, 1f, 0.5f, 1f, 0.01f);
@@ -732,5 +733,10 @@ namespace osu.Game.Configuration
         /// Whether song select's mod selection and the editor's test play mods are one and the same.
         /// </summary>
         EditorCarryOverSongSelectMods,
+
+        /// <summary>
+        /// Whether kiai's flashing is left out of the editor.
+        /// </summary>
+        EditorHideKiaiFlash,
     }
 }

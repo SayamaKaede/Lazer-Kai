@@ -418,6 +418,10 @@ namespace osu.Game.Screens.Edit
             AddInternal(starRating);
             dependencies.Cache(starRating);
 
+            var kiaiFlashSuppression = new KiaiFlashSuppression();
+            config.BindWith(OsuSetting.EditorHideKiaiFlash, kiaiFlashSuppression);
+            dependencies.Cache(kiaiFlashSuppression);
+
             var modRatePreview = new EditorModRatePreview();
             AddInternal(modRatePreview);
             dependencies.Cache(modRatePreview);

@@ -58,6 +58,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 },
                 new SettingsCheckbox
                 {
+                    LabelText = EditorStrings.HideKiaiFlash,
+                    TooltipText = EditorStrings.HideKiaiFlashDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorHideKiaiFlash)
+                },
+                new SettingsCheckbox
+                {
                     LabelText = EditorStrings.HideGridFromPointsTool,
                     TooltipText = EditorStrings.HideGridFromPointsToolDescription,
                     Current = config.GetBindable<bool>(OsuSetting.EditorHideGridFromPointsTool)

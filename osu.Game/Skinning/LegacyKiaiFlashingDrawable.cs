@@ -5,7 +5,9 @@ using System;
 using osu.Framework.Audio.Track;
 using osu.Framework.Graphics;
 using osu.Game.Beatmaps.ControlPoints;
+using osu.Framework.Allocation;
 using osu.Game.Graphics.Containers;
+using osu.Game.Screens.Edit;
 using osuTK.Graphics;
 
 namespace osu.Game.Skinning
@@ -43,9 +45,12 @@ namespace osu.Game.Skinning
             };
         }
 
+        [Resolved(CanBeNull = true)]
+        private KiaiFlashSuppression kiaiFlashSuppressed { get; set; }
+
         protected override void OnNewBeat(int beatIndex, TimingControlPoint timingPoint, EffectControlPoint effectPoint, ChannelAmplitudes amplitudes)
         {
-            if (!effectPoint.KiaiMode)
+            if (!effectPoint.KiaiMode || kiaiFlashSuppressed?.Value == true)
                 return;
 
             FlashingDrawable
