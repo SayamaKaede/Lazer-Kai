@@ -180,6 +180,11 @@ namespace osu.Game.Screens.Select
             {
                 new GlobalScrollAdjustsVolume(),
                 onlineLookupSource,
+                new PopoverContainer
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Children = new Drawable[]
+                    {
                 mainContent = new Container
                 {
                     Anchor = Anchor.Centre,
@@ -189,7 +194,7 @@ namespace osu.Game.Screens.Select
                     Child = new OsuContextMenuContainer
                     {
                         RelativeSizeAxes = Axes.Both,
-                        Child = new PopoverContainer
+                        Child = new Container
                         {
                             RelativeSizeAxes = Axes.Both,
                             Children = new Drawable[]
@@ -308,6 +313,8 @@ namespace osu.Game.Screens.Select
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
                     RelativeSizeAxes = Axes.Both,
+                },
+                    }
                 },
                 modSpeedHotkeyHandler = new ModSpeedHotkeyHandler()
             });

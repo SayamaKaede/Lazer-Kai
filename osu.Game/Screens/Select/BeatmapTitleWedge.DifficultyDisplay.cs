@@ -319,10 +319,11 @@ namespace osu.Game.Screens.Select
 
                 float available = Math.Max(nameLine.DrawWidth - mappedByText.DrawWidth - 20, 0);
 
-                // a collaboration can run to dozens of names, and left uncapped they push the difficulty's own name off
-                // the line entirely. Half is enough to show the first few and the ellipsis that opens the rest.
-                mapperText.MaxWidth = available / 2;
-                difficultyText.MaxWidth = Math.Max(available - mapperText.DrawWidth, 0);
+                // the difficulty's name is usually short and the list of authors is not, so the name is measured first
+                // and the authors are given everything left over — but the name is held to half the line, so that a
+                // long one cannot take the whole of it either.
+                difficultyText.MaxWidth = available / 2;
+                mapperText.MaxWidth = Math.Max(available - difficultyText.DrawWidth, 0);
 
                 // Use difficulty colour until it gets too dark to be visible against dark backgrounds.
                 Color4 col = starRatingDisplay.DisplayedStars.Value >= OsuColour.STAR_DIFFICULTY_DEFINED_COLOUR_CUTOFF ? starRatingDisplay.DisplayedDifficultyTextColour : starRatingDisplay.DisplayedDifficultyColour;
