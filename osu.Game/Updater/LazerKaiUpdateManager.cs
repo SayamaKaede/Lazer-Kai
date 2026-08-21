@@ -59,6 +59,10 @@ namespace osu.Game.Updater
 
                 var release = LazerKaiRelease.FromJson(request.GetResponseString() ?? string.Empty);
 
+                // logged either way: a check that quietly does nothing is indistinguishable from one that never ran,
+                // and this is the only trace of it there would otherwise be.
+                Logger.Log($"Release feed says {release?.Version ?? "nothing"}, running {runningVersion}");
+
                 if (release == null || !release.IsNewerThan(runningVersion))
                 {
                     scheduleNextCheck();
