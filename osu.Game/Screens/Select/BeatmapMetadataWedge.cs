@@ -360,7 +360,7 @@ namespace osu.Game.Screens.Select
             authorCancellation = new CancellationTokenSource();
             authorLookup?.GetAuthors(beatmap.Value.BeatmapInfo, owners =>
                 creator.Data = (string.Join(@", ", owners.Select(o => o.Username)),
-                    () => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, owners[0].Id))), authorCancellation.Token);
+                    () => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, DifficultyAuthorLookup.AsUser(owners[0])))), authorCancellation.Token);
 
             if (!string.IsNullOrEmpty(metadata.Source))
                 source.Data = (metadata.Source, () => songSelect?.AddToSearch(metadata.Source));

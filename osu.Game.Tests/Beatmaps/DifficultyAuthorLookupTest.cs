@@ -15,6 +15,7 @@ using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Tests.Visual;
+using osu.Game.Users;
 
 namespace osu.Game.Tests.Beatmaps
 {
@@ -88,6 +89,19 @@ namespace osu.Game.Tests.Beatmaps
 
             AddUntilStep("both came back", () => found?.Select(a => a.Username), () => Is.EqualTo(new[] { @"first", @"second" }));
             AddAssert("looked up the beatmap itself", () => requested, () => Does.Contain(555));
+        }
+
+        /// <summary>
+        /// Opening a profile casts its argument, so handing it an id compiles and then throws when clicked.
+        /// </summary>
+        [Test]
+        public void TestAnOwnerConvertsToSomethingAProfileLinkAccepts()
+        {
+            var user = DifficultyAuthorLookup.AsUser(new APIBeatmap.BeatmapOwner { Id = 42, Username = @"someone" });
+
+            Assert.That(user, Is.InstanceOf<IUser>());
+            Assert.That(user.OnlineID, Is.EqualTo(42));
+            Assert.That(user.Username, Is.EqualTo(@"someone"));
         }
 
         /// <summary>

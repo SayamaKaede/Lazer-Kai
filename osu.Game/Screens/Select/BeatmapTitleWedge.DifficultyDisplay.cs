@@ -348,7 +348,7 @@ namespace osu.Game.Screens.Select
 
                 mapperLink.TooltipText = found.Length == 1 ? ContextMenuStrings.ViewProfile : default;
                 mapperLink.Action = found.Length == 1
-                    ? () => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, found[0].Id))
+                    ? () => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, DifficultyAuthorLookup.AsUser(found[0])))
                     : mapperLink.ShowPopover;
             }
 
@@ -366,12 +366,12 @@ namespace osu.Game.Screens.Select
                     IdleColour = overlayColourProvider?.Light2 ?? colours.Blue;
                 }
 
-                public Popover GetPopover() => new AuthorsPopover(Authors(), id => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, id)));
+                public Popover GetPopover() => new AuthorsPopover(Authors(), author => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, DifficultyAuthorLookup.AsUser(author))));
             }
 
             private partial class AuthorsPopover : OsuPopover
             {
-                public AuthorsPopover(APIBeatmap.BeatmapOwner[] authors, Action<int> openProfile)
+                public AuthorsPopover(APIBeatmap.BeatmapOwner[] authors, Action<APIBeatmap.BeatmapOwner> openProfile)
                 {
                     Child = new FillFlowContainer
                     {
@@ -381,7 +381,7 @@ namespace osu.Game.Screens.Select
                         ChildrenEnumerable = authors.Select(a => new OsuHoverContainer
                         {
                             AutoSizeAxes = Axes.Both,
-                            Action = () => openProfile(a.Id),
+                            Action = () => openProfile(a),
                             Child = new OsuSpriteText
                             {
                                 Text = a.Username,
