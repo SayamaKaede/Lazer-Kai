@@ -317,7 +317,12 @@ namespace osu.Game.Screens.Select
             {
                 base.Update();
 
-                difficultyText.MaxWidth = Math.Max(nameLine.DrawWidth - mappedByText.DrawWidth - mapperText.DrawWidth - 20, 0);
+                float available = Math.Max(nameLine.DrawWidth - mappedByText.DrawWidth - 20, 0);
+
+                // a collaboration can run to dozens of names, and left uncapped they push the difficulty's own name off
+                // the line entirely. Half is enough to show the first few and the ellipsis that opens the rest.
+                mapperText.MaxWidth = available / 2;
+                difficultyText.MaxWidth = Math.Max(available - mapperText.DrawWidth, 0);
 
                 // Use difficulty colour until it gets too dark to be visible against dark backgrounds.
                 Color4 col = starRatingDisplay.DisplayedStars.Value >= OsuColour.STAR_DIFFICULTY_DEFINED_COLOUR_CUTOFF ? starRatingDisplay.DisplayedDifficultyTextColour : starRatingDisplay.DisplayedDifficultyColour;
@@ -373,21 +378,29 @@ namespace osu.Game.Screens.Select
             {
                 public AuthorsPopover(APIBeatmap.BeatmapOwner[] authors, Action<APIBeatmap.BeatmapOwner> openProfile)
                 {
-                    Child = new FillFlowContainer
+                    // a collaboration of dozens would otherwise run off the screen, so past a certain length it scrolls.
+                    Child = new OsuScrollContainer
                     {
-                        AutoSizeAxes = Axes.Both,
-                        Direction = FillDirection.Vertical,
-                        Spacing = new Vector2(0, 4),
-                        ChildrenEnumerable = authors.Select(a => new OsuHoverContainer
+                        Width = 220,
+                        Height = Math.Min(authors.Length * 22 + 4, 320),
+                        ScrollbarVisible = false,
+                        Child = new FillFlowContainer
                         {
-                            AutoSizeAxes = Axes.Both,
-                            Action = () => openProfile(a),
-                            Child = new OsuSpriteText
+                            RelativeSizeAxes = Axes.X,
+                            AutoSizeAxes = Axes.Y,
+                            Direction = FillDirection.Vertical,
+                            Spacing = new Vector2(0, 4),
+                            ChildrenEnumerable = authors.Select(a => new OsuHoverContainer
                             {
-                                Text = a.Username,
-                                Font = OsuFont.Style.Body.With(weight: FontWeight.SemiBold),
-                            },
-                        }),
+                                AutoSizeAxes = Axes.Both,
+                                Action = () => openProfile(a),
+                                Child = new OsuSpriteText
+                                {
+                                    Text = a.Username,
+                                    Font = OsuFont.Style.Body.With(weight: FontWeight.SemiBold),
+                                },
+                            }),
+                        },
                     };
                 }
             }
