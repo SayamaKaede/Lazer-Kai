@@ -382,7 +382,7 @@ namespace osu.Game.Screens.Select
                 private const int rows_per_column = 16;
 
                 /// <summary>
-                /// Beyond this the list has to get taller after all, and scroll.
+                /// Past this the columns get taller instead, rather than the popover running off to the side.
                 /// </summary>
                 private const int max_columns = 3;
 
@@ -393,33 +393,27 @@ namespace osu.Game.Screens.Select
                     int columns = Math.Clamp((int)Math.Ceiling((float)authors.Length / rows_per_column), 1, max_columns);
                     int perColumn = (int)Math.Ceiling((float)authors.Length / columns);
 
-                    Child = new OsuScrollContainer
+                    Child = new FillFlowContainer
                     {
-                        AutoSizeAxes = Axes.X,
-                        Height = Math.Min(perColumn, rows_per_column) * 22 + 4,
-                        ScrollbarVisible = false,
-                        Child = new FillFlowContainer
+                        AutoSizeAxes = Axes.Both,
+                        Direction = FillDirection.Horizontal,
+                        Spacing = new Vector2(20, 0),
+                        ChildrenEnumerable = Enumerable.Range(0, columns).Select(column => new FillFlowContainer
                         {
                             AutoSizeAxes = Axes.Both,
-                            Direction = FillDirection.Horizontal,
-                            Spacing = new Vector2(20, 0),
-                            ChildrenEnumerable = Enumerable.Range(0, columns).Select(column => new FillFlowContainer
+                            Direction = FillDirection.Vertical,
+                            Spacing = new Vector2(0, 4),
+                            ChildrenEnumerable = authors.Skip(column * perColumn).Take(perColumn).Select(a => new OsuHoverContainer
                             {
                                 AutoSizeAxes = Axes.Both,
-                                Direction = FillDirection.Vertical,
-                                Spacing = new Vector2(0, 4),
-                                ChildrenEnumerable = authors.Skip(column * perColumn).Take(perColumn).Select(a => new OsuHoverContainer
+                                Action = () => openProfile(a),
+                                Child = new OsuSpriteText
                                 {
-                                    AutoSizeAxes = Axes.Both,
-                                    Action = () => openProfile(a),
-                                    Child = new OsuSpriteText
-                                    {
-                                        Text = a.Username,
-                                        Font = OsuFont.Style.Body.With(weight: FontWeight.SemiBold),
-                                    },
-                                }),
+                                    Text = a.Username,
+                                    Font = OsuFont.Style.Body.With(weight: FontWeight.SemiBold),
+                                },
                             }),
-                        },
+                        }),
                     };
                 }
             }
