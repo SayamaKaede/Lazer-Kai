@@ -44,6 +44,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
         private OsuSpriteText normalBank = null!;
         private OsuSpriteText additionBank = null!;
         private OsuSpriteText sampleVolume = null!;
+        private OsuSpriteText kiai = null!;
         private Drawable modsRow = null!;
         private ModDisplay modDisplay = null!;
 
@@ -66,6 +67,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
                     createRow(@"Normal", out normalBank, colours.Pink1),
                     createRow(@"Addition", out additionBank, colours.Pink2),
                     createRow(@"Volume", out sampleVolume, colours.Pink1),
+                    createRow(@"Kiai", out kiai, colours.Orange1),
                     createModRow(),
                 }
             };
@@ -197,6 +199,9 @@ namespace osu.Game.Screens.Edit.Compose.Components
             }
 
             sliderVelocity.Text = currentWithVelocity == null ? @"-" : @$"{currentWithVelocity.SliderVelocityMultiplier:0.00}x";
+
+            // read from the effect point rather than from an object, so it is right in the gaps between objects too.
+            kiai.Text = editorBeatmap.ControlPointInfo.EffectPointAt(editorClock.CurrentTime).KiaiMode ? @"ON" : @"-";
 
             if (current == null)
             {

@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.ControlPoints;
+using osu.Game.Graphics.Sprites;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Mods;
@@ -98,6 +100,39 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         }
 
         private double? lastSpeed() => difficultyCache.LastMods?.OfType<OsuModDoubleTime>().SingleOrDefault()?.SpeedChange.Value;
+
+        /// <summary>
+        /// Whether the current time sits inside a kiai section, which the timeline only shows as a band far from where
+        /// the objects are being placed.
+        /// </summary>
+        [Test]
+        public void TestStatusPanelShowsKiai()
+        {
+            AddStep("kiai from 5s to 10s", () =>
+            {
+                EditorBeatmap.ControlPointInfo.Add(5000, new EffectControlPoint { KiaiMode = true });
+                EditorBeatmap.ControlPointInfo.Add(10000, new EffectControlPoint { KiaiMode = false });
+            });
+
+            AddStep("seek before it", () => EditorClock.Seek(2000));
+            AddUntilStep("not kiai", kiaiReadout, () => Is.EqualTo("-"));
+
+            AddStep("seek into it", () => EditorClock.Seek(7000));
+            AddUntilStep("kiai", kiaiReadout, () => Is.EqualTo("ON"));
+
+            // read from the effect point, so it holds in the gaps between objects rather than following the last one.
+            AddStep("seek to a gap still inside it", () => EditorClock.Seek(9500));
+            AddUntilStep("still kiai", kiaiReadout, () => Is.EqualTo("ON"));
+
+            AddStep("seek past it", () => EditorClock.Seek(11000));
+            AddUntilStep("not kiai again", kiaiReadout, () => Is.EqualTo("-"));
+        }
+
+        private string kiaiReadout() => Editor.ChildrenOfType<ComposeStatusDisplay>()
+                                              .SelectMany(d => d.ChildrenOfType<OsuSpriteText>())
+                                              .SkipWhile(t => t.Text.ToString() != "Kiai")
+                                              .Skip(1)
+                                              .First().Text.ToString();
 
         private string[] modIcons() => Editor.ChildrenOfType<ComposeStatusDisplay>()
                                              .SelectMany(d => d.ChildrenOfType<ModIcon>())
