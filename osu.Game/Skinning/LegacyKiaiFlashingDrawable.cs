@@ -46,7 +46,7 @@ namespace osu.Game.Skinning
         }
 
         [Resolved(CanBeNull = true)]
-        private KiaiFlashSuppression kiaiFlashSuppressed { get; set; }
+        private KiaiFlashSuppression? kiaiFlashSuppressed { get; set; }
 
         protected override void OnNewBeat(int beatIndex, TimingControlPoint timingPoint, EffectControlPoint effectPoint, ChannelAmplitudes amplitudes)
         {
