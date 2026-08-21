@@ -307,15 +307,15 @@ namespace osu.Game.Localisation
         public static LocalisableString AdditionBank => new TranslatableString(getKey(@"addition_bank"), @"Addition bank");
 
         /// <summary>
-        /// "Addition bankの初期値"
+        /// "Default addition bank"
         /// </summary>
-        public static LocalisableString DefaultAdditionBank => new TranslatableString(getKey(@"default_addition_bank"), @"Addition bankの初期値");
+        public static LocalisableString DefaultAdditionBank => new TranslatableString(getKey(@"default_addition_bank"), @"Default addition bank");
 
         /// <summary>
-        /// "Whistle・Finish・Clapを、まだ付いていないノーツに追加したときに使われます。"
+        /// "Used when a whistle, finish or clap is added to a note which had none."
         /// </summary>
         public static LocalisableString DefaultAdditionBankDescription => new TranslatableString(getKey(@"default_addition_bank_description"),
-            @"Whistle・Finish・Clapを、まだ付いていないノーツに追加したときに使われます。");
+            @"Used when a whistle, finish or clap is added to a note which had none.");
 
         /// <summary>
         /// "Auto"
@@ -595,37 +595,37 @@ namespace osu.Game.Localisation
             @"Speed adjustment is unavailable while a mod that changes the speed is being previewed.");
 
         /// <summary>
-        /// "曲選択画面とエディターでのMod情報を共有する"
+        /// "Share the mod selection with song select"
         /// </summary>
-        public static LocalisableString CarryOverSongSelectMods => new TranslatableString(getKey(@"carry_over_song_select_mods"), @"曲選択画面とエディターでのMod情報を共有する");
+        public static LocalisableString CarryOverSongSelectMods => new TranslatableString(getKey(@"carry_over_song_select_mods"), @"Share the mod selection with song select");
 
         /// <summary>
-        /// "テストプレイが曲選択画面で選んだModから始まり、ここで選んだModは出たあとも選ばれたままになります。"
+        /// "Test play starts from the mods chosen at song select, and what is chosen here is left selected on leaving."
         /// </summary>
         public static LocalisableString CarryOverSongSelectModsDescription => new TranslatableString(getKey(@"carry_over_song_select_mods_description"),
-            @"テストプレイが曲選択画面で選んだModから始まり、ここで選んだModは出たあとも選ばれたままになります。");
+            @"Test play starts from the mods chosen at song select, and what is chosen here is left selected on leaving.");
 
         /// <summary>
-        /// "Kiaiのフラッシュを非表示"
+        /// "Hide the kiai flash"
         /// </summary>
-        public static LocalisableString HideKiaiFlash => new TranslatableString(getKey(@"hide_kiai_flash"), @"Kiaiのフラッシュを非表示");
+        public static LocalisableString HideKiaiFlash => new TranslatableString(getKey(@"hide_kiai_flash"), @"Hide the kiai flash");
 
         /// <summary>
-        /// "エディター内でのみ非表示になります。テストプレイでは今までどおり光ります。"
+        /// "Only inside the editor. Test play flashes as it always did."
         /// </summary>
         public static LocalisableString HideKiaiFlashDescription => new TranslatableString(getKey(@"hide_kiai_flash_description"),
-            @"エディター内でのみ非表示になります。テストプレイでは今までどおり光ります。");
+            @"Only inside the editor. Test play flashes as it always did.");
 
         /// <summary>
-        /// "ToolsのGRIDボタンを非表示"
+        /// "Hide the grid from points tool"
         /// </summary>
-        public static LocalisableString HideGridFromPointsTool => new TranslatableString(getKey(@"hide_grid_from_points_tool"), @"ToolsのGRIDボタンを非表示");
+        public static LocalisableString HideGridFromPointsTool => new TranslatableString(getKey(@"hide_grid_from_points_tool"), @"Hide the grid from points tool");
 
         /// <summary>
-        /// "割り当てられたキーでも選択されなくなります。グリッドは右のGrid欄から設定できます。"
+        /// "Its number key stops selecting it too. The grid can still be set up from the grid section on the right."
         /// </summary>
         public static LocalisableString HideGridFromPointsToolDescription => new TranslatableString(getKey(@"hide_grid_from_points_tool_description"),
-            @"割り当てられたキーでも選択されなくなります。グリッドは右のGrid欄から設定できます。");
+            @"Its number key stops selecting it too. The grid can still be set up from the grid section on the right.");
 
         /// <summary>
         /// "Remove the catch when starting a drag"

@@ -39,6 +39,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:export_beatmap_file"] = @"この難易度を.osu形式で書き出す（v14）",
 
             // test play
+            [$@"{editor_prefix}:carry_over_song_select_mods"] = @"曲選択画面とエディターでのMod情報を共有する",
+            [$@"{editor_prefix}:carry_over_song_select_mods_description"] = @"テストプレイが曲選択画面で選んだModから始まり、ここで選んだModは出たあとも選ばれたままになります",
             [$@"{editor_prefix}:apply_test_play_mods_to_composer"] = @"編集画面にもModを反映",
             [$@"{editor_prefix}:live_mod_preview"] = @"編集中もModの表示を更新",
 
@@ -47,6 +49,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:freehand_slider_placement"] = @"ドラッグでスライダーを描く",
             [$@"{editor_prefix}:default_addition_bank"] = @"Add bankの初期値",
             [$@"{editor_prefix}:default_addition_bank_description"] = @"Add bankを持たないノーツにWhistle・Finish・Clapを付けたとき、このbankになります",
+            [$@"{editor_prefix}:hide_grid_from_points_tool"] = @"ToolsのGRIDボタンを非表示",
+            [$@"{editor_prefix}:hide_grid_from_points_tool_description"] = @"割り当てられたキーでも選択されなくなります。グリッドは右のGrid欄から設定できます",
             [$@"{editor_prefix}:addition_bank_auto"] = @"Auto",
             [$@"{editor_prefix}:addition_bank_normal"] = @"Normal",
             [$@"{editor_prefix}:addition_bank_soft"] = @"Soft",
@@ -70,6 +74,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:always_expand_timeline_point_labels"] = @"タイムラインのラベルを常に展開",
             [$@"{editor_prefix}:seek_animation_duration"] = @"シークのアニメーション",
             [$@"{editor_prefix}:editor_colour_scheme"] = @"エディターのテーマ色",
+            [$@"{editor_prefix}:hide_kiai_flash"] = @"Kiaiのフラッシュを非表示",
+            [$@"{editor_prefix}:hide_kiai_flash_description"] = @"エディター内でのみ非表示になります。テストプレイでは今までどおり光ります",
 
             // selection
             [$@"{editor_prefix}:selection_appearance"] = @"選択枠",
