@@ -8,6 +8,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Game.Database;
+using osu.Game.Online.API.Requests.Responses;
 
 namespace osu.Game.Beatmaps
 {
@@ -15,50 +16,44 @@ namespace osu.Game.Beatmaps
     /// Finds out who actually authored a difficulty, rather than who owns the set it sits in.
     /// </summary>
     /// <remarks>
-    /// A guest difficulty is credited to its own author online, and importing a beatmap records that author's id on the
-    /// difficulty — but leaves the name alone, because the name comes from the beatmap file, which carries the set
-    /// owner's. So the two disagree: the name reads as the set owner while the profile it links to is the guest's.
+    /// A guest difficulty is credited to its own authors online, and a collaboration has several of them. None of that
+    /// survives importing: a beatmap file carries one creator name, the set owner's, and the import records only the
+    /// difficulty's author id alongside it — which is why the name reads as the set owner while the profile it links to
+    /// is the guest's.
     /// <para>
-    /// Only a name is missing, and only a lookup can supply it. Nothing here decides whether a difficulty is a guest
-    /// one: the recorded id is the author either way, so a difficulty the set owner made resolves to their own name and
-    /// nothing appears to change.
+    /// The authors, names included, come back with the beatmap itself, so one lookup answers the whole question.
+    /// Nothing here decides whether a difficulty is a guest one: the set owner's own difficulties come back credited to
+    /// them, and the caller sees the name it already had.
     /// </para>
     /// </remarks>
     public partial class DifficultyAuthorLookup : Component
     {
-        /// <summary>
-        /// Ids at or below this are not a real user: <see cref="Models.RealmUser"/> starts at 1 and stays there until
-        /// online metadata says otherwise.
-        /// </summary>
-        private const int first_real_user_id = 2;
-
         [Resolved]
-        private UserLookupCache users { get; set; } = null!;
+        private BeatmapLookupCache beatmaps { get; set; } = null!;
 
         /// <summary>
-        /// Calls back with the name the difficulty's author goes by, if it turns out to differ from the one already
-        /// shown. Never calls back otherwise, so a caller which has already drawn the beatmap file's name can leave it
-        /// where it is.
+        /// Calls back with everyone credited with this difficulty, once they are known. Never calls back for a beatmap
+        /// which has no online counterpart, or when the lookup cannot be made, so a caller which has already drawn the
+        /// beatmap file's name can leave it where it is.
         /// </summary>
-        public void GetAuthorName(BeatmapInfo beatmap, Action<string> onDiffering, CancellationToken cancellationToken)
+        public void GetAuthors(BeatmapInfo beatmap, Action<APIBeatmap.BeatmapOwner[]> onFound, CancellationToken cancellationToken)
         {
-            int id = beatmap.Metadata.Author.OnlineID;
-            string known = beatmap.Metadata.Author.Username;
+            int id = beatmap.OnlineID;
 
-            if (id < first_real_user_id)
+            if (id <= 0)
                 return;
 
-            users.GetUserAsync(id, cancellationToken).ContinueWith(task =>
+            beatmaps.GetBeatmapAsync(id, cancellationToken).ContinueWith(task =>
             {
-                string? found = task.GetResultSafely()?.Username;
+                var owners = task.GetResultSafely()?.BeatmapOwners;
 
-                if (string.IsNullOrEmpty(found) || found == known)
+                if (owners == null || owners.Length == 0)
                     return;
 
                 Schedule(() =>
                 {
                     if (!cancellationToken.IsCancellationRequested)
-                        onDiffering(found);
+                        onFound(owners);
                 });
             }, cancellationToken, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
         }

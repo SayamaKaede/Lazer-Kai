@@ -350,12 +350,12 @@ namespace osu.Game
             dependencies.Cache(userCache = new UserLookupCache());
             base.Content.Add(userCache);
 
-            DifficultyAuthorLookup difficultyAuthorLookup;
-            dependencies.Cache(difficultyAuthorLookup = new DifficultyAuthorLookup());
-            base.Content.Add(difficultyAuthorLookup);
 
             dependencies.Cache(beatmapCache = new BeatmapLookupCache());
             base.Content.Add(beatmapCache);
+            DifficultyAuthorLookup difficultyAuthorLookup;
+            dependencies.Cache(difficultyAuthorLookup = new DifficultyAuthorLookup());
+            base.Content.Add(difficultyAuthorLookup);
 
             dependencies.CacheAs<IRulesetConfigCache>(rulesetConfigCache = new RulesetConfigCache(realm, RulesetStore));
 

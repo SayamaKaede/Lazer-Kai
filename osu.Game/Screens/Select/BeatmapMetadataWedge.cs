@@ -358,9 +358,9 @@ namespace osu.Game.Screens.Select
             // see `DifficultyAuthorLookup`: the name here belongs to the set owner even when the link does not.
             authorCancellation?.Cancel();
             authorCancellation = new CancellationTokenSource();
-            authorLookup?.GetAuthorName(beatmap.Value.BeatmapInfo,
-                name => creator.Data = (name, () => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, metadata.Author))),
-                authorCancellation.Token);
+            authorLookup?.GetAuthors(beatmap.Value.BeatmapInfo, owners =>
+                creator.Data = (string.Join(@", ", owners.Select(o => o.Username)),
+                    () => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, owners[0].Id))), authorCancellation.Token);
 
             if (!string.IsNullOrEmpty(metadata.Source))
                 source.Data = (metadata.Source, () => songSelect?.AddToSearch(metadata.Source));

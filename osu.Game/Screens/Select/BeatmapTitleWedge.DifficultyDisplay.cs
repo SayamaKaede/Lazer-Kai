@@ -8,14 +8,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Extensions;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Graphics.UserInterface;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
+using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Graphics.UserInterfaceV2;
+using osu.Framework.Graphics.Cursor;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Localisation;
@@ -24,6 +29,7 @@ using osu.Game.Online.Chat;
 using osu.Game.Overlays;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
+using osuTK;
 using osuTK.Graphics;
 
 namespace osu.Game.Screens.Select
@@ -52,7 +58,7 @@ namespace osu.Game.Screens.Select
             private FillFlowContainer nameLine = null!;
             private OsuSpriteText difficultyText = null!;
             private OsuSpriteText mappedByText = null!;
-            private OsuHoverContainer mapperLink = null!;
+            private MapperLinkContainer mapperLink = null!;
             private OsuSpriteText mapperText = null!;
 
             private GridContainer ratingAndNameContainer = null!;
@@ -137,6 +143,7 @@ namespace osu.Game.Screens.Select
                                                 },
                                                 mapperLink = new MapperLinkContainer
                                                 {
+                                                    Authors = () => authors,
                                                     AutoSizeAxes = Axes.Both,
                                                     Anchor = Anchor.BottomLeft,
                                                     Origin = Anchor.BottomLeft,
@@ -255,7 +262,7 @@ namespace osu.Game.Screens.Select
 
                     // the name comes from the beatmap file and so reads as the set owner even on a guest difficulty,
                     // while the profile it links to is already the guest's. Corrected once the name is known.
-                    authorLookup?.GetAuthorName(beatmap.Value.BeatmapInfo, name => mapperText.Text = name, cancellationSource.Token);
+                    authorLookup?.GetAuthors(beatmap.Value.BeatmapInfo, showAuthors, cancellationSource.Token);
                 }
 
                 starRatingDisplay.Current = (Bindable<StarDifficulty>)difficultyCache.GetBindableDifficulty(beatmap.Value.BeatmapInfo, cancellationSource.Token, SongSelect.DIFFICULTY_CALCULATION_DEBOUNCE);
@@ -321,13 +328,67 @@ namespace osu.Game.Screens.Select
                 difficultyStatisticsDisplay.AccentColour = col;
             }
 
-            private partial class MapperLinkContainer : OsuHoverContainer
+            /// <summary>
+            /// Everyone credited with the difficulty on screen, once a lookup has said who they are.
+            /// </summary>
+            private APIBeatmap.BeatmapOwner[] authors = Array.Empty<APIBeatmap.BeatmapOwner>();
+
+            /// <summary>
+            /// Names them all, in place of the single one the beatmap file carries.
+            /// </summary>
+            /// <remarks>
+            /// The line has a width to fit into, so a collaboration too long for it is cut off with an ellipsis by the
+            /// text itself. Clicking opens the full list rather than a profile in that case, which is also the only way
+            /// to reach the second and later authors.
+            /// </remarks>
+            private void showAuthors(APIBeatmap.BeatmapOwner[] found)
             {
+                authors = found;
+                mapperText.Text = string.Join(@", ", found.Select(a => a.Username));
+
+                mapperLink.TooltipText = found.Length == 1 ? ContextMenuStrings.ViewProfile : default;
+                mapperLink.Action = found.Length == 1
+                    ? () => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, found[0].Id))
+                    : mapperLink.ShowPopover;
+            }
+
+            private partial class MapperLinkContainer : OsuHoverContainer, IHasPopover
+            {
+                public Func<APIBeatmap.BeatmapOwner[]> Authors = Array.Empty<APIBeatmap.BeatmapOwner>;
+
+                [Resolved(CanBeNull = true)]
+                private ILinkHandler? linkHandler { get; set; }
+
                 [BackgroundDependencyLoader]
                 private void load(OverlayColourProvider? overlayColourProvider, OsuColour colours)
                 {
                     TooltipText = ContextMenuStrings.ViewProfile;
                     IdleColour = overlayColourProvider?.Light2 ?? colours.Blue;
+                }
+
+                public Popover GetPopover() => new AuthorsPopover(Authors(), id => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, id)));
+            }
+
+            private partial class AuthorsPopover : OsuPopover
+            {
+                public AuthorsPopover(APIBeatmap.BeatmapOwner[] authors, Action<int> openProfile)
+                {
+                    Child = new FillFlowContainer
+                    {
+                        AutoSizeAxes = Axes.Both,
+                        Direction = FillDirection.Vertical,
+                        Spacing = new Vector2(0, 4),
+                        ChildrenEnumerable = authors.Select(a => new OsuHoverContainer
+                        {
+                            AutoSizeAxes = Axes.Both,
+                            Action = () => openProfile(a.Id),
+                            Child = new OsuSpriteText
+                            {
+                                Text = a.Username,
+                                Font = OsuFont.Style.Body.With(weight: FontWeight.SemiBold),
+                            },
+                        }),
+                    };
                 }
             }
         }
