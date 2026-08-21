@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Net;
 using System.Diagnostics;
 using osu.Game.Database;
 using osu.Game.Online.API;
@@ -33,7 +34,7 @@ namespace osu.Game.Beatmaps
 
             Debug.Assert(beatmapInfo.BeatmapSet != null);
 
-            var req = new GetBeatmapRequest(md5Hash: beatmapInfo.MD5Hash, filename: beatmapInfo.Path);
+            var req = new BeatmapLookupRequest(md5Hash: beatmapInfo.MD5Hash, filename: beatmapInfo.Path);
 
             try
             {
@@ -42,8 +43,20 @@ namespace osu.Game.Beatmaps
 
                 if (req.CompletionState == APIRequestCompletionState.Failed)
                 {
-                    logForModel(beatmapInfo.BeatmapSet, $@"Online retrieval failed for {beatmapInfo}");
                     onlineMetadata = null;
+
+                    // a request which failed for any other reason did not establish that this beatmap is unknown
+                    // online — the server was simply unable to say. Reporting a lookup regardless has the caller
+                    // throw the beatmap's online identity away over a passing outage, and it does not come back:
+                    // nothing looks the beatmap up again, so it stays unranked and leaderboard-less until it is
+                    // deleted and downloaded afresh.
+                    if (!FailureMeansNotOnline(req.ResponseStatusCode))
+                    {
+                        logForModel(beatmapInfo.BeatmapSet, $@"Online retrieval could not be completed for {beatmapInfo} ({req.ResponseStatusCode?.ToString() ?? @"no response"})");
+                        return false;
+                    }
+
+                    logForModel(beatmapInfo.BeatmapSet, $@"Online retrieval failed for {beatmapInfo}");
                     return true;
                 }
 
@@ -79,6 +92,24 @@ namespace osu.Game.Beatmaps
 
             onlineMetadata = null;
             return false;
+        }
+
+        /// <summary>
+        /// Whether a failed lookup answered the question — that this beatmap is not one the server knows.
+        /// </summary>
+        internal static bool FailureMeansNotOnline(HttpStatusCode? status) => status == HttpStatusCode.NotFound;
+
+        /// <summary>
+        /// Exists only to read the status the server replied with, which the request keeps to itself.
+        /// </summary>
+        private class BeatmapLookupRequest : GetBeatmapRequest
+        {
+            public HttpStatusCode? ResponseStatusCode => WebRequest?.ResponseStatusCode;
+
+            public BeatmapLookupRequest(string? md5Hash, string? filename)
+                : base(md5Hash: md5Hash, filename: filename)
+            {
+            }
         }
 
         private void logForModel(BeatmapSetInfo set, string message) =>
