@@ -343,12 +343,24 @@ namespace osu.Game.Screens.Select
             wedgeHideChannel.Play();
         }
 
+        [Resolved(CanBeNull = true)]
+        private DifficultyAuthorLookup? authorLookup { get; set; }
+
+        private CancellationTokenSource? authorCancellation;
+
         private void updateDisplay()
         {
             var metadata = beatmap.Value.Metadata;
             var beatmapSetInfo = beatmap.Value.BeatmapSetInfo;
 
             creator.Data = (metadata.Author.Username, () => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, metadata.Author)));
+
+            // see `DifficultyAuthorLookup`: the name here belongs to the set owner even when the link does not.
+            authorCancellation?.Cancel();
+            authorCancellation = new CancellationTokenSource();
+            authorLookup?.GetAuthorName(beatmap.Value.BeatmapInfo,
+                name => creator.Data = (name, () => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, metadata.Author))),
+                authorCancellation.Token);
 
             if (!string.IsNullOrEmpty(metadata.Source))
                 source.Data = (metadata.Source, () => songSelect?.AddToSearch(metadata.Source));

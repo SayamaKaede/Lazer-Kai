@@ -61,6 +61,9 @@ namespace osu.Game.Screens.Select
 
             private CancellationTokenSource? cancellationSource;
 
+            [Resolved(CanBeNull = true)]
+            private DifficultyAuthorLookup? authorLookup { get; set; }
+
             public DifficultyDisplay()
             {
                 RelativeSizeAxes = Axes.X;
@@ -249,6 +252,10 @@ namespace osu.Game.Screens.Select
                     difficultyText.Text = beatmap.Value.BeatmapInfo.DifficultyName;
                     mapperLink.Action = () => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, beatmap.Value.Metadata.Author));
                     mapperText.Text = beatmap.Value.Metadata.Author.Username;
+
+                    // the name comes from the beatmap file and so reads as the set owner even on a guest difficulty,
+                    // while the profile it links to is already the guest's. Corrected once the name is known.
+                    authorLookup?.GetAuthorName(beatmap.Value.BeatmapInfo, name => mapperText.Text = name, cancellationSource.Token);
                 }
 
                 starRatingDisplay.Current = (Bindable<StarDifficulty>)difficultyCache.GetBindableDifficulty(beatmap.Value.BeatmapInfo, cancellationSource.Token, SongSelect.DIFFICULTY_CALCULATION_DEBOUNCE);
