@@ -271,10 +271,10 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
             SetDefault(OsuSetting.EditorAutoBackupKeepCount, 20, 5, 200);
             SetDefault(OsuSetting.EditorHideTimelinePoints, false);
-            SetDefault(OsuSetting.EditorTimelineDragAreaScale, 0.5f, 0.5f, 1f, 0.05f);
-            SetDefault(OsuSetting.EditorTimelineRepeatDragThreshold, 0.8f, 0.5f, 0.8f, 0.05f);
+            SetDefault(OsuSetting.EditorTimelineDragAreaScale, 0.5f, 0.5f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorTimelineRepeatDragThreshold, 0.8f, 0.5f, 0.8f, 0.01f);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerColour, EditorSelectionColour.Default);
-            SetDefault(OsuSetting.EditorSliderEndDragMarkerScale, 1f, 0.5f, 2f, 0.05f);
+            SetDefault(OsuSetting.EditorSliderEndDragMarkerScale, 1f, 0.5f, 2f, 0.01f);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerOpacity, 1f, 0.1f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorAutoGenerateBreaks, true);
             SetDefault(OsuSetting.EditorPinnedGroupOrder, EditorPinnedGroupOrder.ToolboxOrder);
