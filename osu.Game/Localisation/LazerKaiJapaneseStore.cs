@@ -98,6 +98,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:slider_anchor_size"] = @"アンカーの大きさ",
             [$@"{editor_prefix}:slider_end_drag_marker_colour"] = @"スライダー伸縮ハンドルの色",
             [$@"{editor_prefix}:slider_end_drag_marker_scale"] = @"スライダー伸縮ハンドルの太さ",
+            [$@"{editor_prefix}:slider_end_drag_marker_opacity"] = @"スライダー伸縮ハンドルの不透明度",
             [$@"{editor_prefix}:hide_selection_buttons"] = @"選択時のショートカットボタンの非表示",
             [$@"{editor_prefix}:hide_rotation_handles"] = @"選択時の回転ハンドルの非表示",
             [$@"{editor_prefix}:selectable_after_end_time"] = @"通過後の選択可能時間",

@@ -815,6 +815,11 @@ namespace osu.Game.Localisation
         public static LocalisableString SliderEndDragMarkerScale => new TranslatableString(getKey(@"slider_end_drag_marker_scale"), @"Slider length handle size");
 
         /// <summary>
+        /// "Slider length handle opacity"
+        /// </summary>
+        public static LocalisableString SliderEndDragMarkerOpacity => new TranslatableString(getKey(@"slider_end_drag_marker_opacity"), @"Slider length handle opacity");
+
+        /// <summary>
         /// "Add breaks automatically"
         /// </summary>
         public static LocalisableString AutoGenerateBreaks => new TranslatableString(getKey(@"auto_generate_breaks"), @"Add breaks automatically");

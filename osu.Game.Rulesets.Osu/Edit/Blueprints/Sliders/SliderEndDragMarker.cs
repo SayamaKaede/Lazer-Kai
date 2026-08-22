@@ -33,14 +33,17 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
 
         private readonly Bindable<EditorSelectionColour> markerColour = new Bindable<EditorSelectionColour>();
         private readonly Bindable<float> markerScale = new Bindable<float>(1);
+        private readonly Bindable<float> markerOpacity = new Bindable<float>(1);
 
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
             config.BindWith(OsuSetting.EditorSliderEndDragMarkerColour, markerColour);
             config.BindWith(OsuSetting.EditorSliderEndDragMarkerScale, markerScale);
+            config.BindWith(OsuSetting.EditorSliderEndDragMarkerOpacity, markerOpacity);
 
             markerColour.BindValueChanged(_ => updateState());
+            markerOpacity.BindValueChanged(_ => updateState());
             markerScale.BindValueChanged(scale => PathRadius = default_path_radius * scale.NewValue, true);
 
             var path = PathApproximator.CircularArcToPiecewiseLinear([
@@ -101,6 +104,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
         {
             // the dragged colour is left alone: it is what tells the user the marker has hold of the slider.
             Colour = IsHovered || IsDragged ? colours.Red : markerColour.Value.ToColour() ?? colours.Yellow;
+            Alpha = markerOpacity.Value;
         }
     }
 }
