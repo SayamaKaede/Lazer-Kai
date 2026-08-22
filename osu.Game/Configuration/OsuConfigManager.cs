@@ -274,6 +274,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorTimelineRepeatDragThreshold, 0.8f, 0.5f, 0.8f, 0.05f);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerScale, 1f, 0.5f, 2f, 0.05f);
+            SetDefault(OsuSetting.EditorAutoGenerateBreaks, true);
 
             SetDefault(OsuSetting.AlwaysShowHoldForMenuButton, false);
             SetDefault(OsuSetting.AlwaysRequireHoldingForPause, false);
@@ -768,5 +769,10 @@ namespace osu.Game.Configuration
         /// Scales the marker dragged to lengthen a slider in the composer.
         /// </summary>
         EditorSliderEndDragMarkerScale,
+
+        /// <summary>
+        /// Whether breaks are inserted on the editor's own initiative wherever objects are far enough apart.
+        /// </summary>
+        EditorAutoGenerateBreaks,
     }
 }

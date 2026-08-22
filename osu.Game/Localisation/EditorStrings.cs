@@ -814,6 +814,22 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString SliderEndDragMarkerScale => new TranslatableString(getKey(@"slider_end_drag_marker_scale"), @"Slider length handle size");
 
+        /// <summary>
+        /// "Add breaks automatically"
+        /// </summary>
+        public static LocalisableString AutoGenerateBreaks => new TranslatableString(getKey(@"auto_generate_breaks"), @"Add breaks automatically");
+
+        /// <summary>
+        /// "Breaks appear wherever objects are far enough apart, and are rebuilt whenever objects change. Turn this off to place them yourself from the edit menu."
+        /// </summary>
+        public static LocalisableString AutoGenerateBreaksDescription => new TranslatableString(getKey(@"auto_generate_breaks_description"),
+            @"Breaks appear wherever objects are far enough apart, and are rebuilt whenever objects change. Turn this off to place them yourself from the edit menu.");
+
+        /// <summary>
+        /// "Insert break"
+        /// </summary>
+        public static LocalisableString InsertBreak => new TranslatableString(getKey(@"insert_break"), @"Insert break");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

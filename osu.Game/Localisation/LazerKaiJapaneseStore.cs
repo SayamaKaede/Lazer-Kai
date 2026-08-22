@@ -57,6 +57,9 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:addition_bank_drum"] = @"Drum",
             [$@"{editor_prefix}:arc_on_anchor_add"] = @"追加したアンカーをパーフェクトカーブに",
             [$@"{editor_prefix}:ctrl_click_cycles_curve_type"] = @"Ctrl+クリックでカーブ種別を変更",
+            [$@"{editor_prefix}:auto_generate_breaks"] = @"ブレークタイムを自動で挿入",
+            [$@"{editor_prefix}:auto_generate_breaks_description"] = @"ノーツの間隔が空いたところに自動で入り、ノーツを触るたび作り直されます。切ると、編集メニューから自分で置く形になります",
+            [$@"{editor_prefix}:insert_break"] = @"ブレークタイムを挿入",
 
             // display
             [$@"{editor_prefix}:show_play_area_border"] = @"プレイ画面の枠を表示",

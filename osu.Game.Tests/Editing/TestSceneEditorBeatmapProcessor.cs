@@ -154,6 +154,97 @@ namespace osu.Game.Tests.Editing
         }
 
         [Test]
+        public void TestBreaksAreNotGeneratedWhenTurnedOff()
+        {
+            var controlPoints = new ControlPointInfo();
+            controlPoints.Add(0, new TimingControlPoint { BeatLength = 500 });
+            var beatmap = new EditorBeatmap(new Beatmap
+            {
+                ControlPointInfo = controlPoints,
+                BeatmapInfo = { Ruleset = new OsuRuleset().RulesetInfo },
+                HitObjects =
+                {
+                    new Note { StartTime = 1000 },
+                    new Note { StartTime = 5000 },
+                }
+            });
+
+            var beatmapProcessor = new EditorBeatmapProcessor(beatmap, new OsuRuleset());
+            beatmapProcessor.AutoGenerateBreaks.Value = false;
+            beatmapProcessor.PreProcess();
+            beatmapProcessor.PostProcess();
+
+            Assert.That(beatmap.Breaks, Is.Empty);
+        }
+
+        /// <summary>
+        /// A break the user removed used to come back the next time any object anywhere was touched, because the whole
+        /// set is thrown away and rebuilt on every change.
+        /// </summary>
+        [Test]
+        public void TestRemovedBreakStaysRemovedWhenTurnedOff()
+        {
+            var controlPoints = new ControlPointInfo();
+            controlPoints.Add(0, new TimingControlPoint { BeatLength = 500 });
+            var beatmap = new EditorBeatmap(new Beatmap
+            {
+                ControlPointInfo = controlPoints,
+                BeatmapInfo = { Ruleset = new OsuRuleset().RulesetInfo },
+                HitObjects =
+                {
+                    new Note { StartTime = 1000 },
+                    new Note { StartTime = 5000 },
+                }
+            });
+
+            var beatmapProcessor = new EditorBeatmapProcessor(beatmap, new OsuRuleset());
+            beatmapProcessor.PreProcess();
+            beatmapProcessor.PostProcess();
+
+            Assert.That(beatmap.Breaks, Has.Count.EqualTo(1));
+
+            beatmapProcessor.AutoGenerateBreaks.Value = false;
+            beatmap.Breaks.Clear();
+
+            // the processor skips its work while nothing has moved, so this runs as though something had.
+            beatmapProcessor.PreProcess();
+            beatmapProcessor.PostProcess();
+
+            Assert.That(beatmap.Breaks, Is.Empty);
+        }
+
+        [Test]
+        public void TestBreaksComeBackWhenTurnedOnAgain()
+        {
+            var controlPoints = new ControlPointInfo();
+            controlPoints.Add(0, new TimingControlPoint { BeatLength = 500 });
+            var beatmap = new EditorBeatmap(new Beatmap
+            {
+                ControlPointInfo = controlPoints,
+                BeatmapInfo = { Ruleset = new OsuRuleset().RulesetInfo },
+                HitObjects =
+                {
+                    new Note { StartTime = 1000 },
+                    new Note { StartTime = 5000 },
+                }
+            });
+
+            var beatmapProcessor = new EditorBeatmapProcessor(beatmap, new OsuRuleset());
+            beatmapProcessor.AutoGenerateBreaks.Value = false;
+            beatmapProcessor.PreProcess();
+            beatmapProcessor.PostProcess();
+
+            Assert.That(beatmap.Breaks, Is.Empty);
+
+            // nothing about the objects changed, so only clearing what the processor remembers can bring them back.
+            beatmapProcessor.AutoGenerateBreaks.Value = true;
+            beatmapProcessor.PreProcess();
+            beatmapProcessor.PostProcess();
+
+            Assert.That(beatmap.Breaks, Has.Count.EqualTo(1));
+        }
+
+        [Test]
         public void TestBreaksAreFused()
         {
             var controlPoints = new ControlPointInfo();

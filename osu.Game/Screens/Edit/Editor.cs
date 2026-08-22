@@ -31,6 +31,7 @@ using osu.Framework.Timing;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.ControlPoints;
+using osu.Game.Beatmaps.Timing;
 using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Extensions;
@@ -516,6 +517,8 @@ namespace osu.Game.Screens.Edit
                                             pasteMenuItem = new EditorMenuItem(CommonStrings.Paste, MenuItemType.Standard, Paste) { Hotkey = new Hotkey(PlatformAction.Paste) },
                                             cloneMenuItem = new EditorMenuItem(CommonStrings.Clone, MenuItemType.Standard, Clone) { Hotkey = new Hotkey(GlobalAction.EditorCloneSelection) },
                                             new OsuMenuItemSpacer(),
+                                            insertBreakMenuItem = new EditorMenuItem(EditorStrings.InsertBreak, MenuItemType.Standard, insertBreak),
+                                            new OsuMenuItemSpacer(),
                                             new EditorMenuItem(ComboColourStudioStrings.ComboColourStudio, MenuItemType.Standard, () => comboColourStudio?.ToggleVisibility()),
                                         }
                                     },
@@ -881,6 +884,10 @@ namespace osu.Game.Screens.Edit
             clock.ProcessFrame();
 
             discardChangesMenuItem.Action.Disabled = !HasUnsavedChanges;
+
+            // depends on where the playhead is, so there is nothing to hang a notification off; the scan stops at the
+            // first object past it and costs nothing next to the rest of a frame here.
+            insertBreakMenuItem.Action.Disabled = !tryFitBreakAtCurrentTime(out _, out _);
         }
 
         public bool OnPressed(KeyBindingPressEvent<PlatformAction> e)
@@ -1250,6 +1257,62 @@ namespace osu.Game.Screens.Edit
         }
 
         #region Clipboard support
+
+        private EditorMenuItem insertBreakMenuItem;
+
+        /// <summary>
+        /// Fills the gap in objects the playhead is sitting in with a break.
+        /// </summary>
+        /// <remarks>
+        /// Placed as a manual break, so it survives whether or not the editor is generating breaks on its own.
+        /// </remarks>
+        private void insertBreak()
+        {
+            if (!tryFitBreakAtCurrentTime(out double startTime, out double endTime))
+                return;
+
+            changeHandler?.BeginChange();
+            editorBeatmap.Breaks.Add(new ManualBreakPeriod(startTime, endTime));
+            changeHandler?.EndChange();
+        }
+
+        /// <summary>
+        /// The break the gap around the playhead has room for.
+        /// </summary>
+        /// <returns><c>false</c> when there is no gap to fill, or it already holds a break.</returns>
+        private bool tryFitBreakAtCurrentTime(out double startTime, out double endTime)
+        {
+            startTime = endTime = 0;
+
+            if (editorBeatmap == null)
+                return false;
+
+            double time = clock.CurrentTime;
+            double lastEndTime = double.MinValue;
+            HitObject nextObject = null;
+
+            foreach (var hitObject in editorBeatmap.HitObjects)
+            {
+                if (hitObject.StartTime > time)
+                {
+                    nextObject = hitObject;
+                    break;
+                }
+
+                // objects can overlap, so the gap starts at whichever of them runs longest rather than the last one.
+                lastEndTime = Math.Max(lastEndTime, hitObject.GetEndTime());
+            }
+
+            // there is no gap before the first object or after the last one, only the space outside the map.
+            if (nextObject == null || lastEndTime == double.MinValue)
+                return false;
+
+            if (!EditorBeatmapProcessor.TryFitBreak(editorBeatmap, lastEndTime, nextObject, out startTime, out endTime))
+                return false;
+
+            var candidate = new BreakPeriod(startTime, endTime);
+            return !editorBeatmap.Breaks.Any(b => b.Intersects(candidate));
+        }
 
         private EditorMenuItem cutMenuItem;
         private EditorMenuItem copyMenuItem;

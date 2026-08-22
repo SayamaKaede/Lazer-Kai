@@ -32,6 +32,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 },
                 new SettingsCheckbox
                 {
+                    LabelText = EditorStrings.AutoGenerateBreaks,
+                    TooltipText = EditorStrings.AutoGenerateBreaksDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorAutoGenerateBreaks)
+                },
+                new SettingsCheckbox
+                {
                     LabelText = EditorStrings.FreehandSliderPlacement,
                     Current = config.GetBindable<bool>(OsuSetting.EditorFreehandSliderPlacement)
                 },

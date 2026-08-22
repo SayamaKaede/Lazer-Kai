@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using osu.Framework.Bindables;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Timing;
 using osu.Game.Rulesets;
@@ -25,10 +26,23 @@ namespace osu.Game.Screens.Edit
         /// </summary>
         private HashSet<(double, double)> objectDurationCache = new HashSet<(double, double)>();
 
+        /// <summary>
+        /// Whether breaks are placed wherever objects are far enough apart, and rebuilt whenever objects change.
+        /// </summary>
+        /// <remarks>
+        /// Turning this off leaves the breaks exactly as they are, so one the user removed stays removed and one
+        /// they placed stays put. Placing them then falls to the edit menu.
+        /// </remarks>
+        public readonly BindableBool AutoGenerateBreaks = new BindableBool(true);
+
         public EditorBeatmapProcessor(EditorBeatmap beatmap, Ruleset ruleset)
         {
             Beatmap = beatmap;
             rulesetBeatmapProcessor = ruleset.CreateBeatmapProcessor(beatmap);
+
+            // the cache is what stops the breaks being rebuilt while nothing has moved, and switching back on has to
+            // rebuild them even though nothing has.
+            AutoGenerateBreaks.BindValueChanged(_ => objectDurationCache.Clear());
         }
 
         public void PreProcess()
@@ -40,7 +54,9 @@ namespace osu.Game.Screens.Edit
         {
             rulesetBeatmapProcessor?.PostProcess();
 
-            autoGenerateBreaks();
+            if (AutoGenerateBreaks.Value)
+                autoGenerateBreaks();
+
             ensureNewComboAfterBreaks();
         }
 
@@ -81,16 +97,7 @@ namespace osu.Game.Screens.Edit
                 if (nextObject.StartTime - currentMaxEndTime < BreakPeriod.MIN_GAP_DURATION)
                     continue;
 
-                double breakStartTime = currentMaxEndTime + BreakPeriod.GAP_BEFORE_BREAK;
-
-                double breakEndTime = nextObject.StartTime;
-
-                if (nextObject is IHasTimePreempt hasTimePreempt)
-                    breakEndTime -= hasTimePreempt.TimePreempt;
-                else
-                    breakEndTime -= Math.Max(BreakPeriod.GAP_AFTER_BREAK, Beatmap.ControlPointInfo.TimingPointAt(nextObject.StartTime).BeatLength * 2);
-
-                if (breakEndTime - breakStartTime < BreakPeriod.MIN_BREAK_DURATION)
+                if (!TryFitBreak(Beatmap, currentMaxEndTime, nextObject, out double breakStartTime, out double breakEndTime))
                     continue;
 
                 var breakPeriod = new BreakPeriod(breakStartTime, breakEndTime);
@@ -100,6 +107,24 @@ namespace osu.Game.Screens.Edit
 
                 Beatmap.Breaks.Add(breakPeriod);
             }
+        }
+
+        /// <summary>
+        /// Works out the break that fits the gap between an object ending at <paramref name="lastEndTime"/> and
+        /// <paramref name="nextObject"/>, leaving the usual room at either end.
+        /// </summary>
+        /// <returns><c>false</c> when the gap is too short to hold a break worth having.</returns>
+        public static bool TryFitBreak(IBeatmap beatmap, double lastEndTime, HitObject nextObject, out double startTime, out double endTime)
+        {
+            startTime = lastEndTime + BreakPeriod.GAP_BEFORE_BREAK;
+            endTime = nextObject.StartTime;
+
+            if (nextObject is IHasTimePreempt hasTimePreempt)
+                endTime -= hasTimePreempt.TimePreempt;
+            else
+                endTime -= Math.Max(BreakPeriod.GAP_AFTER_BREAK, beatmap.ControlPointInfo.TimingPointAt(nextObject.StartTime).BeatLength * 2);
+
+            return endTime - startTime >= BreakPeriod.MIN_BREAK_DURATION;
         }
 
         private void ensureNewComboAfterBreaks()

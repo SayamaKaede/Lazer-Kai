@@ -16,6 +16,7 @@ using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Beatmaps.Formats;
 using osu.Game.Beatmaps.Legacy;
 using osu.Game.Beatmaps.Timing;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
@@ -94,7 +95,7 @@ namespace osu.Game.Screens.Edit
 
         public BindableInt PreviewTime { get; }
 
-        private readonly IBeatmapProcessor beatmapProcessor;
+        private readonly EditorBeatmapProcessor beatmapProcessor;
 
         private readonly Dictionary<HitObject, Bindable<double>> startTimeBindables = new Dictionary<HitObject, Bindable<double>>();
 
@@ -149,6 +150,12 @@ namespace osu.Game.Screens.Edit
             });
 
             BeatmapVersion = PlayableBeatmap.BeatmapVersion;
+        }
+
+        [BackgroundDependencyLoader]
+        private void load(OsuConfigManager config)
+        {
+            config.BindWith(OsuSetting.EditorAutoGenerateBreaks, beatmapProcessor.AutoGenerateBreaks);
         }
 
         /// <summary>
