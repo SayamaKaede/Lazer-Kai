@@ -104,6 +104,11 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     Current = config.GetBindable<float>(OsuSetting.EditorTimelineRepeatDragThreshold),
                     DisplayAsPercentage = true,
                 }),
+                new SettingsEnumDropdown<EditorPinnedGroupOrder>
+                {
+                    LabelText = EditorStrings.PinnedGroupOrder,
+                    Current = config.GetBindable<EditorPinnedGroupOrder>(OsuSetting.EditorPinnedGroupOrder)
+                },
                 new SettingsItemV2(new FormSliderBar<double>
                 {
                     Caption = EditorStrings.SeekAnimationDuration,

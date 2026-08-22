@@ -830,6 +830,21 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString InsertBreak => new TranslatableString(getKey(@"insert_break"), @"Insert break");
 
+        /// <summary>
+        /// "Pinned group order"
+        /// </summary>
+        public static LocalisableString PinnedGroupOrder => new TranslatableString(getKey(@"pinned_group_order"), @"Pinned group order");
+
+        /// <summary>
+        /// "Sidebar order"
+        /// </summary>
+        public static LocalisableString PinnedGroupOrderToolbox => new TranslatableString(getKey(@"pinned_group_order_toolbox"), @"Sidebar order");
+
+        /// <summary>
+        /// "Order pinned"
+        /// </summary>
+        public static LocalisableString PinnedGroupOrderPinned => new TranslatableString(getKey(@"pinned_group_order_pinned"), @"Order pinned");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

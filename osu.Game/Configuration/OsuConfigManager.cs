@@ -247,7 +247,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorNotifyOnBackup, true);
             SetDefault(OsuSetting.EditorToolButtonSquareness, 0f, 0f, 0.3f, 0.01f);
             SetDefault(OsuSetting.EditorToggleButtonSquareness, 0f, 0f, 0.3f, 0.01f);
-            SetDefault(OsuSetting.EditorPinnedToolboxGroups, string.Empty);
+            // status is the one group a mapper reads rather than operates, so it starts held where it can be read.
+            SetDefault(OsuSetting.EditorPinnedToolboxGroups, @"status");
             SetDefault(OsuSetting.EditorHideSelectionButtons, false);
             SetDefault(OsuSetting.EditorHideRotationHandles, false);
             SetDefault(OsuSetting.EditorDefaultAdditionBank, EditorAdditionBank.Auto);
@@ -275,6 +276,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSliderEndDragMarkerColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerScale, 1f, 0.5f, 2f, 0.05f);
             SetDefault(OsuSetting.EditorAutoGenerateBreaks, true);
+            SetDefault(OsuSetting.EditorPinnedGroupOrder, EditorPinnedGroupOrder.ToolboxOrder);
 
             SetDefault(OsuSetting.AlwaysShowHoldForMenuButton, false);
             SetDefault(OsuSetting.AlwaysRequireHoldingForPause, false);
@@ -774,5 +776,10 @@ namespace osu.Game.Configuration
         /// Whether breaks are inserted on the editor's own initiative wherever objects are far enough apart.
         /// </summary>
         EditorAutoGenerateBreaks,
+
+        /// <summary>
+        /// How the editor's pinned toolbox groups are ordered among themselves.
+        /// </summary>
+        EditorPinnedGroupOrder,
     }
 }

@@ -9,6 +9,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Input.Events;
+using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Game.Configuration;
 using osu.Game.Graphics.Containers;
@@ -60,9 +61,16 @@ namespace osu.Game.Rulesets.Edit
         [Resolved(CanBeNull = true)]
         private OverlayColourProvider? colourProvider { get; set; }
 
-        private readonly Dictionary<EditorToolboxGroup, float> originalLayoutPositions = new Dictionary<EditorToolboxGroup, float>();
+        /// <summary>
+        /// The groups this toolbox lays out, in the order it lays them out.
+        /// </summary>
+        private readonly List<ToolboxEntry> entries = new List<ToolboxEntry>();
 
         private readonly Bindable<string> pinnedGroups = new Bindable<string>(string.Empty);
+
+        private readonly Bindable<EditorPinnedGroupOrder> pinnedGroupOrder = new Bindable<EditorPinnedGroupOrder>();
+
+        private int nextPinSequence;
 
         private const char pinned_separator = '|';
 
@@ -71,6 +79,7 @@ namespace osu.Game.Rulesets.Edit
         {
             config.BindWith(OsuSetting.EditorContractSidebars, contractSidebars);
             config.BindWith(OsuSetting.EditorPinnedToolboxGroups, pinnedGroups);
+            config.BindWith(OsuSetting.EditorPinnedGroupOrder, pinnedGroupOrder);
 
             AddInternal(pinnedContainer = new Container
             {
@@ -118,24 +127,48 @@ namespace osu.Game.Rulesets.Edit
                 });
             }
 
-            var storedPins = pinnedGroups.Value.Split(pinned_separator, StringSplitOptions.RemoveEmptyEntries).ToHashSet();
-            var groups = Children.OfType<EditorToolboxGroup>().ToArray();
-
-            // every position is recorded before anything moves, so restoring one does not depend on what is pinned.
-            foreach (var group in groups)
-                originalLayoutPositions[group] = FillFlow.GetLayoutPosition(group);
-
-            foreach (var group in groups)
+            // a group may sit inside a container of its own, in which case that container is what the toolbox lays
+            // out and what has to move when the group is pinned.
+            foreach (var child in Children.ToArray())
             {
-                var captured = group;
+                var group = child as EditorToolboxGroup ?? child.ChildrenOfType<EditorToolboxGroup>().FirstOrDefault();
 
-                group.Pinned.Value = storedPins.Contains(group.Title);
-                group.Pinned.BindValueChanged(pinned =>
+                if (group != null)
+                    entries.Add(new ToolboxEntry(group, child));
+            }
+
+            // a flow container falls back to the order it first saw its children in, which drops anything taken out
+            // and put back at the bottom. giving every entry a position of its own is what lets one return to its place.
+            for (int i = 0; i < entries.Count; i++)
+            {
+                entries[i].LayoutPosition = i;
+                FillFlow.SetLayoutPosition(entries[i].Drawable, i);
+            }
+
+            // restored in the order they were written, which is the order they were pinned in.
+            foreach (string title in pinnedGroups.Value.Split(pinned_separator, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var restored = entries.FirstOrDefault(e => e.Group.Title == title);
+
+                if (restored == null)
+                    continue;
+
+                restored.Group.Pinned.Value = true;
+                setPinned(restored, true);
+            }
+
+            foreach (var entry in entries)
+            {
+                var captured = entry;
+
+                entry.Group.Pinned.BindValueChanged(pinned =>
                 {
                     setPinned(captured, pinned.NewValue);
                     savePinnedState();
-                }, true);
+                });
             }
+
+            pinnedGroupOrder.BindValueChanged(_ => updatePinnedOrder());
         }
 
         /// <summary>
@@ -147,35 +180,83 @@ namespace osu.Game.Rulesets.Edit
         /// </remarks>
         private void savePinnedState()
         {
-            var ownGroups = Children.OfType<EditorToolboxGroup>().Concat(pinnedArea.OfType<EditorToolboxGroup>()).ToArray();
-            var ownTitles = ownGroups.Select(g => g.Title).ToHashSet();
+            var ownTitles = entries.Select(e => e.Group.Title).ToHashSet();
 
             var stored = pinnedGroups.Value.Split(pinned_separator, StringSplitOptions.RemoveEmptyEntries)
                                      .Where(title => !ownTitles.Contains(title))
                                      .ToList();
 
-            stored.AddRange(ownGroups.Where(g => g.Pinned.Value).Select(g => g.Title));
+            // written in the order they were pinned, which is the only place that order is kept.
+            stored.AddRange(entries.Where(e => e.Group.Pinned.Value)
+                                   .OrderBy(e => e.PinSequence)
+                                   .Select(e => e.Group.Title));
 
             pinnedGroups.Value = string.Join(pinned_separator, stored);
         }
 
-        private void setPinned(EditorToolboxGroup group, bool pinned)
+        private void setPinned(ToolboxEntry entry, bool pinned)
         {
             // membership is tested by parent rather than `Contains`, which throws outright when the drawable belongs
             // to a different container.
             if (pinned)
             {
-                if (ReferenceEquals(group.Parent, FillFlow))
+                if (ReferenceEquals(entry.Drawable.Parent, FillFlow))
                 {
-                    FillFlow.Remove(group, false);
-                    pinnedArea.Add(group);
+                    entry.PinSequence = nextPinSequence++;
+
+                    FillFlow.Remove(entry.Drawable, false);
+                    pinnedArea.Add(entry.Drawable);
                 }
             }
-            else if (ReferenceEquals(group.Parent, pinnedArea))
+            else if (ReferenceEquals(entry.Drawable.Parent, pinnedArea))
             {
-                pinnedArea.Remove(group, false);
-                FillFlow.Add(group);
-                FillFlow.SetLayoutPosition(group, originalLayoutPositions[group]);
+                pinnedArea.Remove(entry.Drawable, false);
+                FillFlow.Add(entry.Drawable);
+                FillFlow.SetLayoutPosition(entry.Drawable, entry.LayoutPosition);
+            }
+
+            updatePinnedOrder();
+        }
+
+        private void updatePinnedOrder()
+        {
+            foreach (var entry in entries)
+            {
+                if (!ReferenceEquals(entry.Drawable.Parent, pinnedArea))
+                    continue;
+
+                pinnedArea.SetLayoutPosition(entry.Drawable, pinnedGroupOrder.Value == EditorPinnedGroupOrder.OrderPinned
+                    ? entry.PinSequence
+                    : entry.LayoutPosition);
+            }
+        }
+
+        /// <summary>
+        /// One group in the toolbox, together with what the toolbox actually lays out for it.
+        /// </summary>
+        private class ToolboxEntry
+        {
+            public readonly EditorToolboxGroup Group;
+
+            /// <summary>
+            /// The group itself, or the container it is wrapped in.
+            /// </summary>
+            public readonly Drawable Drawable;
+
+            /// <summary>
+            /// Where this sits in the toolbox while nothing is pinned.
+            /// </summary>
+            public float LayoutPosition;
+
+            /// <summary>
+            /// When this was pinned, relative to the others.
+            /// </summary>
+            public int PinSequence;
+
+            public ToolboxEntry(EditorToolboxGroup group, Drawable drawable)
+            {
+                Group = group;
+                Drawable = drawable;
             }
         }
 
