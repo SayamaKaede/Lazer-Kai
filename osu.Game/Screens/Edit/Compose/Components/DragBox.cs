@@ -55,6 +55,9 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
             if (Box is BoxWithBorders boxWithBorders)
                 boxWithBorders.ThicknessScale = appearance.GetThickness(1);
+
+            if (state != Visibility.Hidden)
+                Alpha = appearance.Opacity;
         }
 
         protected virtual Drawable CreateBox() => new BoxWithBorders();

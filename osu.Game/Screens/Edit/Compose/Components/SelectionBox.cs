@@ -219,6 +219,29 @@ namespace osu.Game.Screens.Edit.Compose.Components
             updateAppearance();
         }
 
+        // starts on, the way any drawable does. a box built on its own is meant to be seen, and the handler that owns
+        // one turns it off as soon as it looks at the selection.
+        private bool shown = true;
+
+        /// <summary>
+        /// Whether there is a selection for this box to draw around.
+        /// </summary>
+        /// <remarks>
+        /// Kept as a flag the box acts on itself rather than something the outside fades directly, because fading it
+        /// in writes a full opacity that the user's own setting has no chance to survive.
+        /// </remarks>
+        public bool Shown
+        {
+            get => shown;
+            set
+            {
+                if (shown == value) return;
+
+                shown = value;
+                updateAppearance();
+            }
+        }
+
         private void updateAppearance()
         {
             var colour = appearance.GetColour(colours.YellowDark);
@@ -226,7 +249,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
             infoTextBackground.Colour = colour;
             border.BorderColour = colour;
             border.BorderThickness = appearance.GetThickness(BORDER_RADIUS);
-            Alpha = appearance.Opacity;
+            Alpha = shown ? appearance.Opacity : 0;
         }
 
         protected override bool OnKeyDown(KeyDownEvent e)
