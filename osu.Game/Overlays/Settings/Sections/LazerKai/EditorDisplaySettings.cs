@@ -85,6 +85,18 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     LabelText = EditorStrings.AlwaysExpandTimelinePointLabels,
                     Current = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandTimelinePointLabels)
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.HideTimelinePoints,
+                    TooltipText = EditorStrings.HideTimelinePointsDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorHideTimelinePoints)
+                },
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.TimelineDragAreaScale,
+                    Current = config.GetBindable<float>(OsuSetting.EditorTimelineDragAreaScale),
+                    DisplayAsPercentage = true,
+                }),
                 new SettingsItemV2(new FormSliderBar<double>
                 {
                     Caption = EditorStrings.SeekAnimationDuration,

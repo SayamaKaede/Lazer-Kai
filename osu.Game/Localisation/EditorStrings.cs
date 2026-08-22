@@ -778,6 +778,22 @@ namespace osu.Game.Localisation
         public static LocalisableString ToggleDistanceSnap => new TranslatableString(getKey(@"toggle_distance_snap"), @"Toggle distance snap grid");
 
         /// <summary>
+        /// "Hide the timeline's velocity and volume rows"
+        /// </summary>
+        public static LocalisableString HideTimelinePoints => new TranslatableString(getKey(@"hide_timeline_points"), @"Hide the timeline's velocity and volume rows");
+
+        /// <summary>
+        /// "Objects take the freed space, making them easier to grab. Velocity and volume stay editable from the right sidebar."
+        /// </summary>
+        public static LocalisableString HideTimelinePointsDescription => new TranslatableString(getKey(@"hide_timeline_points_description"),
+            @"Objects take the freed space, making them easier to grab. Velocity and volume stay editable from the right sidebar.");
+
+        /// <summary>
+        /// "Timeline drag handle size"
+        /// </summary>
+        public static LocalisableString TimelineDragAreaScale => new TranslatableString(getKey(@"timeline_drag_area_scale"), @"Timeline drag handle size");
+
+        /// <summary>
         /// "Slider length handle colour"
         /// </summary>
         public static LocalisableString SliderEndDragMarkerColour => new TranslatableString(getKey(@"slider_end_drag_marker_colour"), @"Slider length handle colour");

@@ -269,6 +269,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorAutoBackup, true);
             SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
             SetDefault(OsuSetting.EditorAutoBackupKeepCount, 20, 5, 200);
+            SetDefault(OsuSetting.EditorHideTimelinePoints, false);
+            SetDefault(OsuSetting.EditorTimelineDragAreaScale, 1f, 0.5f, 2f, 0.05f);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerScale, 1f, 0.5f, 2f, 0.05f);
 
@@ -740,6 +742,16 @@ namespace osu.Game.Configuration
         /// Whether kiai's flashing is left out of the editor.
         /// </summary>
         EditorHideKiaiFlash,
+
+        /// <summary>
+        /// Whether the slider velocity and sample point pieces are left out of the timeline, giving the objects the room instead.
+        /// </summary>
+        EditorHideTimelinePoints,
+
+        /// <summary>
+        /// Scales the circle at the end of a timeline object which is dragged to lengthen it.
+        /// </summary>
+        EditorTimelineDragAreaScale,
 
         /// <summary>
         /// Colour of the marker dragged to lengthen a slider in the composer.

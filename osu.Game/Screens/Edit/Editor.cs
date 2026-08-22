@@ -282,6 +282,7 @@ namespace osu.Game.Screens.Edit
         private Bindable<bool> editorApplyTestPlayModsToComposer;
         private Bindable<bool> editorLiveModPreview;
         private Bindable<bool> editorAlwaysExpandTimelinePointLabels;
+        private Bindable<bool> editorHideTimelinePoints;
         private Bindable<EditorSelectionColour> editorSelectionColour;
         private Bindable<float> editorSelectionThickness;
         private Bindable<float> editorSelectionOpacity;
@@ -442,6 +443,7 @@ namespace osu.Game.Screens.Edit
             editorApplyTestPlayModsToComposer = config.GetBindable<bool>(OsuSetting.EditorApplyTestPlayModsToComposer);
             editorLiveModPreview = config.GetBindable<bool>(OsuSetting.EditorLiveModPreview);
             editorAlwaysExpandTimelinePointLabels = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandTimelinePointLabels);
+            editorHideTimelinePoints = config.GetBindable<bool>(OsuSetting.EditorHideTimelinePoints);
             editorSelectionColour = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorSelectionColour);
             editorSelectionThickness = config.GetBindable<float>(OsuSetting.EditorSelectionThickness);
             editorSelectionOpacity = config.GetBindable<float>(OsuSetting.EditorSelectionOpacity);
@@ -537,6 +539,10 @@ namespace osu.Game.Screens.Edit
                                                     new ToggleMenuItem(EditorStrings.TimelineShowBreaks)
                                                     {
                                                         State = { BindTarget = editorTimelineShowBreaks }
+                                                    },
+                                                    new ToggleMenuItem(EditorStrings.HideTimelinePoints)
+                                                    {
+                                                        State = { BindTarget = editorHideTimelinePoints }
                                                     },
                                                     new ToggleMenuItem(EditorStrings.AlwaysExpandTimelinePointLabels)
                                                     {

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using JetBrains.Annotations;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -34,6 +35,11 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
     {
         private const float circle_size = 32;
 
+        /// <summary>
+        /// The height to draw at once the velocity and volume rows are hidden, which is theirs to give up.
+        /// </summary>
+        private const float expanded_circle_size = 52;
+
         private Container? repeatsContainer;
 
         public Action<DragEvent?>? OnDragHandled = null!;
@@ -56,6 +62,10 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private readonly OsuSpriteText comboIndexText;
         private readonly SamplePointPiece samplePointPiece;
         private readonly DifficultyPointPiece? difficultyPointPiece;
+        private readonly DragArea? dragArea;
+
+        private readonly Bindable<bool> hideTimelinePoints = new Bindable<bool>();
+        private readonly Bindable<float> dragAreaScale = new Bindable<float>(1);
 
         [Resolved]
         private ISkinSource skin { get; set; } = null!;
@@ -122,7 +132,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             if (item is IHasDuration)
             {
-                colouredComponents.Add(new DragArea(item)
+                colouredComponents.Add(dragArea = new DragArea(item)
                 {
                     OnDragHandled = e => OnDragHandled?.Invoke(e)
                 });
@@ -136,6 +146,55 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                     Origin = Anchor.BottomCentre
                 });
             }
+        }
+
+        [BackgroundDependencyLoader]
+        private void load(OsuConfigManager config)
+        {
+            config.BindWith(OsuSetting.EditorHideTimelinePoints, hideTimelinePoints);
+            config.BindWith(OsuSetting.EditorTimelineDragAreaScale, dragAreaScale);
+
+            hideTimelinePoints.BindValueChanged(_ => updateSizing());
+            dragAreaScale.BindValueChanged(scale =>
+            {
+                if (dragArea != null)
+                    dragArea.Scale = new Vector2(scale.NewValue);
+            }, true);
+
+            updateSizing();
+        }
+
+        /// <summary>
+        /// The height objects are currently drawn at, which grows into the space the velocity and volume rows leave behind.
+        /// </summary>
+        private float currentCircleSize => hideTimelinePoints.Value ? expanded_circle_size : circle_size;
+
+        private void updateSizing()
+        {
+            float size = currentCircleSize;
+
+            Height = size;
+            circle.CircleSize = size;
+            border.CircleSize = size;
+            comboIndexText.Font = OsuFont.Default.With(size: size * 0.5f, weight: FontWeight.Regular);
+
+            if (dragArea != null)
+                dragArea.CircleSize = size;
+
+            if (repeatsContainer != null)
+            {
+                foreach (var tick in repeatsContainer.Children.OfType<Tick>())
+                    tick.CircleSize = size;
+            }
+
+            // hidden rather than removed, so the pieces come back the moment the setting does.
+            float pointAlpha = hideTimelinePoints.Value ? 0 : 1;
+
+            samplePointPiece.Alpha = pointAlpha;
+            sampleComponents.Alpha = pointAlpha;
+
+            if (difficultyPointPiece != null)
+                difficultyPointPiece.Alpha = pointAlpha;
         }
 
         protected override void LoadComplete()
@@ -242,6 +301,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             {
                 repeatsContainer.Add(new Tick
                 {
+                    CircleSize = currentCircleSize,
                     X = (float)(i + 1) / (repeats.RepeatCount + 1)
                 });
             }
@@ -301,6 +361,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private partial class Tick : Circle
         {
+            /// <summary>
+            /// The height objects are drawn at, which this is sized from.
+            /// </summary>
+            public float CircleSize
+            {
+                set => Size = new Vector2(value / 4);
+            }
+
             public Tick()
             {
                 Size = new Vector2(circle_size / 4);
@@ -333,6 +401,18 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             public Action<DragEvent?>? OnDragHandled;
 
             public override bool HandlePositionalInput => hitObject != null;
+
+            /// <summary>
+            /// The height objects are drawn at, which this is sized from so it stays round.
+            /// </summary>
+            public float CircleSize
+            {
+                set
+                {
+                    CornerRadius = value / 2;
+                    Size = new Vector2(value, 1);
+                }
+            }
 
             public DragArea(HitObject? hitObject)
             {
@@ -550,6 +630,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => Content.ReceivePositionalInputAt(screenSpacePos);
 
             public override Quad ScreenSpaceDrawQuad => Content.ScreenSpaceDrawQuad;
+
+            /// <summary>
+            /// The height objects are drawn at, which decides how far the end caps reach past the object's bounds.
+            /// </summary>
+            public float CircleSize
+            {
+                set => Padding = new MarginPadding { Horizontal = -value / 2f };
+            }
 
             public ExtendableCircle()
             {

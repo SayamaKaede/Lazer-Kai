@@ -61,10 +61,17 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private Bindable<bool> alwaysExpandPointLabels;
 
+        private readonly Bindable<bool> hideTimelinePoints = new Bindable<bool>();
+
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
             alwaysExpandPointLabels = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandTimelinePointLabels);
+
+            config.BindWith(OsuSetting.EditorHideTimelinePoints, hideTimelinePoints);
+
+            // the rows above and below the objects are what the remaining fifth at each end is held back for.
+            hideTimelinePoints.BindValueChanged(hidden => Height = hidden.NewValue ? 1 : 0.6f, true);
 
             AddInternal(new SelectableAreaBackground
             {
