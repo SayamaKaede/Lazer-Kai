@@ -52,7 +52,6 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
                     AutoSizeAxes = Axes.Both,
                     Anchor = Anchor.CentreLeft,
                     Origin = Anchor.CentreLeft,
-                    Padding = new MarginPadding(-2.5f),
                     Child = EndDragMarker = new SliderEndDragMarker()
                 });
             }
@@ -70,6 +69,9 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
 
             if (endDragMarkerContainer != null)
             {
+                // pulls the arc in by half its own thickness so its centre line, rather than its outer edge, traces
+                // the circle. the marker's thickness is the user's to set, so this follows rather than assumes it.
+                endDragMarkerContainer.Padding = new MarginPadding(-EndDragMarker!.PathRadius / 2);
                 endDragMarkerContainer.Position = circle.Position + slider.StackOffset;
                 endDragMarkerContainer.Scale = CirclePiece.Scale * 1.2f;
                 var diff = slider.Path.PositionAt(1) - slider.Path.PositionAt(0.99f);

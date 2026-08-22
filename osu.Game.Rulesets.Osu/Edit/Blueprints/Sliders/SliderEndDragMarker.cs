@@ -3,12 +3,15 @@
 
 using System;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Lines;
 using osu.Framework.Input.Events;
 using osu.Framework.Utils;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Screens.Edit;
 using osuTK;
 using osuTK.Input;
 
@@ -23,9 +26,23 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
         [Resolved]
         private OsuColour colours { get; set; } = null!;
 
+        /// <summary>
+        /// The thickness the marker is drawn at before the user's setting scales it.
+        /// </summary>
+        private const float default_path_radius = 5;
+
+        private readonly Bindable<EditorSelectionColour> markerColour = new Bindable<EditorSelectionColour>();
+        private readonly Bindable<float> markerScale = new Bindable<float>(1);
+
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            config.BindWith(OsuSetting.EditorSliderEndDragMarkerColour, markerColour);
+            config.BindWith(OsuSetting.EditorSliderEndDragMarkerScale, markerScale);
+
+            markerColour.BindValueChanged(_ => updateState());
+            markerScale.BindValueChanged(scale => PathRadius = default_path_radius * scale.NewValue, true);
+
             var path = PathApproximator.CircularArcToPiecewiseLinear([
                 new Vector2(0, OsuHitObject.OBJECT_RADIUS),
                 new Vector2(OsuHitObject.OBJECT_RADIUS, 0),
@@ -34,7 +51,6 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
 
             Anchor = Anchor.CentreLeft;
             Origin = Anchor.CentreLeft;
-            PathRadius = 5;
             Vertices = path;
         }
 
@@ -83,7 +99,8 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
 
         private void updateState()
         {
-            Colour = IsHovered || IsDragged ? colours.Red : colours.Yellow;
+            // the dragged colour is left alone: it is what tells the user the marker has hold of the slider.
+            Colour = IsHovered || IsDragged ? colours.Red : markerColour.Value.ToColour() ?? colours.Yellow;
         }
     }
 }

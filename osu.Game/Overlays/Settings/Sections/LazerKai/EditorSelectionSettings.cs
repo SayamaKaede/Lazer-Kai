@@ -71,6 +71,17 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     Current = config.GetBindable<float>(OsuSetting.EditorSliderAnchorScale),
                     DisplayAsPercentage = true,
                 }),
+                new SettingsEnumDropdown<EditorSelectionColour>
+                {
+                    LabelText = EditorStrings.SliderEndDragMarkerColour,
+                    Current = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorSliderEndDragMarkerColour)
+                },
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.SliderEndDragMarkerScale,
+                    Current = config.GetBindable<float>(OsuSetting.EditorSliderEndDragMarkerScale),
+                    DisplayAsPercentage = true,
+                }),
             };
         }
     }

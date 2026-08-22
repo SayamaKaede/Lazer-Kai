@@ -777,6 +777,16 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString ToggleDistanceSnap => new TranslatableString(getKey(@"toggle_distance_snap"), @"Toggle distance snap grid");
 
+        /// <summary>
+        /// "Slider length handle colour"
+        /// </summary>
+        public static LocalisableString SliderEndDragMarkerColour => new TranslatableString(getKey(@"slider_end_drag_marker_colour"), @"Slider length handle colour");
+
+        /// <summary>
+        /// "Slider length handle size"
+        /// </summary>
+        public static LocalisableString SliderEndDragMarkerScale => new TranslatableString(getKey(@"slider_end_drag_marker_scale"), @"Slider length handle size");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

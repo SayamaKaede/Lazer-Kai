@@ -269,6 +269,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorAutoBackup, true);
             SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
             SetDefault(OsuSetting.EditorAutoBackupKeepCount, 20, 5, 200);
+            SetDefault(OsuSetting.EditorSliderEndDragMarkerColour, EditorSelectionColour.Default);
+            SetDefault(OsuSetting.EditorSliderEndDragMarkerScale, 1f, 0.5f, 2f, 0.05f);
 
             SetDefault(OsuSetting.AlwaysShowHoldForMenuButton, false);
             SetDefault(OsuSetting.AlwaysRequireHoldingForPause, false);
@@ -738,5 +740,15 @@ namespace osu.Game.Configuration
         /// Whether kiai's flashing is left out of the editor.
         /// </summary>
         EditorHideKiaiFlash,
+
+        /// <summary>
+        /// Colour of the marker dragged to lengthen a slider in the composer.
+        /// </summary>
+        EditorSliderEndDragMarkerColour,
+
+        /// <summary>
+        /// Scales the marker dragged to lengthen a slider in the composer.
+        /// </summary>
+        EditorSliderEndDragMarkerScale,
     }
 }
