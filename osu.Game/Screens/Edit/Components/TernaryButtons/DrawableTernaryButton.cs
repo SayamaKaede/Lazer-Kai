@@ -18,7 +18,6 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osuTK;
 using System.Linq;
-using osu.Framework.Input.Events;
 using osu.Framework.Testing;
 using osu.Game.Configuration;
 using osuTK.Graphics;
