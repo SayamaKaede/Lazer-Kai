@@ -21,8 +21,7 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.RemoveDragThreshold,
-                    // the only setting here that is not confined to the editor, which is worth saying plainly.
-                    TooltipText = LazerKaiSettingsStrings.AppliesGameWide,
+                    TooltipText = EditorStrings.RemoveDragThresholdDescription,
                     Current = config.GetBindable<bool>(OsuSetting.RemoveDragThreshold)
                 },
                 new SettingsCheckbox

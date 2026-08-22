@@ -28,6 +28,7 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.HideRotationHandles,
+                    TooltipText = EditorStrings.HideRotationHandlesDescription,
                     Current = config.GetBindable<bool>(OsuSetting.EditorHideRotationHandles)
                 },
                 new SettingsItemV2(new FormSliderBar<double>

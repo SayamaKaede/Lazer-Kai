@@ -434,6 +434,12 @@ namespace osu.Game.Localisation
         public static LocalisableString HideRotationHandles => new TranslatableString(getKey(@"hide_rotation_handles"), @"Hide the rotation handles on a selection");
 
         /// <summary>
+        /// "Ctrl+Shift+wheel turns a selection, and adding Alt turns it in finer steps."
+        /// </summary>
+        public static LocalisableString HideRotationHandlesDescription => new TranslatableString(getKey(@"hide_rotation_handles_description"),
+            @"Ctrl+Shift+wheel turns a selection, and adding Alt turns it in finer steps.");
+
+        /// <summary>
         /// "Selection handle size"
         /// </summary>
         public static LocalisableString SelectionHandleSize => new TranslatableString(getKey(@"selection_handle_size"), @"Selection handle size");
@@ -534,6 +540,11 @@ namespace osu.Game.Localisation
         public static LocalisableString ArcOnAnchorAdd => new TranslatableString(getKey(@"arc_on_anchor_add"), @"New slider anchors make a perfect curve");
 
         /// <summary>
+        /// "Closer to how stable handles them."
+        /// </summary>
+        public static LocalisableString ArcOnAnchorAddDescription => new TranslatableString(getKey(@"arc_on_anchor_add_description"), @"Closer to how stable handles them.");
+
+        /// <summary>
         /// "Automatic backups"
         /// </summary>
         public static LocalisableString AutoBackup => new TranslatableString(getKey(@"auto_backup"), @"Automatic backups");
@@ -631,6 +642,12 @@ namespace osu.Game.Localisation
         /// "Remove the catch when starting a drag"
         /// </summary>
         public static LocalisableString RemoveDragThreshold => new TranslatableString(getKey(@"remove_drag_threshold"), @"Remove the catch when starting a drag");
+
+        /// <summary>
+        /// "Makes small adjustments easier to land. Applies outside the editor too."
+        /// </summary>
+        public static LocalisableString RemoveDragThresholdDescription => new TranslatableString(getKey(@"remove_drag_threshold_description"),
+            @"Makes small adjustments easier to land. Applies outside the editor too.");
 
         /// <summary>
         /// "Show the play area border"

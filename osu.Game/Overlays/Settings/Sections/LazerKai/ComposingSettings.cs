@@ -44,6 +44,7 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.ArcOnAnchorAdd,
+                    TooltipText = EditorStrings.ArcOnAnchorAddDescription,
                     Current = config.GetBindable<bool>(OsuSetting.EditorArcOnAnchorAdd)
                 },
                 new SettingsCheckbox

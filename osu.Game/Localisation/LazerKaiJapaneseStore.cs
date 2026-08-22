@@ -56,6 +56,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:addition_bank_soft"] = @"Soft",
             [$@"{editor_prefix}:addition_bank_drum"] = @"Drum",
             [$@"{editor_prefix}:arc_on_anchor_add"] = @"追加したアンカーをパーフェクトカーブに",
+            [$@"{editor_prefix}:arc_on_anchor_add_description"] = @"よりStableの操作感に近付きます",
             [$@"{editor_prefix}:ctrl_click_cycles_curve_type"] = @"Ctrl+クリックでカーブ種別を変更",
             [$@"{editor_prefix}:auto_generate_breaks"] = @"休憩時間を自動で挿入",
             [$@"{editor_prefix}:auto_generate_breaks_description"] = @"ノーツを触るたび休憩時間が挿入されるのが嫌な場合はオフ。オフなら、編集メニューから自分で置く形になります",
@@ -105,11 +106,13 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:slider_end_drag_marker_opacity"] = @"スライダー伸縮ハンドルの不透明度",
             [$@"{editor_prefix}:hide_selection_buttons"] = @"選択時のショートカットボタンの非表示",
             [$@"{editor_prefix}:hide_rotation_handles"] = @"選択時の回転ハンドルの非表示",
+            [$@"{editor_prefix}:hide_rotation_handles_description"] = @"Ctrl+Shift+ホイールで回転、Altキーも加えるとさらに微調整ができます",
             [$@"{editor_prefix}:selectable_after_end_time"] = @"通過後の選択可能時間",
 
             // input
             [$@"{editor_prefix}:beatmap_upload_unavailable"] = @"このビルドは譜面をアップロードしません",
             [$@"{editor_prefix}:remove_drag_threshold"] = @"ドラッグ時の引っかかりを無くす",
+            [$@"{editor_prefix}:remove_drag_threshold_description"] = @"細かい微調整がやりやすくなります。エディター外にも適用されます",
             [$@"{editor_prefix}:swap_right_and_middle_mouse"] = @"右クリックとホイールを入れ替え",
 
             // backups
