@@ -53,9 +53,9 @@ namespace osu.Game.Screens.Select
         private ModSettingChangeTracker? settingChangeTracker;
 
         private BeatmapSetOnlineStatusPill statusPill = null!;
-        private OsuHoverContainer titleLink = null!;
+        private MetadataLink titleLink = null!;
         private MarqueeContainer titleLabel = null!;
-        private OsuHoverContainer artistLink = null!;
+        private MetadataLink artistLink = null!;
         private MarqueeContainer artistLabel = null!;
 
         internal string DisplayedTitle { get; private set; } = string.Empty;
@@ -118,7 +118,7 @@ namespace osu.Game.Screens.Select
                             RelativeSizeAxes = Axes.X,
                             Height = OsuFont.Style.Title.Size,
                             Margin = new MarginPadding { Bottom = -4f },
-                            Child = titleLink = new OsuHoverContainer
+                            Child = titleLink = new MetadataLink
                             {
                                 RelativeSizeAxes = Axes.X,
                                 AutoSizeAxes = Axes.Y,
@@ -134,7 +134,7 @@ namespace osu.Game.Screens.Select
                             RelativeSizeAxes = Axes.X,
                             Height = OsuFont.Style.Heading2.Size,
                             Margin = new MarginPadding { Left = 1f },
-                            Child = artistLink = new OsuHoverContainer
+                            Child = artistLink = new MetadataLink
                             {
                                 RelativeSizeAxes = Axes.X,
                                 AutoSizeAxes = Axes.Y,
@@ -198,6 +198,13 @@ namespace osu.Game.Screens.Select
                 settingChangeTracker.SettingChanged += _ => updateLengthAndBpmStatistics();
             });
 
+            // the tooltips offer whichever script is not on screen, so they turn over with the setting that decides that.
+            localisation.CurrentParameters.BindValueChanged(parameters =>
+            {
+                titleLink.UpdateTooltip(parameters.NewValue.PreferOriginalScript);
+                artistLink.UpdateTooltip(parameters.NewValue.PreferOriginalScript);
+            }, true);
+
             updateDisplay();
 
             statisticsFlow.AutoSizeDuration = 100;
@@ -231,6 +238,7 @@ namespace osu.Game.Screens.Select
                 Font = OsuFont.Style.Title,
             };
             titleLink.Action = () => songSelect?.AddToSearch(titleText.GetPreferred(localisation.CurrentParameters.Value.PreferOriginalScript));
+            titleLink.Text = titleText;
             DisplayedTitle = titleText.ToString();
 
             var artistText = new RomanisableString(metadata.ArtistUnicode, metadata.Artist);
@@ -241,6 +249,7 @@ namespace osu.Game.Screens.Select
                 Font = OsuFont.Style.Heading2,
             };
             artistLink.Action = () => songSelect?.AddToSearch(artistText.GetPreferred(localisation.CurrentParameters.Value.PreferOriginalScript));
+            artistLink.Text = artistText;
             DisplayedArtist = artistText.ToString();
 
             updateLengthAndBpmStatistics();
@@ -340,6 +349,51 @@ namespace osu.Game.Screens.Select
             onlineDisplayCancellationSource?.Dispose();
             onlineDisplayCancellationSource = null;
             base.Dispose(isDisposing);
+        }
+
+        /// <summary>
+        /// The title or the artist, which shows the script it is not currently displaying when hovered.
+        /// </summary>
+        /// <remarks>
+        /// Which of the two is on screen follows the "prefer metadata in original language" setting, so half of the
+        /// metadata a map carries is never visible without going into the settings and back. Reading it is the common
+        /// case, so it is offered on hover rather than made to cost a round trip.
+        /// </remarks>
+        private partial class MetadataLink : OsuHoverContainer
+        {
+            private RomanisableString? text;
+
+            /// <summary>
+            /// What this link displays, in both of its scripts.
+            /// </summary>
+            public RomanisableString? Text
+            {
+                get => text;
+                set
+                {
+                    text = value;
+                    UpdateTooltip(preferOriginalScript);
+                }
+            }
+
+            private bool preferOriginalScript;
+
+            /// <param name="preferOriginal">Which of the two scripts is the one on screen.</param>
+            public void UpdateTooltip(bool preferOriginal)
+            {
+                preferOriginalScript = preferOriginal;
+
+                if (text == null)
+                {
+                    TooltipText = default;
+                    return;
+                }
+
+                string alternate = text.GetPreferred(!preferOriginal);
+
+                // a map written only in the latin alphabet reads the same either way, and repeating it says nothing.
+                TooltipText = alternate == text.GetPreferred(preferOriginal) ? default(LocalisableString) : alternate;
+            }
         }
     }
 }
