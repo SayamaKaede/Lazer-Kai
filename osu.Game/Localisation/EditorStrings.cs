@@ -794,6 +794,26 @@ namespace osu.Game.Localisation
         public static LocalisableString TimelineDragAreaScale => new TranslatableString(getKey(@"timeline_drag_area_scale"), @"Timeline drag handle size");
 
         /// <summary>
+        /// "Hide velocity and volume rows"
+        /// </summary>
+        public static LocalisableString TimelineHidePoints => new TranslatableString(getKey(@"timeline_hide_points"), @"Hide velocity and volume rows");
+
+        /// <summary>
+        /// "Timeline velocity and volume rows"
+        /// </summary>
+        public static LocalisableString TimelinePointRows => new TranslatableString(getKey(@"timeline_point_rows"), @"Timeline velocity and volume rows");
+
+        /// <summary>
+        /// "shown"
+        /// </summary>
+        public static LocalisableString Shown => new TranslatableString(getKey(@"shown"), @"shown");
+
+        /// <summary>
+        /// "hidden"
+        /// </summary>
+        public static LocalisableString Hidden => new TranslatableString(getKey(@"hidden"), @"hidden");
+
+        /// <summary>
         /// "Repeat drag distance"
         /// </summary>
         public static LocalisableString TimelineRepeatDragThreshold => new TranslatableString(getKey(@"timeline_repeat_drag_threshold"), @"Repeat drag distance");

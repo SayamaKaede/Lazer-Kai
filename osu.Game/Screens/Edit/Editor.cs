@@ -543,9 +543,10 @@ namespace osu.Game.Screens.Edit
                                                     {
                                                         State = { BindTarget = editorTimelineShowBreaks }
                                                     },
-                                                    new ToggleMenuItem(EditorStrings.HideTimelinePoints)
+                                                    new ToggleMenuItem(EditorStrings.TimelineHidePoints)
                                                     {
-                                                        State = { BindTarget = editorHideTimelinePoints }
+                                                        State = { BindTarget = editorHideTimelinePoints },
+                                                        Hotkey = new Hotkey(GlobalAction.EditorToggleTimelinePoints),
                                                     },
                                                     new ToggleMenuItem(EditorStrings.AlwaysExpandTimelinePointLabels)
                                                     {
@@ -726,6 +727,11 @@ namespace osu.Game.Screens.Edit
                 updateTrackMute();
                 announceAudioState(EditorStrings.Music, audible.NewValue);
             });
+
+            // reported as what the rows are doing rather than as the setting being on, which reads as a double
+            // negative for a setting whose name is already "hide".
+            editorHideTimelinePoints.BindValueChanged(hidden =>
+                announceState(EditorStrings.TimelinePointRows, hidden.NewValue ? EditorStrings.Hidden : EditorStrings.Shown));
 
             // the composer reads the mod preview settings when it is constructed, so it has to be rebuilt for a change to take effect.
             editorApplyTestPlayModsToComposer.BindValueChanged(_ => reloadComposeScreen());
@@ -1064,6 +1070,10 @@ namespace osu.Game.Screens.Edit
 
                 case GlobalAction.EditorToggleMusic:
                     musicAudible.Toggle();
+                    return true;
+
+                case GlobalAction.EditorToggleTimelinePoints:
+                    editorHideTimelinePoints.Value = !editorHideTimelinePoints.Value;
                     return true;
 
                 case GlobalAction.EditorDiscardUnsavedChanges:
@@ -1483,7 +1493,13 @@ namespace osu.Game.Screens.Edit
         /// user is looking when a key binding flips it.
         /// </summary>
         private void announceAudioState(LocalisableString what, bool audible)
-            => onScreenDisplay?.Display(new EditorToast(what, audible ? CommonStrings.Enabled.ToLower() : CommonStrings.Disabled.ToLower()));
+            => announceState(what, audible ? CommonStrings.Enabled.ToLower() : CommonStrings.Disabled.ToLower());
+
+        /// <summary>
+        /// Reports something the editor just did, for actions whose key binding has no other visible result.
+        /// </summary>
+        private void announceState(LocalisableString what, LocalisableString state)
+            => onScreenDisplay?.Display(new EditorToast(what, state));
 
         private void updateTrackMute()
         {

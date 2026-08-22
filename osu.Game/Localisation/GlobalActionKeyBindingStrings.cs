@@ -246,6 +246,11 @@ namespace osu.Game.Localisation
         public static LocalisableString EditorToggleMusic => new TranslatableString(getKey(@"editor_toggle_music"), @"Toggle music");
 
         /// <summary>
+        /// "Toggle timeline velocity and volume rows"
+        /// </summary>
+        public static LocalisableString EditorToggleTimelinePoints => new TranslatableString(getKey(@"editor_toggle_timeline_points"), @"Toggle timeline velocity and volume rows");
+
+        /// <summary>
         /// "Decrease slider velocity"
         /// </summary>
         public static LocalisableString EditorDecreaseSliderVelocity =>

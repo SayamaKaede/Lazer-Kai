@@ -111,6 +111,7 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(InputKey.None, GlobalAction.EditorBackupNow),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleHitsounds),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleMusic),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimelinePoints),
         };
 
         private static IEnumerable<KeyBinding> globalKeyBindings => new[]
@@ -691,6 +692,11 @@ namespace osu.Game.Input.Bindings
 
         [LocalisableDescription(typeof(EditorStrings), nameof(EditorStrings.SeekToEnd))]
         EditorSeekToEnd,
+
+        // added by Lazer-Kai after upstream's block above, rather than beside its own: what must not move is any
+        // integer already sitting in someone's realm, and appending is the only place that holds for both.
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleTimelinePoints))]
+        EditorToggleTimelinePoints,
     }
 
     public enum GlobalActionCategory
