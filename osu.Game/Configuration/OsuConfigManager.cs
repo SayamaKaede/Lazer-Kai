@@ -271,7 +271,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
             SetDefault(OsuSetting.EditorAutoBackupKeepCount, 20, 5, 200);
             SetDefault(OsuSetting.EditorHideTimelinePoints, false);
-            SetDefault(OsuSetting.EditorTimelineDragAreaScale, 1f, 0.5f, 2f, 0.05f);
+            SetDefault(OsuSetting.EditorTimelineDragAreaScale, 0.5f, 0.5f, 1f, 0.05f);
             SetDefault(OsuSetting.EditorTimelineRepeatDragThreshold, 0.8f, 0.5f, 0.8f, 0.05f);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerScale, 1f, 0.5f, 2f, 0.05f);
@@ -753,7 +753,7 @@ namespace osu.Game.Configuration
         EditorHideTimelinePoints,
 
         /// <summary>
-        /// Scales the circle at the end of a timeline object which is dragged to lengthen it.
+        /// The size the circle at the end of a timeline object rests at, which is dragged to lengthen it.
         /// </summary>
         EditorTimelineDragAreaScale,
 

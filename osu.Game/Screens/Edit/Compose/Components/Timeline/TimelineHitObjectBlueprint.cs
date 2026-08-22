@@ -65,7 +65,6 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private readonly DragArea? dragArea;
 
         private readonly Bindable<bool> hideTimelinePoints = new Bindable<bool>();
-        private readonly Bindable<float> dragAreaScale = new Bindable<float>(1);
 
         [Resolved]
         private ISkinSource skin { get; set; } = null!;
@@ -152,14 +151,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private void load(OsuConfigManager config)
         {
             config.BindWith(OsuSetting.EditorHideTimelinePoints, hideTimelinePoints);
-            config.BindWith(OsuSetting.EditorTimelineDragAreaScale, dragAreaScale);
 
             hideTimelinePoints.BindValueChanged(_ => updateSizing());
-            dragAreaScale.BindValueChanged(scale =>
-            {
-                if (dragArea != null)
-                    dragArea.Scale = new Vector2(scale.NewValue);
-            }, true);
 
             updateSizing();
         }
@@ -399,6 +392,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             private ScheduledDelegate? dragOperation;
 
             private readonly Bindable<float> repeatDragThreshold = new Bindable<float>(0.8f);
+            private readonly Bindable<float> restingScale = new Bindable<float>(resting_scale);
+
+            /// <summary>
+            /// The scale the handle sits at while it is not being pointed at, which the user's setting replaces.
+            /// </summary>
+            private const float resting_scale = 0.5f;
 
             public Action<DragEvent?>? OnDragHandled;
 
@@ -441,6 +440,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             private void load(OsuConfigManager config)
             {
                 config.BindWith(OsuSetting.EditorTimelineRepeatDragThreshold, repeatDragThreshold);
+                config.BindWith(OsuSetting.EditorTimelineDragAreaScale, restingScale);
+
+                restingScale.BindValueChanged(_ => updateState());
             }
 
             /// <summary>
@@ -503,12 +505,15 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             private void updateState()
             {
-                float scale = 0.5f;
+                // pointing at the handle grows it, and pressing it settles back part of the way. those are the
+                // affordance, so they are kept as a proportion of whatever size the user asked for rather than
+                // as the fixed sizes they used to be.
+                float scale = restingScale.Value;
 
                 if (hasMouseDown)
-                    scale = 0.6f;
+                    scale *= 1.2f;
                 else if (IsHovered)
-                    scale = 0.7f;
+                    scale *= 1.4f;
 
                 this.ScaleTo(scale, 200, Easing.OutQuint);
                 this.FadeTo(IsHovered || hasMouseDown ? 1f : 0.9f, 200, Easing.OutQuint);
