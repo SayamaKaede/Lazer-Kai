@@ -97,6 +97,13 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     Current = config.GetBindable<float>(OsuSetting.EditorTimelineDragAreaScale),
                     DisplayAsPercentage = true,
                 }),
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.TimelineRepeatDragThreshold,
+                    HintText = EditorStrings.TimelineRepeatDragThresholdDescription,
+                    Current = config.GetBindable<float>(OsuSetting.EditorTimelineRepeatDragThreshold),
+                    DisplayAsPercentage = true,
+                }),
                 new SettingsItemV2(new FormSliderBar<double>
                 {
                     Caption = EditorStrings.SeekAnimationDuration,

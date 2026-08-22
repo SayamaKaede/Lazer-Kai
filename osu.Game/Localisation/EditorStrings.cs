@@ -794,6 +794,17 @@ namespace osu.Game.Localisation
         public static LocalisableString TimelineDragAreaScale => new TranslatableString(getKey(@"timeline_drag_area_scale"), @"Timeline drag handle size");
 
         /// <summary>
+        /// "Repeat drag distance"
+        /// </summary>
+        public static LocalisableString TimelineRepeatDragThreshold => new TranslatableString(getKey(@"timeline_repeat_drag_threshold"), @"Repeat drag distance");
+
+        /// <summary>
+        /// "How far towards the next repeat a slider has to be dragged before the repeat is added."
+        /// </summary>
+        public static LocalisableString TimelineRepeatDragThresholdDescription => new TranslatableString(getKey(@"timeline_repeat_drag_threshold_description"),
+            @"How far towards the next repeat a slider has to be dragged before the repeat is added.");
+
+        /// <summary>
         /// "Slider length handle colour"
         /// </summary>
         public static LocalisableString SliderEndDragMarkerColour => new TranslatableString(getKey(@"slider_end_drag_marker_colour"), @"Slider length handle colour");

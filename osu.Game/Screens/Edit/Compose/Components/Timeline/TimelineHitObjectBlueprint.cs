@@ -398,6 +398,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             private ScheduledDelegate? dragOperation;
 
+            private readonly Bindable<float> repeatDragThreshold = new Bindable<float>(0.8f);
+
             public Action<DragEvent?>? OnDragHandled;
 
             public override bool HandlePositionalInput => hitObject != null;
@@ -433,6 +435,33 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                         RelativeSizeAxes = Axes.Both,
                     }
                 };
+            }
+
+            [BackgroundDependencyLoader]
+            private void load(OsuConfigManager config)
+            {
+                config.BindWith(OsuSetting.EditorTimelineRepeatDragThreshold, repeatDragThreshold);
+            }
+
+            /// <summary>
+            /// The repeat count a slider dragged out to <paramref name="proposedDuration"/> should take.
+            /// </summary>
+            /// <param name="proposedDuration">How long the drag has made the object, measured from its start.</param>
+            /// <param name="lengthOfOneRepeat">How long one pass of the slider takes.</param>
+            /// <param name="threshold">How far towards the next repeat the drag has to reach before it counts.</param>
+            /// <remarks>
+            /// <c>Math.Round</c> used to decide this, which puts the change exactly halfway but rounds its midpoint to
+            /// even - so a drag landing on the halfway beat, which is exactly where the snapping puts it, did nothing,
+            /// and the next tick along was already three quarters of the way there. Measuring the fraction directly
+            /// keeps the point where it says it is, and lets the user move it.
+            /// </remarks>
+            internal static int RepeatCountFor(double proposedDuration, double lengthOfOneRepeat, float threshold)
+            {
+                double repeatsDragged = proposedDuration / lengthOfOneRepeat - threshold;
+
+                // the drag lands on a snapped time, so the user can hit the boundary exactly. nudge it rather than let
+                // floating point decide which side of it they are on.
+                return Math.Max(0, (int)Math.Floor(repeatsDragged + Precision.FLOAT_EPSILON));
             }
 
             protected override void LoadComplete()
@@ -540,7 +569,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                                 {
                                     // find the number of repeats which can fit in the requested time.
                                     double lengthOfOneRepeat = repeatHitObject.Duration / (repeatHitObject.RepeatCount + 1);
-                                    int proposedCount = Math.Max(0, (int)Math.Round(proposedDuration / lengthOfOneRepeat) - 1);
+                                    int proposedCount = RepeatCountFor(proposedDuration, lengthOfOneRepeat, repeatDragThreshold.Value);
 
                                     if (proposedCount == repeatHitObject.RepeatCount || Precision.AlmostEquals(lengthOfOneRepeat, 0, 1))
                                         return;

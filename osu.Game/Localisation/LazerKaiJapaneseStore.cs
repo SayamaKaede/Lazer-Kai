@@ -75,6 +75,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:hide_timeline_points"] = @"タイムラインのSV・音量の帯を非表示",
             [$@"{editor_prefix}:hide_timeline_points_description"] = @"空いた分だけノーツが大きくなり、掴みやすくなります。SVと音量は右のバーから変更できます",
             [$@"{editor_prefix}:timeline_drag_area_scale"] = @"タイムラインの伸縮ハンドルの大きさ",
+            [$@"{editor_prefix}:timeline_repeat_drag_threshold"] = @"リバースが増えるドラッグ量",
+            [$@"{editor_prefix}:timeline_repeat_drag_threshold_description"] = @"次のリバースまでの何割まで引っ張ったらリバースが増えるか",
             [$@"{editor_prefix}:seek_animation_duration"] = @"シークのアニメーション",
             [$@"{editor_prefix}:editor_colour_scheme"] = @"エディターのテーマ色",
             [$@"{editor_prefix}:hide_kiai_flash"] = @"Kiaiのフラッシュを非表示",
