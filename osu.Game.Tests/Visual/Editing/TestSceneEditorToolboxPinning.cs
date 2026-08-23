@@ -7,9 +7,11 @@ using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
+using osu.Framework.Graphics.Shapes;
 using osu.Game.Configuration;
+using osu.Game.Graphics.Containers;
 using osu.Game.Rulesets.Edit;
-using osu.Game.Screens.Edit;
+using osuTK;
 
 namespace osu.Game.Tests.Visual.Editing
 {
@@ -18,7 +20,7 @@ namespace osu.Game.Tests.Visual.Editing
     /// config and would otherwise carry from one test into the next.
     /// </summary>
     [TestFixture]
-    public partial class TestSceneEditorToolboxPinning : OsuTestScene
+    public partial class TestSceneEditorToolboxPinning : OsuManualInputManagerTestScene
     {
         [Resolved]
         private OsuConfigManager config { get; set; } = null!;
@@ -35,7 +37,6 @@ namespace osu.Game.Tests.Visual.Editing
         public void TearDownSteps()
         {
             AddStep("restore pinned groups", () => config.GetBindable<string>(OsuSetting.EditorPinnedToolboxGroups).SetDefault());
-            AddStep("restore pinned order", () => config.GetBindable<EditorPinnedGroupOrder>(OsuSetting.EditorPinnedGroupOrder).SetDefault());
         }
 
         /// <remarks>
@@ -70,7 +71,7 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("pin was written", () => config.Get<string>(OsuSetting.EditorPinnedToolboxGroups), () => Is.EqualTo("wrapped"));
 
             AddStep("pin first group", () => group("first").Pinned.Value = true);
-            AddAssert("both were written", () => config.Get<string>(OsuSetting.EditorPinnedToolboxGroups), () => Is.EqualTo("wrapped|first"));
+            AddAssert("both were written", () => config.Get<string>(OsuSetting.EditorPinnedToolboxGroups), () => Is.EqualTo("first|wrapped"));
 
             AddStep("unpin wrapped group", () => group("wrapped").Pinned.Value = false);
             AddAssert("only one is left", () => config.Get<string>(OsuSetting.EditorPinnedToolboxGroups), () => Is.EqualTo("first"));
@@ -103,6 +104,34 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("the rest did not move", () => topOf("wrapped"), () => Is.LessThan(topOf("third")));
         }
 
+        /// <remarks>
+        /// A group scrolled up behind the pinned ones has nothing on screen to say it is there, so it can stay lost
+        /// indefinitely. Putting the scroll back every time the cursor arrives caps how long that can last.
+        /// </remarks>
+        [Test]
+        public void TestScrollReturnsToTheTopWhenTheCursorComesBack()
+        {
+            OsuScrollContainer scroll = null!;
+
+            AddStep("create a toolbox too short for its groups", () => Child = toolbox = new ExpandingToolboxContainer(50, 200)
+            {
+                RelativeSizeAxes = Axes.None,
+                Size = new Vector2(200),
+                Children = Enumerable.Range(0, 5)
+                                     .Select(i => (Drawable)new EditorToolboxGroup($"group {i}") { Child = new Box { RelativeSizeAxes = Axes.X, Height = 100 } })
+                                     .ToArray(),
+            });
+
+            AddStep("point away", () => InputManager.MoveMouseTo(Vector2.Zero));
+            AddStep("find the scroll", () => scroll = toolbox.ChildrenOfType<OsuScrollContainer>().Single());
+
+            AddStep("scroll to the bottom", () => scroll.ScrollToEnd(false));
+            AddUntilStep("it did scroll", () => scroll.Current, () => Is.GreaterThan(0));
+
+            AddStep("point at the toolbox", () => InputManager.MoveMouseTo(toolbox));
+            AddUntilStep("it went back to the top", () => scroll.Current, () => Is.EqualTo(0).Within(0.5));
+        }
+
         [Test]
         public void TestPinnedGroupsKeepSidebarOrder()
         {
@@ -114,20 +143,5 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("sidebar order is kept", () => topOf("first"), () => Is.LessThan(topOf("third")));
         }
 
-        [Test]
-        public void TestPinnedGroupsCanStackInPinOrder()
-        {
-            AddStep("stack in pin order", () => config.SetValue(OsuSetting.EditorPinnedGroupOrder, EditorPinnedGroupOrder.OrderPinned));
-
-            createToolbox();
-
-            AddStep("pin third group", () => group("third").Pinned.Value = true);
-            AddStep("pin first group", () => group("first").Pinned.Value = true);
-
-            AddAssert("pin order is kept", () => topOf("third"), () => Is.LessThan(topOf("first")));
-
-            AddStep("switch to sidebar order", () => config.SetValue(OsuSetting.EditorPinnedGroupOrder, EditorPinnedGroupOrder.ToolboxOrder));
-            AddAssert("they swap over", () => topOf("first"), () => Is.LessThan(topOf("third")));
-        }
     }
 }

@@ -644,10 +644,10 @@ namespace osu.Game.Localisation
         public static LocalisableString RemoveDragThreshold => new TranslatableString(getKey(@"remove_drag_threshold"), @"Remove the catch when starting a drag");
 
         /// <summary>
-        /// "Makes small adjustments easier to land. Applies outside the editor too."
+        /// "Makes small adjustments easier to land. Only takes effect over the playfield and the two timelines."
         /// </summary>
         public static LocalisableString RemoveDragThresholdDescription => new TranslatableString(getKey(@"remove_drag_threshold_description"),
-            @"Makes small adjustments easier to land. Applies outside the editor too.");
+            @"Makes small adjustments easier to land. Only takes effect over the playfield and the two timelines.");
 
         /// <summary>
         /// "Show the play area border"
@@ -668,6 +668,61 @@ namespace osu.Game.Localisation
         /// "Toggle button height"
         /// </summary>
         public static LocalisableString ToggleButtonSquareness => new TranslatableString(getKey(@"toggle_button_squareness"), @"Toggle button height");
+
+        /// <summary>
+        /// "SR"
+        /// </summary>
+        public static LocalisableString StatusShowStarRating => new TranslatableString(getKey(@"status_show_star_rating"), @"SR");
+
+        /// <summary>
+        /// "SV"
+        /// </summary>
+        public static LocalisableString StatusShowSliderVelocity => new TranslatableString(getKey(@"status_show_slider_velocity"), @"SV");
+
+        /// <summary>
+        /// "Normal bank"
+        /// </summary>
+        public static LocalisableString StatusShowNormalBank => new TranslatableString(getKey(@"status_show_normal_bank"), @"Normal bank");
+
+        /// <summary>
+        /// "Addition bank"
+        /// </summary>
+        public static LocalisableString StatusShowAdditionBank => new TranslatableString(getKey(@"status_show_addition_bank"), @"Addition bank");
+
+        /// <summary>
+        /// "Volume"
+        /// </summary>
+        public static LocalisableString StatusShowSampleVolume => new TranslatableString(getKey(@"status_show_sample_volume"), @"Volume");
+
+        /// <summary>
+        /// "Kiai"
+        /// </summary>
+        public static LocalisableString StatusShowKiai => new TranslatableString(getKey(@"status_show_kiai"), @"Kiai");
+
+        /// <summary>
+        /// "Mods"
+        /// </summary>
+        public static LocalisableString StatusShowMods => new TranslatableString(getKey(@"status_show_mods"), @"Mods");
+
+        /// <summary>
+        /// "Difficulty shown as a ghost"
+        /// </summary>
+        public static LocalisableString ReferenceDifficulty => new TranslatableString(getKey(@"reference_difficulty"), @"Difficulty shown as a ghost");
+
+        /// <summary>
+        /// "None"
+        /// </summary>
+        public static LocalisableString ReferenceDifficultyNone => new TranslatableString(getKey(@"reference_difficulty_none"), @"None");
+
+        /// <summary>
+        /// "Ghost opacity"
+        /// </summary>
+        public static LocalisableString ReferenceDifficultyOpacity => new TranslatableString(getKey(@"reference_difficulty_opacity"), @"Ghost opacity");
+
+        /// <summary>
+        /// "Ghost colour"
+        /// </summary>
+        public static LocalisableString ReferenceDifficultyColour => new TranslatableString(getKey(@"reference_difficulty_colour"), @"Ghost colour");
 
         /// <summary>
         /// "Backup written"
@@ -871,21 +926,6 @@ namespace osu.Game.Localisation
         /// "Insert break"
         /// </summary>
         public static LocalisableString InsertBreak => new TranslatableString(getKey(@"insert_break"), @"Insert break");
-
-        /// <summary>
-        /// "Pinned group order"
-        /// </summary>
-        public static LocalisableString PinnedGroupOrder => new TranslatableString(getKey(@"pinned_group_order"), @"Pinned group order");
-
-        /// <summary>
-        /// "Sidebar order"
-        /// </summary>
-        public static LocalisableString PinnedGroupOrderToolbox => new TranslatableString(getKey(@"pinned_group_order_toolbox"), @"Sidebar order");
-
-        /// <summary>
-        /// "Order pinned"
-        /// </summary>
-        public static LocalisableString PinnedGroupOrderPinned => new TranslatableString(getKey(@"pinned_group_order_pinned"), @"Order pinned");
 
         private static string getKey(string key) => $@"{prefix}:{key}";
     }

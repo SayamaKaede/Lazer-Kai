@@ -73,8 +73,24 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:hitsounds"] = @"効果音",
             [$@"{editor_prefix}:music"] = @"音楽",
             [$@"{editor_prefix}:always_expand_left_toolbox"] = @"左ツールボックスを常に展開",
+            [$@"{editor_prefix}:contract_sidebars"] = @"カーソルが乗っていない間はバーを縮める",
             [$@"{editor_prefix}:tool_button_squareness"] = @"Toolboxのボタンの高さ",
             [$@"{editor_prefix}:toggle_button_squareness"] = @"Togglesのボタンの高さ",
+
+            // status panel rows
+            [$@"{editor_prefix}:status_show_star_rating"] = @"SR",
+            [$@"{editor_prefix}:status_show_slider_velocity"] = @"SV",
+            [$@"{editor_prefix}:status_show_normal_bank"] = @"Normal bank",
+            [$@"{editor_prefix}:status_show_addition_bank"] = @"Addition bank",
+            [$@"{editor_prefix}:status_show_sample_volume"] = @"ボリューム",
+            [$@"{editor_prefix}:status_show_kiai"] = @"Kiai",
+            [$@"{editor_prefix}:status_show_mods"] = @"Mod",
+
+            // reference difficulty
+            [$@"{editor_prefix}:reference_difficulty"] = @"ゴースト表示する難易度",
+            [$@"{editor_prefix}:reference_difficulty_none"] = @"なし",
+            [$@"{editor_prefix}:reference_difficulty_opacity"] = @"ゴースト表示の不透明度",
+            [$@"{editor_prefix}:reference_difficulty_colour"] = @"ゴースト表示の色",
             [$@"{editor_prefix}:always_expand_timeline_point_labels"] = @"タイムラインのラベルを常に展開",
             [$@"{editor_prefix}:hide_timeline_points"] = @"タイムラインのSV・音量の帯を非表示",
             [$@"{editor_prefix}:hide_timeline_points_description"] = @"空いた分だけノーツが大きくなり、掴みやすくなります。SVは右のバーから変更できます",
@@ -85,9 +101,6 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:hidden"] = @"非表示",
             [$@"{editor_prefix}:timeline_repeat_drag_threshold"] = @"リバーススライダーの感度",
             [$@"{editor_prefix}:timeline_repeat_drag_threshold_description"] = @"次のリバースまでの何割まで引っ張ったらリバースが増えるか",
-            [$@"{editor_prefix}:pinned_group_order"] = @"ピン留めの並び順",
-            [$@"{editor_prefix}:pinned_group_order_toolbox"] = @"バー本来の順",
-            [$@"{editor_prefix}:pinned_group_order_pinned"] = @"ピン留めした順",
             [$@"{editor_prefix}:seek_animation_duration"] = @"シークのアニメーション",
             [$@"{editor_prefix}:editor_colour_scheme"] = @"エディターのテーマ色",
             [$@"{editor_prefix}:hide_kiai_flash"] = @"Kiaiのフラッシュを非表示",
@@ -112,7 +125,7 @@ namespace osu.Game.Localisation
             // input
             [$@"{editor_prefix}:beatmap_upload_unavailable"] = @"このビルドは譜面をアップロードしません",
             [$@"{editor_prefix}:remove_drag_threshold"] = @"ドラッグ時の引っかかりを無くす",
-            [$@"{editor_prefix}:remove_drag_threshold_description"] = @"細かい微調整がやりやすくなります。エディター外にも適用されます",
+            [$@"{editor_prefix}:remove_drag_threshold_description"] = @"細かい微調整がやりやすくなります。効くのは配置画面と上下タイムラインの中だけです",
             [$@"{editor_prefix}:swap_right_and_middle_mouse"] = @"右クリックとホイールを入れ替え",
 
             // backups
@@ -138,7 +151,8 @@ namespace osu.Game.Localisation
             // settings section
             [$@"{settings_prefix}:section_header"] = @"Lazer-Kai",
             [$@"{settings_prefix}:display_header"] = @"表示",
-            [$@"{settings_prefix}:selection_header"] = @"選択",
+            [$@"{settings_prefix}:selection_header"] = @"選択枠",
+            [$@"{settings_prefix}:status_header"] = @"STATUSに表示する項目",
             [$@"{settings_prefix}:composing_header"] = @"配置",
             [$@"{settings_prefix}:input_header"] = @"操作",
             [$@"{settings_prefix}:test_play_header"] = @"テストプレイ",

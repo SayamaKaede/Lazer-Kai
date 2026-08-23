@@ -45,6 +45,25 @@ namespace osu.Game.Overlays
 
         public BindableBool Expanded { get; } = new BindableBool(true);
 
+        /// <summary>
+        /// Whether hovering a folded group shows its contents for as long as the cursor stays over it.
+        /// </summary>
+        /// <remarks>
+        /// Handy where a group is folded to get it out of the way, and in the way where it is folded because the
+        /// user is done with it and wants the room.
+        /// </remarks>
+        protected virtual bool PeekOnHover => true;
+
+        /// <summary>
+        /// Whether the fold button stays visible while the group is not hovered.
+        /// </summary>
+        protected virtual bool AlwaysShowExpandButton => false;
+
+        /// <summary>
+        /// Whether the cursor is over this group. What the header's own controls appear and disappear with.
+        /// </summary>
+        protected readonly BindableBool GroupHovered = new BindableBool();
+
         public Vector2 Spacing
         {
             get => content.Spacing;
@@ -184,7 +203,7 @@ namespace osu.Game.Overlays
             // potentially continuing to get processed while content has changed to autosize.
             content.ClearTransforms();
 
-            if (Expanded.Value || mouseInBounds || draggedChild != null)
+            if (Expanded.Value || (PeekOnHover && mouseInBounds) || draggedChild != null)
             {
                 content.AutoSizeAxes = Axes.Y;
                 content.AutoSizeDuration = animate ? transition_duration : 0;
@@ -203,8 +222,10 @@ namespace osu.Game.Overlays
         {
             const float fade_duration = 500;
 
+            GroupHovered.Value = mouseInBounds;
+
             background.FadeTo(mouseInBounds ? 1 : 0.1f, fade_duration, Easing.OutQuint);
-            expandButton.FadeTo(mouseInBounds ? 1 : 0, fade_duration, Easing.OutQuint);
+            expandButton.FadeTo(mouseInBounds || AlwaysShowExpandButton ? 1 : 0, fade_duration, Easing.OutQuint);
         }
     }
 }

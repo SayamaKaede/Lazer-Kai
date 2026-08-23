@@ -8,6 +8,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Framework.Input;
 using osu.Framework.Input.Events;
 using osu.Framework.Testing;
 using osu.Framework.Utils;
@@ -68,9 +69,9 @@ namespace osu.Game.Rulesets.Edit
 
         private readonly Bindable<string> pinnedGroups = new Bindable<string>(string.Empty);
 
-        private readonly Bindable<EditorPinnedGroupOrder> pinnedGroupOrder = new Bindable<EditorPinnedGroupOrder>();
+        private readonly Bindable<string> collapsedGroups = new Bindable<string>(string.Empty);
 
-        private int nextPinSequence;
+        private readonly Bindable<string> groupOrder = new Bindable<string>(string.Empty);
 
         private const char pinned_separator = '|';
 
@@ -79,7 +80,8 @@ namespace osu.Game.Rulesets.Edit
         {
             config.BindWith(OsuSetting.EditorContractSidebars, contractSidebars);
             config.BindWith(OsuSetting.EditorPinnedToolboxGroups, pinnedGroups);
-            config.BindWith(OsuSetting.EditorPinnedGroupOrder, pinnedGroupOrder);
+            config.BindWith(OsuSetting.EditorCollapsedToolboxGroups, collapsedGroups);
+            config.BindWith(OsuSetting.EditorToolboxGroupOrder, groupOrder);
 
             AddInternal(pinnedContainer = new Container
             {
@@ -109,11 +111,18 @@ namespace osu.Game.Rulesets.Edit
 
         protected override OsuScrollContainer CreateScrollContainer() => scrollContainer = new OffsetMaintainingScrollContainer();
 
+        private InputManager? inputManager;
+
+        /// <summary>
+        /// Whether the cursor was inside the toolbox last frame.
+        /// </summary>
+        private bool cursorWasInside;
+
         protected override void LoadComplete()
         {
             base.LoadComplete();
 
-            var inputManager = GetContainingInputManager();
+            inputManager = GetContainingInputManager();
 
             if (inputManager != null)
             {
@@ -137,12 +146,27 @@ namespace osu.Game.Rulesets.Edit
                     entries.Add(new ToolboxEntry(group, child));
             }
 
-            // a flow container falls back to the order it first saw its children in, which drops anything taken out
-            // and put back at the bottom. giving every entry a position of its own is what lets one return to its place.
-            for (int i = 0; i < entries.Count; i++)
+            // groups the user has not moved keep the order the toolbox built them in.
+            var storedOrder = groupOrder.Value.Split(pinned_separator, StringSplitOptions.RemoveEmptyEntries).ToList();
+            var asBuilt = entries.ToList();
+
+            var reordered = entries.OrderBy(e =>
+                             {
+                                 int at = storedOrder.IndexOf(e.Group.Title);
+                                 return at < 0 ? int.MaxValue : at;
+                             })
+                             .ThenBy(asBuilt.IndexOf)
+                             .ToList();
+
+            entries.Clear();
+            entries.AddRange(reordered);
+
+            applyOrder();
+
+            foreach (var entry in entries)
             {
-                entries[i].LayoutPosition = i;
-                FillFlow.SetLayoutPosition(entries[i].Drawable, i);
+                var captured = entry;
+                entry.Group.RequestReorder = direction => move(captured, direction);
             }
 
             // restored in the order they were written, which is the order they were pinned in.
@@ -157,6 +181,8 @@ namespace osu.Game.Rulesets.Edit
                 setPinned(restored, true);
             }
 
+            var storedCollapsed = collapsedGroups.Value.Split(pinned_separator, StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+
             foreach (var entry in entries)
             {
                 var captured = entry;
@@ -166,9 +192,12 @@ namespace osu.Game.Rulesets.Edit
                     setPinned(captured, pinned.NewValue);
                     savePinnedState();
                 });
+
+                // set before binding, so restoring a group's state is not itself written back as a change.
+                entry.Group.Expanded.Value = !storedCollapsed.Contains(entry.Group.Title);
+                entry.Group.Expanded.BindValueChanged(_ => saveCollapsedState());
             }
 
-            pinnedGroupOrder.BindValueChanged(_ => updatePinnedOrder());
         }
 
         /// <summary>
@@ -186,12 +215,80 @@ namespace osu.Game.Rulesets.Edit
                                      .Where(title => !ownTitles.Contains(title))
                                      .ToList();
 
-            // written in the order they were pinned, which is the only place that order is kept.
-            stored.AddRange(entries.Where(e => e.Group.Pinned.Value)
-                                   .OrderBy(e => e.PinSequence)
-                                   .Select(e => e.Group.Title));
+            stored.AddRange(entries.Where(e => e.Group.Pinned.Value).Select(e => e.Group.Title));
 
             pinnedGroups.Value = string.Join(pinned_separator, stored);
+        }
+
+        /// <summary>
+        /// Writes this toolbox's folded groups back to config, leaving the other toolbox's entries alone the way the
+        /// pinned state does.
+        /// </summary>
+        private void saveCollapsedState()
+        {
+            var ownTitles = entries.Select(e => e.Group.Title).ToHashSet();
+
+            var stored = collapsedGroups.Value.Split(pinned_separator, StringSplitOptions.RemoveEmptyEntries)
+                                        .Where(title => !ownTitles.Contains(title))
+                                        .ToList();
+
+            stored.AddRange(entries.Where(e => !e.Group.Expanded.Value).Select(e => e.Group.Title));
+
+            collapsedGroups.Value = string.Join(pinned_separator, stored);
+        }
+
+        /// <summary>
+        /// Swaps a group with the one above (-1) or below (+1) it.
+        /// </summary>
+        private void move(ToolboxEntry entry, int direction)
+        {
+            int from = entries.IndexOf(entry);
+            int to = from + direction;
+
+            if (from < 0 || to < 0 || to >= entries.Count)
+                return;
+
+            entries.RemoveAt(from);
+            entries.Insert(to, entry);
+
+            applyOrder();
+            saveOrder();
+        }
+
+        /// <summary>
+        /// Hands the current order to the layout, both for the groups still scrolling and for whatever is pinned.
+        /// </summary>
+        private void applyOrder()
+        {
+            for (int i = 0; i < entries.Count; i++)
+            {
+                entries[i].LayoutPosition = i;
+
+                if (ReferenceEquals(entries[i].Drawable.Parent, FillFlow))
+                    FillFlow.SetLayoutPosition(entries[i].Drawable, i);
+
+                entries[i].Group.CanMoveUp.Value = i > 0;
+                entries[i].Group.CanMoveDown.Value = i < entries.Count - 1;
+            }
+
+            updatePinnedOrder();
+        }
+
+        /// <summary>
+        /// Writes this toolbox's order back to config, leaving the other toolbox's entries alone the way the pinned
+        /// and folded states do.
+        /// </summary>
+        private void saveOrder()
+        {
+            var ownTitles = entries.Select(e => e.Group.Title).ToHashSet();
+
+            var stored = groupOrder.Value.Split(pinned_separator, StringSplitOptions.RemoveEmptyEntries)
+                                   .Where(title => !ownTitles.Contains(title))
+                                   .ToList();
+
+            stored.AddRange(entries.Select(e => e.Group.Title));
+
+            groupOrder.Value = string.Join(pinned_separator, stored);
         }
 
         private void setPinned(ToolboxEntry entry, bool pinned)
@@ -202,8 +299,6 @@ namespace osu.Game.Rulesets.Edit
             {
                 if (ReferenceEquals(entry.Drawable.Parent, FillFlow))
                 {
-                    entry.PinSequence = nextPinSequence++;
-
                     FillFlow.Remove(entry.Drawable, false);
                     pinnedArea.Add(entry.Drawable);
                 }
@@ -225,9 +320,7 @@ namespace osu.Game.Rulesets.Edit
                 if (!ReferenceEquals(entry.Drawable.Parent, pinnedArea))
                     continue;
 
-                pinnedArea.SetLayoutPosition(entry.Drawable, pinnedGroupOrder.Value == EditorPinnedGroupOrder.OrderPinned
-                    ? entry.PinSequence
-                    : entry.LayoutPosition);
+                pinnedArea.SetLayoutPosition(entry.Drawable, entry.LayoutPosition);
             }
         }
 
@@ -248,11 +341,6 @@ namespace osu.Game.Rulesets.Edit
             /// </summary>
             public float LayoutPosition;
 
-            /// <summary>
-            /// When this was pinned, relative to the others.
-            /// </summary>
-            public int PinSequence;
-
             public ToolboxEntry(EditorToolboxGroup group, Drawable drawable)
             {
                 Group = group;
@@ -265,7 +353,13 @@ namespace osu.Game.Rulesets.Edit
             base.Update();
 
             // keeps the scrolling groups clear of whatever is pinned above them.
+            //
+            // this is padding rather than a shorter scrolling area on purpose. Shortening it does stop a group being
+            // scrolled behind the pinned ones, but it also costs that much room at the bottom, which made checking
+            // whatever hangs off the end harder than the problem it solved. Tried and reverted on 2026-08-23.
             scrollContainer.Padding = new MarginPadding { Top = pinnedContainer.DrawHeight };
+
+            returnToTopOnEntry();
 
             bool requireContracting = !AlwaysExpanded.Value && (contractSidebars.Value || editor?.DrawSize.X / editor?.DrawSize.Y < 1.7f);
 
@@ -274,6 +368,32 @@ namespace osu.Game.Rulesets.Edit
                 expandOnHover = requireContracting;
                 Expanded.Value = !expandOnHover;
             }
+        }
+
+        /// <summary>
+        /// Scrolls back to the top whenever the cursor comes into the toolbox.
+        /// </summary>
+        /// <remarks>
+        /// The pinned groups are drawn over the scrolling ones, so a group scrolled up behind them is not hidden so
+        /// much as lost — there is nothing on screen to say it is there. Rather than take away the room needed to
+        /// reach whatever hangs off the bottom, the scrolling area is simply put back where it started every time the
+        /// cursor arrives, so no group can stay out of sight for longer than it takes to look away and back.
+        ///
+        /// The pinned groups do not scroll and are left alone.
+        /// </remarks>
+        private void returnToTopOnEntry()
+        {
+            bool cursorInside = inputManager != null && ReceivePositionalInputAt(inputManager.CurrentState.Mouse.Position);
+
+            if (cursorInside && !cursorWasInside)
+            {
+                // the offset the scroll container holds onto is what keeps a hovered group in place as the toolbox
+                // widens, and it would pull the scroll straight back.
+                scrollContainer.TargetDrawable = null;
+                scrollContainer.ScrollToStart();
+            }
+
+            cursorWasInside = cursorInside;
         }
 
         protected override bool OnMouseDown(MouseDownEvent e) => true;

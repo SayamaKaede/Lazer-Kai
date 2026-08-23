@@ -277,7 +277,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSliderEndDragMarkerScale, 1f, 0.5f, 2f, 0.01f);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerOpacity, 1f, 0.1f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorAutoGenerateBreaks, true);
-            SetDefault(OsuSetting.EditorPinnedGroupOrder, EditorPinnedGroupOrder.ToolboxOrder);
+            SetDefault(OsuSetting.EditorCollapsedToolboxGroups, string.Empty);
+            SetDefault(OsuSetting.EditorToolboxGroupOrder, string.Empty);
 
             SetDefault(OsuSetting.AlwaysShowHoldForMenuButton, false);
             SetDefault(OsuSetting.AlwaysRequireHoldingForPause, false);
@@ -784,8 +785,57 @@ namespace osu.Game.Configuration
         EditorAutoGenerateBreaks,
 
         /// <summary>
-        /// How the editor's pinned toolbox groups are ordered among themselves.
+        /// Titles of the editor toolbox groups the user folded away, separated by <c>|</c>.
         /// </summary>
-        EditorPinnedGroupOrder,
+        EditorCollapsedToolboxGroups,
+
+        /// <summary>
+        /// The order the user put the editor toolbox groups in, separated by <c>|</c>.
+        /// </summary>
+        EditorToolboxGroupOrder,
+        /// <summary>
+        /// Whether the SR row is shown in the composer's status panel.
+        /// </summary>
+        EditorStatusShowStarRating,
+
+        /// <summary>
+        /// Whether the SV row is shown in the composer's status panel.
+        /// </summary>
+        EditorStatusShowSliderVelocity,
+
+        /// <summary>
+        /// Whether the Normal bank row is shown in the composer's status panel.
+        /// </summary>
+        EditorStatusShowNormalBank,
+
+        /// <summary>
+        /// Whether the Addition bank row is shown in the composer's status panel.
+        /// </summary>
+        EditorStatusShowAdditionBank,
+
+        /// <summary>
+        /// Whether the Volume row is shown in the composer's status panel.
+        /// </summary>
+        EditorStatusShowSampleVolume,
+
+        /// <summary>
+        /// Whether the Kiai row is shown in the composer's status panel.
+        /// </summary>
+        EditorStatusShowKiai,
+
+        /// <summary>
+        /// Whether the Mods row is shown in the composer's status panel.
+        /// </summary>
+        EditorStatusShowMods,
+
+        /// <summary>
+        /// How solid the difficulty drawn underneath the one being edited is.
+        /// </summary>
+        EditorReferenceDifficultyOpacity,
+
+        /// <summary>
+        /// What colour the difficulty drawn underneath the one being edited is tinted.
+        /// </summary>
+        EditorReferenceDifficultyColour,
     }
 }
