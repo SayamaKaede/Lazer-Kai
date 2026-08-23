@@ -11,6 +11,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
+using osu.Game.Configuration;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Input.Bindings;
@@ -172,15 +173,16 @@ namespace osu.Game.Rulesets.Osu.Edit
                 },
             };
 
+            // sized apart from the composer's tools, which are radio buttons as well but a column of their own.
             gridTypeButtons.AddButton(new EditorRadioButton("Square",
                 () => GridType.Value = PositionSnapGridType.Square,
-                () => new SpriteIcon { Icon = FontAwesome.Regular.Square }));
+                () => new SpriteIcon { Icon = FontAwesome.Regular.Square }) { SquarenessSetting = OsuSetting.EditorGridButtonSquareness });
             gridTypeButtons.AddButton(new EditorRadioButton("Triangle",
                 () => GridType.Value = PositionSnapGridType.Triangle,
-                () => new OutlineTriangle(true, 20)));
+                () => new OutlineTriangle(true, 20)) { SquarenessSetting = OsuSetting.EditorGridButtonSquareness });
             gridTypeButtons.AddButton(new EditorRadioButton("Circle",
                 () => GridType.Value = PositionSnapGridType.Circle,
-                () => new SpriteIcon { Icon = FontAwesome.Regular.Circle }));
+                () => new SpriteIcon { Icon = FontAwesome.Regular.Circle }) { SquarenessSetting = OsuSetting.EditorGridButtonSquareness });
 
             GridLineSpacing.Value = editorBeatmap.GridSize;
         }

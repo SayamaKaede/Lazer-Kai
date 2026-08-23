@@ -80,6 +80,30 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     Current = config.GetBindable<float>(OsuSetting.EditorToggleButtonSquareness),
                     DisplayAsPercentage = true,
                 }),
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.SampleBankButtonSquareness,
+                    Current = config.GetBindable<float>(OsuSetting.EditorSampleBankButtonSquareness),
+                    DisplayAsPercentage = true,
+                }),
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.GridButtonSquareness,
+                    Current = config.GetBindable<float>(OsuSetting.EditorGridButtonSquareness),
+                    DisplayAsPercentage = true,
+                }),
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.ActionButtonSquareness,
+                    Current = config.GetBindable<float>(OsuSetting.EditorActionButtonSquareness),
+                    DisplayAsPercentage = true,
+                }),
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.SliderVelocityPresetSquareness,
+                    Current = config.GetBindable<float>(OsuSetting.EditorSliderVelocityPresetSquareness),
+                    DisplayAsPercentage = true,
+                }),
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.AlwaysExpandTimelinePointLabels,

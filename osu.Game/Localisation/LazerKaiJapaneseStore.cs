@@ -76,6 +76,10 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:contract_sidebars"] = @"カーソルが乗っていない間はバーを縮める",
             [$@"{editor_prefix}:tool_button_squareness"] = @"Toolboxのボタンの高さ",
             [$@"{editor_prefix}:toggle_button_squareness"] = @"Togglesのボタンの高さ",
+            [$@"{editor_prefix}:sample_bank_button_squareness"] = @"Bankのボタンの高さ",
+            [$@"{editor_prefix}:grid_button_squareness"] = @"Gridのボタンの高さ",
+            [$@"{editor_prefix}:action_button_squareness"] = @"Transform・Generateのボタンの高さ",
+            [$@"{editor_prefix}:slider_velocity_preset_squareness"] = @"SVプリセットのボタンの高さ",
 
             // status panel rows
             [$@"{editor_prefix}:status_show_star_rating"] = @"SR",

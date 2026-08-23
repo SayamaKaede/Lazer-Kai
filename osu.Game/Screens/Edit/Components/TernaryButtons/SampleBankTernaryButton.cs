@@ -10,6 +10,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
+using osu.Game.Configuration;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Input.Bindings;
@@ -85,6 +86,8 @@ namespace osu.Game.Screens.Edit.Components.TernaryButtons
 
         private partial class InlineDrawableTernaryButton : DrawableTernaryButton, IExpandable
         {
+            protected override OsuSetting SquarenessSetting => OsuSetting.EditorSampleBankButtonSquareness;
+
             private const float text_position = 31f;
 
             public new required Func<Drawable> CreateIcon { get; init; }

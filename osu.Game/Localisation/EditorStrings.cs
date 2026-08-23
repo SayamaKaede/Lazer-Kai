@@ -670,6 +670,26 @@ namespace osu.Game.Localisation
         public static LocalisableString ToggleButtonSquareness => new TranslatableString(getKey(@"toggle_button_squareness"), @"Toggle button height");
 
         /// <summary>
+        /// "Sample bank button height"
+        /// </summary>
+        public static LocalisableString SampleBankButtonSquareness => new TranslatableString(getKey(@"sample_bank_button_squareness"), @"Sample bank button height");
+
+        /// <summary>
+        /// "Grid type button height"
+        /// </summary>
+        public static LocalisableString GridButtonSquareness => new TranslatableString(getKey(@"grid_button_squareness"), @"Grid type button height");
+
+        /// <summary>
+        /// "Transform and generate button height"
+        /// </summary>
+        public static LocalisableString ActionButtonSquareness => new TranslatableString(getKey(@"action_button_squareness"), @"Transform and generate button height");
+
+        /// <summary>
+        /// "Velocity preset button height"
+        /// </summary>
+        public static LocalisableString SliderVelocityPresetSquareness => new TranslatableString(getKey(@"slider_velocity_preset_squareness"), @"Velocity preset button height");
+
+        /// <summary>
         /// "SR"
         /// </summary>
         public static LocalisableString StatusShowStarRating => new TranslatableString(getKey(@"status_show_star_rating"), @"SR");

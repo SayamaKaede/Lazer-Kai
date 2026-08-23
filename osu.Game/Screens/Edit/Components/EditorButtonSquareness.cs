@@ -28,23 +28,33 @@ namespace osu.Game.Screens.Edit.Components
         public const float STOCK_HEIGHT = 40;
 
         private readonly Drawable button;
-        private readonly OsuSetting setting;
+        private readonly float stockHeight;
+
+        /// <summary>
+        /// Which setting sizes this button. Columns share button types, so which one a button listens to is not
+        /// something its type can be read off.
+        /// </summary>
+        public OsuSetting Setting { get; }
 
         private readonly Bindable<float> squareness = new Bindable<float>();
 
         [Resolved(CanBeNull = true)]
         private IExpandingContainer? expandingContainer { get; set; }
 
-        public EditorButtonSquareness(Drawable button, OsuSetting setting)
+        /// <param name="button">The button to size.</param>
+        /// <param name="setting">Which setting decides its height.</param>
+        /// <param name="stockHeight">The height this button has when nothing has been adjusted.</param>
+        public EditorButtonSquareness(Drawable button, OsuSetting setting, float stockHeight = STOCK_HEIGHT)
         {
             this.button = button;
-            this.setting = setting;
+            this.stockHeight = stockHeight;
+            Setting = setting;
         }
 
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
-            config.BindWith(setting, squareness);
+            config.BindWith(Setting, squareness);
         }
 
         protected override void Update()
@@ -54,10 +64,10 @@ namespace osu.Game.Screens.Edit.Components
             // a contracted toolbox shows icons only, where a tall button would just be a tall icon.
             bool expanded = expandingContainer?.Expanded.Value != false;
 
-            float target = STOCK_HEIGHT;
+            float target = stockHeight;
 
-            if (expanded && squareness.Value > 0 && button.DrawWidth > STOCK_HEIGHT)
-                target = STOCK_HEIGHT + (button.DrawWidth - STOCK_HEIGHT) * squareness.Value;
+            if (expanded && squareness.Value > 0 && button.DrawWidth > stockHeight)
+                target = stockHeight + (button.DrawWidth - stockHeight) * squareness.Value;
 
             button.Height = target;
         }

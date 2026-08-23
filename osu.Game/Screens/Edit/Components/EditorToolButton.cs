@@ -13,6 +13,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osuTK;
@@ -46,6 +47,8 @@ namespace osu.Game.Screens.Edit.Components
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colourProvider)
         {
+            AddInternal(new EditorButtonSquareness(this, OsuSetting.EditorActionButtonSquareness));
+
             defaultBackgroundColour = colourProvider.Background3;
             selectedBackgroundColour = colourProvider.Background1;
 

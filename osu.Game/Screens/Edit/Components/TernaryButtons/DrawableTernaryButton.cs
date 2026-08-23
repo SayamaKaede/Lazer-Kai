@@ -63,10 +63,21 @@ namespace osu.Game.Screens.Edit.Components.TernaryButtons
             RelativeSizeAxes = Axes.X;
         }
 
+        /// <summary>
+        /// Which setting decides this button's height. The sample bank buttons are ternary buttons too, and are
+        /// sized apart from the toggles.
+        /// </summary>
+        protected virtual OsuSetting SquarenessSetting => OsuSetting.EditorToggleButtonSquareness;
+
+        /// <summary>
+        /// The height this button has before the user's setting stretches it.
+        /// </summary>
+        protected virtual float StockHeight => EditorButtonSquareness.STOCK_HEIGHT;
+
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colourProvider)
         {
-            AddInternal(new EditorButtonSquareness(this, OsuSetting.EditorToggleButtonSquareness));
+            AddInternal(new EditorButtonSquareness(this, SquarenessSetting, StockHeight));
 
 
             defaultBackgroundColour = colourProvider.Background3;

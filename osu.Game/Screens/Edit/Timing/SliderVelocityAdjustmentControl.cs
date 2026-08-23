@@ -13,6 +13,7 @@ using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
@@ -228,6 +229,11 @@ namespace osu.Game.Screens.Edit.Timing
         {
             public double Velocity { get; }
             public Action<double>? OnDelete { get; init; }
+
+            protected override OsuSetting SquarenessSetting => OsuSetting.EditorSliderVelocityPresetSquareness;
+
+            // half the height of a toolbox button, and stretched towards its own width rather than theirs.
+            protected override float StockHeight => 25;
 
             public SliderVelocityPresetTernaryButton(double velocity)
             {

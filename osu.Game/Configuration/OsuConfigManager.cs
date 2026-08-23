@@ -247,6 +247,10 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorNotifyOnBackup, true);
             SetDefault(OsuSetting.EditorToolButtonSquareness, 0f, 0f, 0.3f, 0.01f);
             SetDefault(OsuSetting.EditorToggleButtonSquareness, 0f, 0f, 0.3f, 0.01f);
+            SetDefault(OsuSetting.EditorSampleBankButtonSquareness, 0f, 0f, 0.3f, 0.01f);
+            SetDefault(OsuSetting.EditorGridButtonSquareness, 0f, 0f, 0.3f, 0.01f);
+            SetDefault(OsuSetting.EditorActionButtonSquareness, 0f, 0f, 0.3f, 0.01f);
+            SetDefault(OsuSetting.EditorSliderVelocityPresetSquareness, 0f, 0f, 1f, 0.01f);
             // status is the one group a mapper reads rather than operates, so it starts held where it can be read.
             SetDefault(OsuSetting.EditorPinnedToolboxGroups, @"status");
             SetDefault(OsuSetting.EditorHideSelectionButtons, false);
@@ -785,9 +789,29 @@ namespace osu.Game.Configuration
         EditorAutoGenerateBreaks,
 
         /// <summary>
+        /// How square the sample bank buttons are stretched towards.
+        /// </summary>
+        EditorSampleBankButtonSquareness,
+
+        /// <summary>
+        /// How square the grid type buttons are stretched towards.
+        /// </summary>
+        EditorGridButtonSquareness,
+
+        /// <summary>
+        /// How square the transform and generate buttons are stretched towards.
+        /// </summary>
+        EditorActionButtonSquareness,
+
+        /// <summary>
         /// Titles of the editor toolbox groups the user folded away, separated by <c>|</c>.
         /// </summary>
         EditorCollapsedToolboxGroups,
+
+        /// <summary>
+        /// How square the slider velocity preset buttons are stretched towards.
+        /// </summary>
+        EditorSliderVelocityPresetSquareness,
 
         /// <summary>
         /// The order the user put the editor toolbox groups in, separated by <c>|</c>.

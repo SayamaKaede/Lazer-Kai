@@ -57,10 +57,16 @@ namespace osu.Game.Screens.Edit.Components.RadioButtons
             RelativeSizeAxes = Axes.X;
         }
 
+        /// <summary>
+        /// Which setting decides this button's height. Radio buttons are used by more than one toolbox group, and
+        /// the groups are sized apart from each other.
+        /// </summary>
+        public OsuSetting SquarenessSetting { get; init; } = OsuSetting.EditorToolButtonSquareness;
+
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colourProvider)
         {
-            AddInternal(new EditorButtonSquareness(this, OsuSetting.EditorToolButtonSquareness));
+            AddInternal(new EditorButtonSquareness(this, SquarenessSetting));
 
 
             defaultBackgroundColour = colourProvider.Background3;
