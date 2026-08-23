@@ -1,13 +1,16 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Graphics;
 using osu.Game.Utils;
@@ -48,11 +51,24 @@ namespace osu.Game.Screens.Edit.Compose.Components
         private Drawable modsRow = null!;
         private ModDisplay modDisplay = null!;
 
+        /// <summary>
+        /// Held so the bindings that show and hide the rows are not collected out from under them.
+        /// </summary>
+        private readonly List<Bindable<bool>> rowVisibilities = new List<Bindable<bool>>();
+
+        private readonly Bindable<bool> showModsRow = new Bindable<bool>(true);
+
+        private bool anyTestPlayMods;
+
         [BackgroundDependencyLoader]
-        private void load(OsuColour colours)
+        private void load(OsuColour colours, OsuConfigManager config)
         {
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
+
+            // the mods row already steps out of the flow when no mods are selected, so the setting joins that rather
+            // than writing over it.
+            config.BindWith(OsuSetting.EditorStatusShowMods, showModsRow);
 
             InternalChild = new FillFlowContainer
             {
@@ -62,12 +78,12 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 Spacing = new Vector2(0, 2),
                 Children = new Drawable[]
                 {
-                    createRow(@"SR", out starRating, colours.Yellow),
-                    createRow(@"SV", out sliderVelocity, colours.Lime1),
-                    createRow(@"Normal", out normalBank, colours.Pink1),
-                    createRow(@"Addition", out additionBank, colours.Pink2),
-                    createRow(@"Volume", out sampleVolume, colours.Pink1),
-                    createRow(@"Kiai", out kiai, colours.Orange1),
+                    shownWhen(config, OsuSetting.EditorStatusShowStarRating, createRow(@"SR", out starRating, colours.Yellow)),
+                    shownWhen(config, OsuSetting.EditorStatusShowSliderVelocity, createRow(@"SV", out sliderVelocity, colours.Lime1)),
+                    shownWhen(config, OsuSetting.EditorStatusShowNormalBank, createRow(@"Normal", out normalBank, colours.Pink1)),
+                    shownWhen(config, OsuSetting.EditorStatusShowAdditionBank, createRow(@"Addition", out additionBank, colours.Pink2)),
+                    shownWhen(config, OsuSetting.EditorStatusShowSampleVolume, createRow(@"Volume", out sampleVolume, colours.Pink1)),
+                    shownWhen(config, OsuSetting.EditorStatusShowKiai, createRow(@"Kiai", out kiai, colours.Orange1)),
                     createModRow(),
                 }
             };
@@ -105,6 +121,27 @@ namespace osu.Game.Screens.Edit.Compose.Components
                     }
                 }
             };
+        }
+
+        /// <summary>
+        /// Hides a row the user has turned off. The panel is a narrow column and every row is one less line of the
+        /// beatmap visible behind it, so which of them are worth the room is theirs to say.
+        /// </summary>
+        private Drawable shownWhen(OsuConfigManager config, OsuSetting setting, Drawable row)
+        {
+            var shown = config.GetBindable<bool>(setting);
+
+            // alpha rather than removal: the flow skips what is not present, so the row's space goes with it.
+            shown.BindValueChanged(v => row.Alpha = v.NewValue ? 1 : 0, true);
+            rowVisibilities.Add(shown);
+
+            return row;
+        }
+
+        private void updateModsRow()
+        {
+            modsRow.Alpha = showModsRow.Value && anyTestPlayMods ? 1 : 0;
+            modsRow.AlwaysPresent = false;
         }
 
         private static Drawable createRow(LocalisableString label, out OsuSpriteText value, ColourInfo valueColour)
@@ -150,12 +187,12 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 // with nothing selected the row would be a label with nothing beside it, so it steps out of the flow.
                 editor.TestPlayMods.Mods.BindValueChanged(mods =>
                 {
-                    modsRow.Alpha = mods.NewValue.Any() ? 1 : 0;
-                    modsRow.AlwaysPresent = false;
+                    anyTestPlayMods = mods.NewValue.Any();
+                    updateModsRow();
                 }, true);
             }
-            else
-                modsRow.Alpha = 0;
+
+            showModsRow.BindValueChanged(_ => updateModsRow(), true);
 
             if (starRatingTracker == null)
                 starRating.Text = @"-";

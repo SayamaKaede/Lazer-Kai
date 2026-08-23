@@ -30,6 +30,7 @@ namespace osu.Game.Overlays.Settings.Sections
             Children = new Drawable[]
             {
                 new EditorDisplaySettings(),
+                new EditorStatusSettings(),
                 new EditorSelectionSettings(),
                 new ComposingSettings(),
                 new EditorInputSettings(),

@@ -32,6 +32,11 @@ namespace osu.Game.Localisation
         public static LocalisableString SelectionHeader => new TranslatableString(getKey(@"selection_header"), @"Selection");
 
         /// <summary>
+        /// "Status panel"
+        /// </summary>
+        public static LocalisableString StatusHeader => new TranslatableString(getKey(@"status_header"), @"Status panel");
+
+        /// <summary>
         /// "Composing"
         /// </summary>
         public static LocalisableString ComposingHeader => new TranslatableString(getKey(@"composing_header"), @"Composing");

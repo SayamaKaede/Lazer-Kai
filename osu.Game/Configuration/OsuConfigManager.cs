@@ -251,6 +251,13 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorGridButtonSquareness, 0f, 0f, 0.3f, 0.01f);
             SetDefault(OsuSetting.EditorActionButtonSquareness, 0f, 0f, 0.3f, 0.01f);
             SetDefault(OsuSetting.EditorSliderVelocityPresetSquareness, 0f, 0f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorStatusShowStarRating, true);
+            SetDefault(OsuSetting.EditorStatusShowSliderVelocity, true);
+            SetDefault(OsuSetting.EditorStatusShowNormalBank, true);
+            SetDefault(OsuSetting.EditorStatusShowAdditionBank, true);
+            SetDefault(OsuSetting.EditorStatusShowSampleVolume, true);
+            SetDefault(OsuSetting.EditorStatusShowKiai, true);
+            SetDefault(OsuSetting.EditorStatusShowMods, true);
             // status is the one group a mapper reads rather than operates, so it starts held where it can be read.
             SetDefault(OsuSetting.EditorPinnedToolboxGroups, @"status");
             SetDefault(OsuSetting.EditorHideSelectionButtons, false);
