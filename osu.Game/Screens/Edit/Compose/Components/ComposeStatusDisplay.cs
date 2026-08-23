@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
@@ -16,6 +17,8 @@ using osu.Game.Graphics;
 using osu.Game.Utils;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Audio;
+using osu.Framework.Utils;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Screens.Edit.Compose.Components.Timeline;
 using osu.Game.Screens.Play.HUD;
@@ -246,9 +249,40 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 return;
             }
 
-            normalBank.Text = $"{SamplePointPiece.GetBankValue(current.Samples) ?? @"-"}{SamplePointPiece.GetSuffix(current.Samples)}";
-            additionBank.Text = SamplePointPiece.GetAdditionBankValue(current.Samples) ?? @"-";
-            sampleVolume.Text = @$"{SamplePointPiece.GetVolumeValue(current.Samples)}%";
+            var samples = samplesAt(current, editorClock.CurrentTime);
+
+            normalBank.Text = $"{SamplePointPiece.GetBankValue(samples) ?? @"-"}{SamplePointPiece.GetSuffix(samples)}";
+            additionBank.Text = SamplePointPiece.GetAdditionBankValue(samples) ?? @"-";
+            sampleVolume.Text = @$"{SamplePointPiece.GetVolumeValue(samples)}%";
+        }
+
+        /// <summary>
+        /// The samples in effect at <paramref name="time"/>, which for anything with repeats is the node most recently
+        /// reached rather than the object's own set.
+        /// </summary>
+        /// <remarks>
+        /// A slider's head, repeats and tail each carry their own bank and volume, and the object's own samples are
+        /// only the fallback for a node that has none. Reading the object alone showed the head's hitsounds while the
+        /// playhead sat on the tail, which is the one place a mapper looks to check what they just set.
+        ///
+        /// Past the end of an object the last node stays on screen, the same way the rest of this panel keeps showing
+        /// the last thing in effect rather than blanking between objects.
+        /// </remarks>
+        private static IList<HitSampleInfo> samplesAt(HitObject hitObject, double time)
+        {
+            if (hitObject is not IHasRepeats repeats)
+                return hitObject.Samples;
+
+            double spanDuration = repeats.Duration / repeats.SpanCount();
+
+            if (spanDuration <= 0)
+                return hitObject.Samples;
+
+            // sitting exactly on a node counts as having reached it, and seeking lands exactly on them.
+            int node = (int)Math.Floor((time - hitObject.StartTime) / spanDuration + Precision.DOUBLE_EPSILON);
+            node = Math.Clamp(node, 0, repeats.SpanCount());
+
+            return node < repeats.NodeSamples.Count ? repeats.NodeSamples[node] : hitObject.Samples;
         }
     }
 }
