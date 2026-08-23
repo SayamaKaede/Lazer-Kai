@@ -258,6 +258,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorStatusShowSampleVolume, true);
             SetDefault(OsuSetting.EditorStatusShowKiai, true);
             SetDefault(OsuSetting.EditorStatusShowMods, true);
+            SetDefault(OsuSetting.EditorReferenceDifficultyOpacity, 0.3f, 0.05f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorReferenceDifficultyColour, EditorSelectionColour.Cyan);
             // status is the one group a mapper reads rather than operates, so it starts held where it can be read.
             SetDefault(OsuSetting.EditorPinnedToolboxGroups, @"status");
             SetDefault(OsuSetting.EditorHideSelectionButtons, false);

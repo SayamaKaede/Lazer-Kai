@@ -81,6 +81,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private WaveformGraph waveform = null!;
 
         private TimelineTickDisplay ticks = null!;
+        private TimelineReferenceObjectDisplay referenceObjects = null!;
 
         private TimelineTimingChangeDisplay controlPoints = null!;
 
@@ -148,6 +149,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                             MidColour = colours.BlueDark,
                             HighColour = colours.BlueDarker,
                         },
+                        referenceObjects = new TimelineReferenceObjectDisplay(),
                         centreMarker.CreateProxy(),
                         ticks.CreateProxy(),
                         userContent,

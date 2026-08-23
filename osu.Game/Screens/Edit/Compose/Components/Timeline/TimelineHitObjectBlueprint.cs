@@ -66,6 +66,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private readonly Bindable<bool> hideTimelinePoints = new Bindable<bool>();
 
+        [Resolved(CanBeNull = true)]
+        private EditorReferenceDifficulty? referenceDifficulty { get; set; }
+
         [Resolved]
         private ISkinSource skin { get; set; } = null!;
 
@@ -153,6 +156,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             config.BindWith(OsuSetting.EditorHideTimelinePoints, hideTimelinePoints);
 
             hideTimelinePoints.BindValueChanged(_ => updateSizing());
+            referenceDifficulty?.Beatmap.BindValueChanged(_ => updateSizing());
 
             updateSizing();
         }
@@ -160,7 +164,16 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         /// <summary>
         /// The height objects are currently drawn at, which grows into the space the velocity and volume rows leave behind.
         /// </summary>
-        private float currentCircleSize => hideTimelinePoints.Value ? expanded_circle_size : circle_size;
+        /// <summary>
+        /// Whether the velocity and volume rows are giving up their space, either because the user asked or because
+        /// another difficulty is sharing the timeline and there is not room for both.
+        /// </summary>
+        private bool pointRowsHidden => hideTimelinePoints.Value || referenceDifficulty?.Beatmap.Value != null;
+
+        // half of what the rows give up goes to the difficulty being referenced, so the objects stay their stock size
+        // rather than growing into all of it.
+        private float currentCircleSize => referenceDifficulty?.Beatmap.Value != null ? circle_size
+            : hideTimelinePoints.Value ? expanded_circle_size : circle_size;
 
         private void updateSizing()
         {
@@ -181,7 +194,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             }
 
             // hidden rather than removed, so the pieces come back the moment the setting does.
-            float pointAlpha = hideTimelinePoints.Value ? 0 : 1;
+            float pointAlpha = pointRowsHidden ? 0 : 1;
 
             samplePointPiece.Alpha = pointAlpha;
             sampleComponents.Alpha = pointAlpha;

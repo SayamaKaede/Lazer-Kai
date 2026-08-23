@@ -98,6 +98,17 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     Current = config.GetBindable<float>(OsuSetting.EditorActionButtonSquareness),
                     DisplayAsPercentage = true,
                 }),
+                new SettingsEnumDropdown<EditorSelectionColour>
+                {
+                    LabelText = EditorStrings.ReferenceDifficultyColour,
+                    Current = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorReferenceDifficultyColour)
+                },
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.ReferenceDifficultyOpacity,
+                    Current = config.GetBindable<float>(OsuSetting.EditorReferenceDifficultyOpacity),
+                    DisplayAsPercentage = true,
+                }),
                 new SettingsItemV2(new FormSliderBar<float>
                 {
                     Caption = EditorStrings.SliderVelocityPresetSquareness,

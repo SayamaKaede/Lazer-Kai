@@ -227,6 +227,7 @@ namespace osu.Game.Screens.Edit
 
         private IBeatmap playableBeatmap;
         private EditorBeatmap editorBeatmap;
+        private EditorReferenceDifficulty referenceDifficulty;
 
         private BottomBar bottomBar;
         private ComboColourStudioOverlay comboColourStudio;
@@ -383,6 +384,9 @@ namespace osu.Game.Screens.Edit
 
             AddInternal(editorBeatmap = new EditorBeatmap(playableBeatmap, loadableBeatmap.GetSkin(), loadableBeatmap.Storyboard, loadableBeatmap.BeatmapInfo));
             dependencies.CacheAs(editorBeatmap);
+
+            AddInternal(referenceDifficulty = new EditorReferenceDifficulty());
+            dependencies.CacheAs(referenceDifficulty);
 
             editorBeatmap.UpdateInProgress.BindValueChanged(_ => updateSampleDisabledState());
 
@@ -554,6 +558,7 @@ namespace osu.Game.Screens.Edit
                                                     },
                                                 ]
                                             },
+                                            createReferenceDifficultyMenu(),
                                             new SelectionAppearanceMenuItem(editorSelectionColour, editorSelectionThickness, editorSelectionOpacity,
                                                 editorSelectionHandleScale, editorSelectionHandleColour, editorSliderAnchorScale),
                                             new ChoiceMenuItem<OverlayColourScheme>(EditorStrings.EditorColourScheme, editorColourScheme,
@@ -1267,6 +1272,22 @@ namespace osu.Game.Screens.Edit
         }
 
         #region Clipboard support
+
+        /// <summary>
+        /// Lists the other difficulties in this set, so one can be drawn underneath the one being edited.
+        /// </summary>
+        private MenuItem createReferenceDifficultyMenu()
+        {
+            var choices = new List<(LocalisableString, Guid)> { (EditorStrings.ReferenceDifficultyNone, Guid.Empty) };
+
+            choices.AddRange(editorBeatmap.BeatmapInfo.BeatmapSet?.Beatmaps
+                                          .Where(b => !b.Equals(editorBeatmap.BeatmapInfo) && b.Ruleset.Equals(editorBeatmap.BeatmapInfo.Ruleset))
+                                          .OrderBy(b => b.StarRating)
+                                          .Select(b => ((LocalisableString)b.DifficultyName, b.ID))
+                             ?? Enumerable.Empty<(LocalisableString, Guid)>());
+
+            return new ChoiceMenuItem<Guid>(EditorStrings.ReferenceDifficulty, referenceDifficulty.Selected, choices);
+        }
 
         private EditorMenuItem insertBreakMenuItem;
 

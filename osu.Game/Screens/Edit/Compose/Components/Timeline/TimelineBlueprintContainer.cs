@@ -63,6 +63,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private readonly Bindable<bool> hideTimelinePoints = new Bindable<bool>();
 
+        [Resolved(CanBeNull = true)]
+        private EditorReferenceDifficulty referenceDifficulty { get; set; }
+
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
@@ -70,8 +73,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             config.BindWith(OsuSetting.EditorHideTimelinePoints, hideTimelinePoints);
 
-            // the rows above and below the objects are what the remaining fifth at each end is held back for.
-            hideTimelinePoints.BindValueChanged(hidden => Height = hidden.NewValue ? 1 : 0.6f, true);
+            hideTimelinePoints.BindValueChanged(_ => updateLayout());
 
             AddInternal(new SelectableAreaBackground
             {
@@ -81,9 +83,38 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             });
         }
 
+        /// <summary>
+        /// Where the objects being edited sit in the timeline, which depends on whether the rows above and below them
+        /// are showing and on whether another difficulty is sharing the room.
+        /// </summary>
+        private void updateLayout()
+        {
+            bool hidden = hideTimelinePoints.Value;
+            bool shared = referenceDifficulty?.Beatmap.Value != null;
+
+            Anchor = Origin = Anchor.Centre;
+
+            if (shared)
+            {
+                // the rows above and below are given up whether or not the user asked, because two rows of objects
+                // and two rows of points do not fit. 8px above, between and below, so nothing looks pushed to one end.
+                Height = 0.5f;
+                Y = -0.2f;
+            }
+            else
+            {
+                Height = hidden ? 1 : 0.6f;
+                Y = 0;
+            }
+        }
+
         protected override void LoadComplete()
         {
             base.LoadComplete();
+
+            RelativePositionAxes = Axes.Y;
+            referenceDifficulty?.Beatmap.BindValueChanged(_ => updateLayout(), true);
+            updateLayout();
 
             placement = Beatmap.PlacementObject.GetBoundCopy();
             placement.ValueChanged += placementChanged;

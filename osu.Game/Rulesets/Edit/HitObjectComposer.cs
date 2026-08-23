@@ -37,6 +37,7 @@ using osu.Game.Screens.Edit.Components.TernaryButtons;
 using osu.Game.Screens.Edit.Compose;
 using osu.Game.Screens.Edit.Compose.Components;
 using osuTK;
+using osuTK.Graphics;
 
 namespace osu.Game.Rulesets.Edit
 {
@@ -82,6 +83,14 @@ namespace osu.Game.Rulesets.Edit
         private DrawableEditorRulesetWrapper<TObject> drawableRulesetWrapper = null!;
 
         protected readonly Container LayerBelowRuleset = new Container { RelativeSizeAxes = Axes.Both };
+
+        private ReferenceRulesetContainer referenceRulesetContainer = null!;
+
+        private readonly Bindable<float> referenceOpacity = new Bindable<float>(1);
+        private readonly Bindable<EditorSelectionColour> referenceColour = new Bindable<EditorSelectionColour>();
+
+        [Resolved(CanBeNull = true)]
+        private EditorReferenceDifficulty? referenceDifficulty { get; set; }
 
         protected InputManager InputManager { get; private set; } = null!;
 
@@ -168,6 +177,8 @@ namespace osu.Game.Rulesets.Edit
             dependencies.CacheAs(Playfield);
 
             config.BindWith(OsuSetting.EditorDefaultAdditionBank, defaultAdditionBank);
+            config.BindWith(OsuSetting.EditorReferenceDifficultyOpacity, referenceOpacity);
+            config.BindWith(OsuSetting.EditorReferenceDifficultyColour, referenceColour);
 
             // a change only takes hold once nothing is selected, which is also the moment the user would look for it.
             defaultAdditionBank.BindValueChanged(_ => resetTernaryStates());
@@ -184,6 +195,8 @@ namespace osu.Game.Rulesets.Edit
                         RelativeSizeAxes = Axes.Y,
                         Children = new Drawable[]
                         {
+                            // the difficulty being referenced sits under everything, and takes no input of its own.
+                            referenceRulesetContainer = new ReferenceRulesetContainer { RelativeSizeAxes = Axes.Both },
                             // layers below playfield
                             drawableRulesetWrapper.CreatePlayfieldAdjustmentContainer().WithChild(LayerBelowRuleset),
                             drawableRulesetWrapper,
@@ -351,6 +364,17 @@ namespace osu.Game.Rulesets.Edit
 
             LeftToolbox.AlwaysExpanded.BindTo(alwaysExpandLeftToolbox);
 
+            if (referenceDifficulty != null)
+            {
+                referenceDifficulty.Beatmap.BindValueChanged(b => showReference(b.NewValue), true);
+                referenceOpacity.BindValueChanged(o => referenceRulesetContainer.Alpha = o.NewValue, true);
+
+                // a tint rather than an outline drawn around each object: the referenced difficulty is a real ruleset
+                // being played underneath, and its objects are built and thrown away as the song runs, so there is
+                // nothing stable to draw a border on. One flat colour tells the two apart at a glance regardless.
+                referenceColour.BindValueChanged(c => referenceRulesetContainer.Colour = c.NewValue.ToColour() ?? Color4.White, true);
+            }
+
             if (previewMods.OfType<IApplicableToBeatmap>().Any())
                 EditorBeatmap.BeatmapReprocessed += onBeatmapReprocessed;
 
@@ -506,6 +530,50 @@ namespace osu.Game.Rulesets.Edit
         protected abstract ComposeBlueprintContainer CreateBlueprintContainer();
 
         protected virtual Drawable CreateHitObjectInspector() => new HitObjectInspector();
+
+        /// <summary>
+        /// Draws another difficulty faintly underneath the one being edited, or clears it away when there is none.
+        /// </summary>
+        /// <remarks>
+        /// A second ruleset of its own rather than a set of markers, so what it shows is what that difficulty actually
+        /// looks like at this moment in the song — approach circles, slider bodies and all — rather than an
+        /// approximation that would have to be kept in step by hand.
+        /// </remarks>
+        private void showReference(IBeatmap? beatmap)
+        {
+            referenceRulesetContainer.Clear();
+
+            if (beatmap == null || !beatmap.HitObjects.Any())
+                return;
+
+            try
+            {
+                var autoplay = Ruleset.GetAutoplayMod();
+                var reference = CreateDrawableRuleset(Ruleset, beatmap, autoplay != null ? new[] { autoplay } : Array.Empty<Mod>());
+
+                reference.FrameStablePlayback = false;
+                reference.Playfield.DisplayJudgements.Value = false;
+                reference.Clock = EditorClock;
+                reference.ProcessCustomClock = false;
+
+                referenceRulesetContainer.Child = reference;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Could not draw the referenced difficulty underneath this one.");
+            }
+        }
+
+        /// <summary>
+        /// Holds the difficulty drawn underneath. Nothing in it is the mapper's to click: every hit test belongs to
+        /// the difficulty being edited.
+        /// </summary>
+        private partial class ReferenceRulesetContainer : Container
+        {
+            public override bool PropagatePositionalInputSubTree => false;
+
+            public override bool PropagateNonPositionalInputSubTree => false;
+        }
 
         /// <summary>
         /// Construct a drawable ruleset for the provided ruleset.
