@@ -947,6 +947,51 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString InsertBreak => new TranslatableString(getKey(@"insert_break"), @"Insert break");
 
+        /// <summary>
+        /// "Red"
+        /// </summary>
+        public static LocalisableString ColourSchemeRed => new TranslatableString(getKey(@"colour_scheme_red"), @"Red");
+
+        /// <summary>
+        /// "Yellow"
+        /// </summary>
+        public static LocalisableString ColourSchemeOrange => new TranslatableString(getKey(@"colour_scheme_orange"), @"Yellow");
+
+        /// <summary>
+        /// "Lime"
+        /// </summary>
+        public static LocalisableString ColourSchemeLime => new TranslatableString(getKey(@"colour_scheme_lime"), @"Lime");
+
+        /// <summary>
+        /// "Green"
+        /// </summary>
+        public static LocalisableString ColourSchemeGreen => new TranslatableString(getKey(@"colour_scheme_green"), @"Green");
+
+        /// <summary>
+        /// "Aquamarine"
+        /// </summary>
+        public static LocalisableString ColourSchemeAquamarine => new TranslatableString(getKey(@"colour_scheme_aquamarine"), @"Aquamarine");
+
+        /// <summary>
+        /// "Sky blue"
+        /// </summary>
+        public static LocalisableString ColourSchemeBlue => new TranslatableString(getKey(@"colour_scheme_blue"), @"Sky blue");
+
+        /// <summary>
+        /// "Purple"
+        /// </summary>
+        public static LocalisableString ColourSchemePurple => new TranslatableString(getKey(@"colour_scheme_purple"), @"Purple");
+
+        /// <summary>
+        /// "Magenta"
+        /// </summary>
+        public static LocalisableString ColourSchemePlum => new TranslatableString(getKey(@"colour_scheme_plum"), @"Magenta");
+
+        /// <summary>
+        /// "Pink"
+        /// </summary>
+        public static LocalisableString ColourSchemePink => new TranslatableString(getKey(@"colour_scheme_pink"), @"Pink");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

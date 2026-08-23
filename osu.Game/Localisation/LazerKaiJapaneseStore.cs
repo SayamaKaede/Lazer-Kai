@@ -107,6 +107,17 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:timeline_repeat_drag_threshold_description"] = @"次のリバースまでの何割まで引っ張ったらリバースが増えるか",
             [$@"{editor_prefix}:seek_animation_duration"] = @"シークのアニメーション",
             [$@"{editor_prefix}:editor_colour_scheme"] = @"エディターのテーマ色",
+
+            // named after what the hue actually looks like, which the stock names do not always do.
+            [$@"{editor_prefix}:colour_scheme_red"] = @"赤",
+            [$@"{editor_prefix}:colour_scheme_orange"] = @"黄色",
+            [$@"{editor_prefix}:colour_scheme_lime"] = @"黄緑",
+            [$@"{editor_prefix}:colour_scheme_green"] = @"緑",
+            [$@"{editor_prefix}:colour_scheme_aquamarine"] = @"青緑",
+            [$@"{editor_prefix}:colour_scheme_blue"] = @"水色",
+            [$@"{editor_prefix}:colour_scheme_purple"] = @"紫",
+            [$@"{editor_prefix}:colour_scheme_plum"] = @"マゼンタ",
+            [$@"{editor_prefix}:colour_scheme_pink"] = @"ピンク",
             [$@"{editor_prefix}:hide_kiai_flash"] = @"Kiaiのフラッシュを非表示",
             [$@"{editor_prefix}:hide_kiai_flash_description"] = @"エディター内でのみ非表示になります。テストプレイでは今までどおり光ります",
 

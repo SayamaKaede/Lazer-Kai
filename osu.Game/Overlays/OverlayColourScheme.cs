@@ -2,19 +2,30 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using osu.Framework.Localisation;
+using osu.Game.Localisation;
 
 namespace osu.Game.Overlays
 {
     public enum OverlayColourScheme
     {
+        [LocalisableDescription(typeof(EditorStrings), nameof(EditorStrings.ColourSchemeRed))]
         Red,
+        [LocalisableDescription(typeof(EditorStrings), nameof(EditorStrings.ColourSchemeOrange))]
         Orange,
+        [LocalisableDescription(typeof(EditorStrings), nameof(EditorStrings.ColourSchemeLime))]
         Lime,
+        [LocalisableDescription(typeof(EditorStrings), nameof(EditorStrings.ColourSchemeGreen))]
         Green,
+        [LocalisableDescription(typeof(EditorStrings), nameof(EditorStrings.ColourSchemeAquamarine))]
         Aquamarine,
+        [LocalisableDescription(typeof(EditorStrings), nameof(EditorStrings.ColourSchemeBlue))]
         Blue,
+        [LocalisableDescription(typeof(EditorStrings), nameof(EditorStrings.ColourSchemePurple))]
         Purple,
+        [LocalisableDescription(typeof(EditorStrings), nameof(EditorStrings.ColourSchemePlum))]
         Plum,
+        [LocalisableDescription(typeof(EditorStrings), nameof(EditorStrings.ColourSchemePink))]
         Pink,
     }
 

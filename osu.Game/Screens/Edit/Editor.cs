@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using osu.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Extensions;
 using osu.Framework.Audio;
 using osu.Framework.Audio.Track;
 using osu.Framework.Bindables;
@@ -562,7 +563,7 @@ namespace osu.Game.Screens.Edit
                                             new SelectionAppearanceMenuItem(editorSelectionColour, editorSelectionThickness, editorSelectionOpacity,
                                                 editorSelectionHandleScale, editorSelectionHandleColour, editorSliderAnchorScale),
                                             new ChoiceMenuItem<OverlayColourScheme>(EditorStrings.EditorColourScheme, editorColourScheme,
-                                                Enum.GetValues<OverlayColourScheme>().Select(scheme => ((LocalisableString)scheme.ToString(), scheme))),
+                                                Enum.GetValues<OverlayColourScheme>().Select(scheme => (scheme.GetLocalisableDescription(), scheme))),
                                             new ChoiceMenuItem<double>(EditorStrings.SeekAnimationDuration, editorSeekAnimationDuration, new[]
                                             {
                                                 ((LocalisableString)@"Instant", 0d),
