@@ -140,7 +140,7 @@ namespace osu.Game.Localisation
             // input
             [$@"{editor_prefix}:beatmap_upload_unavailable"] = @"このビルドは譜面をアップロードしません",
             [$@"{editor_prefix}:remove_drag_threshold"] = @"ドラッグ時の引っかかりを無くす",
-            [$@"{editor_prefix}:remove_drag_threshold_description"] = @"細かい微調整がやりやすくなります。効くのは配置画面と上下タイムラインの中だけです",
+            [$@"{editor_prefix}:remove_drag_threshold_description"] = @"細かい微調整がやりやすくなります。有効になるのは配置画面と上下タイムラインの中だけです",
             [$@"{editor_prefix}:swap_right_and_middle_mouse"] = @"右クリックとホイールを入れ替え",
 
             // backups
