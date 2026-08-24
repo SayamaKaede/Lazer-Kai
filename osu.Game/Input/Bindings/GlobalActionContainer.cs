@@ -115,6 +115,11 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleReferenceDifficulty),
             new KeyBinding(InputKey.None, GlobalAction.EditorNextReferenceDifficulty),
             new KeyBinding(InputKey.None, GlobalAction.EditorPreviousReferenceDifficulty),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleDifficultyGraph),
+            new KeyBinding(InputKey.None, GlobalAction.EditorTogglePlayAreaBorder),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleOffscreenDetection),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleLeftToolboxExpansion),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimelinePointLabels),
         };
 
         private static IEnumerable<KeyBinding> globalKeyBindings => new[]
@@ -709,6 +714,21 @@ namespace osu.Game.Input.Bindings
 
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorPreviousReferenceDifficulty))]
         EditorPreviousReferenceDifficulty,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleDifficultyGraph))]
+        EditorToggleDifficultyGraph,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorTogglePlayAreaBorder))]
+        EditorTogglePlayAreaBorder,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleOffscreenDetection))]
+        EditorToggleOffscreenDetection,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleLeftToolboxExpansion))]
+        EditorToggleLeftToolboxExpansion,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleTimelinePointLabels))]
+        EditorToggleTimelinePointLabels,
     }
 
     public enum GlobalActionCategory

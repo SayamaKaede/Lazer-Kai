@@ -555,7 +555,8 @@ namespace osu.Game.Screens.Edit
                                                     },
                                                     new ToggleMenuItem(EditorStrings.AlwaysExpandTimelinePointLabels)
                                                     {
-                                                        State = { BindTarget = editorAlwaysExpandTimelinePointLabels }
+                                                        State = { BindTarget = editorAlwaysExpandTimelinePointLabels },
+                                                        Hotkey = new Hotkey(GlobalAction.EditorToggleTimelinePointLabels),
                                                     },
                                                 ]
                                             },
@@ -574,18 +575,22 @@ namespace osu.Game.Screens.Edit
                                             new ToggleMenuItem(EditorStrings.AlwaysExpandLeftToolbox)
                                             {
                                                 State = { BindTarget = editorAlwaysExpandLeftToolbox },
+                                                Hotkey = new Hotkey(GlobalAction.EditorToggleLeftToolboxExpansion),
                                             },
                                             new ToggleMenuItem(EditorStrings.ShowDifficultyGraph)
                                             {
                                                 State = { BindTarget = editorShowDifficultyGraph },
+                                                Hotkey = new Hotkey(GlobalAction.EditorToggleDifficultyGraph),
                                             },
                                             new ToggleMenuItem(EditorStrings.ShowPlayAreaBorder)
                                             {
                                                 State = { BindTarget = editorShowPlayAreaBorder },
+                                                Hotkey = new Hotkey(GlobalAction.EditorTogglePlayAreaBorder),
                                             },
                                             new ToggleMenuItem(EditorStrings.DetectOffscreen)
                                             {
                                                 State = { BindTarget = editorDetectOffscreen },
+                                                Hotkey = new Hotkey(GlobalAction.EditorToggleOffscreenDetection),
                                             },
                                             new OsuMenuItemSpacer(),
                                             new BackgroundDimMenuItem(editorBackgroundDim),
@@ -725,13 +730,13 @@ namespace osu.Game.Screens.Edit
             hitsoundsAudible.BindValueChanged(audible =>
             {
                 updateSampleDisabledState();
-                announceAudioState(EditorStrings.Hitsounds, audible.NewValue);
+                announceEnabled(EditorStrings.Hitsounds, audible.NewValue);
             });
 
             musicAudible.BindValueChanged(audible =>
             {
                 updateTrackMute();
-                announceAudioState(EditorStrings.Music, audible.NewValue);
+                announceEnabled(EditorStrings.Music, audible.NewValue);
             });
 
             // reported as what the rows are doing rather than as the setting being on, which reads as a double
@@ -743,6 +748,21 @@ namespace osu.Game.Screens.Edit
             // through them from the keyboard leaves the menu closed.
             referenceDifficulty.Selected.BindValueChanged(_ =>
                 announceState(EditorStrings.ReferenceDifficulty, referenceDifficultyName()));
+
+            // reported as what is on screen for the two that show something, and as the switch being on for the three
+            // that change how the editor behaves.
+            editorShowDifficultyGraph.BindValueChanged(shown =>
+                announceState(EditorStrings.ShowDifficultyGraph, shown.NewValue ? EditorStrings.Shown : EditorStrings.Hidden));
+
+            editorShowPlayAreaBorder.BindValueChanged(shown =>
+                announceState(EditorStrings.ShowPlayAreaBorder, shown.NewValue ? EditorStrings.Shown : EditorStrings.Hidden));
+
+            editorDetectOffscreen.BindValueChanged(on => announceEnabled(EditorStrings.DetectOffscreen, on.NewValue));
+
+            editorAlwaysExpandLeftToolbox.BindValueChanged(on => announceEnabled(EditorStrings.AlwaysExpandLeftToolbox, on.NewValue));
+
+            editorAlwaysExpandTimelinePointLabels.BindValueChanged(on =>
+                announceEnabled(EditorStrings.AlwaysExpandTimelinePointLabels, on.NewValue));
 
             // the composer reads the mod preview settings when it is constructed, so it has to be rebuilt for a change to take effect.
             editorApplyTestPlayModsToComposer.BindValueChanged(_ => reloadComposeScreen());
@@ -1100,6 +1120,26 @@ namespace osu.Game.Screens.Edit
                 case GlobalAction.EditorPreviousReferenceDifficulty:
                     referenceDifficulty.Cycle(-1);
                     announceNothingToGhost();
+                    return true;
+
+                case GlobalAction.EditorToggleDifficultyGraph:
+                    editorShowDifficultyGraph.Value = !editorShowDifficultyGraph.Value;
+                    return true;
+
+                case GlobalAction.EditorTogglePlayAreaBorder:
+                    editorShowPlayAreaBorder.Value = !editorShowPlayAreaBorder.Value;
+                    return true;
+
+                case GlobalAction.EditorToggleOffscreenDetection:
+                    editorDetectOffscreen.Value = !editorDetectOffscreen.Value;
+                    return true;
+
+                case GlobalAction.EditorToggleLeftToolboxExpansion:
+                    editorAlwaysExpandLeftToolbox.Value = !editorAlwaysExpandLeftToolbox.Value;
+                    return true;
+
+                case GlobalAction.EditorToggleTimelinePointLabels:
+                    editorAlwaysExpandTimelinePointLabels.Value = !editorAlwaysExpandTimelinePointLabels.Value;
                     return true;
 
                 case GlobalAction.EditorDiscardUnsavedChanges:
@@ -1527,14 +1567,11 @@ namespace osu.Game.Screens.Edit
         }
 
         /// <summary>
-        /// Puts the mute on the track the editor is playing, or takes it off.
-        /// </summary>
-        /// <summary>
         /// Calls out a switch the same way every other editor shortcut does, since the menu bar may not be where the
         /// user is looking when a key binding flips it.
         /// </summary>
-        private void announceAudioState(LocalisableString what, bool audible)
-            => announceState(what, audible ? CommonStrings.Enabled.ToLower() : CommonStrings.Disabled.ToLower());
+        private void announceEnabled(LocalisableString what, bool on)
+            => announceState(what, on ? CommonStrings.Enabled.ToLower() : CommonStrings.Disabled.ToLower());
 
         /// <summary>
         /// Reports something the editor just did, for actions whose key binding has no other visible result.
@@ -1565,6 +1602,9 @@ namespace osu.Game.Screens.Edit
                 announceState(EditorStrings.ReferenceDifficulty, EditorStrings.ReferenceDifficultyNone);
         }
 
+        /// <summary>
+        /// Puts the mute on the track the editor is playing, or takes it off.
+        /// </summary>
         private void updateTrackMute()
         {
             var target = trackHeld && !musicAudible.Value ? Beatmap.Value.Track : null;

@@ -269,6 +269,36 @@ namespace osu.Game.Localisation
             new TranslatableString(getKey(@"editor_previous_reference_difficulty"), @"Ghost the next difficulty down");
 
         /// <summary>
+        /// "Toggle the difficulty graph"
+        /// </summary>
+        public static LocalisableString EditorToggleDifficultyGraph =>
+            new TranslatableString(getKey(@"editor_toggle_difficulty_graph"), @"Toggle the difficulty graph");
+
+        /// <summary>
+        /// "Toggle the play area border"
+        /// </summary>
+        public static LocalisableString EditorTogglePlayAreaBorder =>
+            new TranslatableString(getKey(@"editor_toggle_play_area_border"), @"Toggle the play area border");
+
+        /// <summary>
+        /// "Toggle offscreen detection"
+        /// </summary>
+        public static LocalisableString EditorToggleOffscreenDetection =>
+            new TranslatableString(getKey(@"editor_toggle_offscreen_detection"), @"Toggle offscreen detection");
+
+        /// <summary>
+        /// "Toggle keeping the left toolbox expanded"
+        /// </summary>
+        public static LocalisableString EditorToggleLeftToolboxExpansion =>
+            new TranslatableString(getKey(@"editor_toggle_left_toolbox_expansion"), @"Toggle keeping the left toolbox expanded");
+
+        /// <summary>
+        /// "Toggle keeping the timeline labels expanded"
+        /// </summary>
+        public static LocalisableString EditorToggleTimelinePointLabels =>
+            new TranslatableString(getKey(@"editor_toggle_timeline_point_labels"), @"Toggle keeping the timeline labels expanded");
+
+        /// <summary>
         /// "Decrease slider velocity"
         /// </summary>
         public static LocalisableString EditorDecreaseSliderVelocity =>
