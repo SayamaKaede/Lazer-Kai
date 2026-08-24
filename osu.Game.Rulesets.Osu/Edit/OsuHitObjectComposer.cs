@@ -118,6 +118,19 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         private readonly Bindable<bool> hideGridFromPointsTool = new Bindable<bool>();
 
+        private readonly Bindable<bool> swapRightAndMiddleMouse = new Bindable<bool>();
+
+        /// <summary>
+        /// The button which turns new combo on and off.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately tied to the physical right button rather than to <see cref="MouseButton.Right"/>, the same way
+        /// a slider's path is finished: this is stable's muscle memory and belongs on the button the hand reaches for,
+        /// whether or not the two are swapped. The swap happens at the input source, so that button arrives here as
+        /// <see cref="MouseButton.Middle"/>.
+        /// </remarks>
+        private MouseButton newComboButton => swapRightAndMiddleMouse.Value ? MouseButton.Middle : MouseButton.Right;
+
         private readonly Bindable<TernaryState> rectangularGridSnapToggle = new Bindable<TernaryState>();
 
         protected override Drawable CreateHitObjectInspector() => new OsuHitObjectInspector(DistanceSnapProvider);
@@ -155,6 +168,7 @@ namespace osu.Game.Rulesets.Osu.Edit
         {
             // the toolbox buttons are added by the base composer, which has already run by this point.
             config.BindWith(OsuSetting.EditorHideGridFromPointsTool, hideGridFromPointsTool);
+            config.BindWith(OsuSetting.SwapRightAndMiddleMouse, swapRightAndMiddleMouse);
             hideGridFromPointsTool.BindValueChanged(hidden => SetToolVisibility(gridFromPointsTool, !hidden.NewValue), true);
 
             AddInternal(DistanceSnapProvider);
@@ -453,7 +467,7 @@ namespace osu.Game.Rulesets.Osu.Edit
             //     |- (Osu)HitObjectComposer               // right click for toggle new combo
             //        |- (Osu)EditorBlueprintContainer     // right click for select
             //           |- (Osu)EditorSelectionHandler    // right click for delete
-            if (e.Button == MouseButton.Right)
+            if (e.Button == newComboButton)
             {
                 var osuSelectionHandler = (OsuSelectionHandler)BlueprintContainer.SelectionHandler;
 
