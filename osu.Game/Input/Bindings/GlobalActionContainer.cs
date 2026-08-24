@@ -112,6 +112,9 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleHitsounds),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleMusic),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimelinePoints),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleReferenceDifficulty),
+            new KeyBinding(InputKey.None, GlobalAction.EditorNextReferenceDifficulty),
+            new KeyBinding(InputKey.None, GlobalAction.EditorPreviousReferenceDifficulty),
         };
 
         private static IEnumerable<KeyBinding> globalKeyBindings => new[]
@@ -697,6 +700,15 @@ namespace osu.Game.Input.Bindings
         // integer already sitting in someone's realm, and appending is the only place that holds for both.
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleTimelinePoints))]
         EditorToggleTimelinePoints,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleReferenceDifficulty))]
+        EditorToggleReferenceDifficulty,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorNextReferenceDifficulty))]
+        EditorNextReferenceDifficulty,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorPreviousReferenceDifficulty))]
+        EditorPreviousReferenceDifficulty,
     }
 
     public enum GlobalActionCategory

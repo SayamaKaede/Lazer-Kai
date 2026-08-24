@@ -46,6 +46,69 @@ namespace osu.Game.Screens.Edit
 
         private CancellationTokenSource? loadCancellation;
 
+        /// <summary>
+        /// The difficulties that can be shown, easiest first.
+        /// </summary>
+        /// <remarks>
+        /// A converted difficulty is not what that difficulty looks like, so only ones sharing this beatmap's ruleset
+        /// are offered. Ordered by star rating because that is the order a spread is thought about.
+        /// </remarks>
+        public BeatmapInfo[] Available => editorBeatmap.BeatmapInfo.BeatmapSet?.Beatmaps
+                                                       .Where(b => !b.Equals(editorBeatmap.BeatmapInfo) && b.Ruleset.Equals(editorBeatmap.BeatmapInfo.Ruleset))
+                                                       .OrderBy(b => b.StarRating)
+                                                       .ToArray()
+                                          ?? Array.Empty<BeatmapInfo>();
+
+        /// <summary>
+        /// The difficulty last shown, so that turning the ghost off and on again brings back the same one.
+        /// </summary>
+        private Guid lastShown;
+
+        /// <summary>
+        /// Shows the ghost, or puts it away.
+        /// </summary>
+        public void Toggle()
+        {
+            if (Selected.Value != Guid.Empty)
+            {
+                lastShown = Selected.Value;
+                Selected.Value = Guid.Empty;
+                return;
+            }
+
+            var available = Available;
+
+            if (available.Length == 0)
+                return;
+
+            Selected.Value = available.Any(b => b.ID == lastShown) ? lastShown : available[0].ID;
+        }
+
+        /// <summary>
+        /// Moves to the next difficulty in <see cref="Available"/>, or the previous one for a negative
+        /// <paramref name="direction"/>.
+        /// </summary>
+        /// <remarks>
+        /// Nothing here selects <see cref="Guid.Empty"/>: putting the ghost away belongs to <see cref="Toggle"/>, so
+        /// stepping never lands on an empty position on the way past. From nothing shown, stepping starts at whichever
+        /// end was stepped towards.
+        /// </remarks>
+        public void Cycle(int direction)
+        {
+            var available = Available;
+
+            if (available.Length == 0)
+                return;
+
+            int current = Array.FindIndex(available, b => b.ID == Selected.Value);
+
+            int next = current < 0
+                ? direction > 0 ? 0 : available.Length - 1
+                : (current + direction + available.Length) % available.Length;
+
+            Selected.Value = available[next].ID;
+        }
+
         protected override void LoadComplete()
         {
             base.LoadComplete();

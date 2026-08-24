@@ -13,7 +13,7 @@ namespace osu.Game.Screens.Edit
     /// <summary>
     /// A submenu presenting a fixed set of values for a setting, with the active one ticked.
     /// </summary>
-    internal class ChoiceMenuItem<T> : MenuItem
+    internal class ChoiceMenuItem<T> : OsuMenuItem
         where T : notnull
     {
         private readonly Bindable<T> current;

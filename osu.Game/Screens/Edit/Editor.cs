@@ -739,6 +739,11 @@ namespace osu.Game.Screens.Edit
             editorHideTimelinePoints.BindValueChanged(hidden =>
                 announceState(EditorStrings.TimelinePointRows, hidden.NewValue ? EditorStrings.Hidden : EditorStrings.Shown));
 
+            // named rather than described: which difficulty is being ghosted is the whole question, and stepping
+            // through them from the keyboard leaves the menu closed.
+            referenceDifficulty.Selected.BindValueChanged(_ =>
+                announceState(EditorStrings.ReferenceDifficulty, referenceDifficultyName()));
+
             // the composer reads the mod preview settings when it is constructed, so it has to be rebuilt for a change to take effect.
             editorApplyTestPlayModsToComposer.BindValueChanged(_ => reloadComposeScreen());
             testPlayModsController.SelectionChanged += onTestPlayModsChanged;
@@ -1082,6 +1087,21 @@ namespace osu.Game.Screens.Edit
                     editorHideTimelinePoints.Value = !editorHideTimelinePoints.Value;
                     return true;
 
+                case GlobalAction.EditorToggleReferenceDifficulty:
+                    referenceDifficulty.Toggle();
+                    announceNothingToGhost();
+                    return true;
+
+                case GlobalAction.EditorNextReferenceDifficulty:
+                    referenceDifficulty.Cycle(1);
+                    announceNothingToGhost();
+                    return true;
+
+                case GlobalAction.EditorPreviousReferenceDifficulty:
+                    referenceDifficulty.Cycle(-1);
+                    announceNothingToGhost();
+                    return true;
+
                 case GlobalAction.EditorDiscardUnsavedChanges:
                     DiscardUnsavedChanges();
                     return true;
@@ -1281,13 +1301,12 @@ namespace osu.Game.Screens.Edit
         {
             var choices = new List<(LocalisableString, Guid)> { (EditorStrings.ReferenceDifficultyNone, Guid.Empty) };
 
-            choices.AddRange(editorBeatmap.BeatmapInfo.BeatmapSet?.Beatmaps
-                                          .Where(b => !b.Equals(editorBeatmap.BeatmapInfo) && b.Ruleset.Equals(editorBeatmap.BeatmapInfo.Ruleset))
-                                          .OrderBy(b => b.StarRating)
-                                          .Select(b => ((LocalisableString)b.DifficultyName, b.ID))
-                             ?? Enumerable.Empty<(LocalisableString, Guid)>());
+            choices.AddRange(referenceDifficulty.Available.Select(b => ((LocalisableString)b.DifficultyName, b.ID)));
 
-            return new ChoiceMenuItem<Guid>(EditorStrings.ReferenceDifficulty, referenceDifficulty.Selected, choices);
+            return new ChoiceMenuItem<Guid>(EditorStrings.ReferenceDifficulty, referenceDifficulty.Selected, choices)
+            {
+                Hotkey = new Hotkey(GlobalAction.EditorToggleReferenceDifficulty)
+            };
         }
 
         private EditorMenuItem insertBreakMenuItem;
@@ -1522,6 +1541,29 @@ namespace osu.Game.Screens.Edit
         /// </summary>
         private void announceState(LocalisableString what, LocalisableString state)
             => onScreenDisplay?.Display(new EditorToast(what, state));
+
+        /// <summary>
+        /// The name of the difficulty being ghosted, or that there is none.
+        /// </summary>
+        private LocalisableString referenceDifficultyName()
+        {
+            var shown = referenceDifficulty.Available.FirstOrDefault(b => b.ID == referenceDifficulty.Selected.Value);
+
+            return shown == null ? EditorStrings.ReferenceDifficultyNone : (LocalisableString)shown.DifficultyName;
+        }
+
+        /// <summary>
+        /// Says so when there is no other difficulty to ghost.
+        /// </summary>
+        /// <remarks>
+        /// The toast otherwise rides on the selection changing, and in a set of one nothing changes — leaving a key
+        /// that reads as broken rather than as having nothing to do.
+        /// </remarks>
+        private void announceNothingToGhost()
+        {
+            if (referenceDifficulty.Available.Length == 0)
+                announceState(EditorStrings.ReferenceDifficulty, EditorStrings.ReferenceDifficultyNone);
+        }
 
         private void updateTrackMute()
         {

@@ -251,6 +251,24 @@ namespace osu.Game.Localisation
         public static LocalisableString EditorToggleTimelinePoints => new TranslatableString(getKey(@"editor_toggle_timeline_points"), @"Toggle timeline velocity and volume rows");
 
         /// <summary>
+        /// "Show or hide the ghost difficulty"
+        /// </summary>
+        public static LocalisableString EditorToggleReferenceDifficulty =>
+            new TranslatableString(getKey(@"editor_toggle_reference_difficulty"), @"Show or hide the ghost difficulty");
+
+        /// <summary>
+        /// "Ghost the next difficulty up"
+        /// </summary>
+        public static LocalisableString EditorNextReferenceDifficulty =>
+            new TranslatableString(getKey(@"editor_next_reference_difficulty"), @"Ghost the next difficulty up");
+
+        /// <summary>
+        /// "Ghost the next difficulty down"
+        /// </summary>
+        public static LocalisableString EditorPreviousReferenceDifficulty =>
+            new TranslatableString(getKey(@"editor_previous_reference_difficulty"), @"Ghost the next difficulty down");
+
+        /// <summary>
         /// "Decrease slider velocity"
         /// </summary>
         public static LocalisableString EditorDecreaseSliderVelocity =>
