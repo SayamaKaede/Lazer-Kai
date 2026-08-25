@@ -68,6 +68,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:show_difficulty_graph"] = @"難易度グラフ",
             [$@"{editor_prefix}:difficulty_graph_colour"] = @"難易度グラフの色",
             [$@"{editor_prefix}:difficulty_graph_opacity"] = @"難易度グラフの不透明度",
+            [$@"{editor_prefix}:difficulty_graph_column_length"] = @"難易度グラフの細かさ",
+            [$@"{editor_prefix}:difficulty_graph_column_length_description"] = @"グラフの1列が曲のどれだけを表すか。短くするほど細かくなります。長い譜面は列の幅が広がるのではなく、列数が増えます",
             [$@"{editor_prefix}:loop_playback"] = @"ループ再生",
             [$@"{editor_prefix}:show_timeline"] = @"タイムライン",
             [$@"{editor_prefix}:hitsounds"] = @"効果音",

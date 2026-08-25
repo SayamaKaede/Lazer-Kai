@@ -48,9 +48,44 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
         private const double recalculate_debounce = 2000;
 
         /// <summary>
-        /// Number of columns the curve is drawn with. Enough to read the shape, few enough to stay cheap.
+        /// How long one column stands for by default, in milliseconds.
         /// </summary>
-        private const int resolution = 400;
+        /// <remarks>
+        /// Chosen so a beatmap of ordinary length is drawn with the four hundred columns the graph used to use for
+        /// every beatmap, whatever its length.
+        /// </remarks>
+        public const float DEFAULT_COLUMN_LENGTH = 375;
+
+        /// <summary>
+        /// Fewest columns the curve is drawn with, so a beatmap of a few seconds still reads as a shape.
+        /// </summary>
+        public const int MIN_COLUMNS = 20;
+
+        /// <summary>
+        /// Most columns the curve is drawn with.
+        /// </summary>
+        /// <remarks>
+        /// The graph is drawn across the width of the summary timeline, so past roughly a column per pixel there is
+        /// nothing left to tell apart — and every column is a drawable, which a marathon at the finest setting would
+        /// otherwise ask for thousands of.
+        /// </remarks>
+        public const int MAX_COLUMNS = 1200;
+
+        /// <summary>
+        /// How many columns a beatmap of this length is drawn with, at this setting.
+        /// </summary>
+        /// <remarks>
+        /// A column stands for a fixed stretch of the song rather than a fixed fraction of it. Drawn across a width
+        /// that does not grow with the beatmap, a fixed count means each of a marathon's columns swallows seconds of
+        /// the song and its shape goes flat.
+        /// </remarks>
+        public static int ColumnCountFor(double trackLength, double columnLength)
+        {
+            if (columnLength <= 0)
+                return MIN_COLUMNS;
+
+            return Math.Clamp((int)(trackLength / columnLength), MIN_COLUMNS, MAX_COLUMNS);
+        }
 
         [Resolved]
         private EditorBeatmap editorBeatmap { get; set; } = null!;
@@ -61,13 +96,19 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
         [Resolved]
         private Bindable<RulesetInfo> ruleset { get; set; } = null!;
 
-        private Container graph = null!;
+        private BufferedContainer<Box> graph = null!;
         private Color4 defaultColour;
-        private Container<Box> bars = null!;
 
         private readonly Bindable<bool> enabled = new Bindable<bool>();
         private readonly Bindable<EditorSelectionColour> colour = new Bindable<EditorSelectionColour>();
         private readonly Bindable<float> opacity = new Bindable<float>();
+        private readonly Bindable<float> columnLength = new Bindable<float>(DEFAULT_COLUMN_LENGTH);
+
+        /// <summary>
+        /// The last difficulty worked out, kept so changing how fine the graph is drawn redraws it rather than
+        /// calculating the whole beatmap again — the difficulty has not changed, only how it is being cut up.
+        /// </summary>
+        private DifficultyBreakdown? lastBreakdown;
 
         /// <summary>
         /// Whether the graph currently has anything to show, so appearance changes do not reveal an empty one.
@@ -84,16 +125,22 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
 
             defaultColour = colourProvider.Highlight1;
 
-            InternalChild = graph = new Container
+            // buffered so the fade lands on a finished picture rather than on each bar. The bars are drawn half a
+            // column wider than their slot so neighbours meet, which means every bar overlaps the next, and framework
+            // alpha applied per drawable would paint those overlapping halves twice. Where a tall bar meets a short
+            // one that reads as a bright curve following the shorter and a dim one following the taller — two curves,
+            // from one set of numbers. Rendering to a buffer first is what the framework offers this for.
+            InternalChild = graph = new BufferedContainer<Box>(cachedFrameBuffer: true)
             {
                 RelativeSizeAxes = Axes.Both,
+                RedrawOnScale = false,
                 Alpha = 0,
-                Child = bars = new Container<Box> { RelativeSizeAxes = Axes.Both },
             };
 
             config.BindWith(OsuSetting.EditorShowDifficultyGraph, enabled);
             config.BindWith(OsuSetting.EditorDifficultyGraphColour, colour);
             config.BindWith(OsuSetting.EditorDifficultyGraphOpacity, opacity);
+            config.BindWith(OsuSetting.EditorDifficultyGraphColumnLength, columnLength);
         }
 
         protected override void LoadComplete()
@@ -105,6 +152,13 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
 
             colour.BindValueChanged(_ => updateAppearance());
             opacity.BindValueChanged(_ => updateAppearance(), true);
+
+            // only how the difficulty is cut up has changed, so the beatmap does not have to be measured again.
+            columnLength.BindValueChanged(_ =>
+            {
+                if (lastBreakdown != null)
+                    display(lastBreakdown);
+            });
         }
 
         /// <summary>
@@ -178,7 +232,8 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
 
         private void display(DifficultyBreakdown breakdown)
         {
-            bars.Clear();
+            lastBreakdown = breakdown;
+            graph.Clear();
 
             double[] difficulties = breakdown.GetCombinedDifficulties();
 
@@ -194,6 +249,8 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
 
             if (trackLength <= 0)
                 return;
+
+            int resolution = ColumnCountFor(trackLength, columnLength.Value);
 
             // the curve is bucketed by time rather than by object, so a dense burst reads as tall rather than wide.
             double[] buckets = new double[resolution];
@@ -223,7 +280,7 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
                 if (buckets[i] <= 0)
                     continue;
 
-                bars.Add(new Box
+                graph.Add(new Box
                 {
                     RelativePositionAxes = Axes.X,
                     RelativeSizeAxes = Axes.Both,
@@ -237,6 +294,10 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
             }
 
             hasContent = true;
+
+            // the buffer is kept between frames, so it has to be told the shape inside it changed.
+            graph.ForceRedraw();
+
             updateAppearance();
         }
 

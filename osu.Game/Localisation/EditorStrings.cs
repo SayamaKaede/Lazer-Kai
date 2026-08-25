@@ -530,6 +530,17 @@ namespace osu.Game.Localisation
         public static LocalisableString DifficultyGraphOpacity => new TranslatableString(getKey(@"difficulty_graph_opacity"), @"Difficulty graph opacity");
 
         /// <summary>
+        /// "Difficulty graph detail"
+        /// </summary>
+        public static LocalisableString DifficultyGraphColumnLength => new TranslatableString(getKey(@"difficulty_graph_column_length"), @"Difficulty graph detail");
+
+        /// <summary>
+        /// "How much of the song each column of the graph stands for. A longer beatmap is drawn with more columns rather than wider ones."
+        /// </summary>
+        public static LocalisableString DifficultyGraphColumnLengthDescription => new TranslatableString(getKey(@"difficulty_graph_column_length_description"),
+            @"How much of the song each column of the graph stands for. A longer beatmap is drawn with more columns rather than wider ones.");
+
+        /// <summary>
         /// "Loop playback"
         /// </summary>
         public static LocalisableString LoopPlayback => new TranslatableString(getKey(@"loop_playback"), @"Loop playback");

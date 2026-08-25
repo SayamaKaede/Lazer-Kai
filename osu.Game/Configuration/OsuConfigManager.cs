@@ -20,6 +20,7 @@ using osu.Game.Overlays.Dashboard.Friends;
 using osu.Game.Overlays.Mods.Input;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Screens.Edit;
+using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
 using osu.Game.Screens.Edit.Compose.Components;
 using osu.Game.Screens.OnlinePlay.Lounge.Components;
 using osu.Game.Screens.Select;
@@ -289,6 +290,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorDifficultyGraphColumnLength, DifficultyGraphPart.DEFAULT_COLUMN_LENGTH, 50f, 1000f, 25f);
             SetDefault(OsuSetting.EditorLoopPlayback, false);
             SetDefault(OsuSetting.EditorAutoBackup, true);
             SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
@@ -726,6 +728,11 @@ namespace osu.Game.Configuration
         /// Opacity of the difficulty graph.
         /// </summary>
         EditorDifficultyGraphOpacity,
+
+        /// <summary>
+        /// How long one column of the editor's difficulty graph stands for, in milliseconds.
+        /// </summary>
+        EditorDifficultyGraphColumnLength,
 
         /// <summary>
         /// Whether editor playback returns to the start of the beatmap on reaching the end rather than stopping.

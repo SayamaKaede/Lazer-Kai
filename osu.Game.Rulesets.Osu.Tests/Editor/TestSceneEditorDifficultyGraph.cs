@@ -49,6 +49,29 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddUntilStep("nothing drawn again", () => barCount(), () => Is.Zero);
         }
 
+        /// <summary>
+        /// Placing objects is the thing a mapper does all day, and the curve is there to be glanced at while doing
+        /// it. Following only a save would mean the graph describes the beatmap as it was some minutes ago.
+        /// </summary>
+        [Test]
+        public void TestGraphFollowsAnEditWithoutBeingAskedTo()
+        {
+            AddStep("show the graph", () => config.SetValue(OsuSetting.EditorShowDifficultyGraph, true));
+
+            AddStep("empty the beatmap", () => EditorBeatmap.RemoveRange(EditorBeatmap.HitObjects.ToArray()));
+            recalculate();
+            AddUntilStep("nothing drawn", () => barCount(), () => Is.Zero);
+
+            AddStep("place a stream", () =>
+            {
+                for (int i = 0; i < 30; i++)
+                    EditorBeatmap.Add(new HitCircle { StartTime = 1000 + i * 125, Position = new Vector2(100 + i * 5, 100) });
+            });
+
+            // deliberately not asking for a recalculation: the point is that one happens on its own.
+            AddUntilStep("curve drawn on its own", () => barCount(), () => Is.GreaterThan(0));
+        }
+
         private void recalculate() => AddStep("recalculate", () => graph().RecalculateNow());
 
         private DifficultyGraphPart graph() => Editor.ChildrenOfType<DifficultyGraphPart>().Single();
