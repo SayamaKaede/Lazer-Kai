@@ -82,13 +82,13 @@ namespace osu.Game.Tests.Visual.Editing
         {
             // the head, the repeat and the tail are each set differently so none can be mistaken for another.
             seekToNode(0);
-            assertSamples("normal", "-", "100%");
+            assertSamples("N", "-", "100%");
 
             seekToNode(1);
-            assertSamples("soft", "drum", "50%");
+            assertSamples("S", "D", "50%");
 
             seekToNode(2);
-            assertSamples("drum", "soft", "5%");
+            assertSamples("D", "S", "5%");
         }
 
         /// <remarks>
@@ -98,10 +98,10 @@ namespace osu.Game.Tests.Visual.Editing
         public void TestPartWayAlongASpanTheNodeBeforeItHolds()
         {
             seekToNode(0.5);
-            assertSamples("normal", "-", "100%");
+            assertSamples("N", "-", "100%");
 
             seekToNode(1.5);
-            assertSamples("soft", "drum", "50%");
+            assertSamples("S", "D", "50%");
         }
 
         /// <remarks>
@@ -112,14 +112,14 @@ namespace osu.Game.Tests.Visual.Editing
         public void TestPastTheEndTheTailHolds()
         {
             seekToNode(2.5);
-            assertSamples("drum", "soft", "5%");
+            assertSamples("D", "S", "5%");
         }
 
         [Test]
         public void TestACircleStillReportsItsOwnSamples()
         {
             seekTo(500);
-            assertSamples("soft", "-", "70%");
+            assertSamples("S", "-", "70%");
         }
 
         [Test]
@@ -127,6 +127,25 @@ namespace osu.Game.Tests.Visual.Editing
         {
             seekTo(0);
             assertSamples("-", "-", "-");
+        }
+
+        /// <remarks>
+        /// Written the way the timeline writes it: the bank as one letter, and which sample set it plays from after
+        /// it. Set 1 is the beatmap's own files with no number on them and is not the same thing as the skin's, so it
+        /// is said out loud; only the skin's is left bare. The addition never repeats the number, because it always
+        /// plays from the same set as the normal beside it.
+        /// </remarks>
+        [Test]
+        public void TestTheSampleSetIsShownAfterTheBank()
+        {
+            seekTo(2000);
+            assertSamples("S:3", "D", "60%");
+
+            seekTo(2500);
+            assertSamples("S:1", "D", "60%");
+
+            seekTo(3000);
+            assertSamples("S", "D", "60%");
         }
 
         protected override IBeatmap CreateBeatmap(RulesetInfo ruleset)
@@ -141,6 +160,11 @@ namespace osu.Game.Tests.Visual.Editing
                         StartTime = 500,
                         Samples = samples("soft", null, 70),
                     },
+                    // the three sample sets a note can play from: a numbered one, the beatmap's own files with no
+                    // number, and the skin's.
+                    new HitCircle { StartTime = 2000, Samples = setOf("3", useBeatmapSamples: true) },
+                    new HitCircle { StartTime = 2500, Samples = setOf(null, useBeatmapSamples: true) },
+                    new HitCircle { StartTime = 3000, Samples = setOf(null, useBeatmapSamples: false) },
                     new Slider
                     {
                         StartTime = 1000,
@@ -166,6 +190,15 @@ namespace osu.Game.Tests.Visual.Editing
 
             return beatmap;
         }
+
+        /// <summary>
+        /// A soft normal and a drum addition, both playing from the sample set described.
+        /// </summary>
+        private static List<HitSampleInfo> setOf(string? suffix, bool useBeatmapSamples) => new List<HitSampleInfo>
+        {
+            new HitSampleInfo(HitSampleInfo.HIT_NORMAL, "soft", suffix, 60, useBeatmapSamples: useBeatmapSamples),
+            new HitSampleInfo(HitSampleInfo.HIT_CLAP, "drum", suffix, 60, editorAutoBank: false, useBeatmapSamples: useBeatmapSamples),
+        };
 
         private static List<HitSampleInfo> samples(string bank, string? additionBank, int volume)
         {

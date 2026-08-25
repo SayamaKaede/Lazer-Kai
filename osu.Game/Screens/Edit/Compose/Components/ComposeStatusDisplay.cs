@@ -278,9 +278,58 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
             var samples = samplesAt(current, editorClock.CurrentTime);
 
-            normalBank.Text = $"{SamplePointPiece.GetBankValue(samples) ?? @"-"}{SamplePointPiece.GetSuffix(samples)}";
-            additionBank.Text = SamplePointPiece.GetAdditionBankValue(samples) ?? @"-";
+            normalBank.Text = bankReadout(SamplePointPiece.GetBankValue(samples), samples.Where(s => s.Name == HitSampleInfo.HIT_NORMAL));
+
+            // an addition always plays from the same set as the normal beside it, so saying which one twice only
+            // takes room the panel does not have.
+            additionBank.Text = SamplePointPiece.AbbreviateBank(SamplePointPiece.GetAdditionBankValue(samples)) ?? @"-";
+
             sampleVolume.Text = @$"{SamplePointPiece.GetVolumeValue(samples)}%";
+        }
+
+        /// <summary>
+        /// A bank the way the timeline writes it a few centimetres away: one letter, followed by which sample set it
+        /// plays from when that is not the skin's own.
+        /// </summary>
+        /// <remarks>
+        /// Set 1 is the beatmap's own files with no number on them, which is a different thing from the skin's and
+        /// worth saying out loud. Only set 0 — the skin's — reads as a bank on its own.
+        /// </remarks>
+        private static string bankReadout(string? bank, IEnumerable<HitSampleInfo> samples)
+        {
+            if (bank == null)
+                return @"-";
+
+            string letter = SamplePointPiece.AbbreviateBank(bank) ?? bank;
+            int? set = sampleSetOf(samples);
+
+            return set is null or 0 ? letter : $@"{letter}:{set}";
+        }
+
+        /// <summary>
+        /// Which sample set every one of <paramref name="samples"/> plays from, or null when they disagree.
+        /// </summary>
+        /// <remarks>
+        /// Worked out the same way the sample popover works out which of its buttons to light up: no suffix means the
+        /// skin's or the beatmap's depending on which files are being used, and a suffix is the number itself.
+        /// </remarks>
+        private static int? sampleSetOf(IEnumerable<HitSampleInfo> samples)
+        {
+            int? common = null;
+
+            foreach (var sample in samples)
+            {
+                int set = sample.Suffix == null
+                    ? sample.UseBeatmapSamples ? 1 : 0
+                    : int.TryParse(sample.Suffix, out int suffix) ? suffix : 0;
+
+                if (common != null && common != set)
+                    return null;
+
+                common = set;
+            }
+
+            return common;
         }
 
         /// <summary>

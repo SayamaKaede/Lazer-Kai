@@ -134,13 +134,20 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private void updateText()
         {
-            Label.Text = $"{abbreviateBank(GetBankValue(GetSamples()))}{GetSuffix(GetSamples())} {GetVolumeValue(GetSamples())}";
+            Label.Text = $"{AbbreviateBank(GetBankValue(GetSamples()))}{GetSuffix(GetSamples())} {GetVolumeValue(GetSamples())}";
 
             if (!contracted.Value)
                 LabelContainer.ResizeWidthTo(Label.Width, 200, Easing.OutQuint);
         }
 
-        private static string? abbreviateBank(string? bank)
+        /// <summary>
+        /// A bank as a single letter, the way the timeline writes it.
+        /// </summary>
+        /// <remarks>
+        /// Public so the composer's status panel reads a bank out the same way, rather than spelling out what the
+        /// timeline abbreviates a few centimetres away.
+        /// </remarks>
+        public static string? AbbreviateBank(string? bank)
         {
             return bank switch
             {
