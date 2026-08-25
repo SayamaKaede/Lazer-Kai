@@ -32,9 +32,9 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
     /// Plots how hard the beatmap is over its length, behind the rest of the summary timeline.
     /// </summary>
     /// <remarks>
-    /// The curve adds up what every skill made of each object. Skills are not on a shared scale and their sum is not
-    /// a star rating, so the height carries no unit: it is there to show where the dense and quiet parts of a beatmap
-    /// are relative to one another.
+    /// The curve adds up what each of the ruleset's skills made of every object — for osu!, aim and speed and
+    /// reading. Skills are not on a shared scale and their sum is not a star rating, so the height carries no unit:
+    /// it is there to show where the dense and quiet parts of a beatmap are relative to one another.
     /// </remarks>
     public partial class DifficultyGraphPart : CompositeDrawable
     {
