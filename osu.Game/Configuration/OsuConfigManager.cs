@@ -241,6 +241,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorColourScheme, OverlayColourScheme.Aquamarine);
             SetDefault(OsuSetting.EditorSeekAnimationDuration, 300.0, 0.0, 300.0, 50.0);
             SetDefault(OsuSetting.EditorAlwaysExpandLeftToolbox, false);
+            SetDefault(OsuSetting.EditorLeftToolboxWidth, 200f, 120f, 400f, 1f);
+            SetDefault(OsuSetting.EditorRightToolboxWidth, 250f, 150f, 500f, 1f);
             SetDefault(OsuSetting.RemoveDragThreshold, false);
             SetDefault(OsuSetting.EditorShowPlayAreaBorder, true);
             SetDefault(OsuSetting.EditorDetectOffscreen, true);

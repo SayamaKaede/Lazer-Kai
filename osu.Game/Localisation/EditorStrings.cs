@@ -600,6 +600,16 @@ namespace osu.Game.Localisation
         public static LocalisableString AlwaysExpandLeftToolbox => new TranslatableString(getKey(@"always_expand_left_toolbox"), @"Keep left toolbox expanded");
 
         /// <summary>
+        /// "Left toolbox width"
+        /// </summary>
+        public static LocalisableString LeftToolboxWidth => new TranslatableString(getKey(@"left_toolbox_width"), @"Left toolbox width");
+
+        /// <summary>
+        /// "Right toolbox width"
+        /// </summary>
+        public static LocalisableString RightToolboxWidth => new TranslatableString(getKey(@"right_toolbox_width"), @"Right toolbox width");
+
+        /// <summary>
         /// "Speed adjustment is unavailable while a mod that changes the speed is being previewed."
         /// </summary>
         public static LocalisableString PlaybackSpeedDrivenByMods => new TranslatableString(getKey(@"playback_speed_driven_by_mods"),

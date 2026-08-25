@@ -17,7 +17,29 @@ namespace osu.Game.Graphics.Containers
         public const double TRANSITION_DURATION = 500;
 
         private readonly float contractedWidth;
-        private readonly float expandedWidth;
+        private float expandedWidth;
+
+        /// <summary>
+        /// How wide this container is once expanded.
+        /// </summary>
+        /// <remarks>
+        /// Settable so the editor's toolboxes can be sized to taste. Changing it while the container is already open
+        /// resizes it there and then; changing it while closed is picked up the next time it opens.
+        /// </remarks>
+        public float ExpandedWidth
+        {
+            get => expandedWidth;
+            set
+            {
+                if (expandedWidth == value)
+                    return;
+
+                expandedWidth = value;
+
+                if (IsLoaded && Expanded.Value)
+                    this.ResizeWidthTo(expandedWidth, TRANSITION_DURATION, Easing.OutQuint);
+            }
+        }
 
         public BindableBool Expanded { get; } = new BindableBool();
 

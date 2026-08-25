@@ -107,6 +107,10 @@ namespace osu.Game.Rulesets.Edit
         private Bindable<bool> liveModPreview = null!;
         private Bindable<bool> alwaysExpandLeftToolbox = null!;
 
+        private Bindable<float> leftToolboxWidth = null!;
+
+        private Bindable<float> rightToolboxWidth = null!;
+
         /// <summary>
         /// Mods being previewed in the composer, if the user opted into previewing their gameplay test mods while editing.
         /// </summary>
@@ -132,6 +136,12 @@ namespace osu.Game.Rulesets.Edit
             advanceByPreviousSpacingOnPlacement = config.GetBindable<bool>(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement);
             liveModPreview = config.GetBindable<bool>(OsuSetting.EditorLiveModPreview);
             alwaysExpandLeftToolbox = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox);
+
+            // how wide the toolboxes open is a matter of how much of the playfield the mapper is willing to give up,
+            // and that answer differs with the screen and with what is being mapped. Bound in LoadComplete, because
+            // the toolboxes themselves are built further down this method.
+            leftToolboxWidth = config.GetBindable<float>(OsuSetting.EditorLeftToolboxWidth);
+            rightToolboxWidth = config.GetBindable<float>(OsuSetting.EditorRightToolboxWidth);
 
             if (editor != null)
             {
@@ -363,6 +373,9 @@ namespace osu.Game.Rulesets.Edit
             InputManager = GetContainingInputManager()!;
 
             LeftToolbox.AlwaysExpanded.BindTo(alwaysExpandLeftToolbox);
+
+            leftToolboxWidth.BindValueChanged(width => LeftToolbox.ExpandedWidth = width.NewValue, true);
+            rightToolboxWidth.BindValueChanged(width => RightToolbox.ExpandedWidth = width.NewValue, true);
 
             if (referenceDifficulty != null)
             {

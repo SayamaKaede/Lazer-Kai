@@ -73,6 +73,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:hitsounds"] = @"効果音",
             [$@"{editor_prefix}:music"] = @"音楽",
             [$@"{editor_prefix}:always_expand_left_toolbox"] = @"左ツールボックスを常に展開",
+            [$@"{editor_prefix}:left_toolbox_width"] = @"左バーを開いたときの幅",
+            [$@"{editor_prefix}:right_toolbox_width"] = @"右バーを開いたときの幅",
             [$@"{editor_prefix}:contract_sidebars"] = @"カーソルが乗っていない間はバーを縮める",
             [$@"{editor_prefix}:tool_button_squareness"] = @"Toolboxのボタンの高さ",
             [$@"{editor_prefix}:toggle_button_squareness"] = @"Togglesのボタンの高さ",
