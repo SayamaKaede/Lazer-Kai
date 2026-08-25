@@ -48,11 +48,10 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 }),
                 new SettingsItemV2(new FormSliderBar<float>
                 {
-                    Caption = EditorStrings.DifficultyGraphColumnLength,
-                    HintText = EditorStrings.DifficultyGraphColumnLengthDescription,
-                    Current = config.GetBindable<float>(OsuSetting.EditorDifficultyGraphColumnLength),
-                    KeyboardStep = 25,
-                    LabelFormat = v => $@"{v:N0} ms",
+                    Caption = EditorStrings.DifficultyGraphDetail,
+                    HintText = EditorStrings.DifficultyGraphDetailDescription,
+                    Current = config.GetBindable<float>(OsuSetting.EditorDifficultyGraphDetail),
+                    DisplayAsPercentage = true,
                 }),
                 new SettingsCheckbox
                 {

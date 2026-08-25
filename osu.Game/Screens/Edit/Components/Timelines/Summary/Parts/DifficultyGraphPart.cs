@@ -48,13 +48,14 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
         private const double recalculate_debounce = 2000;
 
         /// <summary>
-        /// How long one column stands for by default, in milliseconds.
+        /// Number of columns the curve is drawn with at full detail.
         /// </summary>
-        /// <remarks>
-        /// Chosen so a beatmap of ordinary length is drawn with the four hundred columns the graph used to use for
-        /// every beatmap, whatever its length.
-        /// </remarks>
-        public const float DEFAULT_COLUMN_LENGTH = 375;
+        public const int BASE_COLUMNS = 400;
+
+        /// <summary>
+        /// How densely the graph is drawn by default.
+        /// </summary>
+        public const float DEFAULT_DETAIL = 1;
 
         /// <summary>
         /// Fewest columns the curve is drawn with, so a beatmap of a few seconds still reads as a shape.
@@ -72,19 +73,23 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
         public const int MAX_COLUMNS = 1200;
 
         /// <summary>
-        /// How many columns a beatmap of this length is drawn with, at this setting.
+        /// How many columns the curve is drawn with, at this detail.
         /// </summary>
         /// <remarks>
-        /// A column stands for a fixed stretch of the song rather than a fixed fraction of it. Drawn across a width
-        /// that does not grow with the beatmap, a fixed count means each of a marathon's columns swallows seconds of
-        /// the song and its shape goes flat.
+        /// The length of the beatmap is deliberately not part of this. A column stands for a fraction of the song
+        /// rather than a stretch of it, so thirty seconds and ten minutes are drawn just as finely as one another —
+        /// which is the point, since both are drawn across the same width and read at a glance. Tying a column to a
+        /// length instead would leave a short beatmap coarse and a marathon at a density no screen can show.
+        ///
+        /// Detail is a proportion because it is one: nobody has an opinion about a column being three hundred and
+        /// seventy five milliseconds long. Twice the detail is twice the columns.
         /// </remarks>
-        public static int ColumnCountFor(double trackLength, double columnLength)
+        public static int ColumnCountFor(double detail)
         {
-            if (columnLength <= 0)
+            if (detail <= 0)
                 return MIN_COLUMNS;
 
-            return Math.Clamp((int)(trackLength / columnLength), MIN_COLUMNS, MAX_COLUMNS);
+            return Math.Clamp((int)(BASE_COLUMNS * detail), MIN_COLUMNS, MAX_COLUMNS);
         }
 
         [Resolved]
@@ -102,7 +107,7 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
         private readonly Bindable<bool> enabled = new Bindable<bool>();
         private readonly Bindable<EditorSelectionColour> colour = new Bindable<EditorSelectionColour>();
         private readonly Bindable<float> opacity = new Bindable<float>();
-        private readonly Bindable<float> columnLength = new Bindable<float>(DEFAULT_COLUMN_LENGTH);
+        private readonly Bindable<float> detail = new Bindable<float>(DEFAULT_DETAIL);
 
         /// <summary>
         /// The last difficulty worked out, kept so changing how fine the graph is drawn redraws it rather than
@@ -140,7 +145,7 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
             config.BindWith(OsuSetting.EditorShowDifficultyGraph, enabled);
             config.BindWith(OsuSetting.EditorDifficultyGraphColour, colour);
             config.BindWith(OsuSetting.EditorDifficultyGraphOpacity, opacity);
-            config.BindWith(OsuSetting.EditorDifficultyGraphColumnLength, columnLength);
+            config.BindWith(OsuSetting.EditorDifficultyGraphDetail, detail);
         }
 
         protected override void LoadComplete()
@@ -154,7 +159,7 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
             opacity.BindValueChanged(_ => updateAppearance(), true);
 
             // only how the difficulty is cut up has changed, so the beatmap does not have to be measured again.
-            columnLength.BindValueChanged(_ =>
+            detail.BindValueChanged(_ =>
             {
                 if (lastBreakdown != null)
                     display(lastBreakdown);
@@ -250,7 +255,7 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
             if (trackLength <= 0)
                 return;
 
-            int resolution = ColumnCountFor(trackLength, columnLength.Value);
+            int resolution = ColumnCountFor(detail.Value);
 
             // the curve is bucketed by time rather than by object, so a dense burst reads as tall rather than wide.
             double[] buckets = new double[resolution];

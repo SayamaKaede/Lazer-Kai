@@ -290,7 +290,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.01f);
-            SetDefault(OsuSetting.EditorDifficultyGraphColumnLength, DifficultyGraphPart.DEFAULT_COLUMN_LENGTH, 50f, 1000f, 25f);
+            // the top of the range is where the column count stops, so every part of the slider does something.
+            SetDefault(OsuSetting.EditorDifficultyGraphDetail, DifficultyGraphPart.DEFAULT_DETAIL, 0.25f, 3f, 0.05f);
             SetDefault(OsuSetting.EditorLoopPlayback, false);
             SetDefault(OsuSetting.EditorAutoBackup, true);
             SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
@@ -730,9 +731,9 @@ namespace osu.Game.Configuration
         EditorDifficultyGraphOpacity,
 
         /// <summary>
-        /// How long one column of the editor's difficulty graph stands for, in milliseconds.
+        /// How densely the editor's difficulty graph is drawn, as a proportion of its usual detail.
         /// </summary>
-        EditorDifficultyGraphColumnLength,
+        EditorDifficultyGraphDetail,
 
         /// <summary>
         /// Whether editor playback returns to the start of the beatmap on reaching the end rather than stopping.

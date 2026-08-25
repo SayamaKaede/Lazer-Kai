@@ -532,13 +532,13 @@ namespace osu.Game.Localisation
         /// <summary>
         /// "Difficulty graph detail"
         /// </summary>
-        public static LocalisableString DifficultyGraphColumnLength => new TranslatableString(getKey(@"difficulty_graph_column_length"), @"Difficulty graph detail");
+        public static LocalisableString DifficultyGraphDetail => new TranslatableString(getKey(@"difficulty_graph_detail"), @"Difficulty graph detail");
 
         /// <summary>
-        /// "How much of the song each column of the graph stands for. A longer beatmap is drawn with more columns rather than wider ones."
+        /// "How densely the graph is drawn. The count does not depend on the length of the beatmap, so half a minute and ten minutes are drawn just as finely."
         /// </summary>
-        public static LocalisableString DifficultyGraphColumnLengthDescription => new TranslatableString(getKey(@"difficulty_graph_column_length_description"),
-            @"How much of the song each column of the graph stands for. A longer beatmap is drawn with more columns rather than wider ones.");
+        public static LocalisableString DifficultyGraphDetailDescription => new TranslatableString(getKey(@"difficulty_graph_detail_description"),
+            @"How densely the graph is drawn. The count does not depend on the length of the beatmap, so half a minute and ten minutes are drawn just as finely.");
 
         /// <summary>
         /// "Loop playback"

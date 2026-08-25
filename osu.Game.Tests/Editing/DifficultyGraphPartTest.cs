@@ -9,71 +9,45 @@ namespace osu.Game.Tests.Editing
     [TestFixture]
     public class DifficultyGraphPartTest
     {
-        private const double minute = 60_000;
-
         /// <summary>
-        /// A column stands for a fixed stretch of the song, so a longer beatmap is drawn with more of them rather
-        /// than with the same number spread thinner. Drawn across a width that does not grow, a fixed count means a
-        /// marathon's columns each swallow seconds of the song and the shape of it goes flat.
+        /// The setting is how densely the graph is drawn, so twice the detail is twice the columns.
         /// </summary>
-        [Test]
-        public void TestALongerBeatmapIsDrawnWithMoreColumns()
+        [TestCase(0.5, 200)]
+        [TestCase(1, 400)]
+        [TestCase(2, 800)]
+        public void TestDetailScalesTheColumnCount(double detail, int expected)
         {
-            int shortMap = DifficultyGraphPart.ColumnCountFor(2 * minute, 375);
-            int longMap = DifficultyGraphPart.ColumnCountFor(6 * minute, 375);
-
-            Assert.That(longMap, Is.GreaterThan(shortMap));
+            Assert.That(DifficultyGraphPart.ColumnCountFor(detail), Is.EqualTo(expected));
         }
 
         /// <summary>
-        /// The setting is how long one column stands for, so halving it draws twice as many.
+        /// Full detail leaves the graph drawn with the four hundred columns it always was.
         /// </summary>
         [Test]
-        public void TestAFinerSettingDrawsMoreColumns()
+        public void TestFullDetailIsWhereTheGraphAlwaysWas()
         {
-            Assert.That(DifficultyGraphPart.ColumnCountFor(3 * minute, 250), Is.EqualTo(720));
-            Assert.That(DifficultyGraphPart.ColumnCountFor(3 * minute, 500), Is.EqualTo(360));
+            Assert.That(DifficultyGraphPart.ColumnCountFor(DifficultyGraphPart.DEFAULT_DETAIL), Is.EqualTo(400));
         }
 
         /// <summary>
-        /// A column per pixel is already more than can be told apart, and every column is a drawable. Past that the
-        /// count stops rather than growing with the song.
+        /// A column per pixel is already more than can be told apart, and every column is a drawable, so the count
+        /// stops rather than following the setting up forever.
         /// </summary>
         [Test]
         public void TestTheCountStopsSomewhere()
         {
-            Assert.That(DifficultyGraphPart.ColumnCountFor(60 * minute, 50), Is.EqualTo(DifficultyGraphPart.MAX_COLUMNS));
+            Assert.That(DifficultyGraphPart.ColumnCountFor(100), Is.EqualTo(DifficultyGraphPart.MAX_COLUMNS));
         }
 
         /// <summary>
-        /// A beatmap only a few seconds long still gets enough columns to read as a shape rather than as one block.
+        /// Enough columns are always drawn for the curve to read as a shape rather than as a handful of blocks.
         /// </summary>
-        [TestCase(0)]
-        [TestCase(1_000)]
-        [TestCase(4_000)]
-        public void TestAVeryShortBeatmapStillGetsAShape(double trackLength)
-        {
-            Assert.That(DifficultyGraphPart.ColumnCountFor(trackLength, 375), Is.EqualTo(DifficultyGraphPart.MIN_COLUMNS));
-        }
-
-        /// <summary>
-        /// Nothing should ask for columns of no length, but dividing by it would hand back a count that cannot be
-        /// drawn, and the graph is not worth a crash.
-        /// </summary>
+        [TestCase(0.0001)]
         [TestCase(0)]
         [TestCase(-1)]
-        public void TestAColumnOfNoLengthIsRefused(double columnLength)
+        public void TestTooLittleDetailIsRefused(double detail)
         {
-            Assert.That(DifficultyGraphPart.ColumnCountFor(3 * minute, columnLength), Is.EqualTo(DifficultyGraphPart.MIN_COLUMNS));
-        }
-
-        /// <summary>
-        /// The default keeps a beatmap of ordinary length looking the way it did before the count could be changed.
-        /// </summary>
-        [Test]
-        public void TestTheDefaultLeavesAnOrdinaryBeatmapWhereItWas()
-        {
-            Assert.That(DifficultyGraphPart.ColumnCountFor(2.5 * minute, DifficultyGraphPart.DEFAULT_COLUMN_LENGTH), Is.EqualTo(400));
+            Assert.That(DifficultyGraphPart.ColumnCountFor(detail), Is.EqualTo(DifficultyGraphPart.MIN_COLUMNS));
         }
     }
 }
