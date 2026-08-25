@@ -570,9 +570,9 @@ namespace osu.Game.Localisation
         public static LocalisableString BackupNow => new TranslatableString(getKey(@"backup_now"), @"Back up now");
 
         /// <summary>
-        /// "Open backup folder"
+        /// "Open this difficulty's backups"
         /// </summary>
-        public static LocalisableString OpenBackupFolder => new TranslatableString(getKey(@"open_backup_folder"), @"Open backup folder");
+        public static LocalisableString OpenBackupFolder => new TranslatableString(getKey(@"open_backup_folder"), @"Open this difficulty's backups");
 
         /// <summary>
         /// "Keep passed objects selectable for"

@@ -17,6 +17,7 @@ using osu.Framework.Threading;
 using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
+using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Formats;
 using osu.Game.Configuration;
 using osu.Game.Extensions;
@@ -113,7 +114,7 @@ namespace osu.Game.Screens.Edit
 
             lastWrittenHash = hash;
 
-            string directory = Path.Combine(BACKUP_DIRECTORY, folderNameFor(editorBeatmap));
+            string directory = DirectoryFor(editorBeatmap.BeatmapInfo);
             string filename = $"{DateTimeOffset.Now:yyyy-MM-dd_HH-mm-ss}.osu";
 
             // written away from the update thread: this is a whole beatmap being serialised and flushed to disk, and
@@ -176,11 +177,19 @@ namespace osu.Game.Screens.Edit
         }
 
         /// <summary>
+        /// Where a difficulty's backups are kept, relative to the game's storage.
+        /// </summary>
+        /// <remarks>
+        /// Both the writing and the menu item offering to open the folder go through here, so what the editor shows
+        /// is always where the files actually went.
+        /// </remarks>
+        public static string DirectoryFor(BeatmapInfo info) => Path.Combine(BACKUP_DIRECTORY, folderNameFor(info));
+
+        /// <summary>
         /// A folder per difficulty, so restoring means picking the newest file in an obvious place.
         /// </summary>
-        private static string folderNameFor(EditorBeatmap beatmap)
+        private static string folderNameFor(BeatmapInfo info)
         {
-            var info = beatmap.BeatmapInfo;
             string name = $"{info.Metadata.Artist} - {info.Metadata.Title} [{info.DifficultyName}]";
 
             return name.GetValidFilename();

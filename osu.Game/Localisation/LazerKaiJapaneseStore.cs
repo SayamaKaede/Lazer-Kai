@@ -154,7 +154,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:auto_backup_interval"] = @"バックアップの間隔",
             [$@"{editor_prefix}:auto_backup_keep_count"] = @"保持する個数",
             [$@"{editor_prefix}:backup_now"] = @"いますぐバックアップ",
-            [$@"{editor_prefix}:open_backup_folder"] = @"バックアップフォルダを開く",
+            [$@"{editor_prefix}:open_backup_folder"] = @"この譜面のバックアップフォルダを開く",
             [$@"{editor_prefix}:notify_on_backup"] = @"バックアップ完了時に通知を出す",
             [$@"{editor_prefix}:backup_written"] = @"バックアップしました",
 

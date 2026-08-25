@@ -1855,9 +1855,18 @@ namespace osu.Game.Screens.Edit
             lastSavedHash = changeHandler?.CurrentStateHash;
         }
 
+        /// <summary>
+        /// Opens the folder holding this difficulty's backups.
+        /// </summary>
+        /// <remarks>
+        /// The whole backup directory holds a folder per difficulty of every beatmap ever opened, so landing there
+        /// means hunting for the right one. Opening the folder the difficulty in front of the mapper writes to puts
+        /// the file they came looking for on screen. The folder is created if the editor has not written a backup
+        /// yet, which also answers where they are going to appear.
+        /// </remarks>
         private void openBackupFolder()
         {
-            storage.GetStorageForDirectory(EditorAutoBackup.BACKUP_DIRECTORY).PresentExternally();
+            storage.GetStorageForDirectory(EditorAutoBackup.DirectoryFor(editorBeatmap.BeatmapInfo)).PresentExternally();
         }
 
         private IEnumerable<MenuItem> createFileMenuItems()
