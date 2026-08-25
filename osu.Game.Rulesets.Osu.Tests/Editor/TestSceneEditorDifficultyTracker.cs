@@ -12,6 +12,8 @@ using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Difficulty;
+using osu.Game.Rulesets.Osu.Difficulty;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Edit.Compose.Components;
@@ -21,14 +23,14 @@ using osu.Framework.Testing;
 namespace osu.Game.Rulesets.Osu.Tests.Editor
 {
     /// <summary>
-    /// What the editor's star rating is calculated with.
+    /// What the editor's star rating, max performance and max stable score are calculated with.
     /// </summary>
     /// <remarks>
     /// The rating itself cannot be asserted here: it is read through <see cref="BeatmapDifficultyCache"/>, which looks
     /// the beatmap up in the beatmap manager, and a test scene's beatmap is not there to be found. The mods handed to
     /// the calculation are what this build changed, so those are what is checked.
     /// </remarks>
-    public partial class TestSceneEditorStarRating : TestSceneOsuEditor
+    public partial class TestSceneEditorDifficultyTracker : TestSceneOsuEditor
     {
         protected override IBeatmap CreateBeatmap(RulesetInfo ruleset) => new TestBeatmap(ruleset);
 
@@ -128,11 +130,29 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddUntilStep("not kiai again", kiaiReadout, () => Is.EqualTo("-"));
         }
 
-        private string kiaiReadout() => Editor.ChildrenOfType<ComposeStatusDisplay>()
-                                              .SelectMany(d => d.ChildrenOfType<OsuSpriteText>())
-                                              .SkipWhile(t => t.Text.ToString() != "Kiai")
-                                              .Skip(1)
-                                              .First().Text.ToString();
+        /// <summary>
+        /// What an SS would be worth, which the difficulty cache already works out alongside the rating.
+        /// </summary>
+        /// <remarks>
+        /// Reading it off the same calculation rather than running another is the whole reason this row is cheap;
+        /// what is worth checking is that it is read off it at all.
+        /// </remarks>
+        [Test]
+        public void TestStatusPanelShowsMaxPerformance()
+        {
+            AddUntilStep("max pp shown", () => readout("MAX PP"), () => Is.EqualTo("123pp"));
+        }
+
+        private string kiaiReadout() => readout("Kiai");
+
+        /// <summary>
+        /// The value beside a row's label in the status panel.
+        /// </summary>
+        private string readout(string label) => Editor.ChildrenOfType<ComposeStatusDisplay>()
+                                                      .SelectMany(d => d.ChildrenOfType<OsuSpriteText>())
+                                                      .SkipWhile(t => t.Text.ToString() != label)
+                                                      .Skip(1)
+                                                      .First().Text.ToString();
 
         private string[] modIcons() => Editor.ChildrenOfType<ComposeStatusDisplay>()
                                              .SelectMany(d => d.ChildrenOfType<ModIcon>())
@@ -149,7 +169,11 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                                                                      CancellationToken cancellationToken = default, int computationDelay = 0)
             {
                 LastMods = mods?.ToArray() ?? [];
-                return Task.FromResult<StarDifficulty?>(new StarDifficulty(1, 0));
+
+                // the real cache works an SS out alongside the rating, so the stub hands one over too.
+                return Task.FromResult<StarDifficulty?>(new StarDifficulty(
+                    new OsuDifficultyAttributes { StarRating = 1, MaxCombo = 0 },
+                    new PerformanceAttributes { Total = 123.4 }));
             }
         }
     }

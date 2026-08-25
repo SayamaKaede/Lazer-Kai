@@ -40,12 +40,15 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
         // not always present: the composer can be constructed without a full editor around it (notably in test scenes).
         [Resolved(canBeNull: true)]
-        private EditorStarRating? starRatingTracker { get; set; }
+        private EditorDifficultyTracker? difficultyTracker { get; set; }
 
         [Resolved(canBeNull: true)]
         private Editor? editor { get; set; }
 
         private OsuSpriteText starRating = null!;
+        private OsuSpriteText maxPerformance = null!;
+        private OsuSpriteText maxScore = null!;
+        private OsuSpriteText maxLegacyScore = null!;
         private OsuSpriteText sliderVelocity = null!;
         private OsuSpriteText normalBank = null!;
         private OsuSpriteText additionBank = null!;
@@ -82,6 +85,9 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 Children = new Drawable[]
                 {
                     shownWhen(config, OsuSetting.EditorStatusShowStarRating, createRow(@"SR", out starRating, colours.Yellow)),
+                    shownWhen(config, OsuSetting.EditorStatusShowMaxPerformance, createRow(@"MAX PP", out maxPerformance, colours.Blue1)),
+                    shownWhen(config, OsuSetting.EditorStatusShowScore, createRow(@"SCORE", out maxScore, colours.Purple1)),
+                    shownWhen(config, OsuSetting.EditorStatusShowLegacyScore, createRow(@"SCORE V1", out maxLegacyScore, colours.Purple1)),
                     shownWhen(config, OsuSetting.EditorStatusShowSliderVelocity, createRow(@"SV", out sliderVelocity, colours.Lime1)),
                     shownWhen(config, OsuSetting.EditorStatusShowNormalBank, createRow(@"Normal", out normalBank, colours.Pink1)),
                     shownWhen(config, OsuSetting.EditorStatusShowAdditionBank, createRow(@"Addition", out additionBank, colours.Pink2)),
@@ -197,13 +203,34 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
             showModsRow.BindValueChanged(_ => updateModsRow(), true);
 
-            if (starRatingTracker == null)
+            if (difficultyTracker == null)
+            {
                 starRating.Text = @"-";
+                maxPerformance.Text = @"-";
+                maxScore.Text = @"-";
+                maxLegacyScore.Text = @"-";
+            }
             else
+            {
                 // formatted the way the rest of the game does, which floors rather than rounds.
-                starRatingTracker.Current.BindValueChanged(stars => starRating.Text = stars.NewValue == null
+                difficultyTracker.StarRating.BindValueChanged(stars => starRating.Text = stars.NewValue == null
                     ? @"-"
                     : LocalisableString.Interpolate($@"{stars.NewValue.Value.FormatStarRating()}*"), true);
+
+                // whole numbers: the hundredths of a pp move with every recalculation of the difficulty algorithm and
+                // say nothing about the beatmap.
+                difficultyTracker.MaxPerformance.BindValueChanged(performance => maxPerformance.Text = performance.NewValue == null
+                    ? @"-"
+                    : LocalisableString.Interpolate($@"{performance.NewValue.Value:N0}pp"), true);
+
+                difficultyTracker.MaxScore.BindValueChanged(score => maxScore.Text = score.NewValue == null
+                    ? @"-"
+                    : LocalisableString.Interpolate($@"{score.NewValue.Value:N0}"), true);
+
+                difficultyTracker.MaxLegacyScore.BindValueChanged(score => maxLegacyScore.Text = score.NewValue == null
+                    ? @"-"
+                    : LocalisableString.Interpolate($@"{score.NewValue.Value:N0}"), true);
+            }
         }
 
         private double? lastTime;

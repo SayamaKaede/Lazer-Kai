@@ -252,6 +252,9 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorActionButtonSquareness, 0f, 0f, 0.3f, 0.01f);
             SetDefault(OsuSetting.EditorSliderVelocityPresetSquareness, 0f, 0f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorStatusShowStarRating, true);
+            SetDefault(OsuSetting.EditorStatusShowMaxPerformance, true);
+            SetDefault(OsuSetting.EditorStatusShowScore, true);
+            SetDefault(OsuSetting.EditorStatusShowLegacyScore, true);
             SetDefault(OsuSetting.EditorStatusShowSliderVelocity, true);
             SetDefault(OsuSetting.EditorStatusShowNormalBank, true);
             SetDefault(OsuSetting.EditorStatusShowAdditionBank, true);
@@ -830,6 +833,31 @@ namespace osu.Game.Configuration
         /// Whether the SR row is shown in the composer's status panel.
         /// </summary>
         EditorStatusShowStarRating,
+
+        /// <summary>
+        /// Whether the row for what an SS would be worth is shown in the composer's status panel.
+        /// </summary>
+        EditorStatusShowMaxPerformance,
+
+        /// <summary>
+        /// Whether the row for the highest total on this build's scoring is shown in the composer's status panel.
+        /// </summary>
+        /// <summary>
+        /// How wide the composer's left toolbox opens.
+        /// </summary>
+        EditorLeftToolboxWidth,
+
+        /// <summary>
+        /// How wide the composer's right toolbox opens.
+        /// </summary>
+        EditorRightToolboxWidth,
+
+        EditorStatusShowScore,
+
+        /// <summary>
+        /// Whether the row for the highest total under stable's scoring is shown in the composer's status panel.
+        /// </summary>
+        EditorStatusShowLegacyScore,
 
         /// <summary>
         /// Whether the SV row is shown in the composer's status panel.

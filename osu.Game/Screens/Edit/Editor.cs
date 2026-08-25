@@ -420,9 +420,9 @@ namespace osu.Game.Screens.Edit
 
             LoadComponent(modSelect = new EditorModSelectOverlay(editorColourScheme.Value));
 
-            var starRating = new EditorStarRating();
-            AddInternal(starRating);
-            dependencies.Cache(starRating);
+            var difficultyTracker = new EditorDifficultyTracker();
+            AddInternal(difficultyTracker);
+            dependencies.Cache(difficultyTracker);
 
             var kiaiFlashSuppression = new KiaiFlashSuppression();
             config.BindWith(OsuSetting.EditorHideKiaiFlash, kiaiFlashSuppression);

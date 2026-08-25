@@ -695,6 +695,21 @@ namespace osu.Game.Localisation
         public static LocalisableString StatusShowStarRating => new TranslatableString(getKey(@"status_show_star_rating"), @"SR");
 
         /// <summary>
+        /// "MAX PP"
+        /// </summary>
+        public static LocalisableString StatusShowMaxPerformance => new TranslatableString(getKey(@"status_show_max_performance"), @"MAX PP");
+
+        /// <summary>
+        /// "SCORE"
+        /// </summary>
+        public static LocalisableString StatusShowScore => new TranslatableString(getKey(@"status_show_score"), @"SCORE");
+
+        /// <summary>
+        /// "SCORE V1"
+        /// </summary>
+        public static LocalisableString StatusShowLegacyScore => new TranslatableString(getKey(@"status_show_legacy_score"), @"SCORE V1");
+
+        /// <summary>
         /// "SV"
         /// </summary>
         public static LocalisableString StatusShowSliderVelocity => new TranslatableString(getKey(@"status_show_slider_velocity"), @"SV");

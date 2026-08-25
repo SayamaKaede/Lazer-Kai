@@ -32,6 +32,21 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 },
                 new SettingsCheckbox
                 {
+                    LabelText = EditorStrings.StatusShowMaxPerformance,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorStatusShowMaxPerformance)
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.StatusShowScore,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorStatusShowScore)
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.StatusShowLegacyScore,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorStatusShowLegacyScore)
+                },
+                new SettingsCheckbox
+                {
                     LabelText = EditorStrings.StatusShowSliderVelocity,
                     Current = config.GetBindable<bool>(OsuSetting.EditorStatusShowSliderVelocity)
                 },

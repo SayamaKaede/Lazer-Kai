@@ -30,6 +30,9 @@ namespace osu.Game.Tests.Visual.Editing
         private static readonly OsuSetting[] all_rows =
         {
             OsuSetting.EditorStatusShowStarRating,
+            OsuSetting.EditorStatusShowMaxPerformance,
+            OsuSetting.EditorStatusShowScore,
+            OsuSetting.EditorStatusShowLegacyScore,
             OsuSetting.EditorStatusShowSliderVelocity,
             OsuSetting.EditorStatusShowNormalBank,
             OsuSetting.EditorStatusShowAdditionBank,

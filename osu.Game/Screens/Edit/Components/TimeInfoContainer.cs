@@ -33,7 +33,7 @@ namespace osu.Game.Screens.Edit.Components
 
         // not always present: the bottom bar can be constructed without a full editor around it (notably in test scenes).
         [Resolved(canBeNull: true)]
-        private EditorStarRating? starRatingTracker { get; set; }
+        private EditorDifficultyTracker? difficultyTracker { get; set; }
 
         [BackgroundDependencyLoader]
         private void load(OsuColour colours, OverlayColourProvider colourProvider)
@@ -82,12 +82,12 @@ namespace osu.Game.Screens.Edit.Components
         {
             base.LoadComplete();
 
-            if (starRatingTracker == null)
+            if (difficultyTracker == null)
                 starRating.Text = @"-";
             else
                 // formatted the way the rest of the game does, which floors rather than rounds: a 6.9999* beatmap
                 // showing as 7.00* here but 6.99* everywhere else is worse than the lost hundredth.
-                starRatingTracker.Current.BindValueChanged(stars => starRating.Text = stars.NewValue == null
+                difficultyTracker.StarRating.BindValueChanged(stars => starRating.Text = stars.NewValue == null
                     ? @"-"
                     : LocalisableString.Interpolate($@"{stars.NewValue.Value.FormatStarRating()}*"), true);
         }

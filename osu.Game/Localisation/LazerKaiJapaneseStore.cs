@@ -83,6 +83,9 @@ namespace osu.Game.Localisation
 
             // status panel rows
             [$@"{editor_prefix}:status_show_star_rating"] = @"SR",
+            [$@"{editor_prefix}:status_show_max_performance"] = @"MAX PP（SSを取ったときのpp）",
+            [$@"{editor_prefix}:status_show_score"] = @"SCORE（このクライアントでの最大スコア）",
+            [$@"{editor_prefix}:status_show_legacy_score"] = @"SCORE V1（Stableでの最大スコア）",
             [$@"{editor_prefix}:status_show_slider_velocity"] = @"SV",
             [$@"{editor_prefix}:status_show_normal_bank"] = @"Normal bank",
             [$@"{editor_prefix}:status_show_addition_bank"] = @"Addition bank",
