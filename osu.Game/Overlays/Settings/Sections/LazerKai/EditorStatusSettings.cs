@@ -75,6 +75,21 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     LabelText = EditorStrings.StatusShowMods,
                     Current = config.GetBindable<bool>(OsuSetting.EditorStatusShowMods)
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.StatusShowObjectCount,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorStatusShowObjectCount)
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.StatusShowDrainTime,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorStatusShowDrainTime)
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.StatusShowDifficultySettings,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorStatusShowDifficultySettings)
+                },
             };
         }
     }

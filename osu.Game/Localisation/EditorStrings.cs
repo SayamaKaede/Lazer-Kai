@@ -750,6 +750,21 @@ namespace osu.Game.Localisation
         public static LocalisableString StatusShowMods => new TranslatableString(getKey(@"status_show_mods"), @"Mods");
 
         /// <summary>
+        /// "Object count"
+        /// </summary>
+        public static LocalisableString StatusShowObjectCount => new TranslatableString(getKey(@"status_show_object_count"), @"Object count");
+
+        /// <summary>
+        /// "Drain time"
+        /// </summary>
+        public static LocalisableString StatusShowDrainTime => new TranslatableString(getKey(@"status_show_drain_time"), @"Drain time");
+
+        /// <summary>
+        /// "Difficulty settings (AR, CS, OD, HP)"
+        /// </summary>
+        public static LocalisableString StatusShowDifficultySettings => new TranslatableString(getKey(@"status_show_difficulty_settings"), @"Difficulty settings (AR, CS, OD, HP)");
+
+        /// <summary>
         /// "Difficulty shown as a ghost"
         /// </summary>
         public static LocalisableString ReferenceDifficulty => new TranslatableString(getKey(@"reference_difficulty"), @"Difficulty shown as a ghost");

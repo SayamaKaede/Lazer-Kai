@@ -263,6 +263,11 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorStatusShowSampleVolume, true);
             SetDefault(OsuSetting.EditorStatusShowKiai, true);
             SetDefault(OsuSetting.EditorStatusShowMods, true);
+            // off by default: these describe the beatmap as a whole rather than the place being worked on, so they
+            // are checked now and then rather than watched, and the panel is a narrow column.
+            SetDefault(OsuSetting.EditorStatusShowObjectCount, false);
+            SetDefault(OsuSetting.EditorStatusShowDrainTime, false);
+            SetDefault(OsuSetting.EditorStatusShowDifficultySettings, false);
             SetDefault(OsuSetting.EditorReferenceDifficultyOpacity, 0.3f, 0.05f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorReferenceDifficultyColour, EditorSelectionColour.Cyan);
             // status is the one group a mapper reads rather than operates, so it starts held where it can be read.
@@ -890,6 +895,22 @@ namespace osu.Game.Configuration
         /// Whether the Mods row is shown in the composer's status panel.
         /// </summary>
         EditorStatusShowMods,
+
+        /// <summary>
+        /// Whether the hit object count is shown in the composer's status panel.
+        /// </summary>
+        EditorStatusShowObjectCount,
+
+        /// <summary>
+        /// Whether the drain time is shown in the composer's status panel.
+        /// </summary>
+        EditorStatusShowDrainTime,
+
+        /// <summary>
+        /// Whether the approach rate, circle size, overall difficulty and drain rate are shown in the composer's
+        /// status panel.
+        /// </summary>
+        EditorStatusShowDifficultySettings,
 
         /// <summary>
         /// How solid the difficulty drawn underneath the one being edited is.

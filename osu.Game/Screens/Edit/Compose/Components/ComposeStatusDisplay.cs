@@ -8,6 +8,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
+using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
@@ -54,6 +55,12 @@ namespace osu.Game.Screens.Edit.Compose.Components
         private OsuSpriteText additionBank = null!;
         private OsuSpriteText sampleVolume = null!;
         private OsuSpriteText kiai = null!;
+        private OsuSpriteText objectCount = null!;
+        private OsuSpriteText drainTime = null!;
+        private OsuSpriteText approachRate = null!;
+        private OsuSpriteText circleSize = null!;
+        private OsuSpriteText overallDifficulty = null!;
+        private OsuSpriteText drainRate = null!;
         private Drawable modsRow = null!;
         private ModDisplay modDisplay = null!;
 
@@ -93,6 +100,9 @@ namespace osu.Game.Screens.Edit.Compose.Components
                     shownWhen(config, OsuSetting.EditorStatusShowAdditionBank, createRow(@"Addition", out additionBank, colours.Pink2)),
                     shownWhen(config, OsuSetting.EditorStatusShowSampleVolume, createRow(@"Volume", out sampleVolume, colours.Pink1)),
                     shownWhen(config, OsuSetting.EditorStatusShowKiai, createRow(@"Kiai", out kiai, colours.Orange1)),
+                    shownWhen(config, OsuSetting.EditorStatusShowObjectCount, createRow(@"Objects", out objectCount, colours.Green1)),
+                    shownWhen(config, OsuSetting.EditorStatusShowDrainTime, createRow(@"Drain", out drainTime, colours.Green1)),
+                    shownWhen(config, OsuSetting.EditorStatusShowDifficultySettings, createDifficultyRow(colours)),
                     createModRow(),
                 }
             };
@@ -153,6 +163,88 @@ namespace osu.Game.Screens.Edit.Compose.Components
             modsRow.AlwaysPresent = false;
         }
 
+        /// <summary>
+        /// The four difficulty settings, side by side rather than a row each.
+        /// </summary>
+        /// <remarks>
+        /// Four rows of one number would cost the panel more of the beatmap behind it than the numbers are worth, and
+        /// these are read together anyway — a spread is checked by looking at all four at once. They wrap onto a
+        /// second line rather than run off the edge, so a narrowed toolbox still shows all of them.
+        /// </remarks>
+        private Drawable createDifficultyRow(OsuColour colours)
+        {
+            return new FillFlowContainer
+            {
+                RelativeSizeAxes = Axes.X,
+                AutoSizeAxes = Axes.Y,
+                Direction = FillDirection.Full,
+                Spacing = new Vector2(9, 2),
+                Children = new[]
+                {
+                    createAttribute(@"AR", out approachRate, colours.Green1),
+                    createAttribute(@"CS", out circleSize, colours.Green1),
+                    createAttribute(@"OD", out overallDifficulty, colours.Green1),
+                    createAttribute(@"HP", out drainRate, colours.Green1),
+                }
+            };
+        }
+
+        /// <summary>
+        /// One difficulty setting, as a label with its number beside it.
+        /// </summary>
+        private static Drawable createAttribute(LocalisableString label, out OsuSpriteText value, ColourInfo valueColour)
+        {
+            OsuSpriteText valueText;
+
+            var attribute = new FillFlowContainer
+            {
+                AutoSizeAxes = Axes.Both,
+                Direction = FillDirection.Horizontal,
+                Spacing = new Vector2(3, 0),
+                Children = new Drawable[]
+                {
+                    new OsuSpriteText
+                    {
+                        Text = label,
+                        Font = OsuFont.Default.With(size: 12, weight: FontWeight.SemiBold),
+                        Alpha = 0.6f,
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreLeft,
+                    },
+                    valueText = new OsuSpriteText
+                    {
+                        Font = OsuFont.Default.With(size: 12, weight: FontWeight.Bold),
+                        Colour = valueColour,
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreLeft,
+                    }
+                }
+            };
+
+            value = valueText;
+            return attribute;
+        }
+
+        /// <summary>
+        /// A length as minutes, seconds and milliseconds.
+        /// </summary>
+        /// <remarks>
+        /// Milliseconds are kept because they are the unit the editor works in: every timestamp a mapper reads,
+        /// writes, or is handed in a modding post carries them, so a length rounded to the second is a length that
+        /// has to be worked out again before it can be used.
+        ///
+        /// Minutes keep counting past sixty rather than rolling over into hours — a marathon is still talked about in
+        /// minutes, and an hour-long beatmap reading as "1:01" would be read as a minute long. The fraction of a
+        /// millisecond is dropped rather than rounded up, since this is a measurement of what is there rather than a
+        /// countdown to something.
+        /// </remarks>
+        public static string DrainTimeReadout(double milliseconds)
+        {
+            int total = (int)Math.Max(milliseconds, 0);
+
+            return $@"{total / 60000}:{total / 1000 % 60:00}.{total % 1000:000}";
+        }
+
         private static Drawable createRow(LocalisableString label, out OsuSpriteText value, ColourInfo valueColour)
         {
             OsuSpriteText valueText;
@@ -188,6 +280,11 @@ namespace osu.Game.Screens.Edit.Compose.Components
         protected override void LoadComplete()
         {
             base.LoadComplete();
+
+            // moving an object or editing the breaks changes how long the beatmap drains for without changing how
+            // many objects there are, which is the only thing the frame-by-frame comparison would notice.
+            editorBeatmap.HitObjectUpdated += onBeatmapLengthChanged;
+            editorBeatmap.BeatmapReprocessed += invalidateDrainTime;
 
             if (editor != null)
             {
@@ -239,12 +336,71 @@ namespace osu.Game.Screens.Edit.Compose.Components
         {
             base.Update();
 
+            updateValuesForWholeBeatmap();
+
             if (lastTime == editorClock.CurrentTime)
                 return;
 
             lastTime = editorClock.CurrentTime;
             updateValuesAtCurrentTime();
         }
+
+        private int? lastObjectCount;
+        private double? lastDrainTime;
+        private (float ar, float cs, float od, float hp)? lastDifficulty;
+
+        /// <summary>
+        /// Updates the rows describing the beatmap rather than the place in it.
+        /// </summary>
+        /// <remarks>
+        /// Worked out here rather than from the editor's change events because the difficulty settings are edited on
+        /// another screen entirely and come back without one. Each value is compared before its text is touched, so
+        /// an untouched beatmap costs a count and four floats a frame and nothing is laid out again.
+        /// </remarks>
+        private void updateValuesForWholeBeatmap()
+        {
+            int count = editorBeatmap.HitObjects.Count;
+
+            if (count != lastObjectCount)
+            {
+                lastObjectCount = count;
+                objectCount.Text = count.ToString(@"N0");
+
+                // the drain depends on where the objects start and end, so it is only worth working out again when
+                // the beatmap has actually moved. it walks every object, which the rest of this method does not.
+                lastDrainTime = null;
+            }
+
+            if (lastDrainTime == null)
+            {
+                double drain = editorBeatmap.CalculateDrainLength();
+
+                lastDrainTime = drain;
+                drainTime.Text = DrainTimeReadout(drain);
+            }
+
+            var difficulty = editorBeatmap.Difficulty;
+            var current = (difficulty.ApproachRate, difficulty.CircleSize, difficulty.OverallDifficulty, difficulty.DrainRate);
+
+            if (lastDifficulty != current)
+            {
+                lastDifficulty = current;
+
+                approachRate.Text = attributeReadout(difficulty.ApproachRate);
+                circleSize.Text = attributeReadout(difficulty.CircleSize);
+                overallDifficulty.Text = attributeReadout(difficulty.OverallDifficulty);
+                drainRate.Text = attributeReadout(difficulty.DrainRate);
+            }
+        }
+
+        /// <summary>
+        /// A difficulty setting, written the way the setup screen and the beatmap file write it.
+        /// </summary>
+        /// <remarks>
+        /// A tenth is as fine as these go, and a whole number is left whole rather than padded to "9.0" — that is how
+        /// mappers say them out loud, and the column has no room to spare.
+        /// </remarks>
+        private static string attributeReadout(float value) => value.ToString(@"0.##");
 
         private void updateValuesAtCurrentTime()
         {
@@ -359,6 +515,21 @@ namespace osu.Game.Screens.Edit.Compose.Components
             node = Math.Clamp(node, 0, repeats.SpanCount());
 
             return node < repeats.NodeSamples.Count ? repeats.NodeSamples[node] : hitObject.Samples;
+        }
+
+        private void onBeatmapLengthChanged(HitObject hitObject) => invalidateDrainTime();
+
+        private void invalidateDrainTime() => lastDrainTime = null;
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            if (editorBeatmap.IsNotNull())
+            {
+                editorBeatmap.HitObjectUpdated -= onBeatmapLengthChanged;
+                editorBeatmap.BeatmapReprocessed -= invalidateDrainTime;
+            }
         }
     }
 }
