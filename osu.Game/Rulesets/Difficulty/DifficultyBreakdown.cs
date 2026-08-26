@@ -40,17 +40,9 @@ namespace osu.Game.Rulesets.Difficulty
         public double[] GetCombinedDifficulties()
         {
             double[] combined = new double[Times.Length];
-            var counted = new HashSet<Type>();
 
-            foreach (var skill in skills)
+            foreach (var skill in countedSkills())
             {
-                // a ruleset may build a skill a second time only to take a ratio against it: osu! builds aim again
-                // with sliders left out to arrive at its slider factor, taiko builds stamina again for single
-                // colours. Those copies are not difficulty of their own, and adding them in counts one skill twice,
-                // which tilts the whole curve towards whatever that skill measures.
-                if (!counted.Add(skill.GetType()))
-                    continue;
-
                 var difficulties = skill.GetObjectDifficulties();
 
                 // a skill may bail out early on an object it has nothing to say about, so it can report fewer values
@@ -65,7 +57,29 @@ namespace osu.Game.Rulesets.Difficulty
         /// <summary>
         /// The individual skills, named as their implementing type.
         /// </summary>
+        /// <remarks>
+        /// The same skills <see cref="GetCombinedDifficulties"/> adds up, so a stack of these comes to exactly the
+        /// height of that curve. Anything drawing the two together would otherwise disagree with itself.
+        /// </remarks>
         public (string Name, double[] Difficulties)[] GetPerSkillDifficulties() =>
-            skills.Select(s => (s.GetType().Name, s.GetObjectDifficulties().ToArray())).ToArray();
+            countedSkills().Select(s => (s.GetType().Name, s.GetObjectDifficulties().ToArray())).ToArray();
+
+        /// <summary>
+        /// The skills that stand for difficulty, one per kind.
+        /// </summary>
+        /// <remarks>
+        /// A ruleset may build a skill a second time only to take a ratio against it: osu! builds aim again with
+        /// sliders left out to arrive at its slider factor, taiko builds stamina again for single colours. Those
+        /// copies are not difficulty of their own, and counting them would count one skill twice, tilting whatever
+        /// is drawn towards whichever skill the ruleset happened to want a ratio against.
+        ///
+        /// The one kept is the one the ruleset built first, which is the one it treats as the measurement.
+        /// </remarks>
+        private IEnumerable<Skill> countedSkills()
+        {
+            var counted = new HashSet<Type>();
+
+            return skills.Where(s => counted.Add(s.GetType()));
+        }
     }
 }

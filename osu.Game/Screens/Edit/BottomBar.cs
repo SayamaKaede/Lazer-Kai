@@ -19,7 +19,14 @@ namespace osu.Game.Screens.Edit
 {
     internal partial class BottomBar : CompositeDrawable
     {
+        /// <summary>
+        /// How tall the bar is, so anything drawing over the editor can leave it out.
+        /// </summary>
+        public const float HEIGHT = 50;
+
         public TestGameplayButton TestGameplayButton { get; private set; } = null!;
+
+        private SummaryTimeline summaryTimeline = null!;
 
         private IBindable<bool> saveInProgress = null!;
         private Bindable<bool> composerFocusMode = null!;
@@ -32,7 +39,7 @@ namespace osu.Game.Screens.Edit
 
             RelativeSizeAxes = Axes.X;
 
-            Height = 50;
+            Height = HEIGHT;
 
             Masking = true;
             EdgeEffect = new EdgeEffectParameters

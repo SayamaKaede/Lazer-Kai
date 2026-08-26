@@ -7,12 +7,13 @@ using osu.Framework.Allocation;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Testing;
 using osu.Game.Configuration;
+using osu.Game.Rulesets;
+using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
-using osu.Game.Tests.Visual;
 using osuTK;
 
-namespace osu.Game.Rulesets.Osu.Tests.Editor
+namespace osu.Game.Tests.Visual.Editing
 {
     [TestFixture]
     public partial class TestSceneEditorDifficultyGraph : EditorTestScene

@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Linq;
 using NUnit.Framework;
 using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
@@ -78,6 +79,49 @@ namespace osu.Game.Tests.Rulesets.Difficulty
             });
 
             Assert.That(breakdown.GetCombinedDifficulties(), Is.EqualTo(new double[] { 11, 2, 3 }));
+        }
+
+        /// <summary>
+        /// The skills are listed for anything drawing the curve as bands, one per skill. Listing a skill the total
+        /// leaves out would draw a stack taller than the curve it is supposed to be a breakdown of.
+        /// </summary>
+        [Test]
+        public void TestOnlyTheSkillsThatCountAreListed()
+        {
+            var breakdown = new DifficultyBreakdown(new double[] { 0, 1 }, new Skill[]
+            {
+                new TestAim(1, 10),
+                new TestAim(2, 20),
+                new TestSpeed(3, 30),
+            });
+
+            Assert.That(breakdown.GetPerSkillDifficulties().Select(s => s.Name), Is.EqualTo(new[] { nameof(TestAim), nameof(TestSpeed) }));
+        }
+
+        /// <summary>
+        /// The bands and the curve are the same numbers seen two ways, so a stack of the bands has to come to the
+        /// height of the curve exactly. Anything else and the detail screen disagrees with the timeline beneath it.
+        /// </summary>
+        [Test]
+        public void TestTheSkillsAddUpToTheCombinedDifficulty()
+        {
+            var breakdown = new DifficultyBreakdown(new double[] { 0, 1, 2 }, new Skill[]
+            {
+                new TestAim(1, 10, 100),
+                new TestAim(2, 20, 200),
+                new TestSpeed(3, 30, 300),
+                new TestReading(4, 40),
+            });
+
+            double[] stacked = new double[3];
+
+            foreach ((_, double[] difficulties) in breakdown.GetPerSkillDifficulties())
+            {
+                for (int i = 0; i < difficulties.Length; i++)
+                    stacked[i] += difficulties[i];
+            }
+
+            Assert.That(stacked, Is.EqualTo(breakdown.GetCombinedDifficulties()));
         }
 
         private class TestSkill : Skill

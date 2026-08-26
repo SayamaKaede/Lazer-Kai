@@ -51,6 +51,7 @@ using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Screens.Backgrounds;
 using osu.Game.Screens.Edit.ComboColours;
+using osu.Game.Screens.Edit.DifficultyGraph;
 using osu.Game.Screens.Edit.Components.Menus;
 using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
 using osu.Game.Screens.Edit.Compose;
@@ -232,6 +233,8 @@ namespace osu.Game.Screens.Edit
 
         private BottomBar bottomBar;
         private ComboColourStudioOverlay comboColourStudio;
+
+        private DifficultyGraphDetailOverlay difficultyGraphDetail;
 
         [CanBeNull] // Should be non-null once it can support custom rulesets.
         private EditorChangeHandler changeHandler;
@@ -623,6 +626,8 @@ namespace osu.Game.Screens.Edit
                                             {
                                                 State = { BindTarget = editorContractSidebars }
                                             },
+                                            new OsuMenuItemSpacer(),
+                                            new EditorMenuItem(EditorStrings.DifficultyGraphDetailScreen, MenuItemType.Standard, () => difficultyGraphDetail?.Show()),
                                         }
                                     },
                                     new MenuItem(EditorStrings.Timing)
@@ -692,6 +697,8 @@ namespace osu.Game.Screens.Edit
                     // sits above the screens so it stays readable, but takes no input away from them: the layout is
                     // built while listening to the song and watching the playfield.
                     comboColourStudio = new ComboColourStudioOverlay { State = { Value = Visibility.Hidden } },
+                    // modal, unlike the studio above it: this one is opened, read, and closed.
+                    difficultyGraphDetail = new DifficultyGraphDetailOverlay { State = { Value = Visibility.Hidden } },
                     MutationTracker,
                     autoBackup = new EditorAutoBackup(),
                     new EditorPlaybackLoop(),

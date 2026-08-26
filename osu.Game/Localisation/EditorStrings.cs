@@ -535,6 +535,21 @@ namespace osu.Game.Localisation
         public static LocalisableString DifficultyGraphDetail => new TranslatableString(getKey(@"difficulty_graph_detail"), @"Difficulty graph detail");
 
         /// <summary>
+        /// "Difficulty graph in detail"
+        /// </summary>
+        public static LocalisableString DifficultyGraphDetailScreen => new TranslatableString(getKey(@"difficulty_graph_detail_screen"), @"Difficulty graph in detail");
+
+        /// <summary>
+        /// "Per skill"
+        /// </summary>
+        public static LocalisableString DifficultyGraphPerSkill => new TranslatableString(getKey(@"difficulty_graph_per_skill"), @"Per skill");
+
+        /// <summary>
+        /// "Apply the current mods"
+        /// </summary>
+        public static LocalisableString DifficultyGraphApplyCurrentMods => new TranslatableString(getKey(@"difficulty_graph_apply_current_mods"), @"Apply the current mods");
+
+        /// <summary>
         /// "How densely the graph is drawn. The count does not depend on the length of the beatmap, so half a minute and ten minutes are drawn just as finely."
         /// </summary>
         public static LocalisableString DifficultyGraphDetailDescription => new TranslatableString(getKey(@"difficulty_graph_detail_description"),
