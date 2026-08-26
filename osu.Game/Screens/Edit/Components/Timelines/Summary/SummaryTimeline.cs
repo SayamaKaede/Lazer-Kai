@@ -2,7 +2,9 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Game.Configuration;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Game.Input;
@@ -23,9 +25,21 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary
         /// </summary>
         public override bool HandlePositionalInput => true;
 
+        /// <summary>
+        /// Follows the same switch as the timeline along the top of the editor.
+        /// </summary>
+        /// <remarks>
+        /// Turning the timeline off is asking to look at the beatmap rather than at the instruments around it, and
+        /// this strip is as much of the instruments as that one. Only the timeline goes: the clock, playback and the
+        /// test button beside it are how the editor is operated.
+        /// </remarks>
+        private readonly Bindable<bool> shown = new Bindable<bool>(true);
+
         [BackgroundDependencyLoader]
-        private void load(OverlayColourProvider colourProvider)
+        private void load(OverlayColourProvider colourProvider, OsuConfigManager config)
         {
+            config.BindWith(OsuSetting.EditorShowTimeline, shown);
+
             Background.Colour = colourProvider.Background6;
 
             Children = new Drawable[]
@@ -95,6 +109,18 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary
                 },
                 new MarkerPart { RelativeSizeAxes = Axes.Both },
             };
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            // hidden rather than removed, so the rest of the bar stays where the hand expects to find it.
+            shown.BindValueChanged(show =>
+            {
+                this.FadeTo(show.NewValue ? 1 : 0, 200, Easing.OutQuint);
+                AlwaysPresent = false;
+            }, true);
         }
     }
 }

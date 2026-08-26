@@ -67,7 +67,7 @@ namespace osu.Game.Screens.Edit
                         new Drawable[]
                         {
                             new TimeInfoContainer { RelativeSizeAxes = Axes.Both },
-                            new SummaryTimeline { RelativeSizeAxes = Axes.Both },
+                            summaryTimeline = new SummaryTimeline { RelativeSizeAxes = Axes.Both },
                             new PlaybackControl { RelativeSizeAxes = Axes.Both },
                             TestGameplayButton = new TestGameplayButton
                             {
@@ -100,6 +100,24 @@ namespace osu.Game.Screens.Edit
                         c.Background.Delay(600).FadeTo(0.5f, 4000, Easing.OutQuint);
                 }
             }, true);
+        }
+
+        /// <summary>
+        /// The bar takes the mouse before the beatmap behind it does, so a click on a button here does not also
+        /// reach into the beatmap. Where the timeline has been turned off, it lets go instead.
+        /// </summary>
+        /// <remarks>
+        /// Reaching an object that runs under the bar is the reason for turning the timeline off at all: a slider
+        /// tail or an anchor down here cannot be dragged while the bar is holding the mouse down. Only that share of
+        /// the bar opens up — the clock, playback and the test button keep taking it, since a click meant for one of
+        /// them starting a drag in the beatmap would be worse than not reaching it.
+        /// </remarks>
+        public override bool ReceivePositionalInputAt(Vector2 screenSpacePos)
+        {
+            if (!summaryTimeline.IsPresent && summaryTimeline.ScreenSpaceDrawQuad.Contains(screenSpacePos))
+                return false;
+
+            return base.ReceivePositionalInputAt(screenSpacePos);
         }
 
         protected override bool OnMouseDown(MouseDownEvent e) => true;
