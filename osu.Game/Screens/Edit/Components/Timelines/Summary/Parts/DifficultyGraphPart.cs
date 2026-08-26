@@ -257,6 +257,7 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
 
             // the curve is bucketed by time rather than by object, so a dense burst reads as tall rather than wide.
             double[] buckets = new double[resolution];
+            bool[] measured = new bool[resolution];
 
             for (int i = 0; i < difficulties.Length; i++)
             {
@@ -266,6 +267,29 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
                     continue;
 
                 buckets[bucket] = Math.Max(buckets[bucket], difficulties[i]);
+                measured[bucket] = true;
+            }
+
+            // a long slider is measured only where it starts, so what it runs through winds down from it rather than
+            // dropping out and reading as a break. The beatmap's actual breaks stay empty, which is what tells them
+            // apart — and the bar this graph sits in already says where they are.
+            bool[] inBreak = new bool[resolution];
+
+            foreach (var period in editorBeatmap.Breaks)
+            {
+                int from = (int)(period.StartTime / trackLength * resolution);
+                int to = (int)(period.EndTime / trackLength * resolution);
+
+                for (int i = Math.Max(from, 0); i <= Math.Min(to, resolution - 1); i++)
+                    inBreak[i] = true;
+            }
+
+            var fades = DifficultyGraphFade.Across(measured, inBreak);
+
+            for (int i = 0; i < resolution; i++)
+            {
+                if (!measured[i])
+                    buckets[i] = fades[i].Source < 0 ? 0 : buckets[fades[i].Source] * fades[i].Factor;
             }
 
             double peak = buckets.Max();
