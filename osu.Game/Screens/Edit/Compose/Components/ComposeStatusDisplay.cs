@@ -226,6 +226,47 @@ namespace osu.Game.Screens.Edit.Compose.Components
         }
 
         /// <summary>
+        /// How long a beatmap drains for, counted the way a mapper is judged on it.
+        /// </summary>
+        /// <remarks>
+        /// A break is written into the beatmap with a gap held before and after it — two hundred milliseconds after
+        /// the object it follows, six hundred before the one it leads to — so the period stored in the file is
+        /// shorter than the stretch where nothing is actually played. The game's own reckoning takes the stored
+        /// period off, which leaves a beatmap draining for most of a second longer than the tools a mapper is
+        /// checked against report. Here the whole gap comes off instead, so this agrees with them.
+        ///
+        /// The gap is measured from where the object before the break finishes: a slider running into one is played
+        /// rather than rested through.
+        /// </remarks>
+        public static double DrainTimeFor(IBeatmap beatmap)
+        {
+            double length = beatmap.CalculatePlayableLength();
+
+            foreach (var period in beatmap.Breaks)
+            {
+                double? before = null;
+                double? after = null;
+
+                foreach (var hitObject in beatmap.HitObjects)
+                {
+                    double end = hitObject.GetEndTime();
+
+                    if (end <= period.StartTime)
+                        before = before == null ? end : Math.Max(before.Value, end);
+
+                    if (hitObject.StartTime >= period.EndTime && after == null)
+                        after = hitObject.StartTime;
+                }
+
+                // a break with no beatmap on one side of it is not a gap between two objects, and there is nothing
+                // to measure it against. What the file says is the best that can be said.
+                length -= before != null && after != null ? after.Value - before.Value : period.Duration;
+            }
+
+            return Math.Max(length, 0);
+        }
+
+        /// <summary>
         /// A length as minutes, seconds and milliseconds.
         /// </summary>
         /// <remarks>
@@ -234,13 +275,15 @@ namespace osu.Game.Screens.Edit.Compose.Components
         /// has to be worked out again before it can be used.
         ///
         /// Minutes keep counting past sixty rather than rolling over into hours — a marathon is still talked about in
-        /// minutes, and an hour-long beatmap reading as "1:01" would be read as a minute long. The fraction of a
-        /// millisecond is dropped rather than rounded up, since this is a measurement of what is there rather than a
-        /// countdown to something.
+        /// minutes, and an hour-long beatmap reading as "1:01" would be read as a minute long.
+        ///
+        /// The fraction of a millisecond is rounded rather than dropped, so this agrees to the millisecond with the
+        /// tools a mapper checks a beatmap against. A slider ending on a fraction is common enough that dropping it
+        /// would leave the two disagreeing on most beatmaps.
         /// </remarks>
         public static string DrainTimeReadout(double milliseconds)
         {
-            int total = (int)Math.Max(milliseconds, 0);
+            int total = (int)Math.Round(Math.Max(milliseconds, 0), MidpointRounding.AwayFromZero);
 
             return $@"{total / 60000}:{total / 1000 % 60:00}.{total % 1000:000}";
         }
@@ -373,7 +416,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
             if (lastDrainTime == null)
             {
-                double drain = editorBeatmap.CalculateDrainLength();
+                double drain = DrainTimeFor(editorBeatmap);
 
                 lastDrainTime = drain;
                 drainTime.Text = DrainTimeReadout(drain);

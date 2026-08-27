@@ -55,13 +55,16 @@ namespace osu.Game.Tests.Editing
         }
 
         /// <summary>
-        /// A drain length is a measurement rather than a countdown, so a fraction of a millisecond is dropped rather
-        /// than rounded up into a millisecond that has not passed.
+        /// A fraction of a millisecond is rounded rather than dropped, so this agrees to the millisecond with the
+        /// tools a mapper checks a beatmap against — a slider ending on a fraction is common enough that dropping it
+        /// would leave the two disagreeing on most beatmaps.
         /// </summary>
-        [Test]
-        public void TestPartOfAMillisecondIsDropped()
+        [TestCase(1_999.9, "0:02.000")]
+        [TestCase(1_999.4, "0:01.999")]
+        [TestCase(235_889.7, "3:55.890")]
+        public void TestPartOfAMillisecondIsRounded(double milliseconds, string expected)
         {
-            Assert.That(ComposeStatusDisplay.DrainTimeReadout(1_999.9), Is.EqualTo("0:01.999"));
+            Assert.That(ComposeStatusDisplay.DrainTimeReadout(milliseconds), Is.EqualTo(expected));
         }
     }
 }
