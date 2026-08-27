@@ -4,15 +4,19 @@
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Game.Configuration;
+using osu.Game.Extensions;
+using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Screens.Edit.DifficultyGraph;
+using osuTK;
 using osuTK.Input;
 
 namespace osu.Game.Tests.Visual.Editing
@@ -126,6 +130,112 @@ namespace osu.Game.Tests.Visual.Editing
                 return shade.ScreenSpaceDrawQuad.BottomLeft.Y < overlay().ScreenSpaceDrawQuad.BottomLeft.Y - 1;
             }, () => Is.True);
         }
+
+        /// <summary>
+        /// The readout has to describe the moment the cursor is actually over. Reading a graph means putting the
+        /// pointer on a peak and asking what it is made of, and an answer taken from somewhere else is worse than no
+        /// answer at all — nothing on screen says it is wrong.
+        /// </summary>
+        [TestCase(0.25f)]
+        [TestCase(0.5f)]
+        [TestCase(0.8f)]
+        public void TestTheReadoutFollowsTheCursor(float across)
+        {
+            AddStep("open the detail screen", () => overlay().Show());
+            AddUntilStep("the curve is drawn", () => graph().ChildrenOfType<Box>().Any(), () => Is.True);
+
+            AddStep($"point at {across:P0} across", () =>
+            {
+                var quad = graph().ScreenSpaceDrawQuad;
+                InputManager.MoveMouseTo(new Vector2(quad.TopLeft.X + quad.Width * across, quad.Centre.Y));
+            });
+
+            AddUntilStep("it read somewhere", () => graph().HoveredTime.Value, () => Is.Not.Null);
+
+            AddAssert("it read the moment under the cursor",
+                () => graph().HoveredTime.Value!.Value,
+                () => Is.EqualTo(Beatmap.Value.Track.Length * across).Within(Beatmap.Value.Track.Length * 0.01));
+        }
+
+        /// <summary>
+        /// And clicking has to land where the cursor is, for the same reason and by the same reckoning.
+        /// </summary>
+        [TestCase(0.3f)]
+        [TestCase(0.6f)]
+        public void TestClickingSeeksToWhereTheCursorIs(float across)
+        {
+            AddStep("open the detail screen", () => overlay().Show());
+            AddUntilStep("the curve is drawn", () => graph().ChildrenOfType<Box>().Any(), () => Is.True);
+
+            AddStep($"click {across:P0} across", () =>
+            {
+                var quad = graph().ScreenSpaceDrawQuad;
+                InputManager.MoveMouseTo(new Vector2(quad.TopLeft.X + quad.Width * across, quad.Centre.Y));
+                InputManager.Click(MouseButton.Left);
+            });
+
+            AddUntilStep("playback went there",
+                () => EditorClock.CurrentTime,
+                () => Is.EqualTo(Beatmap.Value.Track.Length * across).Within(Beatmap.Value.Track.Length * 0.01));
+        }
+
+        /// <summary>
+        /// The readout across the top describes where playback is, without being asked. It follows the clock rather
+        /// than the pointer, so it is still right after seeking with a hand nowhere near the graph.
+        /// </summary>
+        [Test]
+        public void TestTheTopReadoutFollowsPlayback()
+        {
+            AddStep("open the detail screen", () => overlay().Show());
+            AddUntilStep("the curve is drawn", () => graph().ChildrenOfType<Box>().Any(), () => Is.True);
+
+            AddStep("seek to a third in", () => EditorClock.Seek(Beatmap.Value.Track.Length / 3));
+            AddUntilStep("it says so", () => readoutTime(), () => Is.EqualTo((Beatmap.Value.Track.Length / 3).ToEditorFormattedString()));
+
+            AddStep("seek to two thirds in", () => EditorClock.Seek(Beatmap.Value.Track.Length * 2 / 3));
+            AddUntilStep("it moved with it", () => readoutTime(), () => Is.EqualTo((Beatmap.Value.Track.Length * 2 / 3).ToEditorFormattedString()));
+        }
+
+        /// <summary>
+        /// And it says what the beatmap is made of there, not only when.
+        /// </summary>
+        [Test]
+        public void TestTheTopReadoutNamesEverySkill()
+        {
+            AddStep("open the detail screen", () => overlay().Show());
+            AddUntilStep("the curve is drawn", () => graph().ChildrenOfType<Box>().Any(), () => Is.True);
+
+            AddAssert("every skill is named", () => overlay().ChildrenOfType<PlayheadReadout>().Single()
+                                                            .ChildrenOfType<OsuSpriteText>().Select(t => t.Text.ToString()),
+                () => Does.Contain("Aim").And.Contains("Speed"));
+        }
+
+        /// <summary>
+        /// The screen can be made see-through so the beatmap behind it can be looked at without closing it. Showing
+        /// and hiding still runs from nothing to whatever was set, rather than to solid.
+        /// </summary>
+        [Test]
+        public void TestTheScreenCanBeSeenThrough()
+        {
+            AddStep("open the detail screen", () => overlay().Show());
+            AddUntilStep("it is solid", () => shade().Alpha, () => Is.EqualTo(1));
+
+            AddStep("half it", () => config.SetValue(OsuSetting.EditorDifficultyGraphOverlayOpacity, 0.5f));
+            AddUntilStep("it is see-through", () => shade().Alpha, () => Is.EqualTo(0.5f).Within(0.01f));
+
+            AddStep("close it", () => overlay().Hide());
+            AddStep("open it again", () => overlay().Show());
+            AddUntilStep("it came back see-through", () => shade().Alpha, () => Is.EqualTo(0.5f).Within(0.01f));
+
+            AddAssert("and still takes the mouse", () => overlay().ReceivePositionalInputAt(overlay().ScreenSpaceDrawQuad.Centre), () => Is.True);
+        }
+
+        private Drawable shade() => overlay().ChildrenOfType<Box>().First().Parent!;
+
+        private string readoutTime() => overlay().ChildrenOfType<PlayheadReadout>().Single()
+                                                 .ChildrenOfType<OsuSpriteText>().First().Text.ToString();
+
+        private StackedGraph graph() => overlay().ChildrenOfType<StackedGraph>().Single();
 
         private DifficultyGraphDetailOverlay overlay() => Editor.ChildrenOfType<DifficultyGraphDetailOverlay>().Single();
     }

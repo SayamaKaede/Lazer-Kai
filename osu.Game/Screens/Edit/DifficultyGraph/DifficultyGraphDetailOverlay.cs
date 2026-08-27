@@ -76,12 +76,22 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
         [Resolved(canBeNull: true)]
         private EditorDifficultyTracker? difficultyTracker { get; set; }
 
+        [Resolved]
+        private OverlayColourProvider colourProvider { get; set; } = null!;
+
         // a number rather than a plain bindable so the slider in the footer has a range to work against.
         private readonly BindableFloat detail = new BindableFloat(DifficultyGraphPart.DEFAULT_DETAIL);
         private readonly Bindable<bool> showSkills = new Bindable<bool>(true);
         private readonly Bindable<bool> applyMods = new Bindable<bool>();
 
+        /// <summary>
+        /// How solid the screen is drawn, so the beatmap behind it can be looked at without closing it.
+        /// </summary>
+        private readonly BindableFloat windowOpacity = new BindableFloat(1);
+
+        private InputBlockingContainer shade = null!;
         private StackedGraph stacked = null!;
+        private PlayheadReadout playheadReadout = null!;
         private FillFlowContainer skillRows = null!;
         private SpriteIcon foldIcon = null!;
         private OsuSpriteText starRating = null!;
@@ -93,7 +103,7 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
         private Color4[] skillColours = Array.Empty<Color4>();
 
         [BackgroundDependencyLoader]
-        private void load(OsuConfigManager config, OsuColour colours, OverlayColourProvider colourProvider)
+        private void load(OsuConfigManager config, OsuColour colours)
         {
             RelativeSizeAxes = Axes.Both;
 
@@ -105,11 +115,12 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
             config.BindWith(OsuSetting.EditorDifficultyGraphOverlayDetail, detail);
             config.BindWith(OsuSetting.EditorDifficultyGraphOverlayShowSkills, showSkills);
             config.BindWith(OsuSetting.EditorDifficultyGraphOverlayApplyMods, applyMods);
+            config.BindWith(OsuSetting.EditorDifficultyGraphOverlayOpacity, windowOpacity);
 
             // in the order the osu! ruleset builds its skills: aim, then speed, then reading.
             skillColours = new[] { colourProvider.Highlight1, colours.Lime1, colours.Orange1, colours.Pink1, colours.Blue1 };
 
-            Child = new InputBlockingContainer
+            Child = shade = new InputBlockingContainer
             {
                 RelativeSizeAxes = Axes.Both,
                 Children = new Drawable[]
@@ -142,6 +153,7 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
                                     RowDimensions = new[]
                                     {
                                         new Dimension(GridSizeMode.Absolute, 58),
+                                        new Dimension(GridSizeMode.Absolute, 34),
                                         new Dimension(),
                                         new Dimension(GridSizeMode.AutoSize),
                                         new Dimension(GridSizeMode.Absolute, 56),
@@ -149,6 +161,7 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
                                     Content = new[]
                                     {
                                         new Drawable[] { createHeader(colourProvider, colours) },
+                                        new Drawable[] { createPlayheadReadout() },
                                         new Drawable[] { createGraph(colourProvider) },
                                         new Drawable[] { createSkillRows(colourProvider) },
                                         new Drawable[] { createFooter(colourProvider) },
@@ -260,13 +273,30 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
             }
         };
 
+        /// <summary>
+        /// The moment playback is on, kept on screen rather than waiting to be pointed at.
+        /// </summary>
+        private Drawable createPlayheadReadout() => new Container
+        {
+            RelativeSizeAxes = Axes.Both,
+            Padding = new MarginPadding { Horizontal = 26 },
+            Child = playheadReadout = new PlayheadReadout
+            {
+                Anchor = Anchor.CentreLeft,
+                Origin = Anchor.CentreLeft,
+            },
+        };
+
         private Drawable createGraph(OverlayColourProvider colourProvider) => new Container
         {
             RelativeSizeAxes = Axes.Both,
-            Padding = new MarginPadding { Horizontal = 26, Top = 26, Bottom = 8 },
+            // the room above used to hold the time over the playhead. That is written across the top of the screen
+            // now, so the graph starts where the numbers describing it leave off.
+            Padding = new MarginPadding { Horizontal = 26, Top = 4, Bottom = 8 },
             Child = stacked = new StackedGraph(colourProvider)
             {
                 RelativeSizeAxes = Axes.Both,
+                Seek = time => editorClock.SeekSmoothlyTo(time),
             },
         };
 
@@ -371,6 +401,22 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
                     {
                         new OsuSpriteText
                         {
+                            Text = EditorStrings.DifficultyGraphWindowOpacity,
+                            Font = OsuFont.Default.With(size: 12),
+                            Colour = colourProvider.Content2,
+                            Anchor = Anchor.CentreLeft,
+                            Origin = Anchor.CentreLeft,
+                        },
+                        new RoundedSliderBar<float>
+                        {
+                            Current = windowOpacity,
+                            Width = 140,
+                            Anchor = Anchor.CentreLeft,
+                            Origin = Anchor.CentreLeft,
+                            Margin = new MarginPadding { Right = 10 },
+                        },
+                        new OsuSpriteText
+                        {
                             Text = EditorStrings.DifficultyGraphDetail,
                             Font = OsuFont.Default.With(size: 12),
                             Colour = colourProvider.Content2,
@@ -380,7 +426,7 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
                         new RoundedSliderBar<float>
                         {
                             Current = detail,
-                            Width = 200,
+                            Width = 160,
                             Anchor = Anchor.CentreLeft,
                             Origin = Anchor.CentreLeft,
                         },
@@ -401,6 +447,10 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
             }, true);
 
             detail.BindValueChanged(_ => draw());
+
+            // the screen itself is faded rather than the container it sits in, so showing and hiding it still runs
+            // from nothing to whatever the mapper set here.
+            windowOpacity.BindValueChanged(v => shade.Alpha = v.NewValue, true);
             applyMods.BindValueChanged(_ => recalculate());
 
             if (difficultyTracker != null)
@@ -433,12 +483,28 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
 
         protected override void PopOut() => this.FadeOut(200, Easing.OutQuint);
 
+        private double lastDescribed = double.NaN;
+
         protected override void Update()
         {
             base.Update();
 
-            if (State.Value == Visibility.Visible)
-                stacked.SetPlayhead(editorClock.CurrentTime);
+            if (State.Value != Visibility.Visible)
+                return;
+
+            double now = editorClock.CurrentTime;
+
+            stacked.SetPlayhead(now);
+
+            // the readout only changes when the moment does, so a paused editor costs nothing to keep on screen.
+            if (Math.Abs(now - lastDescribed) < 1)
+                return;
+
+            lastDescribed = now;
+
+            var column = stacked.ColumnAt(now);
+            playheadReadout.Set(now, column);
+            playheadReadout.SetMeasured(column?.Measured ?? false);
         }
 
         /// <summary>
@@ -496,7 +562,13 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
 
             var built = ColumnsFor(breakdown.Times, perSkill.Select(s => s.Difficulties).ToArray(), trackLength, columns, breaks);
 
-            stacked.Set(built, perSkill.Select(s => s.Name).ToArray(), skillColours, trackLength);
+            string[] names = perSkill.Select(s => s.Name).ToArray();
+
+            stacked.Set(built, names, skillColours, trackLength);
+            playheadReadout.SetSkills(names, skillColours, colourProvider);
+
+            // the beatmap changed under it, so whatever it was describing is no longer what is there.
+            lastDescribed = double.NaN;
 
             skillRows.Clear();
 

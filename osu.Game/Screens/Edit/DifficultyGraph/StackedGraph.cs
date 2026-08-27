@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
@@ -26,11 +27,15 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
     /// </remarks>
     public partial class StackedGraph : CompositeDrawable
     {
+        /// <summary>
+        /// Called with a beatmap time when the graph is clicked.
+        /// </summary>
+        public Action<double>? Seek;
+
         private readonly OverlayColourProvider colourProvider;
 
         private BufferedContainer<Box> bands = null!;
         private Container playhead = null!;
-        private OsuSpriteText playheadTime = null!;
         private Container readout = null!;
         private FillFlowContainer readoutRows = null!;
         private OsuSpriteText readoutTime = null!;
@@ -70,13 +75,6 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
                     Width = 1.5f,
                     Alpha = 0,
                     Child = new Box { RelativeSizeAxes = Axes.Both, Colour = Color4.White, Alpha = 0.85f },
-                },
-                playheadTime = new OsuSpriteText
-                {
-                    RelativePositionAxes = Axes.X,
-                    Font = OsuFont.Default.With(size: 11.5f, fixedWidth: true),
-                    Origin = Anchor.BottomCentre,
-                    Alpha = 0,
                 },
                 readout = new Container
                 {
@@ -176,44 +174,87 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
         {
             if (trackLength <= 0)
             {
-                playhead.Alpha = playheadTime.Alpha = 0;
+                playhead.Alpha = 0;
                 return;
             }
 
             float position = (float)Math.Clamp(time / trackLength, 0, 1);
 
+            // the time itself is written across the top of the screen, so it is not repeated over the line here.
             playhead.Alpha = 1;
             playhead.X = position;
-
-            playheadTime.Alpha = 1;
-            playheadTime.X = position;
-            playheadTime.Text = time.ToEditorFormattedString();
         }
 
         protected override bool OnHover(HoverEvent e) => true;
 
-        protected override void OnHoverLost(HoverLostEvent e) => readout.Alpha = 0;
+        protected override void OnHoverLost(HoverLostEvent e)
+        {
+            readout.Alpha = 0;
+            HoveredTime.Value = null;
+        }
+
+        /// <summary>
+        /// The moment the cursor last sat over, or null when it is not over the graph.
+        /// </summary>
+        /// <remarks>
+        /// Held out here so what the readout says can be checked against where the mouse actually is.
+        /// </remarks>
+        public readonly Bindable<double?> HoveredTime = new Bindable<double?>();
 
         protected override bool OnMouseMove(MouseMoveEvent e)
         {
-            updateReadout(e.MousePosition.X);
+            updateReadout(localX(e));
             return base.OnMouseMove(e);
         }
 
-        // deliberately not seekable. Clicking here landed somewhere other than where the cursor was, and the timeline
-        // along the bottom of the editor is left reachable for exactly this — a graph is for reading.
-        private double timeAt(float x) => Math.Clamp(x / DrawWidth, 0, 1) * trackLength;
+        /// <summary>
+        /// How far across this graph the mouse is, in the graph's own coordinates.
+        /// </summary>
+        /// <remarks>
+        /// Worked out from the screen position rather than taken from the event. An event's mouse position is
+        /// reported in the space of whatever it was routed through, which here is the padded container this sits
+        /// inside — measured, that read twenty six pixels to the right of the cursor, exactly the padding, and the
+        /// readout answered for a moment nobody was pointing at.
+        /// </remarks>
+        private float localX(MouseEvent e) => ToLocalSpace(e.ScreenSpaceMousePosition).X;
+
+        protected override bool OnClick(ClickEvent e)
+        {
+            if (trackLength > 0)
+                Seek?.Invoke(TimeAt(localX(e)));
+
+            return true;
+        }
+
+        /// <summary>
+        /// The moment a point across the graph stands for.
+        /// </summary>
+        /// <param name="x">How far across, in the graph's own coordinates.</param>
+        public double TimeAt(float x) => Math.Clamp(x / DrawWidth, 0, 1) * trackLength;
+
+        /// <summary>
+        /// What the graph is drawing at a moment, or nothing if it has not been given a beatmap yet.
+        /// </summary>
+        public DifficultyGraphDetailOverlay.SkillColumn? ColumnAt(double time)
+        {
+            if (columns.Length == 0 || trackLength <= 0)
+                return null;
+
+            return columns[Math.Clamp((int)(time / trackLength * columns.Length), 0, columns.Length - 1)];
+        }
 
         private void updateReadout(float x)
         {
             if (columns.Length == 0 || trackLength <= 0)
             {
                 readout.Alpha = 0;
+                HoveredTime.Value = null;
                 return;
             }
 
             int index = Math.Clamp((int)(x / DrawWidth * columns.Length), 0, columns.Length - 1);
 
+            HoveredTime.Value = TimeAt(x);
             readout.Alpha = 1;
             readout.X = Math.Clamp(x / DrawWidth, 0, 1);
 
@@ -222,7 +263,7 @@ namespace osu.Game.Screens.Edit.DifficultyGraph
             readout.Origin = nearTheEnd ? Anchor.TopRight : Anchor.TopLeft;
             readout.Margin = new MarginPadding { Top = 20, Left = nearTheEnd ? 0 : 8, Right = nearTheEnd ? 8 : 0 };
 
-            readoutTime.Text = timeAt(x).ToEditorFormattedString();
+            readoutTime.Text = TimeAt(x).ToEditorFormattedString();
             readoutRows.Clear();
 
             for (int s = 0; s < names.Length; s++)

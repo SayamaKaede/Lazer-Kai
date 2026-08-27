@@ -297,6 +297,9 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorDifficultyGraphOverlayDetail, DifficultyGraphPart.DEFAULT_DETAIL, 0.25f, 3f, 0.05f);
             SetDefault(OsuSetting.EditorDifficultyGraphOverlayShowSkills, true);
             SetDefault(OsuSetting.EditorDifficultyGraphOverlayApplyMods, false);
+            // never all the way down: a screen that can be made invisible while still taking the mouse is a screen
+            // someone loses.
+            SetDefault(OsuSetting.EditorDifficultyGraphOverlayOpacity, 1f, 0.3f, 1f, 0.05f);
             SetDefault(OsuSetting.EditorLoopPlayback, false);
             SetDefault(OsuSetting.EditorAutoBackup, true);
             SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
@@ -754,6 +757,11 @@ namespace osu.Game.Configuration
         /// Whether the difficulty graph's detail screen describes the beatmap with the current mods applied.
         /// </summary>
         EditorDifficultyGraphOverlayApplyMods,
+
+        /// <summary>
+        /// How solid the difficulty graph's detail screen is drawn.
+        /// </summary>
+        EditorDifficultyGraphOverlayOpacity,
 
         /// <summary>
         /// Whether editor playback returns to the start of the beatmap on reaching the end rather than stopping.

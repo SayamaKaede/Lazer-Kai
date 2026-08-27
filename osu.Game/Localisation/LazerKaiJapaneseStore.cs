@@ -71,6 +71,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:difficulty_graph_detail"] = @"難易度グラフの細かさ",
             [$@"{editor_prefix}:difficulty_graph_detail_screen"] = @"難易度グラフの詳細",
             [$@"{editor_prefix}:difficulty_graph_per_skill"] = @"スキル別",
+            [$@"{editor_prefix}:difficulty_graph_total"] = @"合計",
+            [$@"{editor_prefix}:difficulty_graph_window_opacity"] = @"透明度",
             [$@"{editor_prefix}:difficulty_graph_apply_current_mods"] = @"現在のModを適用",
             [$@"{editor_prefix}:difficulty_graph_detail_description"] = @"グラフをどれだけ細かく描くか。列数は曲の長さに左右されないので、30秒の譜面でも10分の譜面でも同じ細かさで描かれます",
             [$@"{editor_prefix}:loop_playback"] = @"ループ再生",

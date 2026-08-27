@@ -545,6 +545,16 @@ namespace osu.Game.Localisation
         public static LocalisableString DifficultyGraphPerSkill => new TranslatableString(getKey(@"difficulty_graph_per_skill"), @"Per skill");
 
         /// <summary>
+        /// "Total"
+        /// </summary>
+        public static LocalisableString DifficultyGraphTotal => new TranslatableString(getKey(@"difficulty_graph_total"), @"Total");
+
+        /// <summary>
+        /// "Opacity"
+        /// </summary>
+        public static LocalisableString DifficultyGraphWindowOpacity => new TranslatableString(getKey(@"difficulty_graph_window_opacity"), @"Opacity");
+
+        /// <summary>
         /// "Apply the current mods"
         /// </summary>
         public static LocalisableString DifficultyGraphApplyCurrentMods => new TranslatableString(getKey(@"difficulty_graph_apply_current_mods"), @"Apply the current mods");
