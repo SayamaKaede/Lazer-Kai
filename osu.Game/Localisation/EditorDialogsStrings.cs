@@ -114,6 +114,17 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString SyncTimingOptionPreviewPoint => new TranslatableString(getKey(@"sync_timing_option_preview_point"), @"Preview point");
 
+        /// <summary>
+        /// "Overwrite the difficulty you are editing?"
+        /// </summary>
+        public static LocalisableString OverwriteCurrentDifficultyHeader => new TranslatableString(getKey(@"overwrite_current_difficulty_header"), @"Overwrite the difficulty you are editing?");
+
+        /// <summary>
+        /// "The dropped file is "{0}", which is the difficulty currently open. Overwriting it discards your unsaved changes and reopens the editor on the new contents."
+        /// </summary>
+        public static LocalisableString OverwriteCurrentDifficultyDetails(string difficultyName) => new TranslatableString(getKey(@"overwrite_current_difficulty_details"),
+            @"The dropped file is ""{0}"", which is the difficulty currently open. Overwriting it discards your unsaved changes and reopens the editor on the new contents.", difficultyName);
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

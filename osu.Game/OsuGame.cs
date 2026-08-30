@@ -419,7 +419,20 @@ namespace osu.Game
                     string[] paths = dragDropFiles.ToArray();
                     dragDropFiles.Clear();
 
-                    Task.Factory.StartNew(() => Import(paths), TaskCreationOptions.LongRunning);
+                    // a `.osu` dropped while a beatmap is open in the editor belongs to the set being edited
+                    // far more often than it is a thing of its own, so the editor takes those.
+                    if (ScreenStack.CurrentScreen is Editor editor)
+                    {
+                        editor.ImportDroppedDifficulties(paths);
+                        paths = paths.Where(p => !Editor.IsDroppedDifficulty(p)).ToArray();
+
+                        if (paths.Length == 0)
+                            return;
+                    }
+
+                    string[] toImport = paths;
+
+                    Task.Factory.StartNew(() => Import(toImport), TaskCreationOptions.LongRunning);
                 }
             }
         }

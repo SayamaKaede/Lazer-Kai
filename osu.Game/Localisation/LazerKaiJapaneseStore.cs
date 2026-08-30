@@ -195,8 +195,30 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:colour_magenta"] = @"マゼンタ",
             [$@"{editor_prefix}:colour_white"] = @"白",
 
+            // dropping a .osu onto the open editor
+            [$@"{editor_prefix}:dropped_difficulty_added"] = @"「{0}」を新しい難易度として追加しました。",
+            [$@"{editor_prefix}:dropped_difficulty_replaced"] = @"難易度「{0}」を上書きしました。",
+            [$@"{editor_prefix}:dropped_difficulty_unreadable"] = @"「{0}」を難易度として読み込めませんでした。",
+            [$@"{editor_prefix}:dropped_difficulty_name_taken"] = @"このセットには別モードの「{0}」が既にあるため、ドロップされたファイルは取り込みませんでした。",
+            [$@"{editor_dialogs_prefix}:overwrite_current_difficulty_header"] = @"編集中の難易度を上書きしますか?",
+            [$@"{editor_dialogs_prefix}:overwrite_current_difficulty_details"] = @"ドロップされたファイルは「{0}」で、いま開いている難易度です。上書きすると保存していない変更は破棄され、新しい内容でエディターを開き直します。",
+
+            // Mapping Tools への受け渡し
+            [$@"{editor_prefix}:click_to_export_logs"] = @"クリックすると、送信用のログを書き出します（Windowsのアカウント名は伏せられます）",
+            [$@"{editor_prefix}:open_in_mapping_tools"] = @"Mapping Tools で開く",
+            [$@"{editor_prefix}:mapping_tools_not_found"] = @"Mapping Tools が見つかりませんでした。インストール先をオプションの Lazer-Kai から指定してください。",
+            [$@"{editor_prefix}:mapping_tools_already_running"] = @"Mapping Tools が既に起動しています。どの譜面を扱うかは起動時にしか読み込まれないので、一度閉じてからやり直してください。",
+            [$@"{editor_prefix}:mapping_tools_path_is_something_else"] = @"オプションで指定されているファイルは Mapping Tools ではありません。Mapping Tools.exe を指定してください。",
+            [$@"{editor_prefix}:mapping_tools_failed_to_start"] = @"Mapping Tools を起動できませんでした。",
+
             // settings section
             [$@"{settings_prefix}:section_header"] = @"Lazer-Kai",
+            // the fork's name is written the same way in Japanese; it is here so that it reads as decided rather
+            // than as a string nobody got to.
+            [$@"{settings_prefix}:section_header"] = @"Lazer-Kai",
+            [$@"{settings_prefix}:beatmap_section_header"] = @"譜面",
+            [$@"{settings_prefix}:test_play_section_header"] = @"テストプレイ",
+            [$@"{settings_prefix}:other_section_header"] = @"その他",
             [$@"{settings_prefix}:display_header"] = @"表示",
             [$@"{settings_prefix}:selection_header"] = @"選択枠",
             [$@"{settings_prefix}:status_header"] = @"STATUSに表示する項目",

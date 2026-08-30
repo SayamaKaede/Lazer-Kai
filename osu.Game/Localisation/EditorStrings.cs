@@ -1145,6 +1145,64 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString ColourSchemePink => new TranslatableString(getKey(@"colour_scheme_pink"), @"Pink");
 
+        /// <summary>
+        /// "Added "{0}" as a new difficulty."
+        /// </summary>
+        public static LocalisableString DroppedDifficultyAdded(string difficultyName) => new TranslatableString(getKey(@"dropped_difficulty_added"),
+            @"Added ""{0}"" as a new difficulty.", difficultyName);
+
+        /// <summary>
+        /// "Replaced the difficulty "{0}"."
+        /// </summary>
+        public static LocalisableString DroppedDifficultyReplaced(string difficultyName) => new TranslatableString(getKey(@"dropped_difficulty_replaced"),
+            @"Replaced the difficulty ""{0}"".", difficultyName);
+
+        /// <summary>
+        /// ""{0}" could not be read as a difficulty."
+        /// </summary>
+        public static LocalisableString DroppedDifficultyUnreadable(string fileName) => new TranslatableString(getKey(@"dropped_difficulty_unreadable"),
+            @"""{0}"" could not be read as a difficulty.", fileName);
+
+        /// <summary>
+        /// "This set already has a difficulty named "{0}" in another mode, so the dropped file was left alone."
+        /// </summary>
+        public static LocalisableString DroppedDifficultyNameTaken(string difficultyName) => new TranslatableString(getKey(@"dropped_difficulty_name_taken"),
+            @"This set already has a difficulty named ""{0}"" in another mode, so the dropped file was left alone.", difficultyName);
+
+        /// <summary>
+        /// "Click to write out the logs to send, with your Windows account name removed."
+        /// </summary>
+        public static LocalisableString ClickToExportLogs => new TranslatableString(getKey(@"click_to_export_logs"),
+            @"Click to write out the logs to send, with your Windows account name removed.");
+
+        /// <summary>
+        /// "Open in Mapping Tools"
+        /// </summary>
+        public static LocalisableString OpenInMappingTools => new TranslatableString(getKey(@"open_in_mapping_tools"), @"Open in Mapping Tools");
+
+        /// <summary>
+        /// "Mapping Tools was not found. Set where it is installed in the Lazer-Kai options."
+        /// </summary>
+        public static LocalisableString MappingToolsNotFound => new TranslatableString(getKey(@"mapping_tools_not_found"),
+            @"Mapping Tools was not found. Set where it is installed in the Lazer-Kai options.");
+
+        /// <summary>
+        /// "Mapping Tools is already open. It only reads which beatmap to work on as it starts, so close it and try again."
+        /// </summary>
+        public static LocalisableString MappingToolsAlreadyRunning => new TranslatableString(getKey(@"mapping_tools_already_running"),
+            @"Mapping Tools is already open. It only reads which beatmap to work on as it starts, so close it and try again.");
+
+        /// <summary>
+        /// "The file set in the Lazer-Kai options is not Mapping Tools. Point it at Mapping Tools.exe."
+        /// </summary>
+        public static LocalisableString MappingToolsPathIsSomethingElse => new TranslatableString(getKey(@"mapping_tools_path_is_something_else"),
+            @"The file set in the Lazer-Kai options is not Mapping Tools. Point it at Mapping Tools.exe.");
+
+        /// <summary>
+        /// "Mapping Tools could not be started."
+        /// </summary>
+        public static LocalisableString MappingToolsFailedToStart => new TranslatableString(getKey(@"mapping_tools_failed_to_start"), @"Mapping Tools could not be started.");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }
