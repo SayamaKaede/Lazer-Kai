@@ -6,16 +6,19 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
@@ -25,7 +28,9 @@ using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
 using osu.Game.Online.Multiplayer;
 using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Screens.OnlinePlay.Match.Components;
+using osu.Game.Utils;
 using osuTK;
 
 namespace osu.Game.Screens.Edit
@@ -47,6 +52,13 @@ namespace osu.Game.Screens.Edit
         [Resolved]
         private EditorBeatmap editorBeatmap { get; set; } = null!;
 
+        [Resolved(canBeNull: true)]
+        private INotificationOverlay? notifications { get; set; }
+
+        private readonly Bindable<string> mappingToolsPath = new Bindable<string>(string.Empty);
+
+        private PurpleRoundedButton? mappingToolsButton;
+
         private Task? fileMountOperation;
 
         public ExternalEditOperation<BeatmapSetInfo>? EditOperation { get; private set; }
@@ -57,8 +69,10 @@ namespace osu.Game.Screens.Edit
         private FillFlowContainer flow = null!;
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            config.BindWith(OsuSetting.MappingToolsPath, mappingToolsPath);
+
             InternalChild = new Container
             {
                 Masking = true,
@@ -163,6 +177,18 @@ namespace osu.Game.Screens.Edit
                     Action = openDirectory,
                     Enabled = { Value = false }
                 },
+                // always shown, and greyed out when there is nothing to start. Hiding it instead would mean that
+                // anyone whose Mapping Tools is somewhere unusual — a portable copy, another drive — sees a
+                // feature that does not exist rather than one waiting on a path they can go and set.
+                mappingToolsButton = new PurpleRoundedButton
+                {
+                    Text = EditorStrings.OpenInMappingTools,
+                    Width = 350,
+                    Anchor = Anchor.TopCentre,
+                    Origin = Anchor.TopCentre,
+                    Action = openInMappingTools,
+                    Enabled = { Value = false }
+                },
                 new DangerousRoundedButton
                 {
                     Text = EditorStrings.FinishEditingExternally,
@@ -178,6 +204,11 @@ namespace osu.Game.Screens.Edit
             {
                 foreach (var b in flow.ChildrenOfType<RoundedButton>())
                     b.Enabled.Value = true;
+
+                // after the rest, not with them: the sweep above turns on every button on the screen, and this
+                // one is only on when there is something for it to start.
+                mappingToolsPath.BindValueChanged(_ => updateMappingToolsButton(), true);
+
                 openDirectory();
             }, 1000);
         }
@@ -189,6 +220,76 @@ namespace osu.Game.Screens.Edit
 
             // Ensure the trailing separator is present in order to show the folder contents.
             gameHost.OpenFileExternally(EditOperation.MountedPath.TrimDirectorySeparator() + Path.DirectorySeparatorChar);
+        }
+
+        /// <summary>
+        /// Turns the Mapping Tools button on only when there is a Mapping Tools to turn it on for, and says in
+        /// its tooltip what to do when there is not.
+        /// </summary>
+        private void updateMappingToolsButton()
+        {
+            if (mappingToolsButton == null)
+                return;
+
+            bool found = MappingToolsHandoff.FindExecutable(mappingToolsPath.Value) != null;
+
+            mappingToolsButton.Enabled.Value = found;
+
+            // a path pointing at a file that is simply not Mapping Tools is told apart from one pointing at
+            // nothing: "not found" sends somebody looking for a file that is sitting right where they put it.
+            mappingToolsButton.TooltipText = found ? default
+                : File.Exists(mappingToolsPath.Value) ? EditorStrings.MappingToolsPathIsSomethingElse
+                : EditorStrings.MappingToolsNotFound;
+        }
+
+        /// <summary>
+        /// Starts Mapping Tools on the difficulty that was open, out of the folder just exported.
+        /// </summary>
+        private void openInMappingTools()
+        {
+            if (EditOperation == null)
+                return;
+
+            string? executable = MappingToolsHandoff.FindExecutable(mappingToolsPath.Value);
+
+            if (executable == null)
+            {
+                notifications?.Post(new SimpleErrorNotification
+                {
+                    Icon = FontAwesome.Solid.ExclamationTriangle,
+                    Text = File.Exists(mappingToolsPath.Value) ? EditorStrings.MappingToolsPathIsSomethingElse : EditorStrings.MappingToolsNotFound,
+                });
+                return;
+            }
+
+            // it reads the map it is to work on once, as it starts. A copy already open would neither notice
+            // this one nor keep it, so there is nothing to do but say so.
+            if (MappingToolsHandoff.IsRunning())
+            {
+                notifications?.Post(new SimpleErrorNotification
+                {
+                    Icon = FontAwesome.Solid.ExclamationTriangle,
+                    Text = EditorStrings.MappingToolsAlreadyRunning,
+                });
+                return;
+            }
+
+            try
+            {
+                MappingToolsHandoff.Open(executable, Path.Combine(EditOperation.MountedPath, editorBeatmap.BeatmapInfo.Path!));
+            }
+            catch (Exception ex)
+            {
+                // masked: the exception quotes the path it failed on, and a portable Mapping Tools very often
+                // sits under somebody's account folder. Logs get sent here when something breaks.
+                Logger.Log(PathDisplay.MaskIn($@"Failed to open Mapping Tools: {ex}"), LoggingTarget.Runtime);
+
+                notifications?.Post(new SimpleErrorNotification
+                {
+                    Icon = FontAwesome.Solid.ExclamationTriangle,
+                    Text = EditorStrings.MappingToolsFailedToStart,
+                });
+            }
         }
 
         private async Task finish()

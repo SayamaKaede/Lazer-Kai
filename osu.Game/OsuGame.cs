@@ -1482,12 +1482,20 @@ namespace osu.Game
                 if (entry.Exception != null && sentryLogger != null)
                     message = LocalisableString.Interpolate($"{entry.Message.Truncate(256)}\n\n{NotificationsStrings.ErrorAutomaticallyReported}");
                 else
-                    message = entry.Message.Truncate(256);
+                    // nothing is reported anywhere from this build, so the only way anybody finds out what went
+                    // wrong is if the person it happened to sends the logs. Say so on the notification itself:
+                    // by the time they think to go looking in the options, the run it happened in has ended.
+                    message = LocalisableString.Interpolate($"{entry.Message.Truncate(256)}\n\n{EditorStrings.ClickToExportLogs}");
 
                 Schedule(() => Notifications.Post(new SimpleErrorNotification
                 {
                     Icon = entry.Level == LogLevel.Important ? FontAwesome.Solid.ExclamationCircle : FontAwesome.Solid.Bomb,
-                    Text = message
+                    Text = message,
+                    Activated = () =>
+                    {
+                        exportLogsForSending();
+                        return true;
+                    }
                 }));
             }
             else if (generalLogRecentCount == short_term_display_limit)
@@ -1508,6 +1516,33 @@ namespace osu.Game
 
             Interlocked.Increment(ref generalLogRecentCount);
             Scheduler.AddDelayed(() => Interlocked.Decrement(ref generalLogRecentCount), general_log_debounce);
+        }
+
+        /// <summary>
+        /// Writes copies of the recent logs with the account name taken out, and opens where they went.
+        /// </summary>
+        /// <remarks>
+        /// The same thing the button in the options does. It is here as well because this is the moment somebody
+        /// actually has something worth sending, and the folder being open is the difference between "send me
+        /// your logs" being a favour and being a chore.
+        /// </remarks>
+        private void exportLogsForSending()
+        {
+            try
+            {
+                (string destination, _) = LogExport.WriteForSending(Storage, Logger.Storage);
+
+                // the trailing separator is what makes the folder open rather than being selected in its parent.
+                Host.OpenFileExternally(destination.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(PathDisplay.MaskIn($@"Failed to export logs: {ex}"), LoggingTarget.Runtime);
+
+                // fall back to the logs themselves rather than leaving the click doing nothing. They name the
+                // machine, which is what the copies are for, but an unmasked log beats no log at all.
+                Logger.Storage.PresentExternally();
+            }
         }
 
         private void forwardTabletLogToNotifications(LogEntry entry)
