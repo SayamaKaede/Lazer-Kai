@@ -520,6 +520,83 @@ namespace osu.Game.Localisation
         public static LocalisableString ShowDifficultyGraph => new TranslatableString(getKey(@"show_difficulty_graph"), @"Show difficulty over the song");
 
         /// <summary>
+        /// "Mark objects that are off the beat"
+        /// </summary>
+        public static LocalisableString ShowUnsnapMarkers => new TranslatableString(getKey(@"show_unsnap_markers"), @"Mark objects that are off the beat");
+
+        /// <summary>
+        /// "Convert to stream"
+        /// </summary>
+        public static LocalisableString ConvertToStream => new TranslatableString(getKey(@"convert_to_stream"), @"Convert to stream");
+
+        /// <summary>
+        /// "Acceleration"
+        /// </summary>
+        public static LocalisableString StreamAcceleration => new TranslatableString(getKey(@"stream_acceleration"), @"Acceleration");
+
+        /// <summary>
+        /// "Easing"
+        /// </summary>
+        public static LocalisableString StreamEasing => new TranslatableString(getKey(@"stream_easing"), @"Easing");
+
+        /// <summary>
+        /// "Zigzag"
+        /// </summary>
+        public static LocalisableString StreamZigzag => new TranslatableString(getKey(@"stream_zigzag"), @"Zigzag");
+
+        /// <summary>
+        /// "Circles per side"
+        /// </summary>
+        public static LocalisableString StreamZigzagPeriod => new TranslatableString(getKey(@"stream_zigzag_period"), @"Circles per side");
+
+        /// <summary>
+        /// "Zigzag shape"
+        /// </summary>
+        public static LocalisableString StreamZigzagShape => new TranslatableString(getKey(@"stream_zigzag_shape"), @"Zigzag shape");
+
+        /// <summary>
+        /// "Draw the curve"
+        /// </summary>
+        public static LocalisableString StreamDrawTheCurve => new TranslatableString(getKey(@"stream_draw_the_curve"), @"Draw the curve");
+
+        /// <summary>
+        /// "Grid shape"
+        /// </summary>
+        public static LocalisableString GridDefaultShape => new TranslatableString(getKey(@"grid_default_shape"), @"Grid shape");
+
+        /// <summary>
+        /// "Grid spacing"
+        /// </summary>
+        public static LocalisableString GridDefaultSpacing => new TranslatableString(getKey(@"grid_default_spacing"), @"Grid spacing");
+
+        /// <summary>
+        /// "Grid rotation"
+        /// </summary>
+        public static LocalisableString GridDefaultRotation => new TranslatableString(getKey(@"grid_default_rotation"), @"Grid rotation");
+
+        /// <summary>
+        /// "Grid origin X"
+        /// </summary>
+        public static LocalisableString GridDefaultX => new TranslatableString(getKey(@"grid_default_x"), @"Grid origin X");
+
+        /// <summary>
+        /// "Grid origin Y"
+        /// </summary>
+        public static LocalisableString GridDefaultY => new TranslatableString(getKey(@"grid_default_y"), @"Grid origin Y");
+
+        /// <summary>
+        /// "What the editor's grid opens on. The spacing replaces the one saved in the beatmap."
+        /// </summary>
+        public static LocalisableString GridDefaultsDescription => new TranslatableString(getKey(@"grid_defaults_description"),
+            @"What the editor's grid opens on. The spacing replaces the one saved in the beatmap.");
+
+        /// <summary>
+        /// "A mark appears over anything a millisecond or more off the nearest snap, in the timeline, as you place it."
+        /// </summary>
+        public static LocalisableString ShowUnsnapMarkersDescription => new TranslatableString(getKey(@"show_unsnap_markers_description"),
+            @"A mark appears over anything a millisecond or more off the nearest snap, in the timeline, as you place it.");
+
+        /// <summary>
         /// "Difficulty graph colour"
         /// </summary>
         public static LocalisableString DifficultyGraphColour => new TranslatableString(getKey(@"difficulty_graph_colour"), @"Difficulty graph colour");

@@ -283,6 +283,19 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSelectionHandleScale, 1f, 0.5f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorSliderAnchorScale, 1f, 0.5f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorShowTimeline, true);
+            SetDefault(OsuSetting.EditorShowUnsnapMarkers, true);
+            SetDefault(OsuSetting.EditorGridDefaultX, 256f, 0f, 512f, 0.1f);
+            SetDefault(OsuSetting.EditorGridDefaultY, 192f, 0f, 384f, 0.1f);
+            SetDefault(OsuSetting.EditorGridDefaultSpacing, 4f, 4f, 256f, 0.1f);
+            SetDefault(OsuSetting.EditorGridDefaultRotation, 0f, -180f, 180f, 0.1f);
+            SetDefault(OsuSetting.EditorGridDefaultType, EditorGridShape.Square);
+            SetDefault(OsuSetting.MappingToolsPath, string.Empty);
+
+            // on by default, which is what the editor did before there was a switch. Somebody who has not gone
+            // looking for this should not find the beatmap they opened looking like a different beatmap.
+            SetDefault(OsuSetting.EditorBeatmapColours, true);
+            SetDefault(OsuSetting.EditorBeatmapHitsounds, true);
+
             SetDefault(OsuSetting.EditorCtrlClickCyclesCurveType, false);
             SetDefault(OsuSetting.SwapRightAndMiddleMouse, false);
             SetDefault(OsuSetting.EditorSelectableAfterEndTime, 400.0, 0.0, 2000.0, 50.0);
@@ -702,6 +715,36 @@ namespace osu.Game.Configuration
         EditorShowTimeline,
 
         /// <summary>
+        /// Whether objects that do not sit on the beat are marked in the timeline as they are placed.
+        /// </summary>
+        EditorShowUnsnapMarkers,
+
+        /// <summary>
+        /// The grid origin's X the editor opens with.
+        /// </summary>
+        EditorGridDefaultX,
+
+        /// <summary>
+        /// The grid origin's Y the editor opens with.
+        /// </summary>
+        EditorGridDefaultY,
+
+        /// <summary>
+        /// The grid spacing the editor opens with, in place of the one the beatmap last saved.
+        /// </summary>
+        EditorGridDefaultSpacing,
+
+        /// <summary>
+        /// The grid rotation the editor opens with.
+        /// </summary>
+        EditorGridDefaultRotation,
+
+        /// <summary>
+        /// The grid shape the editor opens with.
+        /// </summary>
+        EditorGridDefaultType,
+
+        /// <summary>
         /// Whether ctrl+clicking a slider control point cycles its curve type.
         /// While on, ctrl no longer adds control points to the selection.
         /// </summary>
@@ -957,5 +1000,20 @@ namespace osu.Game.Configuration
         /// What colour the difficulty drawn underneath the one being edited is tinted.
         /// </summary>
         EditorReferenceDifficultyColour,
+
+        /// <summary>
+        /// Where Mapping Tools is installed. Empty means the usual install is looked for instead.
+        /// </summary>
+        MappingToolsPath,
+
+        /// <summary>
+        /// Whether the editor uses the beatmap's own combo colours. Off falls back to the selected skin's.
+        /// </summary>
+        EditorBeatmapColours,
+
+        /// <summary>
+        /// Whether the editor uses the beatmap's own hitsounds. Off falls back to the selected skin's.
+        /// </summary>
+        EditorBeatmapHitsounds,
     }
 }

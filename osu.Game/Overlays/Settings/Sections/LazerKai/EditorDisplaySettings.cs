@@ -32,6 +32,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 },
                 new SettingsCheckbox
                 {
+                    LabelText = EditorStrings.ShowUnsnapMarkers,
+                    TooltipText = EditorStrings.ShowUnsnapMarkersDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorShowUnsnapMarkers)
+                },
+                new SettingsCheckbox
+                {
                     LabelText = EditorStrings.ShowDifficultyGraph,
                     Current = config.GetBindable<bool>(OsuSetting.EditorShowDifficultyGraph)
                 },

@@ -32,6 +32,8 @@ namespace osu.Game.Rulesets.Osu.Edit
         [Resolved]
         private IExpandingContainer? expandingContainer { get; set; }
 
+        private OsuConfigManager config = null!;
+
         /// <summary>
         /// X position of the grid's origin.
         /// </summary>
@@ -120,8 +122,10 @@ namespace osu.Game.Rulesets.Osu.Edit
         }
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            this.config = config;
+
             Children = new Drawable[]
             {
                 startPositionXSlider = new ExpandableSlider<float>
@@ -184,14 +188,22 @@ namespace osu.Game.Rulesets.Osu.Edit
                 () => GridType.Value = PositionSnapGridType.Circle,
                 () => new SpriteIcon { Icon = FontAwesome.Regular.Circle }) { SquarenessSetting = OsuSetting.EditorGridButtonSquareness });
 
-            GridLineSpacing.Value = editorBeatmap.GridSize;
+            // the grid opens on what the mapper set in the options rather than on the middle of the playfield and
+            // whatever spacing the beatmap last saved. Somebody who always works on the same grid was otherwise
+            // setting it up again on every difficulty.
+            StartPositionX.Value = config.Get<float>(OsuSetting.EditorGridDefaultX);
+            StartPositionY.Value = config.Get<float>(OsuSetting.EditorGridDefaultY);
+            GridLineSpacing.Value = config.Get<float>(OsuSetting.EditorGridDefaultSpacing);
+            GridLinesRotation.Value = config.Get<float>(OsuSetting.EditorGridDefaultRotation);
         }
 
         protected override void LoadComplete()
         {
             base.LoadComplete();
 
-            gridTypeButtons.Items.First().Select();
+            // the buttons were added in the order the shapes are listed, so the chosen one is the one at its
+            // position. EditorGridShapeTest holds the two lists to that.
+            gridTypeButtons.Items.ElementAt((int)config.Get<EditorGridShape>(OsuSetting.EditorGridDefaultType)).Select();
 
             StartPositionX.BindValueChanged(x =>
             {

@@ -64,6 +64,10 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private readonly DifficultyPointPiece? difficultyPointPiece;
         private readonly DragArea? dragArea;
 
+        private readonly UnsnapMarker startUnsnap;
+        private readonly UnsnapMarker? endUnsnap;
+        private readonly Container<UnsnapMarker>? repeatUnsnaps;
+
         private readonly Bindable<bool> hideTimelinePoints = new Bindable<bool>();
 
         [Resolved(CanBeNull = true)]
@@ -146,6 +150,34 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 {
                     Anchor = Anchor.TopLeft,
                     Origin = Anchor.BottomCentre
+                });
+            }
+
+            // over the object rather than on it: the timeline is read at a glance while placing, and a mark
+            // inside the circle would be one more thing on top of the combo number and the sample rows.
+            AddInternal(startUnsnap = new UnsnapMarker
+            {
+                Anchor = Anchor.TopLeft,
+                Origin = Anchor.BottomLeft,
+            });
+
+            if (item is IHasDuration)
+            {
+                AddInternal(endUnsnap = new UnsnapMarker
+                {
+                    Anchor = Anchor.TopRight,
+                    Origin = Anchor.BottomRight,
+                });
+            }
+
+            // a reverse is a moment the player has to hit, and it can be off the beat while both ends are on it.
+            // The verifier has always reported these; the timeline was only marking where the object began and
+            // ended, so a slider could be marked nowhere and still be called a problem.
+            if (item is IHasRepeats)
+            {
+                AddInternal(repeatUnsnaps = new Container<UnsnapMarker>
+                {
+                    RelativeSizeAxes = Axes.Both,
                 });
             }
         }
@@ -292,6 +324,20 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 if (Item is IHasRepeats repeats)
                     updateRepeats(repeats);
             }
+
+            // read every update for the same reason the width is: an object's times move with the timing behind
+            // it as well as with the object, and neither says so.
+            startUnsnap.SetTime(Item.StartTime);
+            endUnsnap?.SetTime(Item.GetEndTime());
+
+            if (repeatUnsnaps != null && Item is IHasRepeats hasRepeats)
+            {
+                // the same arithmetic the verifier uses, so a reverse it calls unsnapped is the one marked here.
+                double spanDuration = (Item.GetEndTime() - Item.StartTime) / (hasRepeats.RepeatCount + 1);
+
+                for (int i = 0; i < repeatUnsnaps.Children.Count; i++)
+                    repeatUnsnaps.Children[i].SetTime(Item.StartTime + spanDuration * (i + 1));
+            }
         }
 
         private void updateRepeats(IHasRepeats repeats)
@@ -303,12 +349,23 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 RelativeSizeAxes = Axes.Both,
             });
 
+            repeatUnsnaps?.Clear();
+
             for (int i = 0; i < repeats.RepeatCount; i++)
             {
                 repeatsContainer.Add(new Tick
                 {
                     CircleSize = currentCircleSize,
                     X = (float)(i + 1) / (repeats.RepeatCount + 1)
+                });
+
+                // over the reverse arrow, the same way the other two sit over the ends they are about.
+                repeatUnsnaps?.Add(new UnsnapMarker
+                {
+                    RelativePositionAxes = Axes.X,
+                    X = (float)(i + 1) / (repeats.RepeatCount + 1),
+                    Anchor = Anchor.TopLeft,
+                    Origin = Anchor.BottomCentre,
                 });
             }
 
