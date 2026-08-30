@@ -216,12 +216,20 @@ namespace osu.Game.Localisation
             [$@"{binding_prefix}:editor_increase_slider_velocity"] = @"SVを上げる",
             [$@"{binding_prefix}:editor_decrease_slider_velocity_fine"] = @"SVを下げる（微調整）",
             [$@"{binding_prefix}:editor_increase_slider_velocity_fine"] = @"SVを上げる（微調整）",
+
+            // profile
+            // named after the game's own listings on the same page, which read 「ゲスト難易度のビートマップ」,
+            // 「Pendingのビートマップ」 and 「Graveyardのビートマップ」.
+            [$@"{profile_prefix}:guest_pending_title"] = @"ゲスト難易度のPendingビートマップ",
+            [$@"{profile_prefix}:guest_graveyard_title"] = @"ゲスト難易度のGraveyardビートマップ",
         };
 
         private const string editor_prefix = @"osu.Game.Resources.Localisation.Editor";
+        private const string editor_dialogs_prefix = @"osu.Game.Resources.Localisation.EditorDialogs";
         private const string settings_prefix = @"osu.Game.Resources.Localisation.LazerKaiSettings";
         private const string binding_prefix = @"osu.Game.Resources.Localisation.GlobalActionKeyBinding";
         private const string common_prefix = @"osu.Game.Resources.Localisation.Common";
+        private const string profile_prefix = @"osu.Game.Resources.Localisation.LazerKaiProfile";
 
         public LazerKaiJapaneseStore(ILocalisationStore fallback)
         {

@@ -40,6 +40,11 @@ namespace osu.Game.Online.API.Requests
         [CanBeNull]
         public IReadOnlyCollection<ScoreRank> Ranks { get; }
 
+        /// <summary>
+        /// The free-text query, which may carry the search's own operators — <c>creator=</c> and the like.
+        /// </summary>
+        public string Query => query;
+
         private readonly string query;
         private readonly RulesetInfo ruleset;
         private readonly Cursor cursor;
