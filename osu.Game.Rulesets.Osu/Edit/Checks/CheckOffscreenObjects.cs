@@ -36,6 +36,29 @@ namespace osu.Game.Rulesets.Osu.Edit.Checks
         // (higher = more performant, but higher false-negative chance).
         private const int path_step_size = 5;
 
+        /// <summary>
+        /// Whether any part of an object leaves the visible screen area.
+        /// </summary>
+        /// <remarks>
+        /// Exposed so the editor can mark the same objects this reports, by asking the same question rather than
+        /// by asking a similar one. A slider is walked exactly as <see cref="sliderIssues"/> walks it: the body
+        /// is what goes offscreen most of the time, and it is not enough to look at where the slider begins.
+        /// </remarks>
+        public static bool IsOffscreen(OsuHitObject hitObject)
+        {
+            if (hitObject is not Slider slider)
+                return IsOffscreen(hitObject.StackedPosition, hitObject.Radius);
+
+            for (int i = 0; i < slider.Distance; i += path_step_size)
+            {
+                if (IsOffscreen(slider.StackedPositionAt(i / slider.Distance), slider.Radius))
+                    return true;
+            }
+
+            // the loop above can step over the very end of the path.
+            return IsOffscreen(slider.StackedEndPosition, slider.Radius);
+        }
+
         public CheckMetadata Metadata { get; } = new CheckMetadata(CheckCategory.Compose, "Offscreen hitobjects");
 
         public IEnumerable<IssueTemplate> PossibleTemplates => new IssueTemplate[]

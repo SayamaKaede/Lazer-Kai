@@ -170,39 +170,13 @@ namespace osu.Game.Rulesets.Osu.Edit
         /// Whether any part of the object leaves the visible area.
         /// </summary>
         /// <remarks>
-        /// A slider is measured from the bounds of its already-calculated path rather than by stepping along it:
-        /// whichever point reaches an extreme is the one that would leave the play area first, so taking the extremes
-        /// directly gives the same answer for the cost of reading the path once.
+        /// Asked of <see cref="CheckOffscreenObjects"/> rather than worked out again here. This used to measure a
+        /// slider from the bounds of its <see cref="SliderPath.CalculatedPath"/>, which is the curve the control
+        /// points describe and not the body that is drawn: a slider whose length runs past the end of that curve
+        /// carries on beyond it, and the part past the end was never looked at. A slider arcing up out of the
+        /// play area could go unmarked while the verifier called it a problem.
         /// </remarks>
-        private static bool isOffscreen(OsuHitObject hitObject)
-        {
-            if (hitObject is not Slider slider)
-                return CheckOffscreenObjects.IsOffscreen(hitObject.StackedPosition, hitObject.Radius);
-
-            var path = slider.Path.CalculatedPath;
-
-            if (path.Count == 0)
-                return CheckOffscreenObjects.IsOffscreen(slider.StackedPosition, slider.Radius);
-
-            float minX = float.MaxValue, maxX = float.MinValue;
-            float minY = float.MaxValue, maxY = float.MinValue;
-
-            foreach (var point in path)
-            {
-                if (point.X < minX) minX = point.X;
-                if (point.X > maxX) maxX = point.X;
-                if (point.Y < minY) minY = point.Y;
-                if (point.Y > maxY) maxY = point.Y;
-            }
-
-            var origin = slider.StackedPosition;
-            double radius = slider.Radius;
-
-            return origin.X + minX - radius < CheckOffscreenObjects.MIN_X
-                   || origin.X + maxX + radius > CheckOffscreenObjects.MAX_X
-                   || origin.Y + minY - radius < CheckOffscreenObjects.MIN_Y
-                   || origin.Y + maxY + radius > CheckOffscreenObjects.MAX_Y;
-        }
+        private static bool isOffscreen(OsuHitObject hitObject) => CheckOffscreenObjects.IsOffscreen(hitObject);
 
         /// <summary>
         /// Lets a marker follow the object it belongs to while that object is being edited.
@@ -215,7 +189,7 @@ namespace osu.Game.Rulesets.Osu.Edit
         /// <summary>
         /// Traces a slider's path so the whole object reads as offscreen, matching how selection outlines it.
         /// </summary>
-        private partial class OffscreenSliderOutline : CompositeDrawable, IOffscreenMarker
+        internal partial class OffscreenSliderOutline : CompositeDrawable, IOffscreenMarker
         {
             private readonly ManualSliderBody body;
 
@@ -223,6 +197,13 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             public OffscreenSliderOutline(Slider slider)
             {
+                // both of these are what `SliderBodyPiece` does for the same job, and both are needed here for
+                // the same reason. Without a size this is a drawable one point wide sitting wherever the origin
+                // put it, and a point outside the masking bounds is a drawable that never gets drawn — which is
+                // exactly what happens to a slider whose body reaches a long way out of the play area.
+                AutoSizeAxes = Axes.Both;
+                AlwaysPresent = true;
+
                 InternalChild = body = new ManualSliderBody
                 {
                     AccentColour = Color4.Transparent,
