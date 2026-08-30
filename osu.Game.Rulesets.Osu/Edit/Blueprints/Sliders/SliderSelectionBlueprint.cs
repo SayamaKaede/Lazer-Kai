@@ -55,6 +55,9 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
         [Resolved]
         private BindableBeatDivisor? beatDivisor { get; set; }
 
+        [Resolved(CanBeNull = true)]
+        private StreamConversionPanel? streamConversionPanel { get; set; }
+
         private PathControlPoint? placementControlPoint;
 
         public override Quad SelectionQuad
@@ -568,49 +571,15 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             HitObject.Position += first;
         }
 
-        // duplicated in `JuiceStreamSelectionBlueprint.convertToStream()`
-        // consider extracting common helper when applying changes here
-        private void convertToStream()
-        {
-            if (editorBeatmap == null || beatDivisor == null)
-                return;
-
-            var timingPoint = editorBeatmap.ControlPointInfo.TimingPointAt(HitObject.StartTime);
-            double streamSpacing = timingPoint.BeatLength / beatDivisor.Value;
-
-            changeHandler?.BeginChange();
-
-            int i = 0;
-            double time = HitObject.StartTime;
-
-            while (!Precision.DefinitelyBigger(time, HitObject.GetEndTime(), 1))
-            {
-                // positionWithRepeats is a fractional number in the range of [0, HitObject.SpanCount()]
-                // and indicates how many fractional spans of a slider have passed up to time.
-                double positionWithRepeats = (time - HitObject.StartTime) / HitObject.Duration * HitObject.SpanCount();
-                double pathPosition = positionWithRepeats - (int)positionWithRepeats;
-                // every second span is in the reverse direction - need to reverse the path position.
-                if (positionWithRepeats % 2 >= 1)
-                    pathPosition = 1 - pathPosition;
-
-                Vector2 position = HitObject.Position + HitObject.Path.PositionAt(pathPosition);
-
-                editorBeatmap.Add(new HitCircle
-                {
-                    StartTime = time,
-                    Position = position,
-                    NewCombo = i == 0 && HitObject.NewCombo,
-                    Samples = HitObject.HeadCircle.Samples.Select(s => s.With()).ToList()
-                });
-
-                i += 1;
-                time = HitObject.StartTime + i * streamSpacing;
-            }
-
-            editorBeatmap.Remove(HitObject);
-
-            changeHandler?.EndChange();
-        }
+        /// <summary>
+        /// Opens the settings for turning this slider into a stream, rather than turning it into one on the spot.
+        /// </summary>
+        /// <remarks>
+        /// What the shortcut used to do — a stream at the current beat division, evenly along the path — is what
+        /// the panel opens on, so pressing it and pressing the button is the old behaviour with a look at it
+        /// first. Everything else the panel offers has to be reached for.
+        /// </remarks>
+        private void convertToStream() => streamConversionPanel?.Open(HitObject);
 
         public override MenuItem[] ContextMenuItems => new MenuItem[]
         {

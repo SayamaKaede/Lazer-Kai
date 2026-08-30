@@ -65,6 +65,23 @@ namespace osu.Game.Localisation
             // display
             [$@"{editor_prefix}:show_play_area_border"] = @"プレイ画面の枠を表示",
             [$@"{editor_prefix}:detect_offscreen"] = @"Offscreen検知",
+            // stream conversion
+            [$@"{editor_prefix}:convert_to_stream"] = @"連打に変換",
+            [$@"{editor_prefix}:stream_acceleration"] = @"加速",
+            [$@"{editor_prefix}:stream_easing"] = @"イージング",
+            [$@"{editor_prefix}:stream_zigzag"] = @"ジグザグ",
+            [$@"{editor_prefix}:stream_zigzag_period"] = @"何個ごとに折り返すか",
+            [$@"{editor_prefix}:stream_zigzag_shape"] = @"ジグザグの変化",
+            [$@"{editor_prefix}:stream_draw_the_curve"] = @"カーブを自分で描く",
+
+            [$@"{editor_prefix}:grid_default_shape"] = @"グリッドの形",
+            [$@"{editor_prefix}:grid_default_spacing"] = @"グリッドの間隔",
+            [$@"{editor_prefix}:grid_default_rotation"] = @"グリッドの角度",
+            [$@"{editor_prefix}:grid_default_x"] = @"グリッドの原点 X",
+            [$@"{editor_prefix}:grid_default_y"] = @"グリッドの原点 Y",
+            [$@"{editor_prefix}:grid_defaults_description"] = @"エディターを開いたときのグリッドの初期値です。間隔は、譜面に保存されている値より優先されます",
+            [$@"{editor_prefix}:show_unsnap_markers"] = @"スナップから外れたノーツに印を付ける",
+            [$@"{editor_prefix}:show_unsnap_markers_description"] = @"最も近いスナップから1ミリ秒以上ずれているものに、タイムライン上で印が付きます。2ミリ秒以上は赤、それ未満は黄色です",
             [$@"{editor_prefix}:show_difficulty_graph"] = @"難易度グラフ",
             [$@"{editor_prefix}:difficulty_graph_colour"] = @"難易度グラフの色",
             [$@"{editor_prefix}:difficulty_graph_opacity"] = @"難易度グラフの不透明度",

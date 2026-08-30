@@ -163,6 +163,13 @@ namespace osu.Game.Rulesets.Osu.Edit
         [Cached]
         protected readonly FreehandSliderToolboxGroup FreehandSliderToolboxGroup = new FreehandSliderToolboxGroup();
 
+        /// <summary>
+        /// The settings shown while a slider is being turned into a stream. Lives here rather than with the
+        /// slider it is about, which stops existing partway through the conversion.
+        /// </summary>
+        [Cached]
+        protected readonly StreamConversionPanel StreamConversionPanel = new StreamConversionPanel();
+
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
@@ -172,6 +179,7 @@ namespace osu.Game.Rulesets.Osu.Edit
             hideGridFromPointsTool.BindValueChanged(hidden => SetToolVisibility(gridFromPointsTool, !hidden.NewValue), true);
 
             AddInternal(DistanceSnapProvider);
+            AddInternal(StreamConversionPanel);
             DistanceSnapProvider.AttachToToolbox(RightToolbox);
 
             // Give a bit of breathing room around the playfield content.
