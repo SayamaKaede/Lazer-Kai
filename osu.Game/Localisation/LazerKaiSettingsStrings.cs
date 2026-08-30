@@ -81,6 +81,86 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString Minutes(string count) => new TranslatableString(getKey(@"minutes"), @"{0} minutes", count);
 
+        /// <summary>
+        /// "Beatmap skin"
+        /// </summary>
+        public static LocalisableString BeatmapSkinHeader => new TranslatableString(getKey(@"beatmap_skin_header"), @"Beatmap skin");
+
+        /// <summary>
+        /// "Beatmap colours"
+        /// </summary>
+        public static LocalisableString EditorBeatmapColours => new TranslatableString(getKey(@"editor_beatmap_colours"), @"Beatmap colours");
+
+        /// <summary>
+        /// "Off uses your skin's combo colours instead. Does not change how the beatmap plays."
+        /// </summary>
+        public static LocalisableString EditorBeatmapColoursDescription => new TranslatableString(getKey(@"editor_beatmap_colours_description"),
+            @"Off uses your skin's combo colours instead. Does not change how the beatmap plays.");
+
+        /// <summary>
+        /// "Beatmap hitsounds"
+        /// </summary>
+        public static LocalisableString EditorBeatmapHitsounds => new TranslatableString(getKey(@"editor_beatmap_hitsounds"), @"Beatmap hitsounds");
+
+        /// <summary>
+        /// "Off uses your skin's hitsounds instead. Does not change how the beatmap plays."
+        /// </summary>
+        public static LocalisableString EditorBeatmapHitsoundsDescription => new TranslatableString(getKey(@"editor_beatmap_hitsounds_description"),
+            @"Off uses your skin's hitsounds instead. Does not change how the beatmap plays.");
+
+        /// <summary>
+        /// "External tools"
+        /// </summary>
+        public static LocalisableString ExternalToolHeader => new TranslatableString(getKey(@"external_tool_header"), @"External tools");
+
+        /// <summary>
+        /// "Mapping Tools"
+        /// </summary>
+        public static LocalisableString MappingToolsPath => new TranslatableString(getKey(@"mapping_tools_path"), @"Mapping Tools");
+
+        /// <summary>
+        /// "Export logs for sending"
+        /// </summary>
+        public static LocalisableString ExportLogs => new TranslatableString(getKey(@"export_logs"), @"Export logs for sending");
+
+        /// <summary>
+        /// "Copies the recent logs with your Windows account name replaced, and opens the folder they went to."
+        /// </summary>
+        public static LocalisableString ExportLogsDescription => new TranslatableString(getKey(@"export_logs_description"),
+            @"Copies the recent logs with your Windows account name replaced, and opens the folder they went to.");
+
+        /// <summary>
+        /// "{0} log files were written. Click to open the folder."
+        /// </summary>
+        public static LocalisableString ExportedLogs(string count) => new TranslatableString(getKey(@"exported_logs"),
+            @"{0} log files were written. Click to open the folder.", count);
+
+        /// <summary>
+        /// "The logs could not be exported."
+        /// </summary>
+        public static LocalisableString ExportLogsFailed => new TranslatableString(getKey(@"export_logs_failed"), @"The logs could not be exported.");
+
+        /// <summary>
+        /// "Show the Mapping Tools path"
+        /// </summary>
+        public static LocalisableString ShowMappingToolsPath => new TranslatableString(getKey(@"show_mapping_tools_path"), @"Show the Mapping Tools path");
+
+        /// <summary>
+        /// "Hide the Mapping Tools path"
+        /// </summary>
+        public static LocalisableString HideMappingToolsPath => new TranslatableString(getKey(@"hide_mapping_tools_path"), @"Hide the Mapping Tools path");
+
+        /// <summary>
+        /// "Mapping Tools was not found"
+        /// </summary>
+        public static LocalisableString MappingToolsNotDetected => new TranslatableString(getKey(@"mapping_tools_not_detected"), @"Mapping Tools was not found");
+
+        /// <summary>
+        /// "Where Mapping Tools.exe is. Leave empty to use the usual install."
+        /// </summary>
+        public static LocalisableString MappingToolsPathDescription => new TranslatableString(getKey(@"mapping_tools_path_description"),
+            @"Where Mapping Tools.exe is. Leave empty to use the usual install.");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }
