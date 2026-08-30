@@ -74,7 +74,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:difficulty_graph_total"] = @"合計",
             [$@"{editor_prefix}:difficulty_graph_window_opacity"] = @"透明度",
             [$@"{editor_prefix}:difficulty_graph_apply_current_mods"] = @"現在のModを適用",
-            [$@"{editor_prefix}:difficulty_graph_detail_description"] = @"グラフをどれだけ細かく描くか。列数は曲の長さに左右されないので、30秒の譜面でも10分の譜面でも同じ細かさで描かれます",
+            [$@"{editor_prefix}:difficulty_graph_detail_description"] = @"グラフをどれだけ細かく表示するか。列数は曲の長さに左右されないので、30秒の譜面でも10分の譜面でも同じ細かさで表示されます",
             [$@"{editor_prefix}:loop_playback"] = @"ループ再生",
             [$@"{editor_prefix}:show_timeline"] = @"タイムライン",
             [$@"{editor_prefix}:hitsounds"] = @"効果音",
