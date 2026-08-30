@@ -10,11 +10,19 @@ using osu.Game.Overlays.Settings.Sections.LazerKai;
 namespace osu.Game.Overlays.Settings.Sections
 {
     /// <summary>
-    /// Gathers everything this fork adds, so it can all be found in one place.
+    /// What this fork adds, as one sidebar entry with the rest folded under it.
     /// </summary>
     /// <remarks>
-    /// These settings also appear in the editor's own menus, where they are reachable while working. This section is
-    /// for finding out what exists in the first place.
+    /// It was one section until there were nine subsections in it — more than any of the game's own — and
+    /// finding a setting meant scrolling past everything else on the way.
+    ///
+    /// The groups below sit under this one in the sidebar the way the rulesets sit under gameplay:
+    /// <see cref="SettingsSection.UseSmallerSidebarButton"/> is what indents them. They are separate sections
+    /// rather than subsections because the sidebar only lists sections, and being able to jump to a group is the
+    /// whole point.
+    ///
+    /// Split by when a setting is reached for rather than by what it changes: what the screen looks like, what
+    /// the beatmap is made of, testing it, and the things that are neither.
     /// </remarks>
     public partial class LazerKaiSection : SettingsSection
     {
@@ -30,12 +38,71 @@ namespace osu.Game.Overlays.Settings.Sections
             Children = new Drawable[]
             {
                 new EditorDisplaySettings(),
-                new EditorStatusSettings(),
                 new EditorSelectionSettings(),
+                new EditorStatusSettings(),
+            };
+        }
+    }
+
+    public partial class LazerKaiBeatmapSection : SettingsSection
+    {
+        public override LocalisableString Header => LazerKaiSettingsStrings.BeatmapSectionHeader;
+
+        public override Drawable CreateIcon() => new SpriteIcon
+        {
+            Icon = FontAwesome.Solid.Music
+        };
+
+        public LazerKaiBeatmapSection()
+        {
+            UseSmallerSidebarButton = true;
+
+            Children = new Drawable[]
+            {
+                new EditorBeatmapSkinSettings(),
                 new ComposingSettings(),
                 new EditorInputSettings(),
+            };
+        }
+    }
+
+    public partial class LazerKaiTestPlaySection : SettingsSection
+    {
+        public override LocalisableString Header => LazerKaiSettingsStrings.TestPlaySectionHeader;
+
+        public override Drawable CreateIcon() => new SpriteIcon
+        {
+            Icon = FontAwesome.Solid.Play
+        };
+
+        public LazerKaiTestPlaySection()
+        {
+            UseSmallerSidebarButton = true;
+
+            Children = new Drawable[]
+            {
                 new TestPlaySettings(),
+            };
+        }
+    }
+
+    public partial class LazerKaiOtherSection : SettingsSection
+    {
+        public override LocalisableString Header => LazerKaiSettingsStrings.OtherSectionHeader;
+
+        public override Drawable CreateIcon() => new SpriteIcon
+        {
+            Icon = FontAwesome.Solid.Toolbox
+        };
+
+        public LazerKaiOtherSection()
+        {
+            UseSmallerSidebarButton = true;
+
+            Children = new Drawable[]
+            {
                 new BackupSettings(),
+                new ExternalToolSettings(),
             };
         }
     }

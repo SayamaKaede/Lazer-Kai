@@ -104,6 +104,9 @@ namespace osu.Game.Overlays
                 new DebugSection(),
                 // last, so the stock settings stay where anyone familiar with osu! expects to find them.
                 new LazerKaiSection(),
+                new LazerKaiBeatmapSection(),
+                new LazerKaiTestPlaySection(),
+                new LazerKaiOtherSection(),
             });
 
             var today = DateTimeOffset.Now;
