@@ -77,6 +77,11 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 },
                 new SettingsCheckbox
                 {
+                    LabelText = EditorStrings.StatusShowCombo,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorStatusShowCombo)
+                },
+                new SettingsCheckbox
+                {
                     LabelText = EditorStrings.StatusShowObjectCount,
                     Current = config.GetBindable<bool>(OsuSetting.EditorStatusShowObjectCount)
                 },

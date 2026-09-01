@@ -21,6 +21,7 @@ using osu.Game.Rulesets.Objects;
 using osu.Game.Audio;
 using osu.Framework.Utils;
 using osu.Game.Rulesets.Objects.Types;
+using osu.Game.Rulesets.Scoring;
 using osu.Game.Screens.Edit.Compose.Components.Timeline;
 using osu.Game.Screens.Play.HUD;
 using osuTK;
@@ -55,6 +56,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
         private OsuSpriteText additionBank = null!;
         private OsuSpriteText sampleVolume = null!;
         private OsuSpriteText kiai = null!;
+        private OsuSpriteText combo = null!;
         private OsuSpriteText objectCount = null!;
         private OsuSpriteText drainTime = null!;
         private OsuSpriteText approachRate = null!;
@@ -100,6 +102,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
                     shownWhen(config, OsuSetting.EditorStatusShowAdditionBank, createRow(@"Addition", out additionBank, colours.Pink2)),
                     shownWhen(config, OsuSetting.EditorStatusShowSampleVolume, createRow(@"Volume", out sampleVolume, colours.Pink1)),
                     shownWhen(config, OsuSetting.EditorStatusShowKiai, createRow(@"Kiai", out kiai, colours.Orange1)),
+                    shownWhen(config, OsuSetting.EditorStatusShowCombo, createRow(@"Combo", out combo, colours.Blue1)),
                     shownWhen(config, OsuSetting.EditorStatusShowObjectCount, createRow(@"Objects", out objectCount, colours.Green1)),
                     shownWhen(config, OsuSetting.EditorStatusShowDrainTime, createRow(@"Drain", out drainTime, colours.Green1)),
                     shownWhen(config, OsuSetting.EditorStatusShowDifficultySettings, createDifficultyRow(colours)),
@@ -390,6 +393,16 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
         private int? lastObjectCount;
         private double? lastDrainTime;
+
+        /// <summary>
+        /// Every moment the combo goes up, kept between frames because working them out walks the whole beatmap.
+        /// </summary>
+        private double[]? comboTimes;
+
+        /// <summary>
+        /// The combo last written to the panel, so an unchanged number is not laid out again every frame.
+        /// </summary>
+        private int? lastCombo;
         private (float ar, float cs, float od, float hp)? lastDifficulty;
 
         /// <summary>
@@ -437,6 +450,63 @@ namespace osu.Game.Screens.Edit.Compose.Components
         }
 
         /// <summary>
+        /// Every moment the combo goes up by one, in order.
+        /// </summary>
+        /// <remarks>
+        /// What counts is taken from the same place the game's own maximum combo is: an element counts if its best
+        /// possible result affects combo. That reaches inside objects as well as across them, so a slider's head,
+        /// its ticks, its reverses and its tail are each their own step, which is what a player watching the number
+        /// climb actually sees.
+        ///
+        /// The times are worked out once and read many times. Walking every object and everything nested inside it
+        /// is far too much to do per frame on a long beatmap, and the answer only changes when the beatmap does.
+        /// </remarks>
+        public static double[] ComboTimesFor(IBeatmap beatmap)
+        {
+            var times = new List<double>();
+
+            foreach (var hitObject in beatmap.HitObjects)
+                collect(hitObject);
+
+            times.Sort();
+
+            return times.ToArray();
+
+            void collect(HitObject hitObject)
+            {
+                // when the element is judged, rather than when it begins: a slider's tail is reached at its end.
+                if (hitObject.Judgement.MaxResult.AffectsCombo())
+                    times.Add(hitObject.GetEndTime());
+
+                foreach (var nested in hitObject.NestedHitObjects)
+                    collect(nested);
+            }
+        }
+
+        /// <summary>
+        /// The combo a player would be on at <paramref name="time"/>, having hit everything up to it.
+        /// </summary>
+        public static int ComboAt(double[] comboTimes, double time)
+        {
+            // the count of moments at or before the one asked about, found rather than counted: the times are in
+            // order, and a marathon has tens of thousands of them.
+            int low = 0;
+            int high = comboTimes.Length;
+
+            while (low < high)
+            {
+                int middle = (low + high) / 2;
+
+                if (comboTimes[middle] <= time)
+                    low = middle + 1;
+                else
+                    high = middle;
+            }
+
+            return low;
+        }
+
+        /// <summary>
         /// A difficulty setting, written the way the setup screen and the beatmap file write it.
         /// </summary>
         /// <remarks>
@@ -462,6 +532,16 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 // (circles, spinners), so the last velocity in effect stays on screen until the next slider.
                 if (hitObject is IHasSliderVelocity hasVelocity)
                     currentWithVelocity = hasVelocity;
+            }
+
+            comboTimes ??= ComboTimesFor(editorBeatmap);
+
+            int comboNow = ComboAt(comboTimes, editorClock.CurrentTime);
+
+            if (comboNow != lastCombo)
+            {
+                lastCombo = comboNow;
+                combo.Text = comboNow.ToString(@"N0");
             }
 
             sliderVelocity.Text = currentWithVelocity == null ? @"-" : @$"{currentWithVelocity.SliderVelocityMultiplier:0.00}x";
@@ -562,7 +642,14 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
         private void onBeatmapLengthChanged(HitObject hitObject) => invalidateDrainTime();
 
-        private void invalidateDrainTime() => lastDrainTime = null;
+        private void invalidateDrainTime()
+        {
+            lastDrainTime = null;
+
+            // the combo steps move with the objects for the same reasons the drain does — an object added, removed
+            // or dragged changes where they are, and a slider's length changes how many of them it carries.
+            comboTimes = null;
+        }
 
         protected override void Dispose(bool isDisposing)
         {

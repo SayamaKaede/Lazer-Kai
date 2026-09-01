@@ -264,6 +264,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorStatusShowSampleVolume, true);
             SetDefault(OsuSetting.EditorStatusShowKiai, true);
             SetDefault(OsuSetting.EditorStatusShowMods, true);
+            // on, with the rest of the rows that describe the moment the playhead is at.
+            SetDefault(OsuSetting.EditorStatusShowCombo, true);
             // off by default: these describe the beatmap as a whole rather than the place being worked on, so they
             // are checked now and then rather than watched, and the panel is a narrow column.
             SetDefault(OsuSetting.EditorStatusShowObjectCount, false);
@@ -1015,5 +1017,10 @@ namespace osu.Game.Configuration
         /// Whether the editor uses the beatmap's own hitsounds. Off falls back to the selected skin's.
         /// </summary>
         EditorBeatmapHitsounds,
+
+        /// <summary>
+        /// Whether the status panel shows the combo a player would be on at the playhead.
+        /// </summary>
+        EditorStatusShowCombo,
     }
 }

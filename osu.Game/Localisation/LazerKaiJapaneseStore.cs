@@ -118,6 +118,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:status_show_sample_volume"] = @"ボリューム",
             [$@"{editor_prefix}:status_show_kiai"] = @"Kiai",
             [$@"{editor_prefix}:status_show_mods"] = @"Mod",
+            [$@"{editor_prefix}:status_show_combo"] = @"コンボ（現在の再生位置でのコンボ数）",
             [$@"{editor_prefix}:status_show_object_count"] = @"オブジェクト数",
             [$@"{editor_prefix}:status_show_drain_time"] = @"ドレインタイム",
             [$@"{editor_prefix}:status_show_difficulty_settings"] = @"譜面ステータス（AR・CS・OD・HP）",

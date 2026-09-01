@@ -38,6 +38,7 @@ namespace osu.Game.Tests.Visual.Editing
             OsuSetting.EditorStatusShowAdditionBank,
             OsuSetting.EditorStatusShowSampleVolume,
             OsuSetting.EditorStatusShowKiai,
+            OsuSetting.EditorStatusShowCombo,
             OsuSetting.EditorStatusShowMods,
         };
 

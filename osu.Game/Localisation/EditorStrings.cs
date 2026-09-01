@@ -865,6 +865,11 @@ namespace osu.Game.Localisation
         /// <summary>
         /// "Object count"
         /// </summary>
+        /// <summary>
+        /// "Combo"
+        /// </summary>
+        public static LocalisableString StatusShowCombo => new TranslatableString(getKey(@"status_show_combo"), @"Combo");
+
         public static LocalisableString StatusShowObjectCount => new TranslatableString(getKey(@"status_show_object_count"), @"Object count");
 
         /// <summary>
