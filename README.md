@@ -33,8 +33,11 @@ RCと同じ基準（2msより大きいもの）で、タイムラインに印が
 
 ## インストール
 
-1. zip を解凍・展開する
-2. フォルダの中の `osu!.exe` を実行する
+1. [Releases](https://github.com/SayamaKaede/Lazer-Kai-Releases/releases) から `LazerKai-win-Portable.zip` をダウンロードする
+2. 好きな場所に解凍・展開する
+3. フォルダの中の **`Lazer-Kai.exe`** を実行する
+
+譜面・設定・スコアは、このフォルダの中に保存されます。`current` フォルダは更新のたびに入れ替わるので、**中身を触らないでください。**
 
 ## 更新
 
