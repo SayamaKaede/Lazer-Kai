@@ -138,6 +138,18 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     Current = config.GetBindable<float>(OsuSetting.EditorSliderVelocityPresetSquareness),
                     DisplayAsPercentage = true,
                 }),
+                new SettingsItemV2(new FormEnumDropdown<EditorTimelineStyle>
+                {
+                    Caption = EditorStrings.TimelineStyle,
+                    HintText = EditorStrings.TimelineStyleDescription,
+                    Current = config.GetBindable<EditorTimelineStyle>(OsuSetting.EditorTimelineStyle),
+                }),
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.TimelineDragToSeek,
+                    TooltipText = EditorStrings.TimelineDragToSeekDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorTimelineDragToSeek)
+                },
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.AlwaysExpandTimelinePointLabels,

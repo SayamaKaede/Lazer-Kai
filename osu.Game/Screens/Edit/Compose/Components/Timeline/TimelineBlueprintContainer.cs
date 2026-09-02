@@ -63,6 +63,11 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private readonly Bindable<bool> hideTimelinePoints = new Bindable<bool>();
 
+        private readonly Bindable<EditorTimelineStyle> timelineStyle = new Bindable<EditorTimelineStyle>();
+
+        private readonly BindableBool dragToSeek = new BindableBool();
+
+
         [Resolved(CanBeNull = true)]
         private EditorReferenceDifficulty referenceDifficulty { get; set; }
 
@@ -72,8 +77,11 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             alwaysExpandPointLabels = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandTimelinePointLabels);
 
             config.BindWith(OsuSetting.EditorHideTimelinePoints, hideTimelinePoints);
+            config.BindWith(OsuSetting.EditorTimelineStyle, timelineStyle);
+            config.BindWith(OsuSetting.EditorTimelineDragToSeek, dragToSeek);
 
             hideTimelinePoints.BindValueChanged(_ => updateLayout());
+            timelineStyle.BindValueChanged(_ => updateLayout());
 
             AddInternal(new SelectableAreaBackground
             {
@@ -92,6 +100,20 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             bool hidden = hideTimelinePoints.Value;
             bool shared = referenceDifficulty?.Beatmap.Value != null;
 
+            // stable rests its objects on the bottom edge and puts everything else above them. The band is given the
+            // height of the object itself so that, with the object centred in it, the object's own bottom edge lands
+            // on the timeline's. Sharing the timeline with another difficulty keeps the centred layout either way:
+            // there is no room to rest two rows of objects on one edge.
+            if (timelineStyle.Value.RestsOnTheBottomEdge() && !shared)
+            {
+                Anchor = Origin = Anchor.BottomLeft;
+                RelativeSizeAxes = Axes.X;
+                Height = TimelineHitObjectBlueprint.CircleSizeFor(hidden, timelineStyle.Value);
+                Y = 0;
+                return;
+            }
+
+            RelativeSizeAxes = Axes.Both;
             Anchor = Origin = Anchor.Centre;
 
             if (shared)
@@ -147,7 +169,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         protected override bool OnDragStart(DragStartEvent e)
         {
-            if (!base.ReceivePositionalInputAt(e.ScreenSpaceMouseDownPosition))
+            // with the timeline no longer moving under a drag, the whole of it is free to select in. Otherwise a drag
+            // begun outside the objects' own band is left to the timeline, which moves the playhead with it.
+            if (dragToSeek.Value && !base.ReceivePositionalInputAt(e.ScreenSpaceMouseDownPosition))
                 return false;
 
             return base.OnDragStart(e);

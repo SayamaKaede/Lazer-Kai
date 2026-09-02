@@ -320,6 +320,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
             SetDefault(OsuSetting.EditorAutoBackupKeepCount, 20, 5, 200);
             SetDefault(OsuSetting.EditorHideTimelinePoints, false);
+            SetDefault(OsuSetting.EditorTimelineStyle, EditorTimelineStyle.Lazer);
+            SetDefault(OsuSetting.EditorTimelineDragToSeek, true);
             SetDefault(OsuSetting.EditorTimelineDragAreaScale, 0.5f, 0.5f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorTimelineRepeatDragThreshold, 0.8f, 0.5f, 0.8f, 0.01f);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerColour, EditorSelectionColour.Default);
@@ -1022,5 +1024,15 @@ namespace osu.Game.Configuration
         /// Whether the status panel shows the combo a player would be on at the playhead.
         /// </summary>
         EditorStatusShowCombo,
+
+        /// <summary>
+        /// How the timeline lays its objects, ticks and point rows out.
+        /// </summary>
+        EditorTimelineStyle,
+
+        /// <summary>
+        /// Whether the timeline can be dragged to move the playhead.
+        /// </summary>
+        EditorTimelineDragToSeek,
     }
 }

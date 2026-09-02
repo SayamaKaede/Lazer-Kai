@@ -4,7 +4,9 @@
 #nullable disable
 
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Game.Configuration;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Game.Graphics;
@@ -31,9 +33,11 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 LabelContainer = new Container
                 {
                     AutoSizeAxes = Axes.X,
-                    Height = 16,
+                    // a touch shorter than upstream's 16, so that two of these stacked over an object in the stable
+                    // layout leave the object more of the timeline's height.
+                    Height = TimelineHitObjectBlueprint.POINT_ROW_HEIGHT,
                     Masking = true,
-                    CornerRadius = 8,
+                    CornerRadius = TimelineHitObjectBlueprint.POINT_ROW_HEIGHT / 2,
                     Anchor = Anchor.BottomCentre,
                     Origin = Anchor.BottomCentre,
                     Children = new Drawable[]

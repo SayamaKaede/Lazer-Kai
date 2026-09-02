@@ -1039,6 +1039,43 @@ namespace osu.Game.Localisation
             @"Objects take the freed space, making them easier to grab. Velocity and volume stay editable from the right sidebar.");
 
         /// <summary>
+        /// "Timeline layout"
+        /// </summary>
+        public static LocalisableString TimelineStyle => new TranslatableString(getKey(@"timeline_style"), @"Timeline layout");
+
+        /// <summary>
+        /// "Lazer"
+        /// </summary>
+        public static LocalisableString TimelineStyleLazer => new TranslatableString(getKey(@"timeline_style_lazer"), @"Lazer");
+
+        /// <summary>
+        /// "Stable"
+        /// </summary>
+        public static LocalisableString TimelineStyleStable => new TranslatableString(getKey(@"timeline_style_stable"), @"Stable");
+
+        /// <summary>
+        /// "Lazer-Kai"
+        /// </summary>
+        public static LocalisableString TimelineStyleLazerKai => new TranslatableString(getKey(@"timeline_style_lazer_kai"), @"Lazer-Kai");
+
+        /// <summary>
+        /// "Stable rests the objects on the bottom edge and keeps the ticks down there with them, with velocity and volume above. Lazer-Kai is the same with a tick growing in from the top edge as well."
+        /// </summary>
+        public static LocalisableString TimelineStyleDescription => new TranslatableString(getKey(@"timeline_style_description"),
+            @"Stable rests the objects on the bottom edge and keeps the ticks down there with them, with velocity and volume above. Lazer-Kai is the same with a tick growing in from the top edge as well.");
+
+        /// <summary>
+        /// "Drag the timeline to move the playhead"
+        /// </summary>
+        public static LocalisableString TimelineDragToSeek => new TranslatableString(getKey(@"timeline_drag_to_seek"), @"Drag the timeline to move the playhead");
+
+        /// <summary>
+        /// "Only the objects' own band takes a drag as a selection, so a drag begun anywhere else moves the playhead. Turn this off to reach for a selection without moving it."
+        /// </summary>
+        public static LocalisableString TimelineDragToSeekDescription => new TranslatableString(getKey(@"timeline_drag_to_seek_description"),
+            @"Only the objects' own band takes a drag as a selection, so a drag begun anywhere else moves the playhead. Turn this off to reach for a selection without moving it.");
+
+        /// <summary>
         /// "Timeline drag handle size"
         /// </summary>
         public static LocalisableString TimelineDragAreaScale => new TranslatableString(getKey(@"timeline_drag_area_scale"), @"Timeline drag handle size");

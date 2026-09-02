@@ -40,6 +40,19 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         /// </summary>
         private const float expanded_circle_size = 52;
 
+        /// <summary>
+        /// The two heights above, for the stable layout.
+        /// </summary>
+        private const float stable_circle_size = 45;
+
+        private const float stable_expanded_circle_size = 64;
+
+        /// <summary>
+        /// How tall one velocity or volume row is drawn.
+        /// </summary>
+        public const float POINT_ROW_HEIGHT = 15;
+
+
         private Container? repeatsContainer;
 
         public Action<DragEvent?>? OnDragHandled = null!;
@@ -186,11 +199,59 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private void load(OsuConfigManager config)
         {
             config.BindWith(OsuSetting.EditorHideTimelinePoints, hideTimelinePoints);
+            config.BindWith(OsuSetting.EditorTimelineStyle, timelineStyle);
 
             hideTimelinePoints.BindValueChanged(_ => updateSizing());
+            timelineStyle.BindValueChanged(_ => updateSizing());
             referenceDifficulty?.Beatmap.BindValueChanged(_ => updateSizing());
 
             updateSizing();
+        }
+
+        private readonly Bindable<EditorTimelineStyle> timelineStyle = new Bindable<EditorTimelineStyle>();
+
+        /// <summary>
+        /// How tall an object is drawn, given what else the timeline has to fit around it.
+        /// </summary>
+        /// <remarks>
+        /// Stable's are bigger than lazer's at both sizes: resting the objects on the bottom edge puts the two point
+        /// rows over them rather than one on either side, which leaves more of the height for the objects themselves.
+        /// The four numbers were settled by eye against a real beatmap rather than worked out.
+        /// </remarks>
+        public static float CircleSizeFor(bool pointRowsHidden, EditorTimelineStyle style)
+        {
+            if (style.RestsOnTheBottomEdge())
+                return pointRowsHidden ? stable_expanded_circle_size : stable_circle_size;
+
+            return pointRowsHidden ? expanded_circle_size : circle_size;
+        }
+
+        /// <summary>
+        /// Whether the objects are resting on the timeline's bottom edge, with everything else above them.
+        /// </summary>
+        private bool stableLayout => timelineStyle.Value.RestsOnTheBottomEdge() && referenceDifficulty?.Beatmap.Value == null;
+
+        /// <summary>
+        /// Puts the velocity and volume rows where the current layout wants them: on either side of the object in the
+        /// lazer one, both stacked above it in stable's, where there is nothing below the object to put them in.
+        /// </summary>
+        private void updatePointRowPlacement()
+        {
+            bool above = stableLayout;
+
+            samplePointPiece.Anchor = above ? Anchor.TopLeft : Anchor.BottomLeft;
+            samplePointPiece.Origin = above ? Anchor.BottomCentre : Anchor.TopCentre;
+
+            foreach (var node in sampleComponents.Children.OfType<NodeSamplePointPiece>())
+            {
+                node.Anchor = above ? Anchor.TopLeft : Anchor.BottomLeft;
+                node.Origin = above ? Anchor.BottomCentre : Anchor.TopCentre;
+            }
+
+            // velocity goes above volume rather than the other way round: volume belongs to the object itself, so it
+            // reads better sitting right on it.
+            if (difficultyPointPiece != null)
+                difficultyPointPiece.Y = above ? -POINT_ROW_HEIGHT : 0;
         }
 
         /// <summary>
@@ -205,10 +266,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         // half of what the rows give up goes to the difficulty being referenced, so the objects stay their stock size
         // rather than growing into all of it.
         private float currentCircleSize => referenceDifficulty?.Beatmap.Value != null ? circle_size
-            : hideTimelinePoints.Value ? expanded_circle_size : circle_size;
+            : CircleSizeFor(hideTimelinePoints.Value, timelineStyle.Value);
 
         private void updateSizing()
         {
+            updatePointRowPlacement();
+
             float size = currentCircleSize;
 
             Height = size;
@@ -378,8 +441,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 {
                     X = (float)i / (repeats.RepeatCount + 1),
                     RelativePositionAxes = Axes.X,
-                    Anchor = Anchor.BottomLeft,
-                    Origin = Anchor.TopCentre
+                    Anchor = stableLayout ? Anchor.TopLeft : Anchor.BottomLeft,
+                    Origin = stableLayout ? Anchor.BottomCentre : Anchor.TopCentre
                 });
             }
 

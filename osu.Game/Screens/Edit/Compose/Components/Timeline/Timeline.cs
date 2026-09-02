@@ -81,6 +81,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private WaveformGraph waveform = null!;
 
         private TimelineTickDisplay ticks = null!;
+
+        private Drawable tickProxy = null!;
+
+        private Container tickAndObjectLayer = null!;
+
+        private readonly Bindable<EditorTimelineStyle> timelineStyle = new Bindable<EditorTimelineStyle>();
+
+        private readonly BindableBool dragToSeek = new BindableBool();
         private TimelineReferenceObjectDisplay referenceObjects = null!;
 
         private TimelineTimingChangeDisplay controlPoints = null!;
@@ -135,7 +143,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                     Anchor = Anchor.CentreLeft,
                     Origin = Anchor.CentreLeft,
                 },
-                new Container
+                tickAndObjectLayer = new Container
                 {
                     RelativeSizeAxes = Axes.X,
                     Height = timeline_height,
@@ -151,11 +159,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                         },
                         referenceObjects = new TimelineReferenceObjectDisplay(),
                         centreMarker.CreateProxy(),
-                        ticks.CreateProxy(),
+                        tickProxy = ticks.CreateProxy(),
                         userContent,
                     }
                 },
             });
+
+            config.BindWith(OsuSetting.EditorTimelineStyle, timelineStyle);
+            config.BindWith(OsuSetting.EditorTimelineDragToSeek, dragToSeek);
 
             waveformOpacity = config.GetBindable<float>(OsuSetting.EditorWaveformOpacity);
             controlPointsVisible = config.GetBindable<bool>(OsuSetting.EditorTimelineShowTimingChanges);
@@ -194,6 +205,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             waveformOpacity.BindValueChanged(_ => updateWaveformOpacity(), true);
 
             ticksVisible.BindValueChanged(visible => ticks.FadeTo(visible.NewValue ? 1 : 0, 200, Easing.OutQuint), true);
+
+            // the layouts which rest their objects on the bottom edge draw the ticks over them rather than behind.
+            // They are short marks along the edges there, so having them on top reads as the objects resting on a
+            // ruler instead of covering it.
+            timelineStyle.BindValueChanged(style =>
+                tickAndObjectLayer.ChangeChildDepth(tickProxy, style.NewValue.RestsOnTheBottomEdge() ? -1 : 0), true);
 
             controlPointsVisible.BindValueChanged(visible =>
             {
@@ -297,12 +314,19 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         protected override bool OnMouseDown(MouseDownEvent e)
         {
-            if (base.OnMouseDown(e))
+            if (base.OnMouseDown(e) && dragToSeek.Value)
                 beginUserDrag();
 
             // handling right button as well breaks context menus inside the timeline, only handle left button for now.
             return e.Button == MouseButton.Left;
         }
+
+        /// <summary>
+        /// Dragging the timeline itself moves the playhead with the mouse. Only the objects' own band takes a drag as
+        /// a selection, so a drag begun anywhere else — which in the stable layout is most of the height — moves the
+        /// playhead instead of selecting, which is easy to do by accident while reaching for a selection.
+        /// </summary>
+        protected override bool OnDragStart(DragStartEvent e) => dragToSeek.Value && base.OnDragStart(e);
 
         protected override void OnMouseUp(MouseUpEvent e)
         {

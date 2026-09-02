@@ -13,6 +13,7 @@ using osu.Game.Graphics;
 using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
 using osu.Game.Screens.Edit.Components.Timelines.Summary.Visualisations;
 using osuTK;
+using osuTK.Graphics;
 
 namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 {
@@ -42,6 +43,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private readonly BindableBool showTimingChanges = new BindableBool(true);
 
+        private readonly Bindable<EditorTimelineStyle> timelineStyle = new Bindable<EditorTimelineStyle>();
+
+        /// <summary>
+        /// How much of the timeline's height the ticks reach up to in the stable layout, where they are short marks
+        /// along the bottom edge rather than lines across the whole height.
+        /// </summary>
+        private const float stable_tick_extent = 0.1f;
+
         private readonly Cached tickCache = new Cached();
 
         [BackgroundDependencyLoader]
@@ -53,6 +62,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             configManager.BindWith(OsuSetting.EditorTimelineShowTimingChanges, showTimingChanges);
             showTimingChanges.BindValueChanged(_ => invalidateTicks());
+
+            configManager.BindWith(OsuSetting.EditorTimelineStyle, timelineStyle);
+            timelineStyle.BindValueChanged(_ => invalidateTicks());
         }
 
         private void invalidateTicks()
@@ -105,6 +117,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         {
             int drawableIndex = 0;
 
+            bool alongTheEdges = timelineStyle.Value.RestsOnTheBottomEdge();
+            bool fromTheTopToo = timelineStyle.Value == EditorTimelineStyle.LazerKai;
+
             nextMinTick = null;
             nextMaxTick = null;
 
@@ -140,12 +155,17 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                             ? new Vector2(1.3f, 1)
                             : BindableBeatDivisor.GetSize(divisor);
 
-                        var line = getNextUsableLine();
-                        line.X = xPos;
+                        if (alongTheEdges)
+                        {
+                            addLine(xPos, size, colour, Anchor.BottomLeft, Anchor.BottomCentre, size.Y * stable_tick_extent);
 
-                        line.Width = TICK_WIDTH * size.X;
-                        line.Height = size.Y;
-                        line.Colour = colour;
+                            // a second mark growing in from the top, so that a beat is readable from either side of
+                            // the objects resting between them. Stable itself only has the one along the bottom.
+                            if (fromTheTopToo)
+                                addLine(xPos, size, colour, Anchor.TopLeft, Anchor.TopCentre, size.Y * stable_tick_extent);
+                        }
+                        else
+                            addLine(xPos, size, colour, Anchor.CentreLeft, Anchor.Centre, size.Y);
                     }
 
                     beat++;
@@ -163,6 +183,18 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 Children[drawableIndex++].Expire();
 
             tickCache.Validate();
+
+            void addLine(float xPos, Vector2 size, Color4 colour, Anchor anchor, Anchor origin, float height)
+            {
+                var line = getNextUsableLine();
+
+                line.X = xPos;
+                line.Width = TICK_WIDTH * size.X;
+                line.Height = height;
+                line.Colour = colour;
+                line.Anchor = anchor;
+                line.Origin = origin;
+            }
 
             Drawable getNextUsableLine()
             {
