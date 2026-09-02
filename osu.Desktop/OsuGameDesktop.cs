@@ -107,6 +107,25 @@ namespace osu.Desktop
 
         public static bool IsPackageManaged => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OSU_EXTERNAL_UPDATE_PROVIDER"));
 
+        /// <summary>
+        /// Keeps the game's own files out of the folder velopack replaces on every update.
+        /// </summary>
+        /// <remarks>
+        /// This build runs portable, which puts beatmaps, settings and scores beside the executable so that it never
+        /// touches an official installation's data. A packaged build's executable sits inside a versioned folder that
+        /// an update throws away whole, so they are kept a level up, beside that folder rather than inside it. Left
+        /// where portable mode puts them, every update would take the lot.
+        /// </remarks>
+        protected override Storage CreateStorage(GameHost host, Storage defaultStorage)
+        {
+            string? root = VelopackUpdateManager.RootDirectory;
+
+            if (root != null)
+                defaultStorage = host.GetStorage(root);
+
+            return base.CreateStorage(host, defaultStorage);
+        }
+
         protected override UpdateManager CreateUpdateManager()
         {
             // If this is the first time we've run the game, ie it is being installed,
@@ -120,8 +139,12 @@ namespace osu.Desktop
             if (IsPackageManaged)
                 return new NoActionUpdateManager();
 
-            // this fork is handed out as a folder to copy over an existing one, so velopack has nothing to install
-            // into and its check fails on every run. Knowing a release happened is all that is wanted here.
+            if (VelopackUpdateManager.CanReplaceItself)
+                return new VelopackUpdateManager();
+
+            // builds handed out before this fork was packaged are folders copied over an existing one, so velopack has
+            // nothing to update from and its check fails on every run. Knowing a release happened is all that is left
+            // to offer them, and it is what tells them to move over to a packaged build once.
             return new LazerKaiUpdateManager();
         }
 

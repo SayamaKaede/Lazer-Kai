@@ -12,6 +12,7 @@ using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Screens.Play;
 using Velopack;
+using Velopack.Locators;
 using Velopack.Sources;
 using UpdateManager = osu.Game.Updater.UpdateManager;
 
@@ -31,6 +32,44 @@ namespace osu.Desktop.Updater
         private bool isInGameplay => localUserInfo?.PlayingState.Value != LocalUserPlayingState.NotPlaying;
 
         private ScheduledDelegate? scheduledBackgroundCheck;
+
+        /// <summary>
+        /// Where releases of this fork are published.
+        /// </summary>
+        /// <remarks>
+        /// A repository of its own, holding nothing but the releases: the source sits elsewhere, and reading this one
+        /// has to work without a token, which anyone holding a copy of the game would be able to read back out of it.
+        /// The release stream setting has no part here — there is one stream.
+        /// </remarks>
+        private static IUpdateSource CreateSource() => new GithubSource(@"https://github.com/SayamaKaede/Lazer-Kai-Releases", null, false);
+
+        /// <summary>
+        /// The folder a packaged build lives in, which is the one above the versioned folder the executable sits in.
+        /// Null when this build was not packed by velopack.
+        /// </summary>
+        /// <remarks>
+        /// Velopack replaces the versioned folder wholesale on every update, so nothing that has to outlive one can be
+        /// kept in there. This is the folder that does outlive them.
+        /// </remarks>
+        public static string? RootDirectory
+        {
+            get
+            {
+                var locator = VelopackLocator.Current;
+
+                // null for a build that was never packed, which is what tells the two kinds apart everywhere below.
+                return locator.CurrentlyInstalledVersion == null ? null : locator.RootAppDir;
+            }
+        }
+
+        /// <summary>
+        /// Whether this build was packed by velopack, and can therefore replace itself.
+        /// </summary>
+        /// <remarks>
+        /// A build handed out as a folder to copy over an existing one has nothing to update from, and velopack's
+        /// check fails on every run. Those are told a release happened instead, by osu.Game's LazerKaiUpdateManager.
+        /// </remarks>
+        public static bool CanReplaceItself => RootDirectory != null;
 
         private void scheduleNextUpdateCheck()
         {
@@ -55,8 +94,7 @@ namespace osu.Desktop.Updater
 
             try
             {
-                IUpdateSource updateSource = new GithubSource(@"https://github.com/ppy/osu", null, ReleaseStream.Value == Game.Configuration.ReleaseStream.Tachyon);
-                Velopack.UpdateManager updateManager = new Velopack.UpdateManager(updateSource, new UpdateOptions
+                Velopack.UpdateManager updateManager = new Velopack.UpdateManager(CreateSource(), new UpdateOptions
                 {
                     AllowVersionDowngrade = true
                 });
