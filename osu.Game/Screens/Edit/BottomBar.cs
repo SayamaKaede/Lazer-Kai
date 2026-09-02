@@ -82,6 +82,29 @@ namespace osu.Game.Screens.Edit
 
             saveInProgress = editor.MutationTracker.InProgress.GetBoundCopy();
             composerFocusMode = editor.ComposerFocusMode.GetBoundCopy();
+            flashlightPreviewed = editor.FlashlightPreviewed.GetBoundCopy();
+        }
+
+        private IBindable<bool> flashlightPreviewed = null!;
+
+        /// <summary>
+        /// How see-through the bar's own backgrounds are.
+        /// </summary>
+        /// <remarks>
+        /// Working in the playfield takes them half-transparent so as not to draw the eye, which puts the
+        /// beatmap's own background back on screen along the bottom. Under flashlight that is the one bright strip
+        /// left in an otherwise dark picture, so the bar is kept solid for as long as it is on.
+        /// </remarks>
+        private void updateBackgroundOpacity()
+        {
+            // Transforms should be kept in sync with other usages of composer focus mode.
+            foreach (var c in this.ChildrenOfType<BottomBarContainer>())
+            {
+                if (!composerFocusMode.Value || flashlightPreviewed.Value)
+                    c.Background.FadeIn(750, Easing.OutQuint);
+                else
+                    c.Background.Delay(600).FadeTo(0.5f, 4000, Easing.OutQuint);
+            }
         }
 
         protected override void LoadComplete()
@@ -89,17 +112,8 @@ namespace osu.Game.Screens.Edit
             base.LoadComplete();
 
             saveInProgress.BindValueChanged(_ => TestGameplayButton.Enabled.Value = !saveInProgress.Value, true);
-            composerFocusMode.BindValueChanged(_ =>
-            {
-                // Transforms should be kept in sync with other usages of composer focus mode.
-                foreach (var c in this.ChildrenOfType<BottomBarContainer>())
-                {
-                    if (!composerFocusMode.Value)
-                        c.Background.FadeIn(750, Easing.OutQuint);
-                    else
-                        c.Background.Delay(600).FadeTo(0.5f, 4000, Easing.OutQuint);
-                }
-            }, true);
+            composerFocusMode.BindValueChanged(_ => updateBackgroundOpacity());
+            flashlightPreviewed.BindValueChanged(_ => updateBackgroundOpacity(), true);
         }
 
         /// <summary>

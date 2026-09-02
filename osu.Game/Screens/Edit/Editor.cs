@@ -47,6 +47,7 @@ using osu.Game.Overlays.Notifications;
 using osu.Game.Overlays.OSD;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Edit;
+using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Screens.Backgrounds;
@@ -694,6 +695,15 @@ namespace osu.Game.Screens.Edit
                         },
                     },
                     bottomBar = new BottomBar(),
+                    // what the composer's preview mods draw over the playfield goes here, above the timeline and the
+                    // bottom bar so that flashlight reaches those too — they show the beatmap as plainly as the
+                    // playfield does. The menu bar is left out, so there is always somewhere to reach the menus.
+                    ModOverlays = new Container
+                    {
+                        Name = "Mod overlays",
+                        RelativeSizeAxes = Axes.Both,
+                        Padding = new MarginPadding { Top = 40 },
+                    },
                     // sits above the screens so it stays readable, but takes no input away from them: the layout is
                     // built while listening to the song and watching the playfield.
                     comboColourStudio = new ComboColourStudioOverlay { State = { Value = Visibility.Hidden } },
@@ -713,6 +723,31 @@ namespace osu.Game.Screens.Edit
         private MusicController musicController { get; set; }
 
         protected override BackgroundScreen CreateBackground() => new EditorBackgroundScreen(editorBeatmap);
+
+        /// <summary>
+        /// Where the composer puts whatever its preview mods draw over the playfield.
+        /// </summary>
+        /// <remarks>
+        /// A ruleset only ever fills the space its playfield was given, so anything it overlays stops at the edge of
+        /// the composer. Flashlight has to reach further than that to be worth practising on, so it is drawn from
+        /// here instead — above everything the editor shows of the beatmap.
+        /// </remarks>
+        public Container ModOverlays { get; private set; }
+
+        private readonly BindableBool flashlightPreviewed = new BindableBool();
+
+        /// <summary>
+        /// Whether the composer is currently showing flashlight.
+        /// </summary>
+        /// <remarks>
+        /// Flashlight is drawn by the ruleset, so it only ever covers the composer. Everything else the editor
+        /// shows of the beatmap has to be dealt with on its own, and this is what those parts read.
+        /// </remarks>
+        public IBindable<bool> FlashlightPreviewed => flashlightPreviewed;
+
+        private void updateFlashlightPreviewed() =>
+            flashlightPreviewed.Value = editorApplyTestPlayModsToComposer.Value
+                                        && testPlayModsController.Mods.Value.Any(m => m is ModFlashlight);
 
         protected override void LoadComplete()
         {
@@ -772,8 +807,14 @@ namespace osu.Game.Screens.Edit
                 announceEnabled(EditorStrings.AlwaysExpandTimelinePointLabels, on.NewValue));
 
             // the composer reads the mod preview settings when it is constructed, so it has to be rebuilt for a change to take effect.
-            editorApplyTestPlayModsToComposer.BindValueChanged(_ => reloadComposeScreen());
+            editorApplyTestPlayModsToComposer.BindValueChanged(_ =>
+            {
+                reloadComposeScreen();
+                updateFlashlightPreviewed();
+            });
             testPlayModsController.SelectionChanged += onTestPlayModsChanged;
+
+            updateFlashlightPreviewed();
 
             MutationTracker.InProgress.BindValueChanged(_ =>
             {
@@ -1632,6 +1673,8 @@ namespace osu.Game.Screens.Edit
 
         private void onTestPlayModsChanged()
         {
+            updateFlashlightPreviewed();
+
             if (!editorApplyTestPlayModsToComposer.Value)
                 return;
 
@@ -1642,6 +1685,10 @@ namespace osu.Game.Screens.Edit
 
         private void reloadComposeScreen()
         {
+            // the composer hands these over on load and cannot take them back on disposal, which does not run on the
+            // update thread. Clearing here, where the composer that put them there is about to go, is what does it.
+            ModOverlays.Clear();
+
             var existing = screenContainer.SingleOrDefault(s => s.Type == EditorScreenMode.Compose);
 
             if (existing == null)
@@ -1663,6 +1710,10 @@ namespace osu.Game.Screens.Edit
 
         private void onModeChanged(ValueChangedEvent<EditorScreenMode> e)
         {
+            // the overlays belong to the composer, which is kept around rather than thrown away when another screen is
+            // opened. Without this, flashlight would go on covering the design and timing screens too.
+            ModOverlays.Alpha = e.NewValue == EditorScreenMode.Compose ? 1 : 0;
+
             var lastScreen = currentScreen;
 
             lastScreen?.Hide();
@@ -1727,6 +1778,8 @@ namespace osu.Game.Screens.Edit
         /// </summary>
         public void ReloadComposeScreen()
         {
+            ModOverlays.Clear();
+
             screenContainer.SingleOrDefault(s => s.Type == EditorScreenMode.Compose)?.RemoveAndDisposeImmediately();
 
             // If not currently on compose screen, the reload will happen on next mode change.

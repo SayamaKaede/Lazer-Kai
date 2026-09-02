@@ -29,6 +29,7 @@ using osu.Game.Rulesets.Edit.Tools;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Drawables;
+using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
 using osu.Game.Rulesets.UI.Scrolling;
 using osu.Game.Screens.Edit;
@@ -132,6 +133,8 @@ namespace osu.Game.Rulesets.Edit
         [BackgroundDependencyLoader(true)]
         private void load(OsuConfigManager config, Editor? editor, ReadableKeyCombinationProvider keyCombinationProvider)
         {
+            host = editor;
+
             autoSeekOnPlacement = config.GetBindable<bool>(OsuSetting.EditorAutoSeekOnPlacement);
             advanceByPreviousSpacingOnPlacement = config.GetBindable<bool>(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement);
             liveModPreview = config.GetBindable<bool>(OsuSetting.EditorLiveModPreview);
@@ -372,6 +375,9 @@ namespace osu.Game.Rulesets.Edit
 
             InputManager = GetContainingInputManager()!;
 
+            spreadModOverlaysAcrossTheScreen();
+            feedComboToPreviewMods();
+
             LeftToolbox.AlwaysExpanded.BindTo(alwaysExpandLeftToolbox);
 
             leftToolboxWidth.BindValueChanged(width => LeftToolbox.ExpandedWidth = width.NewValue, true);
@@ -426,6 +432,8 @@ namespace osu.Game.Rulesets.Edit
         protected override void Update()
         {
             base.Update();
+
+            updatePreviewCombo();
 
             if (ApplyHorizontalCentering)
             {
@@ -732,6 +740,69 @@ namespace osu.Game.Rulesets.Edit
         }
 
         /// <summary>
+        /// The editor this composer is inside, kept for the overlays it hands over below. Null in tests which put a
+        /// composer on screen on its own.
+        /// </summary>
+        private Editor? host;
+
+        /// <summary>
+        /// Moves whatever the preview mods draw over the playfield out to the editor.
+        /// </summary>
+        /// <remarks>
+        /// A drawable ruleset only fills the space its playfield was given, so anything it overlays stops at that box and
+        /// leaves the beatmap showing all around it — along the edges of the composer, on the timeline, and on the bottom
+        /// bar. For flashlight that is the difference between being able to practise on it and not.
+        /// </remarks>
+        private void spreadModOverlaysAcrossTheScreen()
+        {
+            if (host == null)
+                return;
+
+            foreach (var overlay in DrawableRuleset.Overlays.ToArray())
+            {
+                DrawableRuleset.Overlays.Remove(overlay, false);
+                host.ModOverlays.Add(overlay);
+            }
+        }
+
+        private ScoreProcessor? previewScoreProcessor;
+        private double[]? previewComboTimes;
+
+        /// <summary>
+        /// Gives the preview mods a score processor to read the combo from, in place of the one a gameplay screen would
+        /// have. Flashlight shrinks its lit area at 100 and again at 200, and without this it would sit at zero forever
+        /// and always show the widest one.
+        /// </summary>
+        private void feedComboToPreviewMods()
+        {
+            var scoreProcessorMods = previewMods.OfType<IApplicableToScoreProcessor>().ToArray();
+
+            if (scoreProcessorMods.Length == 0)
+                return;
+
+            AddInternal(previewScoreProcessor = Ruleset.CreateScoreProcessor());
+
+            foreach (var mod in scoreProcessorMods)
+                mod.ApplyToScoreProcessor(previewScoreProcessor);
+
+            EditorBeatmap.BeatmapReprocessed += invalidatePreviewComboTimes;
+        }
+
+        private void invalidatePreviewComboTimes() => previewComboTimes = null;
+
+        /// <summary>
+        /// Reads the combo off the playhead, so that it is the same number the status panel is showing.
+        /// </summary>
+        private void updatePreviewCombo()
+        {
+            if (previewScoreProcessor == null)
+                return;
+
+            previewComboTimes ??= ComposeStatusDisplay.ComboTimesFor(EditorBeatmap);
+            previewScoreProcessor.Combo.Value = ComposeStatusDisplay.ComboAt(previewComboTimes, EditorClock.CurrentTime);
+        }
+
+        /// <summary>
         /// Seeks forward by the spacing between the just-placed object and the one before it, so that the playhead lands
         /// where an object continuing the same rhythm would go. This allows placing a constant rhythm without touching the timeline.
         /// </summary>
@@ -787,6 +858,7 @@ namespace osu.Game.Rulesets.Edit
                 EditorBeatmap.HitObjectUpdated -= hitObjectUpdated;
                 EditorBeatmap.SelectedHitObjects.CollectionChanged -= selectionChanged;
                 EditorBeatmap.BeatmapReprocessed -= onBeatmapReprocessed;
+                EditorBeatmap.BeatmapReprocessed -= invalidatePreviewComboTimes;
             }
 
             base.Dispose(isDisposing);
