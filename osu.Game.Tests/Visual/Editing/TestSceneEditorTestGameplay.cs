@@ -16,6 +16,7 @@ using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Localisation;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu;
@@ -154,11 +155,17 @@ namespace osu.Game.Tests.Visual.Editing
 
         private void openModSelect()
         {
-            AddStep("click Test", () => this.ChildrenOfType<EditorMenuBar.DrawableEditorBarMenuItem>()
-                                            .Single(item => hasText(item, "Test")).TriggerClick());
+            // read off the strings themselves rather than typed out again here. Both of these have been renamed
+            // since, and the menu ended up carrying the same word at two levels, which the literals could not tell
+            // apart.
+            string menu = EditorStrings.MenuBarTest.ToString();
+            string item = EditorStrings.TestPlayMods.ToString();
 
-            hoverMenuItem("Mods");
-            AddStep("click Mods", () => getMenuItem("Mods").TriggerClick());
+            AddStep($"click {menu}", () => this.ChildrenOfType<EditorMenuBar.DrawableEditorBarMenuItem>()
+                                               .Single(bar => hasText(bar, menu)).TriggerClick());
+
+            hoverMenuItem(item);
+            AddStep($"click {item}", () => getMenuItem(item).TriggerClick());
 
             AddUntilStep("mod screen is up", () => modSelect().State.Value, () => Is.EqualTo(Visibility.Visible));
             AddUntilStep("its panels are loaded", () => modSelect().ChildrenOfType<ModPanel>().Any(), () => Is.True);

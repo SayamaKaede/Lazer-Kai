@@ -27,9 +27,9 @@ namespace osu.Game.Localisation
         public static LocalisableString BeatmapSectionHeader => new TranslatableString(getKey(@"beatmap_section_header"), @"Beatmap");
 
         /// <summary>
-        /// "Test play"
+        /// "Mods"
         /// </summary>
-        public static LocalisableString TestPlaySectionHeader => new TranslatableString(getKey(@"test_play_section_header"), @"Test play");
+        public static LocalisableString TestPlaySectionHeader => new TranslatableString(getKey(@"test_play_section_header"), @"Mods");
 
         /// <summary>
         /// "Other"
@@ -62,9 +62,9 @@ namespace osu.Game.Localisation
         public static LocalisableString InputHeader => new TranslatableString(getKey(@"input_header"), @"Input");
 
         /// <summary>
-        /// "Test play"
+        /// "Mods"
         /// </summary>
-        public static LocalisableString TestPlayHeader => new TranslatableString(getKey(@"test_play_header"), @"Test play");
+        public static LocalisableString TestPlayHeader => new TranslatableString(getKey(@"test_play_header"), @"Mods");
 
         /// <summary>
         /// "Backups"

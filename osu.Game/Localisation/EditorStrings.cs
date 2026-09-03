@@ -353,9 +353,9 @@ namespace osu.Game.Localisation
         public static LocalisableString SampleSet => new TranslatableString(getKey(@"sample_set"), @"Sample set");
 
         /// <summary>
-        /// "Test"
+        /// "Mods"
         /// </summary>
-        public static LocalisableString MenuBarTest => new TranslatableString(getKey(@"menu_bar_test"), @"Test");
+        public static LocalisableString MenuBarTest => new TranslatableString(getKey(@"menu_bar_test"), @"Mods");
 
         /// <summary>
         /// "Mods"
