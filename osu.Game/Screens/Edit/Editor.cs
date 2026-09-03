@@ -53,6 +53,7 @@ using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Screens.Backgrounds;
 using osu.Game.Screens.Edit.ComboColours;
 using osu.Game.Screens.Edit.DifficultyGraph;
+using osu.Game.Screens.Edit.Collab;
 using osu.Game.Screens.Edit.Components.Menus;
 using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
 using osu.Game.Screens.Edit.Compose;
@@ -234,6 +235,8 @@ namespace osu.Game.Screens.Edit
 
         private BottomBar bottomBar;
         private ComboColourStudioOverlay comboColourStudio;
+
+        private CollabOverlay collab;
 
         private DifficultyGraphDetailOverlay difficultyGraphDetail;
 
@@ -436,6 +439,8 @@ namespace osu.Game.Screens.Edit
             AddInternal(modRatePreview);
             dependencies.Cache(modRatePreview);
 
+            dependencies.Cache(new CollabHighlight());
+
             OsuMenuItem undoMenuItem;
             OsuMenuItem redoMenuItem;
 
@@ -529,6 +534,7 @@ namespace osu.Game.Screens.Edit
                                             insertBreakMenuItem = new EditorMenuItem(EditorStrings.InsertBreak, MenuItemType.Standard, insertBreak),
                                             new OsuMenuItemSpacer(),
                                             new EditorMenuItem(ComboColourStudioStrings.ComboColourStudio, MenuItemType.Standard, () => comboColourStudio?.ToggleVisibility()),
+                                            new EditorMenuItem(CollabStrings.MenuItem, MenuItemType.Standard, () => collab?.ToggleVisibility()),
                                         }
                                     },
                                     new MenuItem(CommonStrings.MenuBarView)
@@ -707,6 +713,9 @@ namespace osu.Game.Screens.Edit
                     // sits above the screens so it stays readable, but takes no input away from them: the layout is
                     // built while listening to the song and watching the playfield.
                     comboColourStudio = new ComboColourStudioOverlay { State = { Value = Visibility.Hidden } },
+                    // spans the screen, unlike the studio above it, so that it can tell a click meant for the beatmap
+                    // from one meant for itself. Only its own panel takes input.
+                    collab = new CollabOverlay { State = { Value = Visibility.Hidden } },
                     // modal, unlike the studio above it: this one is opened, read, and closed.
                     difficultyGraphDetail = new DifficultyGraphDetailOverlay { State = { Value = Visibility.Hidden } },
                     MutationTracker,

@@ -7,6 +7,7 @@ using osu.Framework.Graphics;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Screens.Edit;
+using osu.Game.Screens.Edit.Collab;
 using osu.Game.Screens.Edit.Components.Timelines.Summary;
 using osuTK;
 
@@ -17,6 +18,12 @@ namespace osu.Game.Tests.Visual.Editing
     {
         [Cached(typeof(EditorBeatmap))]
         private readonly EditorBeatmap editorBeatmap;
+
+        /// <summary>
+        /// Cached by the editor in the real thing: the strip lights the stretch a collaboration panel is pointing at.
+        /// </summary>
+        [Cached]
+        private readonly CollabHighlight collabHighlight = new CollabHighlight();
 
         public TestSceneEditorSummaryTimeline()
         {

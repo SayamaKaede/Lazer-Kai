@@ -102,6 +102,93 @@ namespace osu.Game.Tests.Editing
             Assert.That(ComposeStatusDisplay.DrainTimeFor(new Beatmap()), Is.Zero);
         }
 
+        /// <summary>
+        /// The whole point of splitting a beatmap between collaborators: what each of them is counted as having done
+        /// has to add back up to what the beatmap is counted as being. A split that loses time somewhere would have
+        /// them arguing over a number neither of them can reproduce.
+        /// </summary>
+        [Test]
+        public void TestTheSplitPiecesAddBackUpToTheWhole()
+        {
+            var beatmap = withBreaks();
+
+            double whole = ComposeStatusDisplay.DrainTimeFor(beatmap);
+
+            // cuts fall in the middle of a stretch of play, inside a rest, and exactly on an object.
+            double[] cuts = { 2_400, 5_000, 8_000 };
+            double summed = 0;
+            double from = double.MinValue;
+
+            foreach (double cut in cuts)
+            {
+                summed += ComposeStatusDisplay.DrainTimeBetween(beatmap, from, cut);
+                from = cut;
+            }
+
+            summed += ComposeStatusDisplay.DrainTimeBetween(beatmap, from, double.MaxValue);
+
+            Assert.That(summed, Is.EqualTo(whole).Within(0.0001));
+        }
+
+        /// <summary>
+        /// The wait between one piece's last object and the next piece's first is played through, so it belongs to
+        /// whichever piece covers it rather than to neither.
+        /// </summary>
+        [Test]
+        public void TestTheGapAtASplitIsCountedRatherThanLost()
+        {
+            var beatmap = new Beatmap();
+            beatmap.HitObjects.Add(new TestObject { StartTime = 1_000 });
+            beatmap.HitObjects.Add(new TestObject { StartTime = 5_000 });
+
+            // no rest between them, so every millisecond of the four seconds counts.
+            Assert.That(ComposeStatusDisplay.DrainTimeBetween(beatmap, double.MinValue, 3_000), Is.EqualTo(2_000));
+            Assert.That(ComposeStatusDisplay.DrainTimeBetween(beatmap, 3_000, double.MaxValue), Is.EqualTo(2_000));
+        }
+
+        /// <summary>
+        /// A piece before the first object or after the last has nothing being played in it.
+        /// </summary>
+        [Test]
+        public void TestTimeOutsideTheBeatmapCountsForNothing()
+        {
+            var beatmap = new Beatmap();
+            beatmap.HitObjects.Add(new TestObject { StartTime = 1_000 });
+            beatmap.HitObjects.Add(new TestObject { StartTime = 2_000 });
+
+            Assert.That(ComposeStatusDisplay.DrainTimeBetween(beatmap, 0, 1_000), Is.Zero);
+            Assert.That(ComposeStatusDisplay.DrainTimeBetween(beatmap, 2_000, 9_000), Is.Zero);
+        }
+
+        /// <summary>
+        /// A rest straddling a split is taken off both sides in the proportion it actually covers.
+        /// </summary>
+        [Test]
+        public void TestARestStraddlingASplitIsSharedBetweenTheTwo()
+        {
+            var beatmap = withBreaks();
+
+            double left = ComposeStatusDisplay.DrainTimeBetween(beatmap, double.MinValue, 5_000);
+            double right = ComposeStatusDisplay.DrainTimeBetween(beatmap, 5_000, double.MaxValue);
+
+            Assert.That(left + right, Is.EqualTo(ComposeStatusDisplay.DrainTimeFor(beatmap)).Within(0.0001));
+        }
+
+        /// <summary>A beatmap with a rest in it, for the splitting tests to divide up.</summary>
+        private static Beatmap withBreaks()
+        {
+            var beatmap = new Beatmap();
+
+            beatmap.HitObjects.Add(new TestObject { StartTime = 1_000 });
+            beatmap.HitObjects.Add(new TestDurationObject { StartTime = 3_000, Duration = 500 });
+            beatmap.HitObjects.Add(new TestObject { StartTime = 8_000 });
+            beatmap.HitObjects.Add(new TestObject { StartTime = 10_000 });
+
+            beatmap.Breaks.Add(new BreakPeriod(3_700, 7_400));
+
+            return beatmap;
+        }
+
         private class TestObject : HitObject
         {
         }

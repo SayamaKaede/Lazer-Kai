@@ -279,6 +279,22 @@ namespace osu.Game.Localisation
             [$@"{binding_prefix}:editor_decrease_slider_velocity_fine"] = @"SVを下げる（微調整）",
             [$@"{binding_prefix}:editor_increase_slider_velocity_fine"] = @"SVを上げる（微調整）",
 
+            // collab manager
+            // the feature keeps its English name, which is what it is called between the people using it. Everything
+            // said about it is in Japanese, and 「担当」 throughout: it is the word a collaboration is divided in.
+            // the name stays as it is: it is what the people using it call the feature.
+            [$@"{collab_prefix}:header"] = @"Collab Manager",
+            [$@"{collab_prefix}:menu_item"] = @"Collab Manager...",
+            [$@"{collab_prefix}:no_bookmarks_yet"] = @"区切りたい位置にブックマークを追加すると、そこが担当範囲になります",
+            [$@"{collab_prefix}:unassigned"] = @"未割り当て",
+            [$@"{collab_prefix}:add_collaborator"] = @"マッパーを追加",
+            [$@"{collab_prefix}:copy_split"] = @"リストをコピー",
+            [$@"{collab_prefix}:whole_beatmap"] = @"譜面全体 {0}",
+            [$@"{collab_prefix}:block_summary"] = @"{0} / {1}ノーツ",
+            [$@"{collab_prefix}:rename"] = @"名前を変更",
+            [$@"{collab_prefix}:collaborator_name"] = @"マッパーの名前",
+            [$@"{collab_prefix}:panel_opacity"] = @"透明度",
+
             // profile
             // named after the game's own listings on the same page, which read 「ゲスト難易度のビートマップ」,
             // 「Pendingのビートマップ」 and 「Graveyardのビートマップ」.
@@ -292,6 +308,7 @@ namespace osu.Game.Localisation
         private const string binding_prefix = @"osu.Game.Resources.Localisation.GlobalActionKeyBinding";
         private const string common_prefix = @"osu.Game.Resources.Localisation.Common";
         private const string profile_prefix = @"osu.Game.Resources.Localisation.LazerKaiProfile";
+        private const string collab_prefix = @"osu.Game.Resources.Localisation.Collab";
 
         public LazerKaiJapaneseStore(ILocalisationStore fallback)
         {

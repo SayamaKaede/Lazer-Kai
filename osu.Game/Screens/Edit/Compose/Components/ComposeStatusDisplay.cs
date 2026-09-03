@@ -241,9 +241,27 @@ namespace osu.Game.Screens.Edit.Compose.Components
         /// The gap is measured from where the object before the break finishes: a slider running into one is played
         /// rather than rested through.
         /// </remarks>
-        public static double DrainTimeFor(IBeatmap beatmap)
+        public static double DrainTimeFor(IBeatmap beatmap) => DrainTimeBetween(beatmap, double.MinValue, double.MaxValue);
+
+        /// <summary>
+        /// How much of <see cref="DrainTimeFor"/> falls between two moments.
+        /// </summary>
+        /// <remarks>
+        /// Written so that dividing a beatmap at any set of moments and adding the pieces gives back the whole: every
+        /// millisecond between the first object and the last belongs to exactly one piece, and a rest is taken off
+        /// whichever pieces it actually overlaps. A piece is therefore the stretch of time it covers rather than the
+        /// stretch its own objects span — the wait between one piece's last object and the next piece's first is
+        /// played through, and has to be somebody's.
+        /// </remarks>
+        public static double DrainTimeBetween(IBeatmap beatmap, double start, double end)
         {
-            double length = beatmap.CalculatePlayableLength();
+            if (beatmap.HitObjects.Count == 0)
+                return 0;
+
+            double first = beatmap.HitObjects.Min(h => h.StartTime);
+            double last = beatmap.HitObjects.Max(h => h.GetEndTime());
+
+            double length = overlap(start, end, first, last);
 
             foreach (var period in beatmap.Breaks)
             {
@@ -252,10 +270,10 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
                 foreach (var hitObject in beatmap.HitObjects)
                 {
-                    double end = hitObject.GetEndTime();
+                    double objectEnd = hitObject.GetEndTime();
 
-                    if (end <= period.StartTime)
-                        before = before == null ? end : Math.Max(before.Value, end);
+                    if (objectEnd <= period.StartTime)
+                        before = before == null ? objectEnd : Math.Max(before.Value, objectEnd);
 
                     if (hitObject.StartTime >= period.EndTime && after == null)
                         after = hitObject.StartTime;
@@ -263,10 +281,17 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
                 // a break with no beatmap on one side of it is not a gap between two objects, and there is nothing
                 // to measure it against. What the file says is the best that can be said.
-                length -= before != null && after != null ? after.Value - before.Value : period.Duration;
+                (double restStart, double restEnd) = before != null && after != null
+                    ? (before.Value, after.Value)
+                    : (period.StartTime, period.EndTime);
+
+                length -= overlap(start, end, restStart, restEnd);
             }
 
             return Math.Max(length, 0);
+
+            static double overlap(double aStart, double aEnd, double bStart, double bEnd) =>
+                Math.Max(Math.Min(aEnd, bEnd) - Math.Max(aStart, bStart), 0);
         }
 
         /// <summary>
