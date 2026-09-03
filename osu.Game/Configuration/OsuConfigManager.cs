@@ -239,6 +239,11 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSelectionColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorSelectionThickness, 1f, 0.25f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorSelectionOpacity, 1f, 0.1f, 1f, 0.01f);
+
+            // the same stock values the box uses, so splitting the two changed nothing anyone was looking at.
+            SetDefault(OsuSetting.EditorObjectOutlineColour, EditorSelectionColour.Default);
+            SetDefault(OsuSetting.EditorObjectOutlineThickness, 1f, 0.25f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorObjectOutlineOpacity, 1f, 0.1f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorColourScheme, OverlayColourScheme.Aquamarine);
             SetDefault(OsuSetting.EditorSeekAnimationDuration, 300.0, 0.0, 300.0, 50.0);
             SetDefault(OsuSetting.EditorAlwaysExpandLeftToolbox, false);
@@ -1045,6 +1050,15 @@ namespace osu.Game.Configuration
         /// Whether the timeline draws its objects with the skin's own circles, ends and reverse arrows.
         /// </summary>
         EditorTimelineUseSkin,
+
+        /// <summary>The colour of the outline drawn around a selected object itself.</summary>
+        EditorObjectOutlineColour,
+
+        /// <summary>How thick that outline is drawn.</summary>
+        EditorObjectOutlineThickness,
+
+        /// <summary>How solid that outline is drawn.</summary>
+        EditorObjectOutlineOpacity,
 
 
     }

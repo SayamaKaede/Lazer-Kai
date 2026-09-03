@@ -41,15 +41,23 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Spinners.Components
             };
         }
 
+        /// <summary>
+        /// Held onto rather than left to the loading method. Nothing else refers to one of these,
+        /// and the settings are bound weakly, so a collected one stops hearing about changes and the
+        /// outline only catches up on the next visit to the editor.
+        /// </summary>
+        private EditorSelectionAppearance appearance = null!;
+
         [BackgroundDependencyLoader]
         private void load(OsuColour colours, OsuConfigManager config)
         {
-            var appearance = new EditorSelectionAppearance(config);
+            appearance = new EditorSelectionAppearance(config);
 
             void updateAppearance()
             {
-                Colour = appearance.GetColour(colours.Yellow);
-                Alpha = appearance.Opacity;
+                // no thickness here: a spinner's outline is a filled disc and a solid ring, with no border to widen.
+                Colour = appearance.GetObjectColour(colours.Yellow);
+                Alpha = appearance.ObjectOpacity;
             }
 
             appearance.Changed += updateAppearance;

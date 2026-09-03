@@ -296,6 +296,9 @@ namespace osu.Game.Screens.Edit
         private Bindable<EditorSelectionColour> editorSelectionColour;
         private Bindable<float> editorSelectionThickness;
         private Bindable<float> editorSelectionOpacity;
+        private Bindable<EditorSelectionColour> editorObjectOutlineColour;
+        private Bindable<float> editorObjectOutlineThickness;
+        private Bindable<float> editorObjectOutlineOpacity;
         private Bindable<float> editorSelectionHandleScale;
         private Bindable<EditorSelectionColour> editorSelectionHandleColour;
         private Bindable<float> editorSliderAnchorScale;
@@ -462,6 +465,9 @@ namespace osu.Game.Screens.Edit
             editorSelectionColour = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorSelectionColour);
             editorSelectionThickness = config.GetBindable<float>(OsuSetting.EditorSelectionThickness);
             editorSelectionOpacity = config.GetBindable<float>(OsuSetting.EditorSelectionOpacity);
+            editorObjectOutlineColour = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorObjectOutlineColour);
+            editorObjectOutlineThickness = config.GetBindable<float>(OsuSetting.EditorObjectOutlineThickness);
+            editorObjectOutlineOpacity = config.GetBindable<float>(OsuSetting.EditorObjectOutlineOpacity);
             editorSelectionHandleScale = config.GetBindable<float>(OsuSetting.EditorSelectionHandleScale);
             editorSelectionHandleColour = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorSelectionHandleColour);
             editorSliderAnchorScale = config.GetBindable<float>(OsuSetting.EditorSliderAnchorScale);
@@ -572,6 +578,7 @@ namespace osu.Game.Screens.Edit
                                             },
                                             createReferenceDifficultyMenu(),
                                             new SelectionAppearanceMenuItem(editorSelectionColour, editorSelectionThickness, editorSelectionOpacity,
+                                                editorObjectOutlineColour, editorObjectOutlineThickness, editorObjectOutlineOpacity,
                                                 editorSelectionHandleScale, editorSelectionHandleColour, editorSliderAnchorScale),
                                             new ChoiceMenuItem<OverlayColourScheme>(EditorStrings.EditorColourScheme, editorColourScheme,
                                                 Enum.GetValues<OverlayColourScheme>().Select(scheme => (scheme.GetLocalisableDescription(), scheme))),

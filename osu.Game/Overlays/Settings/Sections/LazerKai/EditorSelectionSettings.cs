@@ -35,35 +35,61 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 new SettingsItemV2(new FormSliderBar<double>
                 {
                     Caption = EditorStrings.SelectableAfterEndTime,
+                    HintText = EditorStrings.SelectableAfterEndTimeDescription,
                     Current = config.GetBindable<double>(OsuSetting.EditorSelectableAfterEndTime),
                     KeyboardStep = 10,
                     LabelFormat = v => v == 0 ? LazerKaiSettingsStrings.NoDelay : $"{v:N0} ms",
                 }),
                 new SettingsEnumDropdown<EditorSelectionColour>
                 {
+                    LabelText = EditorStrings.ObjectOutlineColour,
+                    TooltipText = EditorStrings.ObjectOutlineColourDescription,
+                    Current = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorObjectOutlineColour)
+                },
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.ObjectOutlineThickness,
+                    HintText = EditorStrings.ObjectOutlineThicknessDescription,
+                    Current = config.GetBindable<float>(OsuSetting.EditorObjectOutlineThickness),
+                    DisplayAsPercentage = true,
+                }),
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.ObjectOutlineOpacity,
+                    HintText = EditorStrings.ObjectOutlineOpacityDescription,
+                    Current = config.GetBindable<float>(OsuSetting.EditorObjectOutlineOpacity),
+                    DisplayAsPercentage = true,
+                }),
+                new SettingsEnumDropdown<EditorSelectionColour>
+                {
                     LabelText = EditorStrings.SelectionColour,
+                    TooltipText = EditorStrings.SelectionColourDescription,
                     Current = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorSelectionColour)
                 },
                 new SettingsItemV2(new FormSliderBar<float>
                 {
                     Caption = EditorStrings.SelectionThickness,
+                    HintText = EditorStrings.SelectionThicknessDescription,
                     Current = config.GetBindable<float>(OsuSetting.EditorSelectionThickness),
                     DisplayAsPercentage = true,
                 }),
                 new SettingsItemV2(new FormSliderBar<float>
                 {
                     Caption = EditorStrings.SelectionOpacity,
+                    HintText = EditorStrings.SelectionOpacityDescription,
                     Current = config.GetBindable<float>(OsuSetting.EditorSelectionOpacity),
                     DisplayAsPercentage = true,
                 }),
                 new SettingsEnumDropdown<EditorSelectionColour>
                 {
                     LabelText = EditorStrings.SelectionHandleColour,
+                    TooltipText = EditorStrings.SelectionHandleColourDescription,
                     Current = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorSelectionHandleColour)
                 },
                 new SettingsItemV2(new FormSliderBar<float>
                 {
                     Caption = EditorStrings.SelectionHandleSize,
+                    HintText = EditorStrings.SelectionHandleSizeDescription,
                     Current = config.GetBindable<float>(OsuSetting.EditorSelectionHandleScale),
                     DisplayAsPercentage = true,
                 }),

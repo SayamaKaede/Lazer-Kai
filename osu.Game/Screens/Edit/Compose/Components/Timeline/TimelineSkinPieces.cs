@@ -123,6 +123,13 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             this.reverse = reverse;
         }
 
+        /// <summary>
+        /// Held onto rather than left to the loading method. Nothing else refers to one of these,
+        /// and the settings are bound weakly, so a collected one stops hearing about changes and the
+        /// outline only catches up on the next visit to the editor.
+        /// </summary>
+        private EditorSelectionAppearance appearance = null!;
+
         [BackgroundDependencyLoader]
         private void load(ISkinSource skin, OsuConfigManager config, OsuColour colours)
         {
@@ -180,9 +187,10 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             InternalChildren = pieces.ToArray();
 
-            var appearance = new EditorSelectionAppearance(config);
+            appearance = new EditorSelectionAppearance(config);
 
-            void updateGrip() => grip.BorderColour = appearance.GetColour(colours.Yellow);
+            // the same colour the outline is drawn in, since this says the same thing about the same object.
+            void updateGrip() => grip.BorderColour = appearance.GetObjectColour(colours.Yellow);
 
             appearance.Changed += updateGrip;
             updateGrip();

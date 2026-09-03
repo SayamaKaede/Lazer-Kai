@@ -54,8 +54,28 @@ namespace osu.Game.Screens.Edit
             return bindable;
         }
 
+        /// <summary>
+        /// The box drawn around a selection, and the one dragged out to make one.
+        /// </summary>
         /// <param name="fallback">The colour to use while the user has not chosen an override.</param>
         public Color4 GetColour(Color4 fallback) => get<EditorSelectionColour>(OsuSetting.EditorSelectionColour).Value.ToColour() ?? fallback;
+
+        /// <param name="baseThickness">The piece's stock border thickness, which the user's setting scales.</param>
+        public float GetThickness(float baseThickness) => baseThickness * get<float>(OsuSetting.EditorSelectionThickness).Value;
+
+        public float Opacity => get<float>(OsuSetting.EditorSelectionOpacity).Value;
+
+        /// <summary>
+        /// The outline drawn around a selected object itself, which is set apart from the box because the two are
+        /// read for different things: one says what is selected, the other says how far the selection reaches.
+        /// </summary>
+        /// <param name="fallback">The colour to use while the user has not chosen an override.</param>
+        public Color4 GetObjectColour(Color4 fallback) => get<EditorSelectionColour>(OsuSetting.EditorObjectOutlineColour).Value.ToColour() ?? fallback;
+
+        /// <param name="baseThickness">The piece's stock border thickness, which the user's setting scales.</param>
+        public float GetObjectThickness(float baseThickness) => baseThickness * get<float>(OsuSetting.EditorObjectOutlineThickness).Value;
+
+        public float ObjectOpacity => get<float>(OsuSetting.EditorObjectOutlineOpacity).Value;
 
         /// <summary>
         /// The colour of the drag handles on the selection box, which the user sets separately from the outline.
@@ -69,9 +89,5 @@ namespace osu.Game.Screens.Edit
         /// <param name="baseSize">A slider anchor's stock size, which the user's setting scales.</param>
         public float GetAnchorSize(float baseSize) => baseSize * get<float>(OsuSetting.EditorSliderAnchorScale).Value;
 
-        /// <param name="baseThickness">The piece's stock border thickness, which the user's setting scales.</param>
-        public float GetThickness(float baseThickness) => baseThickness * get<float>(OsuSetting.EditorSelectionThickness).Value;
-
-        public float Opacity => get<float>(OsuSetting.EditorSelectionOpacity).Value;
     }
 }

@@ -46,16 +46,23 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
             };
         }
 
+        /// <summary>
+        /// Held onto rather than left to the loading method. Nothing else refers to one of these,
+        /// and the settings are bound weakly, so a collected one stops hearing about changes and the
+        /// outline only catches up on the next visit to the editor.
+        /// </summary>
+        private EditorSelectionAppearance appearance = null!;
+
         [BackgroundDependencyLoader]
         private void load(OsuColour colours, OsuConfigManager config)
         {
-            var appearance = new EditorSelectionAppearance(config);
+            appearance = new EditorSelectionAppearance(config);
 
             void updateAppearance()
             {
-                body.BorderColour = appearance.GetColour(colours.Yellow);
-                body.BorderSize = appearance.GetThickness(default_border_size);
-                Alpha = appearance.Opacity;
+                body.BorderColour = appearance.GetObjectColour(colours.Yellow);
+                body.BorderSize = appearance.GetObjectThickness(default_border_size);
+                Alpha = appearance.ObjectOpacity;
             }
 
             appearance.Changed += updateAppearance;

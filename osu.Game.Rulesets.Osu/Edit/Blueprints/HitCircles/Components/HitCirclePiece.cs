@@ -30,16 +30,23 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.HitCircles.Components
             InternalChild = ring = new RingPiece(default_ring_thickness);
         }
 
+        /// <summary>
+        /// Held onto rather than left to the loading method. Nothing else refers to one of these,
+        /// and the settings are bound weakly, so a collected one stops hearing about changes and the
+        /// outline only catches up on the next visit to the editor.
+        /// </summary>
+        private EditorSelectionAppearance appearance = null!;
+
         [BackgroundDependencyLoader]
         private void load(OsuColour colours, OsuConfigManager config)
         {
-            var appearance = new EditorSelectionAppearance(config);
+            appearance = new EditorSelectionAppearance(config);
 
             void updateAppearance()
             {
-                Colour = appearance.GetColour(colours.Yellow);
-                Alpha = appearance.Opacity;
-                ring.BorderThickness = appearance.GetThickness(default_ring_thickness);
+                Colour = appearance.GetObjectColour(colours.Yellow);
+                Alpha = appearance.ObjectOpacity;
+                ring.BorderThickness = appearance.GetObjectThickness(default_ring_thickness);
             }
 
             appearance.Changed += updateAppearance;

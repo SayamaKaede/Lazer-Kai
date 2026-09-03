@@ -948,25 +948,59 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             /// </summary>
             private const float default_border_thickness = 4;
 
+            /// <summary>
+            /// Held onto rather than left to the loading method. Nothing else refers to one of these, and the
+            /// settings are bound weakly, so a collected one stops hearing about changes and the outline only
+            /// catches up on the next visit to the editor.
+            /// </summary>
+            private EditorSelectionAppearance? appearance;
+
+            private OsuColour colours = null!;
+
+            /// <summary>
+            /// Whether the object this is drawn on is selected, which <see cref="Show"/> and <see cref="Hide"/> are
+            /// told. Kept here rather than read back off <see cref="Drawable.Alpha"/>, which the opacity setting
+            /// writes as well: without it, changing that setting drew an outline on every object in the timeline.
+            /// </summary>
+            private bool shown;
+
+            public override void Show()
+            {
+                shown = true;
+                updateAppearance();
+            }
+
+            public override void Hide()
+            {
+                shown = false;
+                updateAppearance();
+            }
+
             [BackgroundDependencyLoader]
             private void load(OsuColour colours, OsuConfigManager config)
             {
+                this.colours = colours;
+
                 Content.Child.Alpha = 0;
                 Content.Child.AlwaysPresent = true;
 
                 Content.EdgeEffect = new EdgeEffectParameters();
 
-                var appearance = new EditorSelectionAppearance(config);
-
-                void updateAppearance()
-                {
-                    Content.BorderColour = appearance.GetColour(colours.Yellow);
-                    Content.BorderThickness = appearance.GetThickness(default_border_thickness);
-                    Alpha = appearance.Opacity;
-                }
-
+                appearance = new EditorSelectionAppearance(config);
                 appearance.Changed += updateAppearance;
+
                 updateAppearance();
+            }
+
+            private void updateAppearance()
+            {
+                // the selection state can be set before this has loaded, in which case the loading method applies it.
+                if (appearance == null)
+                    return;
+
+                Content.BorderColour = appearance.GetObjectColour(colours.Yellow);
+                Content.BorderThickness = appearance.GetObjectThickness(default_border_thickness);
+                Alpha = shown ? appearance.ObjectOpacity : 0;
             }
         }
 
