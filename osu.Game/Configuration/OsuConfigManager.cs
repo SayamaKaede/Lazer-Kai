@@ -322,6 +322,9 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorHideTimelinePoints, false);
             SetDefault(OsuSetting.EditorTimelineStyle, EditorTimelineStyle.Lazer);
             SetDefault(OsuSetting.EditorTimelineDragToSeek, true);
+            SetDefault(OsuSetting.EditorTimelineUseSkin, false);
+            SetDefault(OsuSetting.EditorTimelineSkinCircleScale, 1f, 0.5f, 1.5f, 0.01f);
+            SetDefault(OsuSetting.EditorTimelineSkinReverseScale, 1f, 0.5f, 1.5f, 0.01f);
 
             SetDefault(OsuSetting.CollabOverlayOpacity, 1f, 0.2f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorTimelineDragAreaScale, 0.5f, 0.5f, 1f, 0.01f);
@@ -1039,5 +1042,17 @@ namespace osu.Game.Configuration
 
         /// <summary>How solid the collab manager is drawn, so the beatmap behind it can be checked.</summary>
         CollabOverlayOpacity,
+
+        /// <summary>
+        /// Whether the timeline draws its objects with the skin's own circles, ends and reverse arrows.
+        /// </summary>
+        EditorTimelineUseSkin,
+
+        /// <summary>How big the skin's circles are drawn against the height the objects are drawn at.</summary>
+        EditorTimelineSkinCircleScale,
+
+        /// <summary>How big the skin's reverse arrows are drawn against the same height.</summary>
+        EditorTimelineSkinReverseScale,
+
     }
 }

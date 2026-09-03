@@ -53,6 +53,25 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         public const float POINT_ROW_HEIGHT = 15;
 
 
+        /// <summary>
+        /// How solid the combo colour is drawn while the skin's pieces are being used.
+        /// </summary>
+        /// <remarks>
+        /// Thinner in the Lazer-Kai layout, where the ticks reach in from both edges and there is more behind the
+        /// objects worth seeing. Settled by eye against a real beatmap rather than worked out.
+        /// </remarks>
+        private static float skinOpacityFor(EditorTimelineStyle style) => style == EditorTimelineStyle.LazerKai ? 0.3f : 0.5f;
+
+        /// <summary>
+        /// What stable draws a spinner in, which is nobody's combo colour.
+        /// </summary>
+        private static readonly Color4 spinner_grey = OsuColour.Gray(0.6f);
+
+        private readonly Container skinPieces;
+
+        /// <summary>The end the drag handle sits on, which is what says it is being held.</summary>
+        private TimelineSkinCircle? skinTail;
+
         private Container? repeatsContainer;
 
         public Action<DragEvent?>? OnDragHandled = null!;
@@ -92,6 +111,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
+        [Resolved]
+        private EditorBeatmap editorBeatmap { get; set; } = null!;
+
         public TimelineHitObjectBlueprint(HitObject item)
             : base(item)
         {
@@ -109,6 +131,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             AddRangeInternal(new Drawable[]
             {
                 circle = new ExtendableCircle
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Anchor = Anchor.CentreLeft,
+                    Origin = Anchor.CentreLeft,
+                },
+                // over the bar so the ends read as ends, under the selection outline so a selected object still
+                // says so.
+                skinPieces = new Container
                 {
                     RelativeSizeAxes = Axes.Both,
                     Anchor = Anchor.CentreLeft,
@@ -153,7 +183,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             {
                 colouredComponents.Add(dragArea = new DragArea(item)
                 {
-                    OnDragHandled = e => OnDragHandled?.Invoke(e)
+                    OnDragHandled = e => OnDragHandled?.Invoke(e),
+                    GrabChanged = grabbed =>
+                    {
+                        if (skinTail != null)
+                            skinTail.Grabbed = grabbed;
+                    },
                 });
             }
 
@@ -200,15 +235,38 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         {
             config.BindWith(OsuSetting.EditorHideTimelinePoints, hideTimelinePoints);
             config.BindWith(OsuSetting.EditorTimelineStyle, timelineStyle);
+            config.BindWith(OsuSetting.EditorTimelineUseSkin, useSkin);
+            config.BindWith(OsuSetting.EditorTimelineSkinCircleScale, skinCircleScale);
+            config.BindWith(OsuSetting.EditorTimelineSkinReverseScale, skinReverseScale);
 
             hideTimelinePoints.BindValueChanged(_ => updateSizing());
-            timelineStyle.BindValueChanged(_ => updateSizing());
+
+            timelineStyle.BindValueChanged(_ =>
+            {
+                updateSizing();
+
+                // stable leaves a spinner out of the combo colours, and which of the two this timeline is follows
+                // the style rather than a setting of its own.
+                updateColour();
+            });
+
             referenceDifficulty?.Beatmap.BindValueChanged(_ => updateSizing());
 
+            useSkin.BindValueChanged(_ => updateSkinPieces());
+            skinCircleScale.BindValueChanged(_ => updateSizing());
+            skinReverseScale.BindValueChanged(_ => updateSizing());
+
+            updateSkinPieces();
             updateSizing();
         }
 
         private readonly Bindable<EditorTimelineStyle> timelineStyle = new Bindable<EditorTimelineStyle>();
+
+        private readonly BindableBool useSkin = new BindableBool();
+
+        private readonly BindableFloat skinCircleScale = new BindableFloat(1);
+
+        private readonly BindableFloat skinReverseScale = new BindableFloat(1);
 
         /// <summary>
         /// How tall an object is drawn, given what else the timeline has to fit around it.
@@ -279,13 +337,27 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             border.CircleSize = size;
             comboIndexText.Font = OsuFont.Default.With(size: size * 0.5f, weight: FontWeight.Regular);
 
-            if (dragArea != null)
-                dragArea.CircleSize = size;
-
             if (repeatsContainer != null)
             {
                 foreach (var tick in repeatsContainer.Children.OfType<Tick>())
                     tick.CircleSize = size;
+
+                // the skin draws its own arrows where these dots would be.
+                repeatsContainer.Alpha = skinned ? 0 : 1;
+            }
+
+            foreach (var piece in skinPieces.Children.OfType<TimelineSkinCircle>())
+            {
+                piece.CircleSize = size * skinCircleScale.Value;
+                piece.ArrowScale = skinReverseScale.Value;
+            }
+
+            if (dragArea != null)
+            {
+                // the handle is stable's whole slider end rather than a grip drawn on it: the ring is what there is
+                // to take hold of, so it is the whole of it that answers, and nothing is drawn over the skin.
+                dragArea.Invisible = skinned;
+                dragArea.CircleSize = size * (skinned ? skinCircleScale.Value : 1);
             }
 
             // hidden rather than removed, so the pieces come back the moment the setting does.
@@ -314,6 +386,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                     indexInCurrentComboBindable.BindValueChanged(_ =>
                     {
                         comboIndexText.Text = (indexInCurrentComboBindable.Value + 1).ToString();
+
+                        // the skin's number is a sprite per digit, so it is rebuilt rather than reworded.
+                        updateSkinPieces();
                     }, true);
 
                     comboIndexBindable = comboInfo.ComboIndexBindable.GetBoundCopy();
@@ -321,10 +396,11 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
                     comboIndexBindable.BindValueChanged(_ => updateColour());
                     comboIndexWithOffsetsBindable.BindValueChanged(_ => updateColour(), true);
-
-                    skin.SourceChanged += updateColour;
                     break;
             }
+
+            // a different skin is different pieces as well as different colours, and may be one that has none.
+            skin.SourceChanged += updateSkinPieces;
         }
 
         protected override void OnSelected()
@@ -339,6 +415,72 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             updateColour();
         }
 
+        /// <summary>
+        /// Whether the skin's own circles, ends and reverse arrows are what this object is drawn with.
+        /// </summary>
+        /// <remarks>
+        /// The pieces are the osu! ruleset's, so this is off for the others: their objects are not circles and would
+        /// be drawn as something they are not. A skin that does not draw in the stable format has none of them, and
+        /// the timeline stays as it was rather than losing its objects.
+        /// </remarks>
+        private bool skinned => useSkin.Value && osuRuleset && TimelineSkinPieces.Available(skin);
+
+        private bool osuRuleset => editorBeatmap.BeatmapInfo.Ruleset.OnlineID == 0;
+
+        /// <summary>
+        /// A spinner, which is the one osu! object with a length and no path.
+        /// </summary>
+        private bool isSpinner => osuRuleset && Item is IHasDuration && Item is not IHasPath;
+
+        /// <summary>
+        /// Builds the skin's pieces for this object, or takes them away again.
+        /// </summary>
+        private void updateSkinPieces()
+        {
+            skinPieces.Clear();
+            skinTail = null;
+
+            // the plain number belongs to the plain bar; the skin draws its own on the circle.
+            comboIndexText.Alpha = skinned ? 0 : 1;
+
+            if (skinned)
+            {
+                skinPieces.Add(new TimelineSkinCircle((Item as IHasComboInformation)?.IndexInCurrentCombo + 1)
+                {
+                    Anchor = Anchor.CentreLeft,
+                    Origin = Anchor.Centre,
+                });
+
+                if (Item is IHasDuration)
+                {
+                    skinPieces.Add(skinTail = new TimelineSkinCircle(null)
+                    {
+                        Anchor = Anchor.CentreRight,
+                        Origin = Anchor.Centre,
+                    });
+                }
+
+                if (Item is IHasRepeats repeats)
+                {
+                    for (int i = 0; i < repeats.RepeatCount; i++)
+                    {
+                        // a circle of its own rather than a bare arrow: a reverse is a moment the player hits, and
+                        // stable's timeline draws it as one of these with the arrow where the number would be.
+                        skinPieces.Add(new TimelineSkinCircle(null, reverse: true)
+                        {
+                            Anchor = Anchor.CentreLeft,
+                            Origin = Anchor.Centre,
+                            RelativePositionAxes = Axes.X,
+                            X = (float)(i + 1) / (repeats.RepeatCount + 1),
+                        });
+                    }
+                }
+            }
+
+            updateSizing();
+            updateColour();
+        }
+
         private void updateColour()
         {
             Color4 colour;
@@ -347,6 +489,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             {
                 case IHasDisplayColour displayColour:
                     colour = displayColour.DisplayColour.Value;
+                    break;
+
+                // stable's timeline leaves a spinner out of the combo colours, so the style that is stable's leaves
+                // it out too. It reads as what it is either way: there is only ever one of them at a time.
+                case IHasComboInformation when isSpinner && timelineStyle.Value == EditorTimelineStyle.Stable:
+                    colour = spinner_grey;
                     break;
 
                 case IHasComboInformation combo:
@@ -363,6 +511,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             else
                 border.Hide();
 
+            // stable's timeline lets the waveform through the objects, which is how a moment is read against the
+            // sound it belongs to. Only the colour is thinned: the ring, the number and the arrow stay solid, or
+            // there is nothing left to read the position off.
+            if (skinned)
+                colour = colour.Opacity(skinOpacityFor(timelineStyle.Value));
+
             if (Item is IHasDuration duration && duration.Duration > 0)
                 circle.Colour = ColourInfo.GradientHorizontal(colour, colour.Lighten(0.4f));
             else
@@ -370,6 +524,10 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             var averageColour = Interpolation.ValueAt(0.5, circle.Colour.TopLeft, circle.Colour.TopRight, 0, 1);
             colouredComponents.Colour = OsuColour.ForegroundTextColourFor(averageColour);
+
+            // each end takes the colour of the bar it sits on, so the two do not read as different objects.
+            foreach (var piece in skinPieces.Children.OfType<TimelineSkinCircle>())
+                piece.CircleColour = piece.Anchor == Anchor.CentreRight ? circle.Colour.TopRight : circle.Colour.TopLeft;
         }
 
         protected override void Update()
@@ -447,6 +605,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             }
 
             samplePointPiece.X = 1f / (repeats.RepeatCount + 1) / 2;
+
+            // one arrow per reverse, so the skin's pieces follow a reverse being added or taken away.
+            updateSkinPieces();
         }
 
         protected override bool ShouldBeConsideredForInput(Drawable child) => true;
@@ -482,7 +643,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             base.Dispose(isDisposing);
 
             if (skin.IsNotNull())
-                skin.SourceChanged -= updateColour;
+                skin.SourceChanged -= updateSkinPieces;
         }
 
         private partial class Tick : Circle
@@ -534,6 +695,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             public Action<DragEvent?>? OnDragHandled;
 
+            /// <summary>Told whether the handle is being held, so the end it sits on can say so.</summary>
+            public Action<bool>? GrabChanged;
+
             public override bool HandlePositionalInput => hitObject != null;
 
             /// <summary>
@@ -547,6 +711,23 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                     Size = new Vector2(value, 1);
                 }
             }
+
+            private Box handle = null!;
+
+            /// <summary>
+            /// Whether the handle is drawn. It still answers the pointer either way: with the skin's own end drawn
+            /// over it there is nothing for a grip of its own to add.
+            /// </summary>
+            public bool Invisible
+            {
+                set
+                {
+                    invisible = value;
+                    updateState();
+                }
+            }
+
+            private bool invisible;
 
             public DragArea(HitObject? hitObject)
             {
@@ -562,7 +743,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
                 InternalChildren = new Drawable[]
                 {
-                    new Box
+                    handle = new Box
                     {
                         RelativeSizeAxes = Axes.Both,
                     }
@@ -625,6 +806,16 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             protected override bool OnMouseDown(MouseDownEvent e)
             {
                 hasMouseDown = true;
+
+                // taking hold of an end is working on that object, and with the skin's own end drawn here there is
+                // nothing left of the object to click instead. Without this the handle answers while something else
+                // entirely stays selected.
+                if (hitObject != null && !beatmap.SelectedHitObjects.Contains(hitObject))
+                {
+                    beatmap.SelectedHitObjects.Clear();
+                    beatmap.SelectedHitObjects.Add(hitObject);
+                }
+
                 updateState();
                 return true;
             }
@@ -641,12 +832,20 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 // pointing at the handle grows it, and pressing it settles back part of the way. those are the
                 // affordance, so they are kept as a proportion of whatever size the user asked for rather than
                 // as the fixed sizes they used to be.
-                float scale = restingScale.Value;
+                handle.Alpha = invisible ? 0 : 1;
 
-                if (hasMouseDown)
-                    scale *= 1.2f;
-                else if (IsHovered)
-                    scale *= 1.4f;
+                GrabChanged?.Invoke(hasMouseDown);
+
+                // undrawn, it is the ring behind it that is being aimed at, and that does not grow or shrink.
+                float scale = invisible ? 1 : restingScale.Value;
+
+                if (!invisible)
+                {
+                    if (hasMouseDown)
+                        scale *= 1.2f;
+                    else if (IsHovered)
+                        scale *= 1.4f;
+                }
 
                 this.ScaleTo(scale, 200, Easing.OutQuint);
                 this.FadeTo(IsHovered || hasMouseDown ? 1f : 0.9f, 200, Easing.OutQuint);

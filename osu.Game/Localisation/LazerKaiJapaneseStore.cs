@@ -279,6 +279,12 @@ namespace osu.Game.Localisation
             [$@"{binding_prefix}:editor_decrease_slider_velocity_fine"] = @"SVを下げる（微調整）",
             [$@"{binding_prefix}:editor_increase_slider_velocity_fine"] = @"SVを上げる（微調整）",
 
+            // timeline skin
+            [$@"{editor_prefix}:timeline_use_skin"] = @"上部タイムラインにスキンを適用",
+            [$@"{editor_prefix}:timeline_use_skin_description"] = @"サークル・スライダーの頭と尻尾・リバース矢印を、選択中のスキンの画像で表示します。osu!の譜面とStable形式のスキンのときだけ適用され、それ以外は今までどおりの表示です",
+            [$@"{editor_prefix}:timeline_skin_circle_scale"] = @"【調整用】タイムラインのスキン: 丸の大きさ",
+            [$@"{editor_prefix}:timeline_skin_reverse_scale"] = @"【調整用】タイムラインのスキン: リバース矢印の大きさ",
+
             // collab manager
             // the feature keeps its English name, which is what it is called between the people using it. Everything
             // said about it is in Japanese, and 「担当」 throughout: it is the word a collaboration is divided in.

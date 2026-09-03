@@ -1076,6 +1076,27 @@ namespace osu.Game.Localisation
             @"Only the objects' own band takes a drag as a selection, so a drag begun anywhere else moves the playhead. Turn this off to reach for a selection without moving it.");
 
         /// <summary>
+        /// "Draw the timeline with the current skin"
+        /// </summary>
+        public static LocalisableString TimelineUseSkin => new TranslatableString(getKey(@"timeline_use_skin"), @"Draw the timeline with the current skin");
+
+        /// <summary>
+        /// "The timeline draws the skin's own circles, slider ends and reverse arrows. osu! beatmaps and stable-format skins only; anything else is drawn the way it always was."
+        /// </summary>
+        public static LocalisableString TimelineUseSkinDescription => new TranslatableString(getKey(@"timeline_use_skin_description"),
+            @"The timeline draws the skin's own circles, slider ends and reverse arrows. osu! beatmaps and stable-format skins only; anything else is drawn the way it always was.");
+
+        /// <summary>
+        /// "[Tuning] Timeline skin circle size"
+        /// </summary>
+        public static LocalisableString TimelineSkinCircleScale => new TranslatableString(getKey(@"timeline_skin_circle_scale"), @"[Tuning] Timeline skin circle size");
+
+        /// <summary>
+        /// "[Tuning] Timeline skin reverse arrow size"
+        /// </summary>
+        public static LocalisableString TimelineSkinReverseScale => new TranslatableString(getKey(@"timeline_skin_reverse_scale"), @"[Tuning] Timeline skin reverse arrow size");
+
+        /// <summary>
         /// "Timeline drag handle size"
         /// </summary>
         public static LocalisableString TimelineDragAreaScale => new TranslatableString(getKey(@"timeline_drag_area_scale"), @"Timeline drag handle size");
