@@ -16,10 +16,20 @@ namespace osu.Game.Screens.Edit.Compose.Components
         [Resolved]
         private SelectionScaleHandler? scaleHandler { get; set; }
 
+        /// <summary>
+        /// The size the handle is drawn at while nothing has been asked of it.
+        /// </summary>
+        private const float resting_size = 10;
+
         [BackgroundDependencyLoader]
         private void load()
         {
-            Size = new Vector2(Appearance.GetHandleSize(10));
+            void updateSize() => Size = new Vector2(Appearance.GetHandleSize(resting_size));
+
+            // read again whenever the setting moves, rather than once on the way in. Taking the size only here is
+            // what made it look as though the editor had to be left and come back to.
+            Appearance.Changed += updateSize;
+            updateSize();
         }
 
         private Anchor originalAnchor;
