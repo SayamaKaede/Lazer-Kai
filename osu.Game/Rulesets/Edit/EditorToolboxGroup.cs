@@ -57,10 +57,15 @@ namespace osu.Game.Rulesets.Edit
             Width = 1;
         }
 
+        /// <summary>
+        /// Sounds like the menu bar, the way the buttons beside it do.
+        /// </summary>
+        protected override IconButton CreateExpandButton() => new MenuIconButton();
+
         [BackgroundDependencyLoader]
         private void load()
         {
-            HeaderContent.Add(moveUpButton = new IconButton
+            HeaderContent.Add(moveUpButton = new MenuIconButton
             {
                 Origin = Anchor.Centre,
                 Anchor = Anchor.CentreRight,
@@ -72,7 +77,7 @@ namespace osu.Game.Rulesets.Edit
                 Action = () => RequestReorder?.Invoke(-1),
             });
 
-            HeaderContent.Add(moveDownButton = new IconButton
+            HeaderContent.Add(moveDownButton = new MenuIconButton
             {
                 Origin = Anchor.Centre,
                 Anchor = Anchor.CentreRight,
@@ -83,7 +88,7 @@ namespace osu.Game.Rulesets.Edit
                 Action = () => RequestReorder?.Invoke(1),
             });
 
-            HeaderContent.Add(pinButton = new IconButton
+            HeaderContent.Add(pinButton = new MenuIconButton
             {
                 Origin = Anchor.Centre,
                 Anchor = Anchor.CentreRight,
@@ -94,6 +99,18 @@ namespace osu.Game.Rulesets.Edit
                 TooltipText = "Keep this group pinned to the top",
                 Action = () => Pinned.Toggle(),
             });
+        }
+
+        /// <summary>
+        /// A header button that sounds like the menu bar rather than like a button on the beatmap.
+        /// </summary>
+        /// <remarks>
+        /// Nothing these do touches the beatmap: they move a group, hold it in place, or fold it away. The menu is
+        /// where the rest of that kind of thing lives, and reading a toolbox goes several of them at a time.
+        /// </remarks>
+        private partial class MenuIconButton : IconButton
+        {
+            protected override HoverSounds CreateHoverSounds(HoverSampleSet sampleSet) => new HoverClickSounds(HoverSampleSet.MenuOpen);
         }
 
         private void updateMoveButtons()

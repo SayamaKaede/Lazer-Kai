@@ -83,6 +83,11 @@ namespace osu.Game.Overlays
 
         private IconButton expandButton = null!;
 
+        /// <summary>
+        /// The button that folds this group away, for a group that wants it to look or sound like something else.
+        /// </summary>
+        protected virtual IconButton CreateExpandButton() => new IconButton();
+
         private InputManager inputManager = null!;
 
         private Drawable? draggedChild;
@@ -140,15 +145,15 @@ namespace osu.Game.Overlays
                                     Font = OsuFont.GetFont(weight: FontWeight.Bold, size: 17),
                                     Padding = new MarginPadding { Left = 10, Right = 30 },
                                 },
-                                expandButton = new IconButton
+                                expandButton = CreateExpandButton().With(b =>
                                 {
-                                    Origin = Anchor.Centre,
-                                    Anchor = Anchor.CentreRight,
-                                    Position = new Vector2(-15, 0),
-                                    Icon = FontAwesome.Solid.Bars,
-                                    Scale = new Vector2(0.75f),
-                                    Action = () => Expanded.Toggle(),
-                                },
+                                    b.Origin = Anchor.Centre;
+                                    b.Anchor = Anchor.CentreRight;
+                                    b.Position = new Vector2(-15, 0);
+                                    b.Icon = FontAwesome.Solid.Bars;
+                                    b.Scale = new Vector2(0.75f);
+                                    b.Action = () => Expanded.Toggle();
+                                }),
                             }
                         },
                         content
