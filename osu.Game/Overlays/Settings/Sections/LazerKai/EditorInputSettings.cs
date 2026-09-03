@@ -20,15 +20,45 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
             {
                 new SettingsCheckbox
                 {
+                    LabelText = EditorStrings.AdvanceByPreviousSpacingOnPlacement,
+                    TooltipText = EditorStrings.AdvanceByPreviousSpacingOnPlacementDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement)
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.FreehandSliderPlacement,
+                    TooltipText = EditorStrings.FreehandSliderPlacementDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorFreehandSliderPlacement)
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.ArcOnAnchorAdd,
+                    TooltipText = EditorStrings.ArcOnAnchorAddDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorArcOnAnchorAdd)
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.CtrlClickCyclesCurveType,
+                    TooltipText = EditorStrings.CtrlClickCyclesCurveTypeDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorCtrlClickCyclesCurveType)
+                },
+                new SettingsCheckbox
+                {
                     LabelText = EditorStrings.RemoveDragThreshold,
                     TooltipText = EditorStrings.RemoveDragThresholdDescription,
                     Current = config.GetBindable<bool>(OsuSetting.RemoveDragThreshold)
                 },
                 new SettingsCheckbox
                 {
-                    TooltipText = LazerKaiSettingsStrings.EditorOnly,
+                    TooltipText = EditorStrings.SwapRightAndMiddleMouseDescription,
                     LabelText = EditorStrings.SwapRightAndMiddleMouse,
                     Current = config.GetBindable<bool>(OsuSetting.SwapRightAndMiddleMouse)
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.AutoGenerateBreaks,
+                    TooltipText = EditorStrings.AutoGenerateBreaksDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorAutoGenerateBreaks)
                 },
             };
         }

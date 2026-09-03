@@ -5,8 +5,8 @@ using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
-using osu.Game.Localisation;
 using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Localisation;
 using osu.Game.Screens.Edit;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
@@ -23,6 +23,7 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.HideSelectionButtons,
+                    TooltipText = EditorStrings.HideSelectionButtonsDescription,
                     Current = config.GetBindable<bool>(OsuSetting.EditorHideSelectionButtons)
                 },
                 new SettingsCheckbox
@@ -75,17 +76,20 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 new SettingsEnumDropdown<EditorSelectionColour>
                 {
                     LabelText = EditorStrings.SliderEndDragMarkerColour,
+                    TooltipText = EditorStrings.SliderEndDragMarkerColourDescription,
                     Current = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorSliderEndDragMarkerColour)
                 },
                 new SettingsItemV2(new FormSliderBar<float>
                 {
                     Caption = EditorStrings.SliderEndDragMarkerScale,
+                    HintText = EditorStrings.SliderEndDragMarkerScaleDescription,
                     Current = config.GetBindable<float>(OsuSetting.EditorSliderEndDragMarkerScale),
                     DisplayAsPercentage = true,
                 }),
                 new SettingsItemV2(new FormSliderBar<float>
                 {
                     Caption = EditorStrings.SliderEndDragMarkerOpacity,
+                    HintText = EditorStrings.SliderEndDragMarkerOpacityDescription,
                     Current = config.GetBindable<float>(OsuSetting.EditorSliderEndDragMarkerOpacity),
                     DisplayAsPercentage = true,
                 }),

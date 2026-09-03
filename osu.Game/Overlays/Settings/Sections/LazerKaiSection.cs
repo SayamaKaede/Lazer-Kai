@@ -38,6 +38,11 @@ namespace osu.Game.Overlays.Settings.Sections
             Children = new Drawable[]
             {
                 new EditorDisplaySettings(),
+                new EditorDifficultyGraphSettings(),
+                new EditorGhostDifficultySettings(),
+                new EditorToolboxSettings(),
+                new EditorButtonShapeSettings(),
+                new EditorTimelineSettings(),
                 new EditorSelectionSettings(),
                 new EditorStatusSettings(),
             };
@@ -60,8 +65,9 @@ namespace osu.Game.Overlays.Settings.Sections
             Children = new Drawable[]
             {
                 new EditorBeatmapSkinSettings(),
-                new ComposingSettings(),
+                new EditorHitsoundSettings(),
                 new EditorInputSettings(),
+                new EditorOtherCustomisationSettings(),
             };
         }
     }

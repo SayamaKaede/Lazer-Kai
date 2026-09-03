@@ -9,13 +9,6 @@ using osu.Game.Localisation;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
 {
-    /// <summary>
-    /// Which rows the composer's status panel shows.
-    /// </summary>
-    /// <remarks>
-    /// The panel is a narrow column down the right of the editor, and every row it carries is one less line of the
-    /// beatmap visible behind it. Which of them earn that space depends on what the mapper is doing.
-    /// </remarks>
     public partial class EditorStatusSettings : SettingsSubsection
     {
         protected override LocalisableString Header => LazerKaiSettingsStrings.StatusHeader;

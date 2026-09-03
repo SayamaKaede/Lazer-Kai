@@ -42,14 +42,49 @@ namespace osu.Game.Localisation
         public static LocalisableString DisplayHeader => new TranslatableString(getKey(@"display_header"), @"Editor display");
 
         /// <summary>
-        /// "Selection"
+        /// "Difficulty graph"
         /// </summary>
-        public static LocalisableString SelectionHeader => new TranslatableString(getKey(@"selection_header"), @"Selection");
+        public static LocalisableString DifficultyGraphHeader => new TranslatableString(getKey(@"difficulty_graph_header"), @"Difficulty graph");
 
         /// <summary>
-        /// "Status panel"
+        /// "Ghost difficulty"
         /// </summary>
-        public static LocalisableString StatusHeader => new TranslatableString(getKey(@"status_header"), @"Status panel");
+        public static LocalisableString GhostDifficultyHeader => new TranslatableString(getKey(@"ghost_difficulty_header"), @"Ghost difficulty");
+
+        /// <summary>
+        /// "Hitsounds"
+        /// </summary>
+        public static LocalisableString HitsoundHeader => new TranslatableString(getKey(@"hitsound_header"), @"Hitsounds");
+
+        /// <summary>
+        /// "Other customisation"
+        /// </summary>
+        public static LocalisableString OtherCustomisationHeader => new TranslatableString(getKey(@"other_customisation_header"), @"Other customisation");
+
+        /// <summary>
+        /// "Toolboxes"
+        /// </summary>
+        public static LocalisableString ToolboxHeader => new TranslatableString(getKey(@"toolbox_header"), @"Toolboxes");
+
+        /// <summary>
+        /// "Toolbox buttons"
+        /// </summary>
+        public static LocalisableString ButtonShapeHeader => new TranslatableString(getKey(@"button_shape_header"), @"Toolbox buttons");
+
+        /// <summary>
+        /// "Timeline"
+        /// </summary>
+        public static LocalisableString TimelineHeader => new TranslatableString(getKey(@"timeline_header"), @"Timeline");
+
+        /// <summary>
+        /// "Selection and drag box"
+        /// </summary>
+        public static LocalisableString SelectionHeader => new TranslatableString(getKey(@"selection_header"), @"Selection and drag box");
+
+        /// <summary>
+        /// "STATUS"
+        /// </summary>
+        public static LocalisableString StatusHeader => new TranslatableString(getKey(@"status_header"), @"STATUS");
 
         /// <summary>
         /// "Composing"

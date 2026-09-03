@@ -5,8 +5,8 @@ using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
-using osu.Game.Localisation;
 using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Localisation;
 using osu.Game.Screens.Edit;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
@@ -28,6 +28,7 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.DetectOffscreen,
+                    TooltipText = EditorStrings.DetectOffscreenDescription,
                     Current = config.GetBindable<bool>(OsuSetting.EditorDetectOffscreen)
                 },
                 new SettingsCheckbox
@@ -38,151 +39,19 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 },
                 new SettingsCheckbox
                 {
-                    LabelText = EditorStrings.ShowDifficultyGraph,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorShowDifficultyGraph)
-                },
-                new SettingsEnumDropdown<EditorSelectionColour>
-                {
-                    LabelText = EditorStrings.DifficultyGraphColour,
-                    Current = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorDifficultyGraphColour)
-                },
-                new SettingsItemV2(new FormSliderBar<float>
-                {
-                    Caption = EditorStrings.DifficultyGraphOpacity,
-                    Current = config.GetBindable<float>(OsuSetting.EditorDifficultyGraphOpacity),
-                    DisplayAsPercentage = true,
-                }),
-                new SettingsItemV2(new FormSliderBar<float>
-                {
-                    Caption = EditorStrings.DifficultyGraphDetail,
-                    HintText = EditorStrings.DifficultyGraphDetailDescription,
-                    Current = config.GetBindable<float>(OsuSetting.EditorDifficultyGraphDetail),
-                    DisplayAsPercentage = true,
-                }),
-                new SettingsCheckbox
-                {
-                    LabelText = EditorStrings.LoopPlayback,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorLoopPlayback)
-                },
-                new SettingsCheckbox
-                {
-                    LabelText = EditorStrings.AlwaysExpandLeftToolbox,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox)
-                },
-                new SettingsItemV2(new FormSliderBar<float>
-                {
-                    Caption = EditorStrings.LeftToolboxWidth,
-                    Current = config.GetBindable<float>(OsuSetting.EditorLeftToolboxWidth),
-                }),
-                new SettingsItemV2(new FormSliderBar<float>
-                {
-                    Caption = EditorStrings.RightToolboxWidth,
-                    Current = config.GetBindable<float>(OsuSetting.EditorRightToolboxWidth),
-                }),
-                new SettingsCheckbox
-                {
                     LabelText = EditorStrings.HideKiaiFlash,
                     TooltipText = EditorStrings.HideKiaiFlashDescription,
                     Current = config.GetBindable<bool>(OsuSetting.EditorHideKiaiFlash)
                 },
                 new SettingsCheckbox
                 {
-                    LabelText = EditorStrings.HideGridFromPointsTool,
-                    TooltipText = EditorStrings.HideGridFromPointsToolDescription,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorHideGridFromPointsTool)
+                    LabelText = EditorStrings.LoopPlayback,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorLoopPlayback)
                 },
-                new SettingsItemV2(new FormSliderBar<float>
-                {
-                    Caption = EditorStrings.ToolButtonSquareness,
-                    Current = config.GetBindable<float>(OsuSetting.EditorToolButtonSquareness),
-                    DisplayAsPercentage = true,
-                }),
-                new SettingsItemV2(new FormSliderBar<float>
-                {
-                    Caption = EditorStrings.ToggleButtonSquareness,
-                    Current = config.GetBindable<float>(OsuSetting.EditorToggleButtonSquareness),
-                    DisplayAsPercentage = true,
-                }),
-                new SettingsItemV2(new FormSliderBar<float>
-                {
-                    Caption = EditorStrings.SampleBankButtonSquareness,
-                    Current = config.GetBindable<float>(OsuSetting.EditorSampleBankButtonSquareness),
-                    DisplayAsPercentage = true,
-                }),
-                new SettingsItemV2(new FormSliderBar<float>
-                {
-                    Caption = EditorStrings.GridButtonSquareness,
-                    Current = config.GetBindable<float>(OsuSetting.EditorGridButtonSquareness),
-                    DisplayAsPercentage = true,
-                }),
-                new SettingsItemV2(new FormSliderBar<float>
-                {
-                    Caption = EditorStrings.ActionButtonSquareness,
-                    Current = config.GetBindable<float>(OsuSetting.EditorActionButtonSquareness),
-                    DisplayAsPercentage = true,
-                }),
-                new SettingsEnumDropdown<EditorSelectionColour>
-                {
-                    LabelText = EditorStrings.ReferenceDifficultyColour,
-                    Current = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorReferenceDifficultyColour)
-                },
-                new SettingsItemV2(new FormSliderBar<float>
-                {
-                    Caption = EditorStrings.ReferenceDifficultyOpacity,
-                    Current = config.GetBindable<float>(OsuSetting.EditorReferenceDifficultyOpacity),
-                    DisplayAsPercentage = true,
-                }),
-                new SettingsItemV2(new FormSliderBar<float>
-                {
-                    Caption = EditorStrings.SliderVelocityPresetSquareness,
-                    Current = config.GetBindable<float>(OsuSetting.EditorSliderVelocityPresetSquareness),
-                    DisplayAsPercentage = true,
-                }),
-                new SettingsItemV2(new FormEnumDropdown<EditorTimelineStyle>
-                {
-                    Caption = EditorStrings.TimelineStyle,
-                    HintText = EditorStrings.TimelineStyleDescription,
-                    Current = config.GetBindable<EditorTimelineStyle>(OsuSetting.EditorTimelineStyle),
-                }),
-                new SettingsCheckbox
-                {
-                    LabelText = EditorStrings.TimelineDragToSeek,
-                    TooltipText = EditorStrings.TimelineDragToSeekDescription,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorTimelineDragToSeek)
-                },
-                new SettingsCheckbox
-                {
-                    LabelText = EditorStrings.TimelineUseSkin,
-                    TooltipText = EditorStrings.TimelineUseSkinDescription,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorTimelineUseSkin)
-                },
-                new SettingsCheckbox
-                {
-                    LabelText = EditorStrings.AlwaysExpandTimelinePointLabels,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandTimelinePointLabels)
-                },
-                new SettingsCheckbox
-                {
-                    LabelText = EditorStrings.HideTimelinePoints,
-                    TooltipText = EditorStrings.HideTimelinePointsDescription,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorHideTimelinePoints)
-                },
-                new SettingsItemV2(new FormSliderBar<float>
-                {
-                    Caption = EditorStrings.TimelineDragAreaScale,
-                    Current = config.GetBindable<float>(OsuSetting.EditorTimelineDragAreaScale),
-                    DisplayAsPercentage = true,
-                }),
-                new SettingsItemV2(new FormSliderBar<float>
-                {
-                    Caption = EditorStrings.TimelineRepeatDragThreshold,
-                    HintText = EditorStrings.TimelineRepeatDragThresholdDescription,
-                    Current = config.GetBindable<float>(OsuSetting.EditorTimelineRepeatDragThreshold),
-                    DisplayAsPercentage = true,
-                }),
                 new SettingsItemV2(new FormSliderBar<double>
                 {
                     Caption = EditorStrings.SeekAnimationDuration,
+                    HintText = EditorStrings.SeekAnimationDurationDescription,
                     Current = config.GetBindable<double>(OsuSetting.EditorSeekAnimationDuration),
                     KeyboardStep = 10,
                     LabelFormat = v => v == 0 ? LazerKaiSettingsStrings.NoDelay : $"{v:N0} ms",
