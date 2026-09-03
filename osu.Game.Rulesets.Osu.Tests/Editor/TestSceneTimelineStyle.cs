@@ -235,6 +235,44 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddAssert("volume sits over the object", () => volumeTop(), () => Is.LessThan(objectTop()));
         }
 
+        /// <summary>
+        /// With a drag no longer moving the playhead, a selection can be begun anywhere on the timeline, but the
+        /// strip above the objects was still drawn as though there were nothing to do there.
+        /// </summary>
+        [Test]
+        public void TestTheStripAboveTheObjectsLightsUpOnceItTakesSelections()
+        {
+            AddStep("let a drag move the playhead", () => config.SetValue(OsuSetting.EditorTimelineDragToSeek, true));
+
+            AddStep("point above the objects", pointAboveTheObjects);
+            AddWaitStep("let it light up if it is going to", 5);
+            AddAssert("it stays dark", theStripIsLit, () => Is.False);
+
+            AddStep("stop a drag moving the playhead", () => config.SetValue(OsuSetting.EditorTimelineDragToSeek, false));
+
+            AddStep("look away", () => InputManager.MoveMouseTo(Editor));
+            AddStep("point above the objects again", pointAboveTheObjects);
+            AddUntilStep("it lights up", theStripIsLit, () => Is.True);
+        }
+
+        /// <summary>
+        /// Read off the colour it is drawn in: what is being checked is that the strip answers the pointer, not that
+        /// it was sized some particular way.
+        /// </summary>
+        private bool theStripIsLit()
+            => Editor.ChildrenOfType<TimelineBlueprintContainer.SelectableAreaBackground>().Single().Colour.TopLeft.SRGB.R > 0;
+
+        /// <summary>
+        /// Well clear of the objects' own band, which takes the middle 60% of the timeline. A tenth of the way down
+        /// is inside the strip a drag would otherwise have moved the playhead from.
+        /// </summary>
+        private void pointAboveTheObjects()
+        {
+            var area = timeline().ScreenSpaceDrawQuad;
+
+            InputManager.MoveMouseTo(new Vector2(area.Centre.X, area.TopLeft.Y + area.Height * 0.1f));
+        }
+
         /// <summary>How many of the timeline's edges the ticks are drawn from.</summary>
         private int ticksFromAnEdge() =>
             visibleTicks().Select(t => t.Anchor).Distinct().Count(a => a == Anchor.TopLeft || a == Anchor.BottomLeft);

@@ -30,7 +30,9 @@ using osuTK.Graphics;
 namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 {
     [Cached]
-    internal partial class TimelineBlueprintContainer : EditorBlueprintContainer
+    // public rather than upstream's internal, so that the editor scenes -- which live with the ruleset they are
+    // edited in rather than beside the game -- can read what it draws.
+    public partial class TimelineBlueprintContainer : EditorBlueprintContainer
     {
         [Resolved(CanBeNull = true)]
         private Timeline timeline { get; set; }
@@ -83,12 +85,18 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             hideTimelinePoints.BindValueChanged(_ => updateLayout());
             timelineStyle.BindValueChanged(_ => updateLayout());
 
-            AddInternal(new SelectableAreaBackground
+            SelectableAreaBackground background;
+
+            AddInternal(background = new SelectableAreaBackground
             {
                 Colour = Color4.Black,
                 Depth = float.MaxValue,
                 Blending = BlendingParameters.Additive,
             });
+
+            // with the timeline no longer moving on a drag, a selection can be begun anywhere on it, so the whole
+            // of it is what lights up under the pointer rather than the objects' own band.
+            dragToSeek.BindValueChanged(drag => background.WholeTimeline.Value = !drag.NewValue, true);
         }
 
         /// <summary>
@@ -407,10 +415,18 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             timeline.ScrollBy(amount * (float)Clock.ElapsedFrameTime * Math.Min(1, dragTimeAccumulated / time_ramp_multiplier));
         }
 
-        private partial class SelectableAreaBackground : CompositeDrawable
+        public partial class SelectableAreaBackground : CompositeDrawable
         {
             [Resolved]
             private OsuColour colours { get; set; }
+
+            [Resolved]
+            private Timeline timeline { get; set; }
+
+            /// <summary>
+            /// Whether the whole timeline is what a selection can be begun on, rather than the objects' own band.
+            /// </summary>
+            public readonly BindableBool WholeTimeline = new BindableBool();
 
             public override bool ReceivePositionalInputAt(Vector2 screenSpacePos)
             {
@@ -421,8 +437,21 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             [BackgroundDependencyLoader]
             private void load()
             {
-                RelativeSizeAxes = Axes.Both;
+                Anchor = Origin = Anchor.Centre;
                 Alpha = 0.1f;
+
+                WholeTimeline.BindValueChanged(whole =>
+                {
+                    // sized against the timeline rather than against the band this sits in, which is only as tall
+                    // as the objects.
+                    RelativeSizeAxes = whole.NewValue ? Axes.X : Axes.Both;
+
+                    if (!whole.NewValue)
+                    {
+                        Height = 1;
+                        Y = 0;
+                    }
+                }, true);
 
                 AddRangeInternal(new[]
                 {
@@ -452,6 +481,19 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             {
                 this.FadeColour(Color4.Black, 600, Easing.OutQuint);
                 base.OnHoverLost(e);
+            }
+
+            protected override void Update()
+            {
+                base.Update();
+
+                if (!WholeTimeline.Value || Parent == null)
+                    return;
+
+                Height = timeline.DrawHeight;
+
+                // centred on the timeline rather than on the band, which sits differently in each layout.
+                Y = Parent.ToLocalSpace(timeline.ScreenSpaceDrawQuad.Centre).Y - Parent.DrawHeight / 2;
             }
         }
 
