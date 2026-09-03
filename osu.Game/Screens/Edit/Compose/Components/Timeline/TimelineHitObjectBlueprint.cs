@@ -236,8 +236,6 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             config.BindWith(OsuSetting.EditorHideTimelinePoints, hideTimelinePoints);
             config.BindWith(OsuSetting.EditorTimelineStyle, timelineStyle);
             config.BindWith(OsuSetting.EditorTimelineUseSkin, useSkin);
-            config.BindWith(OsuSetting.EditorTimelineSkinCircleScale, skinCircleScale);
-            config.BindWith(OsuSetting.EditorTimelineSkinReverseScale, skinReverseScale);
 
             hideTimelinePoints.BindValueChanged(_ => updateSizing());
 
@@ -253,8 +251,6 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             referenceDifficulty?.Beatmap.BindValueChanged(_ => updateSizing());
 
             useSkin.BindValueChanged(_ => updateSkinPieces());
-            skinCircleScale.BindValueChanged(_ => updateSizing());
-            skinReverseScale.BindValueChanged(_ => updateSizing());
 
             updateSkinPieces();
             updateSizing();
@@ -264,9 +260,6 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private readonly BindableBool useSkin = new BindableBool();
 
-        private readonly BindableFloat skinCircleScale = new BindableFloat(1);
-
-        private readonly BindableFloat skinReverseScale = new BindableFloat(1);
 
         /// <summary>
         /// How tall an object is drawn, given what else the timeline has to fit around it.
@@ -347,17 +340,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             }
 
             foreach (var piece in skinPieces.Children.OfType<TimelineSkinCircle>())
-            {
-                piece.CircleSize = size * skinCircleScale.Value;
-                piece.ArrowScale = skinReverseScale.Value;
-            }
+                piece.CircleSize = size;
 
             if (dragArea != null)
             {
                 // the handle is stable's whole slider end rather than a grip drawn on it: the ring is what there is
                 // to take hold of, so it is the whole of it that answers, and nothing is drawn over the skin.
                 dragArea.Invisible = skinned;
-                dragArea.CircleSize = size * (skinned ? skinCircleScale.Value : 1);
+                dragArea.CircleSize = size;
             }
 
             // hidden rather than removed, so the pieces come back the moment the setting does.

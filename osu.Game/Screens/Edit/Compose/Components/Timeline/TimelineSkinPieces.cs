@@ -88,7 +88,6 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private Container grip = null!;
 
         private float circleSize;
-        private float arrowScale = 1;
 
         /// <summary>
         /// The height objects are drawn at, which this is drawn to fill.
@@ -103,19 +102,6 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             }
         }
 
-        /// <summary>
-        /// How big the reverse arrow is drawn, against the size the skin drew it at. Numbers are not moved by it:
-        /// they are the skin's own size, and the arrow is the only thing this is asked about.
-        /// </summary>
-        public float ArrowScale
-        {
-            set
-            {
-                arrowScale = value;
-                updateContent();
-            }
-        }
-
         // the skin's numbers and arrows are drawn for a full-sized circle, so they come down with this one.
         // Stable's own blanket 0.8 on the numbers is kept on top of that.
         private void updateContent()
@@ -123,7 +109,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             if (content == null)
                 return;
 
-            float scale = reverse ? arrowScale : 0.8f;
+            // the arrow is the skin's own size; stable's blanket 0.8 on the numbers is kept on top of theirs.
+            float scale = reverse ? 1 : 0.8f;
 
             content.Scale = new Vector2(scale * circleSize / TimelineSkinPieces.LEGACY_CIRCLE_DIAMETER);
         }
