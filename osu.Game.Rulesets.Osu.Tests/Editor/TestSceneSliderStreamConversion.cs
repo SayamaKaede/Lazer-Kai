@@ -5,8 +5,12 @@
 
 using System.Linq;
 using NUnit.Framework;
+using osu.Game.Graphics.UserInterfaceV2;
+using osu.Framework.Testing;
 using osu.Framework.Utils;
+using osu.Game.Localisation;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Compose.Components;
@@ -15,9 +19,21 @@ using osuTK.Input;
 
 namespace osu.Game.Rulesets.Osu.Tests.Editor
 {
+    /// <summary>
+    /// Turning a slider into a stream, which this fork does through a panel rather than in one go.
+    /// </summary>
+    /// <remarks>
+    /// The shortcut opens the panel and shows what the slider would become; nothing is settled until the conversion
+    /// is taken. Until then there is nothing on the undo stack, and the division being built on is the panel's own
+    /// rather than the editor's snap -- reaching for a different stream should not move every other snap in the
+    /// beatmap.
+    /// </remarks>
     public partial class TestSceneSliderStreamConversion : TestSceneOsuEditor
     {
-        private BindableBeatDivisor beatDivisor => (BindableBeatDivisor)Editor.Dependencies.Get(typeof(BindableBeatDivisor));
+        private StreamConversionPanel panel => Editor.ChildrenOfType<StreamConversionPanel>().Single();
+
+        /// <summary>The division the panel is building on, which is not the editor's.</summary>
+        private BindableBeatDivisor beatDivisor => (BindableBeatDivisor)panel.Dependencies.Get(typeof(BindableBeatDivisor));
 
         [Test]
         public void TestSimpleConversion()
@@ -39,6 +55,8 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                 (time: 0.5, pathPosition: 0.5),
                 (time: 0.75, pathPosition: 0.75),
                 (time: 1, pathPosition: 1)));
+
+            takeTheConversion();
 
             AddStep("undo", () => Editor.Undo());
             AddAssert("slider restored", () => sliderRestored(slider));
@@ -83,9 +101,13 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
             convertToStream();
 
+            // the division does not divide this slider evenly, so the last circle lands short of its end in time.
+            // The stream still covers the whole shape: the positions are spread from one end of the path to the
+            // other, which is the progress acceleration and easing are laid over. The game's own conversion leaves
+            // the stream short of the slider's end instead.
             AddAssert("stream created", () => streamCreatedFor(slider,
                 (time: 0, pathPosition: 0),
-                (time: 2 / 3d, pathPosition: 2 / 3d)));
+                (time: 2 / 3d, pathPosition: 1)));
         }
 
         [Test]
@@ -132,9 +154,16 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                 (time: 0.75, pathPosition: 0.75),
                 (time: 1, pathPosition: 1)));
 
+            takeTheConversion();
+
             AddStep("undo", () => Editor.Undo());
             AddAssert("slider restored", () => sliderRestored(slider));
         }
+
+        private void takeTheConversion()
+            => AddStep("take the conversion", () => panel.ChildrenOfType<RoundedButton>()
+                                                        .Single(b => b.Text.Equals(EditorStrings.ConvertToStream))
+                                                        .TriggerClick());
 
         private void convertToStream()
         {
