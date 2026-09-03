@@ -107,10 +107,10 @@ namespace osu.Game.Localisation
         public static LocalisableString EditorBeatmapColours => new TranslatableString(getKey(@"editor_beatmap_colours"), @"Beatmap colours");
 
         /// <summary>
-        /// "Off uses your skin's combo colours instead. Does not change how the beatmap plays."
+        /// "Forces the beatmap's own combo colours."
         /// </summary>
         public static LocalisableString EditorBeatmapColoursDescription => new TranslatableString(getKey(@"editor_beatmap_colours_description"),
-            @"Off uses your skin's combo colours instead. Does not change how the beatmap plays.");
+            @"Forces the beatmap's own combo colours.");
 
         /// <summary>
         /// "Beatmap hitsounds"
@@ -118,10 +118,10 @@ namespace osu.Game.Localisation
         public static LocalisableString EditorBeatmapHitsounds => new TranslatableString(getKey(@"editor_beatmap_hitsounds"), @"Beatmap hitsounds");
 
         /// <summary>
-        /// "Off uses your skin's hitsounds instead. Does not change how the beatmap plays."
+        /// "Forces the beatmap's own hitsounds."
         /// </summary>
         public static LocalisableString EditorBeatmapHitsoundsDescription => new TranslatableString(getKey(@"editor_beatmap_hitsounds_description"),
-            @"Off uses your skin's hitsounds instead. Does not change how the beatmap plays.");
+            @"Forces the beatmap's own hitsounds.");
 
         /// <summary>
         /// "External tools"

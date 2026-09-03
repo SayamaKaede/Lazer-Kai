@@ -394,9 +394,9 @@ namespace osu.Game.Localisation
         public static LocalisableString LiveModPreview => new TranslatableString(getKey(@"live_mod_preview"), @"Keep mod preview up to date while editing");
 
         /// <summary>
-        /// "Always expand timeline labels"
+        /// "Always expand the labels"
         /// </summary>
-        public static LocalisableString AlwaysExpandTimelinePointLabels => new TranslatableString(getKey(@"always_expand_timeline_point_labels"), @"Always expand timeline labels");
+        public static LocalisableString AlwaysExpandTimelinePointLabels => new TranslatableString(getKey(@"always_expand_timeline_point_labels"), @"Always expand the labels");
 
         /// <summary>
         /// "Selection outline"
@@ -404,19 +404,34 @@ namespace osu.Game.Localisation
         public static LocalisableString SelectionAppearance => new TranslatableString(getKey(@"selection_appearance"), @"Selection outline");
 
         /// <summary>
-        /// "Colour"
+        /// "Box colour"
         /// </summary>
-        public static LocalisableString SelectionColour => new TranslatableString(getKey(@"selection_colour"), @"Colour");
+        public static LocalisableString SelectionColour => new TranslatableString(getKey(@"selection_colour"), @"Box colour");
 
         /// <summary>
-        /// "Thickness"
+        /// "Box thickness"
         /// </summary>
-        public static LocalisableString SelectionThickness => new TranslatableString(getKey(@"selection_thickness"), @"Thickness");
+        public static LocalisableString SelectionThickness => new TranslatableString(getKey(@"selection_thickness"), @"Box thickness");
 
         /// <summary>
-        /// "Opacity"
+        /// "Box opacity"
         /// </summary>
-        public static LocalisableString SelectionOpacity => new TranslatableString(getKey(@"selection_opacity"), @"Opacity");
+        public static LocalisableString SelectionOpacity => new TranslatableString(getKey(@"selection_opacity"), @"Box opacity");
+
+        /// <summary>
+        /// "Object outline colour"
+        /// </summary>
+        public static LocalisableString ObjectOutlineColour => new TranslatableString(getKey(@"object_outline_colour"), @"Object outline colour");
+
+        /// <summary>
+        /// "Object outline thickness"
+        /// </summary>
+        public static LocalisableString ObjectOutlineThickness => new TranslatableString(getKey(@"object_outline_thickness"), @"Object outline thickness");
+
+        /// <summary>
+        /// "Object outline opacity"
+        /// </summary>
+        public static LocalisableString ObjectOutlineOpacity => new TranslatableString(getKey(@"object_outline_opacity"), @"Object outline opacity");
 
         /// <summary>
         /// "Editor colour (applies on next open)"
@@ -424,30 +439,30 @@ namespace osu.Game.Localisation
         public static LocalisableString EditorColourScheme => new TranslatableString(getKey(@"editor_colour_scheme"), @"Editor colour (applies on next open)");
 
         /// <summary>
-        /// "Hide the shortcut buttons on a selection"
+        /// "Hide the shortcut buttons"
         /// </summary>
-        public static LocalisableString HideSelectionButtons => new TranslatableString(getKey(@"hide_selection_buttons"), @"Hide the shortcut buttons on a selection");
+        public static LocalisableString HideSelectionButtons => new TranslatableString(getKey(@"hide_selection_buttons"), @"Hide the shortcut buttons");
 
         /// <summary>
-        /// "Hide the rotation handles on a selection"
+        /// "Hide the rotation handles"
         /// </summary>
-        public static LocalisableString HideRotationHandles => new TranslatableString(getKey(@"hide_rotation_handles"), @"Hide the rotation handles on a selection");
+        public static LocalisableString HideRotationHandles => new TranslatableString(getKey(@"hide_rotation_handles"), @"Hide the rotation handles");
 
         /// <summary>
-        /// "Ctrl+Shift+wheel turns a selection, and adding Alt turns it in finer steps."
+        /// "Hides the handles at a selection's corners that rotate it."
         /// </summary>
         public static LocalisableString HideRotationHandlesDescription => new TranslatableString(getKey(@"hide_rotation_handles_description"),
-            @"Ctrl+Shift+wheel turns a selection, and adding Alt turns it in finer steps.");
+            @"Hides the handles at a selection's corners that rotate it.");
 
         /// <summary>
-        /// "Selection handle size"
+        /// "Corner handle size"
         /// </summary>
-        public static LocalisableString SelectionHandleSize => new TranslatableString(getKey(@"selection_handle_size"), @"Selection handle size");
+        public static LocalisableString SelectionHandleSize => new TranslatableString(getKey(@"selection_handle_size"), @"Corner handle size");
 
         /// <summary>
-        /// "Selection handle colour"
+        /// "Corner handle colour"
         /// </summary>
-        public static LocalisableString SelectionHandleColour => new TranslatableString(getKey(@"selection_handle_colour"), @"Selection handle colour");
+        public static LocalisableString SelectionHandleColour => new TranslatableString(getKey(@"selection_handle_colour"), @"Corner handle colour");
 
         /// <summary>
         /// "Slider anchor size"
@@ -591,25 +606,25 @@ namespace osu.Game.Localisation
             @"What the editor's grid opens on. The spacing replaces the one saved in the beatmap.");
 
         /// <summary>
-        /// "A mark appears over anything a millisecond or more off the nearest snap, in the timeline, as you place it."
+        /// "Only marks an object more than 2ms away from the nearest snap."
         /// </summary>
         public static LocalisableString ShowUnsnapMarkersDescription => new TranslatableString(getKey(@"show_unsnap_markers_description"),
-            @"A mark appears over anything a millisecond or more off the nearest snap, in the timeline, as you place it.");
+            @"Only marks an object more than 2ms away from the nearest snap.");
 
         /// <summary>
-        /// "Difficulty graph colour"
+        /// "Colour"
         /// </summary>
-        public static LocalisableString DifficultyGraphColour => new TranslatableString(getKey(@"difficulty_graph_colour"), @"Difficulty graph colour");
+        public static LocalisableString DifficultyGraphColour => new TranslatableString(getKey(@"difficulty_graph_colour"), @"Colour");
 
         /// <summary>
-        /// "Difficulty graph opacity"
+        /// "Opacity"
         /// </summary>
-        public static LocalisableString DifficultyGraphOpacity => new TranslatableString(getKey(@"difficulty_graph_opacity"), @"Difficulty graph opacity");
+        public static LocalisableString DifficultyGraphOpacity => new TranslatableString(getKey(@"difficulty_graph_opacity"), @"Opacity");
 
         /// <summary>
-        /// "Difficulty graph detail"
+        /// "Detail"
         /// </summary>
-        public static LocalisableString DifficultyGraphDetail => new TranslatableString(getKey(@"difficulty_graph_detail"), @"Difficulty graph detail");
+        public static LocalisableString DifficultyGraphDetail => new TranslatableString(getKey(@"difficulty_graph_detail"), @"Detail");
 
         /// <summary>
         /// "Difficulty graph in detail"
@@ -637,10 +652,10 @@ namespace osu.Game.Localisation
         public static LocalisableString DifficultyGraphApplyCurrentMods => new TranslatableString(getKey(@"difficulty_graph_apply_current_mods"), @"Apply the current mods");
 
         /// <summary>
-        /// "How densely the graph is drawn. The count does not depend on the length of the beatmap, so half a minute and ten minutes are drawn just as finely."
+        /// "Raising it too far can make the graph slow to build."
         /// </summary>
         public static LocalisableString DifficultyGraphDetailDescription => new TranslatableString(getKey(@"difficulty_graph_detail_description"),
-            @"How densely the graph is drawn. The count does not depend on the length of the beatmap, so half a minute and ten minutes are drawn just as finely.");
+            @"Raising it too far can make the graph slow to build.");
 
         /// <summary>
         /// "Loop playback"
@@ -688,9 +703,9 @@ namespace osu.Game.Localisation
         public static LocalisableString OpenBackupFolder => new TranslatableString(getKey(@"open_backup_folder"), @"Open this difficulty's backups");
 
         /// <summary>
-        /// "Keep passed objects selectable for"
+        /// "How long an object stays selectable after it passes"
         /// </summary>
-        public static LocalisableString SelectableAfterEndTime => new TranslatableString(getKey(@"selectable_after_end_time"), @"Keep passed objects selectable for");
+        public static LocalisableString SelectableAfterEndTime => new TranslatableString(getKey(@"selectable_after_end_time"), @"How long an object stays selectable after it passes");
 
         /// <summary>
         /// "Ctrl+click a slider anchor to cycle its curve type"
@@ -698,9 +713,9 @@ namespace osu.Game.Localisation
         public static LocalisableString CtrlClickCyclesCurveType => new TranslatableString(getKey(@"ctrl_click_cycles_curve_type"), @"Ctrl+click a slider anchor to cycle its curve type");
 
         /// <summary>
-        /// "Swap right and middle mouse buttons"
+        /// "Swap right click and the wheel button"
         /// </summary>
-        public static LocalisableString SwapRightAndMiddleMouse => new TranslatableString(getKey(@"swap_right_and_middle_mouse"), @"Swap right and middle mouse buttons");
+        public static LocalisableString SwapRightAndMiddleMouse => new TranslatableString(getKey(@"swap_right_and_middle_mouse"), @"Swap right click and the wheel button");
 
         /// <summary>
         /// "Seek animation"
@@ -713,14 +728,14 @@ namespace osu.Game.Localisation
         public static LocalisableString AlwaysExpandLeftToolbox => new TranslatableString(getKey(@"always_expand_left_toolbox"), @"Keep left toolbox expanded");
 
         /// <summary>
-        /// "Left toolbox width"
+        /// "Left width when expanded"
         /// </summary>
-        public static LocalisableString LeftToolboxWidth => new TranslatableString(getKey(@"left_toolbox_width"), @"Left toolbox width");
+        public static LocalisableString LeftToolboxWidth => new TranslatableString(getKey(@"left_toolbox_width"), @"Left width when expanded");
 
         /// <summary>
-        /// "Right toolbox width"
+        /// "Right width when expanded"
         /// </summary>
-        public static LocalisableString RightToolboxWidth => new TranslatableString(getKey(@"right_toolbox_width"), @"Right toolbox width");
+        public static LocalisableString RightToolboxWidth => new TranslatableString(getKey(@"right_toolbox_width"), @"Right width when expanded");
 
         /// <summary>
         /// "Speed adjustment is unavailable while a mod that changes the speed is being previewed."
@@ -740,9 +755,9 @@ namespace osu.Game.Localisation
             @"Test play starts from the mods chosen at song select, and what is chosen here is left selected on leaving.");
 
         /// <summary>
-        /// "Hide the kiai flash"
+        /// "Turn off the kiai flash"
         /// </summary>
-        public static LocalisableString HideKiaiFlash => new TranslatableString(getKey(@"hide_kiai_flash"), @"Hide the kiai flash");
+        public static LocalisableString HideKiaiFlash => new TranslatableString(getKey(@"hide_kiai_flash"), @"Turn off the kiai flash");
 
         /// <summary>
         /// "Only inside the editor. Test play flashes as it always did."
@@ -767,10 +782,10 @@ namespace osu.Game.Localisation
         public static LocalisableString RemoveDragThreshold => new TranslatableString(getKey(@"remove_drag_threshold"), @"Remove the catch when starting a drag");
 
         /// <summary>
-        /// "Makes small adjustments easier to land. Only takes effect over the playfield and the two timelines."
+        /// "Stock lazer ignores a drag that stays within 10px of the click, so small adjustments are easier with this on."
         /// </summary>
         public static LocalisableString RemoveDragThresholdDescription => new TranslatableString(getKey(@"remove_drag_threshold_description"),
-            @"Makes small adjustments easier to land. Only takes effect over the playfield and the two timelines.");
+            @"Stock lazer ignores a drag that stays within 10px of the click, so small adjustments are easier with this on.");
 
         /// <summary>
         /// "Show the play area border"
@@ -783,34 +798,34 @@ namespace osu.Game.Localisation
         public static LocalisableString DetectOffscreen => new TranslatableString(getKey(@"detect_offscreen"), @"Offscreen detection");
 
         /// <summary>
-        /// "Tool button height"
+        /// "(left) Toolbox button height"
         /// </summary>
-        public static LocalisableString ToolButtonSquareness => new TranslatableString(getKey(@"tool_button_squareness"), @"Tool button height");
+        public static LocalisableString ToolButtonSquareness => new TranslatableString(getKey(@"tool_button_squareness"), @"(left) Toolbox button height");
 
         /// <summary>
-        /// "Toggle button height"
+        /// "(left) Toggles button height"
         /// </summary>
-        public static LocalisableString ToggleButtonSquareness => new TranslatableString(getKey(@"toggle_button_squareness"), @"Toggle button height");
+        public static LocalisableString ToggleButtonSquareness => new TranslatableString(getKey(@"toggle_button_squareness"), @"(left) Toggles button height");
 
         /// <summary>
-        /// "Sample bank button height"
+        /// "(left) Bank button height"
         /// </summary>
-        public static LocalisableString SampleBankButtonSquareness => new TranslatableString(getKey(@"sample_bank_button_squareness"), @"Sample bank button height");
+        public static LocalisableString SampleBankButtonSquareness => new TranslatableString(getKey(@"sample_bank_button_squareness"), @"(left) Bank button height");
 
         /// <summary>
-        /// "Grid type button height"
+        /// "(right) Grid button height"
         /// </summary>
-        public static LocalisableString GridButtonSquareness => new TranslatableString(getKey(@"grid_button_squareness"), @"Grid type button height");
+        public static LocalisableString GridButtonSquareness => new TranslatableString(getKey(@"grid_button_squareness"), @"(right) Grid button height");
 
         /// <summary>
-        /// "Transform and generate button height"
+        /// "(right) Transform and Generate button height"
         /// </summary>
-        public static LocalisableString ActionButtonSquareness => new TranslatableString(getKey(@"action_button_squareness"), @"Transform and generate button height");
+        public static LocalisableString ActionButtonSquareness => new TranslatableString(getKey(@"action_button_squareness"), @"(right) Transform and Generate button height");
 
         /// <summary>
-        /// "Velocity preset button height"
+        /// "(right) Slider velocity preset height"
         /// </summary>
-        public static LocalisableString SliderVelocityPresetSquareness => new TranslatableString(getKey(@"slider_velocity_preset_squareness"), @"Velocity preset button height");
+        public static LocalisableString SliderVelocityPresetSquareness => new TranslatableString(getKey(@"slider_velocity_preset_squareness"), @"(right) Slider velocity preset height");
 
         /// <summary>
         /// "SR"
@@ -823,14 +838,14 @@ namespace osu.Game.Localisation
         public static LocalisableString StatusShowMaxPerformance => new TranslatableString(getKey(@"status_show_max_performance"), @"MAX PP");
 
         /// <summary>
-        /// "SCORE"
+        /// "SCORE (Lazer)"
         /// </summary>
-        public static LocalisableString StatusShowScore => new TranslatableString(getKey(@"status_show_score"), @"SCORE");
+        public static LocalisableString StatusShowScore => new TranslatableString(getKey(@"status_show_score"), @"SCORE (Lazer)");
 
         /// <summary>
-        /// "SCORE V1"
+        /// "SCORE V1 (Stable)"
         /// </summary>
-        public static LocalisableString StatusShowLegacyScore => new TranslatableString(getKey(@"status_show_legacy_score"), @"SCORE V1");
+        public static LocalisableString StatusShowLegacyScore => new TranslatableString(getKey(@"status_show_legacy_score"), @"SCORE V1 (Stable)");
 
         /// <summary>
         /// "SV"
@@ -838,14 +853,14 @@ namespace osu.Game.Localisation
         public static LocalisableString StatusShowSliderVelocity => new TranslatableString(getKey(@"status_show_slider_velocity"), @"SV");
 
         /// <summary>
-        /// "Normal bank"
+        /// "Normal bank (Sampleset)"
         /// </summary>
-        public static LocalisableString StatusShowNormalBank => new TranslatableString(getKey(@"status_show_normal_bank"), @"Normal bank");
+        public static LocalisableString StatusShowNormalBank => new TranslatableString(getKey(@"status_show_normal_bank"), @"Normal bank (Sampleset)");
 
         /// <summary>
-        /// "Addition bank"
+        /// "Addition bank (Additions)"
         /// </summary>
-        public static LocalisableString StatusShowAdditionBank => new TranslatableString(getKey(@"status_show_addition_bank"), @"Addition bank");
+        public static LocalisableString StatusShowAdditionBank => new TranslatableString(getKey(@"status_show_addition_bank"), @"Addition bank (Additions)");
 
         /// <summary>
         /// "Volume"
@@ -870,6 +885,9 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString StatusShowCombo => new TranslatableString(getKey(@"status_show_combo"), @"Combo");
 
+        /// <summary>
+        /// "Object count"
+        /// </summary>
         public static LocalisableString StatusShowObjectCount => new TranslatableString(getKey(@"status_show_object_count"), @"Object count");
 
         /// <summary>
@@ -893,14 +911,14 @@ namespace osu.Game.Localisation
         public static LocalisableString ReferenceDifficultyNone => new TranslatableString(getKey(@"reference_difficulty_none"), @"None");
 
         /// <summary>
-        /// "Ghost opacity"
+        /// "Opacity"
         /// </summary>
-        public static LocalisableString ReferenceDifficultyOpacity => new TranslatableString(getKey(@"reference_difficulty_opacity"), @"Ghost opacity");
+        public static LocalisableString ReferenceDifficultyOpacity => new TranslatableString(getKey(@"reference_difficulty_opacity"), @"Opacity");
 
         /// <summary>
-        /// "Ghost colour"
+        /// "Colour"
         /// </summary>
-        public static LocalisableString ReferenceDifficultyColour => new TranslatableString(getKey(@"reference_difficulty_colour"), @"Ghost colour");
+        public static LocalisableString ReferenceDifficultyColour => new TranslatableString(getKey(@"reference_difficulty_colour"), @"Colour");
 
         /// <summary>
         /// "Backup written"
@@ -1028,20 +1046,20 @@ namespace osu.Game.Localisation
         public static LocalisableString ToggleDistanceSnap => new TranslatableString(getKey(@"toggle_distance_snap"), @"Toggle distance snap grid");
 
         /// <summary>
-        /// "Hide the timeline's velocity and volume rows"
+        /// "Hide the velocity and volume labels"
         /// </summary>
-        public static LocalisableString HideTimelinePoints => new TranslatableString(getKey(@"hide_timeline_points"), @"Hide the timeline's velocity and volume rows");
+        public static LocalisableString HideTimelinePoints => new TranslatableString(getKey(@"hide_timeline_points"), @"Hide the velocity and volume labels");
 
         /// <summary>
-        /// "Objects take the freed space, making them easier to grab. Velocity and volume stay editable from the right sidebar."
+        /// "The objects take the room the labels give up, which makes them easier to hit."
         /// </summary>
         public static LocalisableString HideTimelinePointsDescription => new TranslatableString(getKey(@"hide_timeline_points_description"),
-            @"Objects take the freed space, making them easier to grab. Velocity and volume stay editable from the right sidebar.");
+            @"The objects take the room the labels give up, which makes them easier to hit.");
 
         /// <summary>
-        /// "Timeline layout"
+        /// "Layout"
         /// </summary>
-        public static LocalisableString TimelineStyle => new TranslatableString(getKey(@"timeline_style"), @"Timeline layout");
+        public static LocalisableString TimelineStyle => new TranslatableString(getKey(@"timeline_style"), @"Layout");
 
         /// <summary>
         /// "Lazer"
@@ -1065,31 +1083,31 @@ namespace osu.Game.Localisation
             @"Stable rests the objects on the bottom edge and keeps the ticks down there with them, with velocity and volume above. Lazer-Kai is the same with a tick growing in from the top edge as well.");
 
         /// <summary>
-        /// "Drag the timeline to move the playhead"
+        /// "Drag the top of it to move the playhead"
         /// </summary>
-        public static LocalisableString TimelineDragToSeek => new TranslatableString(getKey(@"timeline_drag_to_seek"), @"Drag the timeline to move the playhead");
+        public static LocalisableString TimelineDragToSeek => new TranslatableString(getKey(@"timeline_drag_to_seek"), @"Drag the top of it to move the playhead");
 
         /// <summary>
-        /// "Only the objects' own band takes a drag as a selection, so a drag begun anywhere else moves the playhead. Turn this off to reach for a selection without moving it."
+        /// "The timeline can be pulled along like a hand tool. Turn it off if it keeps happening by accident."
         /// </summary>
         public static LocalisableString TimelineDragToSeekDescription => new TranslatableString(getKey(@"timeline_drag_to_seek_description"),
-            @"Only the objects' own band takes a drag as a selection, so a drag begun anywhere else moves the playhead. Turn this off to reach for a selection without moving it.");
+            @"The timeline can be pulled along like a hand tool. Turn it off if it keeps happening by accident.");
 
         /// <summary>
-        /// "Draw the timeline with the current skin"
+        /// "Draw it with the current skin"
         /// </summary>
-        public static LocalisableString TimelineUseSkin => new TranslatableString(getKey(@"timeline_use_skin"), @"Draw the timeline with the current skin");
+        public static LocalisableString TimelineUseSkin => new TranslatableString(getKey(@"timeline_use_skin"), @"Draw it with the current skin");
 
         /// <summary>
-        /// "The timeline draws the skin's own circles, slider ends and reverse arrows. osu! beatmaps and stable-format skins only; anything else is drawn the way it always was."
+        /// "Brings the look and the feel closer to stable's."
         /// </summary>
         public static LocalisableString TimelineUseSkinDescription => new TranslatableString(getKey(@"timeline_use_skin_description"),
-            @"The timeline draws the skin's own circles, slider ends and reverse arrows. osu! beatmaps and stable-format skins only; anything else is drawn the way it always was.");
+            @"Brings the look and the feel closer to stable's.");
 
         /// <summary>
-        /// "Timeline drag handle size"
+        /// "Reverse handle size"
         /// </summary>
-        public static LocalisableString TimelineDragAreaScale => new TranslatableString(getKey(@"timeline_drag_area_scale"), @"Timeline drag handle size");
+        public static LocalisableString TimelineDragAreaScale => new TranslatableString(getKey(@"timeline_drag_area_scale"), @"Reverse handle size");
 
         /// <summary>
         /// "Hide velocity and volume rows"
@@ -1112,15 +1130,15 @@ namespace osu.Game.Localisation
         public static LocalisableString Hidden => new TranslatableString(getKey(@"hidden"), @"hidden");
 
         /// <summary>
-        /// "Repeat drag distance"
+        /// "Reverse drag sensitivity"
         /// </summary>
-        public static LocalisableString TimelineRepeatDragThreshold => new TranslatableString(getKey(@"timeline_repeat_drag_threshold"), @"Repeat drag distance");
+        public static LocalisableString TimelineRepeatDragThreshold => new TranslatableString(getKey(@"timeline_repeat_drag_threshold"), @"Reverse drag sensitivity");
 
         /// <summary>
-        /// "How far towards the next repeat a slider has to be dragged before the repeat is added."
+        /// "How far a slider's end has to be dragged before another reverse is added."
         /// </summary>
         public static LocalisableString TimelineRepeatDragThresholdDescription => new TranslatableString(getKey(@"timeline_repeat_drag_threshold_description"),
-            @"How far towards the next repeat a slider has to be dragged before the repeat is added.");
+            @"How far a slider's end has to be dragged before another reverse is added.");
 
         /// <summary>
         /// "Slider length handle colour"
@@ -1255,6 +1273,111 @@ namespace osu.Game.Localisation
         /// "Mapping Tools could not be started."
         /// </summary>
         public static LocalisableString MappingToolsFailedToStart => new TranslatableString(getKey(@"mapping_tools_failed_to_start"), @"Mapping Tools could not be started.");
+
+        /// <summary>
+        /// "An object reaching outside the play area is outlined in red."
+        /// </summary>
+        public static LocalisableString DetectOffscreenDescription => new TranslatableString(getKey(@"detect_offscreen_description"), @"An object reaching outside the play area is outlined in red.");
+
+        /// <summary>
+        /// "How long the timeline takes to settle when the wheel or a key moves it."
+        /// </summary>
+        public static LocalisableString SeekAnimationDurationDescription => new TranslatableString(getKey(@"seek_animation_duration_description"), @"How long the timeline takes to settle when the wheel or a key moves it.");
+
+        /// <summary>
+        /// "Left off, the volume labels open and close as they please."
+        /// </summary>
+        public static LocalisableString AlwaysExpandTimelinePointLabelsDescription => new TranslatableString(getKey(@"always_expand_timeline_point_labels_description"), @"Left off, the volume labels open and close as they please.");
+
+        /// <summary>
+        /// "How much of a slider's end takes the drag. Drawing the timeline with the skin hands the whole end over instead, and this no longer applies."
+        /// </summary>
+        public static LocalisableString TimelineDragAreaScaleDescription => new TranslatableString(getKey(@"timeline_drag_area_scale_description"), @"How much of a slider's end takes the drag. Drawing the timeline with the skin hands the whole end over instead, and this no longer applies.");
+
+        /// <summary>
+        /// "Hides the five buttons a selection carries, flipping and the rest."
+        /// </summary>
+        public static LocalisableString HideSelectionButtonsDescription => new TranslatableString(getKey(@"hide_selection_buttons_description"), @"Hides the five buttons a selection carries, flipping and the rest.");
+
+        /// <summary>
+        /// "Stock lazer keeps objects selectable long after they are out of sight, so a drag takes in things nobody meant. Around 200ms is a starting point."
+        /// </summary>
+        public static LocalisableString SelectableAfterEndTimeDescription => new TranslatableString(getKey(@"selectable_after_end_time_description"), @"Stock lazer keeps objects selectable long after they are out of sight, so a drag takes in things nobody meant. Around 200ms is a starting point.");
+
+        /// <summary>
+        /// "The colour of the box drawn around a selection."
+        /// </summary>
+        public static LocalisableString SelectionColourDescription => new TranslatableString(getKey(@"selection_colour_description"), @"The colour of the box drawn around a selection.");
+
+        /// <summary>
+        /// "The thickness of the box drawn around a selection."
+        /// </summary>
+        public static LocalisableString SelectionThicknessDescription => new TranslatableString(getKey(@"selection_thickness_description"), @"The thickness of the box drawn around a selection.");
+
+        /// <summary>
+        /// "How solid the box drawn around a selection is."
+        /// </summary>
+        public static LocalisableString SelectionOpacityDescription => new TranslatableString(getKey(@"selection_opacity_description"), @"How solid the box drawn around a selection is.");
+
+        /// <summary>
+        /// "The colour of the outline drawn on a selected object itself."
+        /// </summary>
+        public static LocalisableString ObjectOutlineColourDescription => new TranslatableString(getKey(@"object_outline_colour_description"), @"The colour of the outline drawn on a selected object itself.");
+
+        /// <summary>
+        /// "The thickness of the outline drawn on a selected object itself."
+        /// </summary>
+        public static LocalisableString ObjectOutlineThicknessDescription => new TranslatableString(getKey(@"object_outline_thickness_description"), @"The thickness of the outline drawn on a selected object itself.");
+
+        /// <summary>
+        /// "How solid the outline drawn on a selected object itself is."
+        /// </summary>
+        public static LocalisableString ObjectOutlineOpacityDescription => new TranslatableString(getKey(@"object_outline_opacity_description"), @"How solid the outline drawn on a selected object itself is.");
+
+        /// <summary>
+        /// "The colour of the eight points a selection is resized by."
+        /// </summary>
+        public static LocalisableString SelectionHandleColourDescription => new TranslatableString(getKey(@"selection_handle_colour_description"), @"The colour of the eight points a selection is resized by.");
+
+        /// <summary>
+        /// "The size of the eight points a selection is resized by."
+        /// </summary>
+        public static LocalisableString SelectionHandleSizeDescription => new TranslatableString(getKey(@"selection_handle_size_description"), @"The size of the eight points a selection is resized by.");
+
+        /// <summary>
+        /// "The colour of the half circle on a slider's end, which is what shortens it."
+        /// </summary>
+        public static LocalisableString SliderEndDragMarkerColourDescription => new TranslatableString(getKey(@"slider_end_drag_marker_colour_description"), @"The colour of the half circle on a slider's end, which is what shortens it.");
+
+        /// <summary>
+        /// "The thickness of the half circle on a slider's end, which is what shortens it."
+        /// </summary>
+        public static LocalisableString SliderEndDragMarkerScaleDescription => new TranslatableString(getKey(@"slider_end_drag_marker_scale_description"), @"The thickness of the half circle on a slider's end, which is what shortens it.");
+
+        /// <summary>
+        /// "How solid the half circle on a slider's end is."
+        /// </summary>
+        public static LocalisableString SliderEndDragMarkerOpacityDescription => new TranslatableString(getKey(@"slider_end_drag_marker_opacity_description"), @"How solid the half circle on a slider's end is.");
+
+        /// <summary>
+        /// "After an object is placed the playhead moves on by the gap before it, so the wheel is not needed between placements."
+        /// </summary>
+        public static LocalisableString AdvanceByPreviousSpacingOnPlacementDescription => new TranslatableString(getKey(@"advance_by_previous_spacing_on_placement_description"), @"After an object is placed the playhead moves on by the gap before it, so the wheel is not needed between placements.");
+
+        /// <summary>
+        /// "Turn it off if placing a slider keeps drawing one by accident."
+        /// </summary>
+        public static LocalisableString FreehandSliderPlacementDescription => new TranslatableString(getKey(@"freehand_slider_placement_description"), @"Turn it off if placing a slider keeps drawing one by accident.");
+
+        /// <summary>
+        /// "Ctrl-clicking what stable calls a white anchor turns it red."
+        /// </summary>
+        public static LocalisableString CtrlClickCyclesCurveTypeDescription => new TranslatableString(getKey(@"ctrl_click_cycles_curve_type_description"), @"Ctrl-clicking what stable calls a white anchor turns it red.");
+
+        /// <summary>
+        /// "Right click deletes, and the wheel button opens the menu. Only while the editor is open."
+        /// </summary>
+        public static LocalisableString SwapRightAndMiddleMouseDescription => new TranslatableString(getKey(@"swap_right_and_middle_mouse_description"), @"Right click deletes, and the wheel button opens the menu. Only while the editor is open.");
 
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
