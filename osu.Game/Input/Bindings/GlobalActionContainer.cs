@@ -120,6 +120,7 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleOffscreenDetection),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleLeftToolboxExpansion),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimelinePointLabels),
+            new KeyBinding(InputKey.None, GlobalAction.EditorTogglePlacementPresets),
         };
 
         private static IEnumerable<KeyBinding> globalKeyBindings => new[]
@@ -729,6 +730,9 @@ namespace osu.Game.Input.Bindings
 
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleTimelinePointLabels))]
         EditorToggleTimelinePointLabels,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorTogglePlacementPresets))]
+        EditorTogglePlacementPresets,
     }
 
     public enum GlobalActionCategory

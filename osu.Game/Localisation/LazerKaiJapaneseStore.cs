@@ -347,6 +347,18 @@ namespace osu.Game.Localisation
             // 「Pendingのビートマップ」 and 「Graveyardのビートマップ」.
             [$@"{profile_prefix}:guest_pending_title"] = @"ゲスト難易度のPendingビートマップ",
             [$@"{profile_prefix}:guest_graveyard_title"] = @"ゲスト難易度のGraveyardビートマップ",
+
+            // placement presets
+            [$@"{preset_prefix}:header"] = @"配置プリセット",
+            [$@"{preset_prefix}:menu_item"] = @"配置プリセット...",
+            [$@"{preset_prefix}:every_beatmap"] = @"全譜面共通",
+            [$@"{preset_prefix}:this_beatmap"] = @"この譜面",
+            [$@"{preset_prefix}:keep_the_selection"] = @"選択範囲を登録",
+            [$@"{preset_prefix}:nothing_kept_yet"] = @"登録したいものを選択して、下のボタンを押してください",
+            [$@"{preset_prefix}:press_a_digit"] = @"数字キーを押すと割り当てます。Escを押すと割り当てを解除します",
+            [$@"{preset_prefix}:assign_a_key"] = @"数字キーを割り当てる",
+            [$@"{preset_prefix}:remove"] = @"削除",
+            [$@"{binding_prefix}:editor_toggle_placement_presets"] = @"配置プリセットを開く",
         };
 
         private const string editor_prefix = @"osu.Game.Resources.Localisation.Editor";
@@ -357,6 +369,7 @@ namespace osu.Game.Localisation
         private const string profile_prefix = @"osu.Game.Resources.Localisation.LazerKaiProfile";
         private const string collab_prefix = @"osu.Game.Resources.Localisation.Collab";
         private const string export_prefix = @"osu.Game.Resources.Localisation.BeatmapExport";
+        private const string preset_prefix = @"osu.Game.Resources.Localisation.PlacementPreset";
 
         public LazerKaiJapaneseStore(ILocalisationStore fallback)
         {

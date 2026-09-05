@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using osu.Framework.Bindables;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Game.Rulesets.Edit.Tools;
@@ -12,6 +13,16 @@ namespace osu.Game.Rulesets.Edit
     public abstract partial class HitObjectCompositionToolButton : EditorRadioButton
     {
         public CompositionTool Tool { get; }
+
+        /// <summary>
+        /// Whether this answers its shortcut key at the moment.
+        /// </summary>
+        /// <remarks>
+        /// Separate from the button being enabled, which greys it out and stops it being clicked. The tools are
+        /// reached by the number row, and while something else on screen has been given the number row the button is
+        /// still there to be clicked -- it just is not what a digit means any more.
+        /// </remarks>
+        public readonly BindableBool ShortcutEnabled = new BindableBool(true);
 
         protected HitObjectCompositionToolButton(CompositionTool tool, Action<CompositionTool>? action)
             : base(tool.Name, () => action?.Invoke(tool), tool.CreateIcon)
@@ -37,7 +48,7 @@ namespace osu.Game.Rulesets.Edit
 
         public bool OnPressed(KeyBindingPressEvent<TAction> e)
         {
-            if (Nullable.Equals(e.Action, Tool.Action) && Enabled.Value)
+            if (Nullable.Equals(e.Action, Tool.Action) && Enabled.Value && ShortcutEnabled.Value)
             {
                 TriggerClick();
                 return true;

@@ -29,6 +29,7 @@ using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Edit.Tools;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.UI;
@@ -277,6 +278,22 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         protected override ComposeBlueprintContainer CreateBlueprintContainer()
             => new OsuBlueprintContainer(this);
+
+        public override bool SupportsPlacementPresets => true;
+
+        public override Vector2 PlacementPresetCentre => OsuPlayfield.BASE_SIZE / 2;
+
+        public override float PlacementPresetObjectRadius
+            => OsuHitObject.OBJECT_RADIUS * LegacyRulesetExtensions.CalculateScaleFromCircleSize(EditorBeatmap.Difficulty.CircleSize, true);
+
+        public override void ApplyPlacementDefaults(HitObject hitObject)
+        {
+            // the velocity is what decides how long the shape lasts, and a preset carries the shape rather than the
+            // reading. Taking the toolbox's value is what the slider tool does, so a preset and a shape drawn by
+            // hand come out the same length.
+            if (hitObject is IHasSliderVelocity hasSliderVelocity)
+                hasSliderVelocity.SliderVelocityMultiplier = sliderVelocityToolboxGroup.SliderVelocity.Value;
+        }
 
         public override string ConvertSelectionToString()
             => string.Join(',', selectedHitObjects.Cast<OsuHitObject>().OrderBy(h => h.StartTime)

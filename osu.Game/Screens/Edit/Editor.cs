@@ -52,6 +52,7 @@ using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Screens.Backgrounds;
 using osu.Game.Screens.Edit.ComboColours;
+using osu.Game.Screens.Edit.Presets;
 using osu.Game.Screens.Edit.DifficultyGraph;
 using osu.Game.Screens.Edit.Collab;
 using osu.Game.Screens.Edit.Components.Menus;
@@ -226,6 +227,15 @@ namespace osu.Game.Screens.Edit
 
         private EditorScreen currentScreen;
 
+        /// <summary>
+        /// The composer the screen currently being shown has, if it has one.
+        /// </summary>
+        /// <remarks>
+        /// The composer is cached inside the compose screen rather than here, so anything sitting alongside the
+        /// screens — the panels the menus open — has to reach it this way.
+        /// </remarks>
+        internal HitObjectComposer CurrentComposer => currentScreen?.ChildrenOfType<HitObjectComposer>().FirstOrDefault();
+
         private readonly BindableBeatDivisor beatDivisor = new BindableBeatDivisor();
         private EditorClock clock;
 
@@ -237,6 +247,19 @@ namespace osu.Game.Screens.Edit
         private ComboColourStudioOverlay comboColourStudio;
 
         private CollabOverlay collab;
+
+        private PlacementPresetOverlay placementPresets;
+
+        private EditorMenuItem placementPresetsMenuItem;
+
+        /// <summary>
+        /// Whether the ruleset being edited can place presets, once its composer has loaded and been asked.
+        /// </summary>
+        /// <remarks>
+        /// Null until then. The ruleset does not change while the editor is open, so this is worked out once and the
+        /// menu item left as it was set.
+        /// </remarks>
+        private bool? placementPresetsSupported;
 
         private DifficultyGraphDetailOverlay difficultyGraphDetail;
 
@@ -541,6 +564,10 @@ namespace osu.Game.Screens.Edit
                                             new OsuMenuItemSpacer(),
                                             new EditorMenuItem(ComboColourStudioStrings.ComboColourStudio, MenuItemType.Standard, () => comboColourStudio?.ToggleVisibility()),
                                             new EditorMenuItem(CollabStrings.MenuItem, MenuItemType.Standard, () => collab?.ToggleVisibility()),
+                                            placementPresetsMenuItem = new EditorMenuItem(PlacementPresetStrings.MenuItem, MenuItemType.Standard, () => placementPresets?.ToggleVisibility())
+                                            {
+                                                Hotkey = new Hotkey(GlobalAction.EditorTogglePlacementPresets)
+                                            },
                                         }
                                     },
                                     new MenuItem(CommonStrings.MenuBarView)
@@ -723,6 +750,9 @@ namespace osu.Game.Screens.Edit
                     // spans the screen, unlike the studio above it, so that it can tell a click meant for the beatmap
                     // from one meant for itself. Only its own panel takes input.
                     collab = new CollabOverlay { State = { Value = Visibility.Hidden } },
+                    // above the screens so that the digits it answers to reach it before the composer's tool
+                    // shortcuts underneath, which are the same keys.
+                    placementPresets = new PlacementPresetOverlay { State = { Value = Visibility.Hidden } },
                     // modal, unlike the studio above it: this one is opened, read, and closed.
                     difficultyGraphDetail = new DifficultyGraphDetailOverlay { State = { Value = Visibility.Hidden } },
                     MutationTracker,
@@ -730,6 +760,9 @@ namespace osu.Game.Screens.Edit
                     new EditorPlaybackLoop(),
                 }
             });
+
+            // until the composer has loaded and said whether it can place them, which the update loop asks once.
+            placementPresetsMenuItem.Action.Disabled = true;
 
             changeHandler?.CanUndo.BindValueChanged(v => undoMenuItem.Action.Disabled = !v.NewValue, true);
             changeHandler?.CanRedo.BindValueChanged(v => redoMenuItem.Action.Disabled = !v.NewValue, true);
@@ -986,6 +1019,14 @@ namespace osu.Game.Screens.Edit
 
             discardChangesMenuItem.Action.Disabled = !HasUnsavedChanges;
 
+            // asked once, on whichever of the first frames the composer has finished loading on, and then never
+            // again: walking for it every frame to answer a question whose answer cannot change is not worth it.
+            if (placementPresetsSupported == null && CurrentComposer != null)
+            {
+                placementPresetsSupported = CurrentComposer.SupportsPlacementPresets;
+                placementPresetsMenuItem.Action.Disabled = !placementPresetsSupported.Value;
+            }
+
             // depends on where the playhead is, so there is nothing to hang a notification off; the scan stops at the
             // first object past it and costs nothing next to the rest of a frame here.
             insertBreakMenuItem.Action.Disabled = !tryFitBreakAtCurrentTime(out _, out _);
@@ -1204,6 +1245,13 @@ namespace osu.Game.Screens.Edit
 
                 case GlobalAction.EditorToggleTimelinePointLabels:
                     editorAlwaysExpandTimelinePointLabels.Value = !editorAlwaysExpandTimelinePointLabels.Value;
+                    return true;
+
+                case GlobalAction.EditorTogglePlacementPresets:
+                    if (placementPresetsMenuItem.Action.Disabled)
+                        return false;
+
+                    placementPresets?.ToggleVisibility();
                     return true;
 
                 case GlobalAction.EditorDiscardUnsavedChanges:
@@ -1729,6 +1777,10 @@ namespace osu.Game.Screens.Edit
             // the overlays belong to the composer, which is kept around rather than thrown away when another screen is
             // opened. Without this, flashlight would go on covering the design and timing screens too.
             ModOverlays.Alpha = e.NewValue == EditorScreenMode.Compose ? 1 : 0;
+
+            // a preset goes into the playfield, so the list has nothing to put anywhere on the other screens.
+            if (e.NewValue != EditorScreenMode.Compose)
+                placementPresets?.Hide();
 
             var lastScreen = currentScreen;
 

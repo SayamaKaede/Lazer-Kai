@@ -299,6 +299,12 @@ namespace osu.Game.Localisation
             new TranslatableString(getKey(@"editor_toggle_timeline_point_labels"), @"Toggle keeping the timeline labels expanded");
 
         /// <summary>
+        /// "Open the placement presets"
+        /// </summary>
+        public static LocalisableString EditorTogglePlacementPresets =>
+            new TranslatableString(getKey(@"editor_toggle_placement_presets"), @"Open the placement presets");
+
+        /// <summary>
         /// "Decrease slider velocity"
         /// </summary>
         public static LocalisableString EditorDecreaseSliderVelocity =>

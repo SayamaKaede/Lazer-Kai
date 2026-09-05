@@ -333,19 +333,25 @@ namespace osu.Game.Rulesets.Edit
                 }
             };
 
-            toolboxCollection.AddButton(new HitObjectCompositionToolButton<GlobalAction>(new SelectTool(), toolSelected)
+            addToolButton(new HitObjectCompositionToolButton<GlobalAction>(new SelectTool(), toolSelected)
             {
                 Hotkey = new Hotkey(GlobalAction.EditorSelectTool)
             });
 
             foreach (var compositionTool in CompositionTools)
             {
-                toolboxCollection.AddButton(new HitObjectCompositionToolButton<TAction>(compositionTool, toolSelected)
+                addToolButton(new HitObjectCompositionToolButton<TAction>(compositionTool, toolSelected)
                 {
                     Hotkey = compositionTool.Action != null
                         ? HotkeyForAction(compositionTool.Action.Value)
                         : null,
                 });
+            }
+
+            void addToolButton(HitObjectCompositionToolButton button)
+            {
+                button.ShortcutEnabled.BindTo(ToolShortcutsEnabled);
+                toolboxCollection.AddButton(button);
             }
 
             togglesCollection.AddRange(CreateTernaryButtons().ToArray());
@@ -939,5 +945,46 @@ namespace osu.Game.Rulesets.Edit
         /// <param name="timestamp">The time instant to seek to, in milliseconds.</param>
         /// <param name="objectDescription">The ruleset-specific description of objects to select at the given timestamp.</param>
         public virtual void SelectFromTimestamp(double timestamp, string objectDescription) { }
+
+        /// <summary>
+        /// Whether the toolbox answers its shortcut keys.
+        /// </summary>
+        /// <remarks>
+        /// The tools sit on the number row, and so does anything else that offers a list to pick from by number.
+        /// Turning this off while such a list is open is what stops a digit reaching the tool behind it — and, since
+        /// nothing then takes the binding, what lets the plain key through to whatever is asking for it.
+        ///
+        /// Whoever turns it off puts it back: the buttons themselves stay clickable throughout.
+        /// </remarks>
+        public readonly BindableBool ToolShortcutsEnabled = new BindableBool(true);
+
+        /// <summary>
+        /// Whether a shape can be kept aside here and placed again later.
+        /// </summary>
+        /// <remarks>
+        /// A preset is laid down around a point on the playfield, which only a ruleset that positions its objects
+        /// has. One whose objects carry a time and a column has nothing to centre.
+        /// </remarks>
+        public virtual bool SupportsPlacementPresets => false;
+
+        /// <summary>
+        /// The point a preset's shape is centred on as it is placed.
+        /// </summary>
+        public virtual Vector2 PlacementPresetCentre => Vector2.Zero;
+
+        /// <summary>
+        /// How wide an object is here, for drawing a kept shape at the weight it will be placed at.
+        /// </summary>
+        public virtual float PlacementPresetObjectRadius => 0;
+
+        /// <summary>
+        /// Brings an object about to be placed in line with what a freshly drawn one would be given here.
+        /// </summary>
+        /// <remarks>
+        /// A preset carries its shape and nothing else about how it should read. Whatever the composer decides for
+        /// a new object — the velocity being the one that changes how long the shape lasts — is decided again here,
+        /// so that placing a preset and drawing the same shape by hand arrive at the same object.
+        /// </remarks>
+        public virtual void ApplyPlacementDefaults(HitObject hitObject) { }
     }
 }
