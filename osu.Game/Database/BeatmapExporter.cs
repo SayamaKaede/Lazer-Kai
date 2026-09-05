@@ -10,7 +10,7 @@ namespace osu.Game.Database
     /// Exporter for beatmap archives.
     /// This is not for legacy purposes and works for lazer only.
     /// </summary>
-    public class BeatmapExporter : LegacyArchiveExporter<BeatmapSetInfo>
+    public class BeatmapExporter : BeatmapSetExporter
     {
         public BeatmapExporter(Storage storage)
             : base(storage)

@@ -211,6 +211,11 @@ namespace osu.Game.Localisation
         public static LocalisableString MappingToolsPathDescription => new TranslatableString(getKey(@"mapping_tools_path_description"),
             @"Where Mapping Tools.exe is. Leave empty to use the usual install.");
 
+        /// <summary>
+        /// "Export"
+        /// </summary>
+        public static LocalisableString ExportHeader => new TranslatableString(getKey(@"export_header"), @"Export");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

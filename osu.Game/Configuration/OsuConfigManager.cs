@@ -244,6 +244,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorObjectOutlineColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorObjectOutlineThickness, 1f, 0.25f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorObjectOutlineOpacity, 1f, 0.1f, 1f, 0.01f);
+            SetDefault(OsuSetting.BeatmapExportFormat, BeatmapExportFormat.Stable);
             SetDefault(OsuSetting.EditorColourScheme, OverlayColourScheme.Aquamarine);
             SetDefault(OsuSetting.EditorSeekAnimationDuration, 300.0, 0.0, 300.0, 50.0);
             SetDefault(OsuSetting.EditorAlwaysExpandLeftToolbox, false);
@@ -1059,6 +1060,9 @@ namespace osu.Game.Configuration
 
         /// <summary>How solid that outline is drawn.</summary>
         EditorObjectOutlineOpacity,
+
+        /// <summary>Which format song select writes a beatmap out in.</summary>
+        BeatmapExportFormat,
 
 
     }

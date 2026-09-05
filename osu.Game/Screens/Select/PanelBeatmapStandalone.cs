@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
@@ -15,10 +16,13 @@ using osu.Framework.Localisation;
 using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
+using osu.Game.Configuration;
+using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osu.Game.Resources.Localisation.Web;
 using osu.Game.Rulesets;
@@ -72,6 +76,12 @@ namespace osu.Game.Screens.Select
         private Box backgroundBorder = null!;
 
         private BeatmapInfo beatmap => ((GroupedBeatmap)Item!.Model).Beatmap;
+
+        [Resolved]
+        private OsuConfigManager config { get; set; } = null!;
+
+        protected override void Export() => beatmaps.ExportBeatmapFile(beatmap, config.Get<BeatmapExportFormat>(OsuSetting.BeatmapExportFormat));
+
 
         public PanelBeatmapStandalone()
         {
@@ -327,6 +337,12 @@ namespace osu.Game.Screens.Select
 
                 if (songSelect != null)
                     items.AddRange(songSelect.GetForwardActions(beatmap));
+
+                items.Add(new OsuMenuItemSpacer());
+                items.Add(new OsuMenuItem(BeatmapExportStrings.ExportDifficulty, MenuItemType.Standard, Export)
+                {
+                    Icon = FontAwesome.Solid.FileExport
+                });
 
                 return items.ToArray();
             }

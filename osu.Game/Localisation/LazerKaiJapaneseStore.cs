@@ -169,6 +169,14 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:object_outline_colour"] = @"ノーツの枠の色",
             [$@"{editor_prefix}:object_outline_thickness"] = @"ノーツの枠の太さ",
             [$@"{editor_prefix}:object_outline_opacity"] = @"ノーツの枠の不透明度",
+
+            // export
+            [$@"{settings_prefix}:export_header"] = @"出力",
+            [$@"{export_prefix}:format"] = @"出力する形式",
+            [$@"{export_prefix}:format_stable"] = @"Stable向け（v14 / .osz）",
+            [$@"{export_prefix}:format_lazer"] = @"Lazer向け（変換しない / .olz）",
+            [$@"{export_prefix}:export_difficulty"] = @"この難易度を出力",
+            [$@"{export_prefix}:export_set"] = @"このセットを出力",
             [$@"{editor_prefix}:selection_handle_colour"] = @"8点ハンドルの色",
             [$@"{editor_prefix}:selection_handle_size"] = @"8点ハンドルの大きさ",
             [$@"{editor_prefix}:slider_anchor_size"] = @"スライダーアンカーの大きさ",
@@ -344,6 +352,7 @@ namespace osu.Game.Localisation
         private const string common_prefix = @"osu.Game.Resources.Localisation.Common";
         private const string profile_prefix = @"osu.Game.Resources.Localisation.LazerKaiProfile";
         private const string collab_prefix = @"osu.Game.Resources.Localisation.Collab";
+        private const string export_prefix = @"osu.Game.Resources.Localisation.BeatmapExport";
 
         public LazerKaiJapaneseStore(ILocalisationStore fallback)
         {

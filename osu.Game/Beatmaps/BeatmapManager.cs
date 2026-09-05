@@ -17,6 +17,7 @@ using osu.Framework.IO.Stores;
 using osu.Framework.Platform;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Beatmaps.Formats;
+using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Extensions;
 using osu.Game.IO.Archives;
@@ -514,6 +515,42 @@ namespace osu.Game.Beatmaps
             beatmapImporter.BeginExternalEditing(model);
 
         public Task Export(BeatmapSetInfo beatmapSet) => beatmapExporter.ExportAsync(beatmapSet.ToLive(Realm));
+
+        /// <summary>
+        /// Writes a whole set out in the format asked for, and says where it went.
+        /// </summary>
+        /// <remarks>
+        /// The set is looked up again rather than used as handed over. Song select's carousel holds detached
+        /// copies, and a copy carries no files -- exporting one wrote an archive with nothing in it.
+        /// </remarks>
+        public Task Export(BeatmapSetInfo beatmapSet, BeatmapExportFormat format)
+        {
+            var live = Realm.Run(r => r.Find<BeatmapSetInfo>(beatmapSet.ID)?.ToLive(Realm));
+
+            if (live == null)
+                return Task.CompletedTask;
+
+            return format == BeatmapExportFormat.Stable ? legacyBeatmapExporter.ExportAsync(live) : beatmapExporter.ExportAsync(live);
+        }
+
+        /// <summary>
+        /// Writes one difficulty out as a bare <c>.osu</c> in the format asked for, and says where it went.
+        /// </summary>
+        /// <remarks>
+        /// Looked up again for the same reason the set is: a detached copy cannot reach the file it was read from.
+        /// </remarks>
+        public void ExportBeatmapFile(BeatmapInfo beatmap, BeatmapExportFormat format)
+        {
+            BeatmapSetExporter exporter = format == BeatmapExportFormat.Stable ? legacyBeatmapExporter : beatmapExporter;
+
+            Realm.Run(r =>
+            {
+                var managed = r.Find<BeatmapInfo>(beatmap.ID);
+
+                if (managed != null)
+                    exporter.ExportBeatmapFileWithNotification(managed);
+            });
+        }
 
         public Task ExportLegacy(BeatmapSetInfo beatmapSet) => legacyBeatmapExporter.ExportAsync(beatmapSet.ToLive(Realm));
 

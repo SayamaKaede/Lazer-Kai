@@ -23,6 +23,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osuTK;
 using osuTK.Graphics;
+using osuTK.Input;
 
 namespace osu.Game.Screens.Select
 {
@@ -261,6 +262,31 @@ namespace osu.Game.Screens.Select
 
             // Important to set this to null to handle reuse scenarios correctly, see `Item` implementation.
             item = null;
+        }
+
+        /// <summary>
+        /// Writes out whatever this row stands for, if it stands for something that can be written out.
+        /// </summary>
+        /// <remarks>
+        /// Reached by shift-right-clicking the row. Right click on its own opens the menu, and the menu is a poor
+        /// fit for this: handing a difficulty to another program is done over and over while working, and every
+        /// time through a menu is two clicks and a read.
+        /// </remarks>
+        protected virtual void Export()
+        {
+        }
+
+        protected override bool OnMouseDown(MouseDownEvent e)
+        {
+            // handled here rather than left to the context menu, which opens on the same button. Taking the event
+            // is what stops the menu appearing over the top of an export that has already happened.
+            if (e.Button == MouseButton.Right && e.ShiftPressed && Item != null)
+            {
+                Export();
+                return true;
+            }
+
+            return base.OnMouseDown(e);
         }
 
         protected override bool OnClick(ClickEvent e)

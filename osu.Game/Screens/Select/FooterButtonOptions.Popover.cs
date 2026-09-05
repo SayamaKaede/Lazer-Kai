@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
@@ -46,7 +47,7 @@ namespace osu.Game.Screens.Select
             }
 
             [BackgroundDependencyLoader]
-            private void load(OsuColour colours)
+            private void load(OsuColour colours, BeatmapManager beatmaps, OsuConfigManager config)
             {
                 Content.Padding = new MarginPadding(5);
 
@@ -63,8 +64,12 @@ namespace osu.Game.Screens.Select
                 Debug.Assert(beatmap.BeatmapSet != null);
                 addHeader(SongSelectStrings.ForAllDifficulties, beatmap.BeatmapSet.ToString());
                 addButton(CommonStrings.DeleteWithConfirmation, FontAwesome.Solid.Trash, () => SongSelect?.Delete(beatmap.BeatmapSet), colours.Red1);
+                addButton(BeatmapExportStrings.ExportSet, FontAwesome.Solid.FileExport,
+                    () => beatmaps.Export(beatmap.BeatmapSet, config.Get<BeatmapExportFormat>(OsuSetting.BeatmapExportFormat)), numbered: false);
 
                 addHeader(SongSelectStrings.ForSelectedDifficulty, beatmap.DifficultyName);
+                addButton(BeatmapExportStrings.ExportDifficulty, FontAwesome.Solid.FileExport,
+                    () => beatmaps.ExportBeatmapFile(beatmap, config.Get<BeatmapExportFormat>(OsuSetting.BeatmapExportFormat)), numbered: false);
 
                 if (SongSelect == null) return;
 
@@ -125,11 +130,14 @@ namespace osu.Game.Screens.Select
                 buttonFlow.Add(textFlow);
             }
 
-            private void addButton(LocalisableString text, IconUsage? icon, Action? action, Color4? colour = null)
+            // `numbered` says whether a number key reaches this one. What each number does is decided by counting
+            // the buttons, so an addition that takes part shifts every button after it onto a different key.
+            private void addButton(LocalisableString text, IconUsage? icon, Action? action, Color4? colour = null, bool numbered = true)
             {
                 var button = new OptionButton
                 {
                     Text = text,
+                    Numbered = numbered,
                     Icon = icon ?? new IconUsage(),
                     BackgroundColour = ColourProvider.Background3,
                     TextColour = colour,
@@ -152,7 +160,7 @@ namespace osu.Game.Screens.Select
                 {
                     int requested = e.Key - Key.Number1;
 
-                    OptionButton? found = buttonFlow.Children.OfType<OptionButton>().ElementAtOrDefault(requested);
+                    OptionButton? found = buttonFlow.Children.OfType<OptionButton>().Where(b => b.Numbered).ElementAtOrDefault(requested);
 
                     if (found != null)
                     {
@@ -168,6 +176,9 @@ namespace osu.Game.Screens.Select
             {
                 public IconUsage Icon { get; init; }
                 public Color4? TextColour { get; init; }
+
+                /// <summary>Whether this one is counted when a number key is pressed.</summary>
+                public bool Numbered { get; init; } = true;
 
                 public OptionButton()
                 {

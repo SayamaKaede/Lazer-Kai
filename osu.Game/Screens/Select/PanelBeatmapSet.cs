@@ -18,6 +18,7 @@ using osu.Framework.Localisation;
 using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
+using osu.Game.Configuration;
 using osu.Game.Collections;
 using osu.Game.Database;
 using osu.Game.Graphics;
@@ -225,6 +226,11 @@ namespace osu.Game.Screens.Select
         [Resolved]
         private ManageCollectionsDialog? manageCollectionsDialog { get; set; }
 
+        [Resolved]
+        private OsuConfigManager config { get; set; } = null!;
+
+        protected override void Export() => beatmaps.Export(groupedBeatmapSet.BeatmapSet, config.Get<BeatmapExportFormat>(OsuSetting.BeatmapExportFormat));
+
         public override MenuItem[] ContextMenuItems
         {
             get
@@ -274,6 +280,11 @@ namespace osu.Game.Screens.Select
                     collectionItems.Add(new OsuMenuItem(CommonStrings.Manage, MenuItemType.Standard, manageCollectionsDialog.Show));
 
                 items.Add(new OsuMenuItem(CommonStrings.Collections) { Items = collectionItems });
+
+                items.Add(new OsuMenuItem(BeatmapExportStrings.ExportSet, MenuItemType.Standard, Export)
+                {
+                    Icon = FontAwesome.Solid.FileExport
+                });
 
                 if (beatmapSet.Beatmaps.Any(b => b.Hidden))
                     items.Add(new OsuMenuItem(SongSelectStrings.RestoreAllHidden, MenuItemType.Standard, () => songSelect?.RestoreAllHidden(beatmapSet)));

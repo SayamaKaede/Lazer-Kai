@@ -68,6 +68,7 @@ namespace osu.Game.Overlays.Settings.Sections
                 new EditorHitsoundSettings(),
                 new EditorInputSettings(),
                 new EditorOtherCustomisationSettings(),
+                new ExportSettings(),
             };
         }
     }

@@ -27,52 +27,11 @@ namespace osu.Game.Database
     /// Exporter for osu!stable legacy beatmap archives.
     /// Converts all beatmaps in the set to legacy format and exports it as a legacy package.
     /// </summary>
-    public class LegacyBeatmapExporter : LegacyArchiveExporter<BeatmapSetInfo>
+    public class LegacyBeatmapExporter : BeatmapSetExporter
     {
         public LegacyBeatmapExporter(Storage storage)
             : base(storage)
         {
-        }
-
-        /// <summary>
-        /// Opens the directory exports are written to.
-        /// </summary>
-        public void PresentExportedFiles() => ExportStorage.PresentExternally();
-
-        /// <summary>
-        /// Writes a single difficulty out as a bare <c>.osu</c> file, converted for stable, into the export directory.
-        /// </summary>
-        /// <remarks>
-        /// The archive exports carry a whole set. This is for handing one difficulty to a program that reads
-        /// <c>.osu</c> files directly.
-        /// </remarks>
-        /// <returns>The name of the file written.</returns>
-        public string ExportBeatmapFile(BeatmapInfo beatmapInfo)
-        {
-            var set = beatmapInfo.BeatmapSet;
-
-            if (set == null)
-                throw new InvalidOperationException("The beatmap is not part of a set, so its file cannot be located.");
-
-            var file = set.GetFile(beatmapInfo.Path ?? string.Empty);
-
-            if (file == null)
-                throw new InvalidOperationException("The beatmap has no stored file to convert. Save it first.");
-
-            using var contents = GetFileContents(set, file)
-                                 ?? throw new InvalidOperationException("The beatmap could not be converted for stable.");
-
-            string baseName = $"{beatmapInfo.Metadata.Artist} - {beatmapInfo.Metadata.Title} ({beatmapInfo.Metadata.Author.Username}) [{beatmapInfo.DifficultyName}]".GetValidFilename();
-
-            if (baseName.Length > MAX_FILENAME_LENGTH - 4)
-                baseName = baseName.Remove(MAX_FILENAME_LENGTH - 4);
-
-            string filename = NamingUtils.GetNextBestFilename(ExportStorage.GetFiles(string.Empty, $"{baseName}*.osu"), $"{baseName}.osu");
-
-            using (var output = ExportStorage.CreateFileSafely(filename))
-                contents.CopyTo(output);
-
-            return filename;
         }
 
         protected override Stream? GetFileContents(BeatmapSetInfo model, INamedFileUsage file)
