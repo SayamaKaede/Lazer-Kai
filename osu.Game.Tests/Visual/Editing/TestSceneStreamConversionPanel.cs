@@ -10,6 +10,7 @@ using osu.Framework.Testing;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Localisation;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
@@ -127,7 +128,7 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("the list is showing", () => panel().ChildrenOfType<FormEnumDropdown<StreamEasing>>().Single().Alpha, () => Is.EqualTo(1));
             AddAssert("the curve is not", () => editor().Alpha, () => Is.EqualTo(0));
 
-            AddStep("switch to drawing it", () => panel().ChildrenOfType<FormCheckBox>().First().Current.Value = true);
+            AddStep("switch to drawing it", () => drawTheCurve().Current.Value = true);
 
             AddUntilStep("the curve is showing", () => editor().Alpha, () => Is.EqualTo(1));
             AddAssert("the list is not", () => panel().ChildrenOfType<FormEnumDropdown<StreamEasing>>().Single().Alpha, () => Is.EqualTo(0));
@@ -153,10 +154,10 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddAssert("acceleration is showing", () => acceleration().Alpha, () => Is.EqualTo(1));
 
-            AddStep("switch to drawing it", () => panel().ChildrenOfType<FormCheckBox>().First().Current.Value = true);
+            AddStep("switch to drawing it", () => drawTheCurve().Current.Value = true);
             AddUntilStep("it went with the list", () => acceleration().Alpha, () => Is.EqualTo(0));
 
-            AddStep("switch back", () => panel().ChildrenOfType<FormCheckBox>().First().Current.Value = false);
+            AddStep("switch back", () => drawTheCurve().Current.Value = false);
             AddUntilStep("and came back with it", () => acceleration().Alpha, () => Is.EqualTo(1));
         }
 
@@ -232,7 +233,7 @@ namespace osu.Game.Tests.Visual.Editing
         public void TestAPointCanBeDraggedAcross()
         {
             open();
-            AddStep("switch to drawing it", () => panel().ChildrenOfType<FormCheckBox>().First().Current.Value = true);
+            AddStep("switch to drawing it", () => drawTheCurve().Current.Value = true);
             AddStep("put a point down", () => editor().Points.Add(new Vector2(0.3f, 0.3f)));
 
             AddUntilStep("its handle is there", () => editor().ChildrenOfType<CircularContainer>().Any(), () => Is.True);
@@ -354,6 +355,13 @@ namespace osu.Game.Tests.Visual.Editing
 
         private StreamConversionPanel panel() => Editor.ChildrenOfType<StreamConversionPanel>().Single();
 
+        /// <summary>
+        /// The box that swaps the easing list for a curve drawn by hand. Found by what it says rather than by
+        /// being first: it stopped being first the moment another box was added above it.
+        /// </summary>
+        private FormCheckBox drawTheCurve() =>
+            panel().ChildrenOfType<FormCheckBox>().Single(b => b.Caption == EditorStrings.StreamDrawTheCurve);
+
         private RoundedButton probe() => panel().ChildrenOfType<RoundedButton>().Single();
 
         private StreamCurveEditor editor() => panel().ChildrenOfType<StreamCurveEditor>().Single();
@@ -361,9 +369,10 @@ namespace osu.Game.Tests.Visual.Editing
         // the two float sliders are acceleration then the zigzag's reach, in that order down the panel.
         private FormSliderBar<float> acceleration() => panel().ChildrenOfType<FormSliderBar<float>>().First();
 
+        // the count is a whole-number slider too, and comes first. Zigzag's is the one at the end.
         private Drawable[] zigzagExtras() => new Drawable[]
         {
-            panel().ChildrenOfType<FormSliderBar<int>>().Single(),
+            panel().ChildrenOfType<FormSliderBar<int>>().Last(),
             panel().ChildrenOfType<FormEnumDropdown<ZigzagShape>>().Single(),
         };
 

@@ -545,6 +545,26 @@ namespace osu.Game.Localisation
         public static LocalisableString ConvertToStream => new TranslatableString(getKey(@"convert_to_stream"), @"Convert to stream");
 
         /// <summary>
+        /// "Count"
+        /// </summary>
+        public static LocalisableString StreamCount => new TranslatableString(getKey(@"stream_count"), @"Count");
+
+        /// <summary>
+        /// "Allow more than 16"
+        /// </summary>
+        public static LocalisableString StreamExtendedLimits => new TranslatableString(getKey(@"stream_extended_limits"), @"Allow more than 16");
+
+        /// <summary>
+        /// "New combo every"
+        /// </summary>
+        public static LocalisableString StreamNewComboEvery => new TranslatableString(getKey(@"stream_new_combo_every"), @"New combo every");
+
+        /// <summary>
+        /// "None"
+        /// </summary>
+        public static LocalisableString StreamNewComboNone => new TranslatableString(getKey(@"stream_new_combo_none"), @"None");
+
+        /// <summary>
         /// "Acceleration"
         /// </summary>
         public static LocalisableString StreamAcceleration => new TranslatableString(getKey(@"stream_acceleration"), @"Acceleration");

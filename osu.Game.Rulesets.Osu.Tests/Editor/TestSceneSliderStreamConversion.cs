@@ -24,15 +24,13 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
     /// </summary>
     /// <remarks>
     /// The shortcut opens the panel and shows what the slider would become; nothing is settled until the conversion
-    /// is taken. Until then there is nothing on the undo stack, and the division being built on is the panel's own
-    /// rather than the editor's snap -- reaching for a different stream should not move every other snap in the
-    /// beatmap.
+    /// is taken. Until then there is nothing on the undo stack. The division starts from the editor's, since that is
+    /// what the hand is already playing to, but moving it here moves only the panel's -- reaching for a different
+    /// stream should not move every other snap in the beatmap.
     /// </remarks>
     public partial class TestSceneSliderStreamConversion : TestSceneOsuEditor
     {
-        private StreamConversionPanel panel => Editor.ChildrenOfType<StreamConversionPanel>().Single();
-
-        /// <summary>The division the panel is building on, which is not the editor's.</summary>
+        /// <summary>The division the panel is building on, which is its own once it has opened.</summary>
         private BindableBeatDivisor beatDivisor => (BindableBeatDivisor)panel.Dependencies.Get(typeof(BindableBeatDivisor));
 
         [Test]
@@ -67,9 +65,9 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                 EditorClock.Seek(slider.StartTime);
                 EditorBeatmap.SelectedHitObjects.Add(slider);
             });
+            convertToStream();
             AddStep("change beat divisor", () => beatDivisor.Value = 8);
 
-            convertToStream();
             AddAssert("stream created", () => streamCreatedFor(slider,
                 (time: 0, pathPosition: 0),
                 (time: 0.125, pathPosition: 0.125),
@@ -80,6 +78,47 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                 (time: 0.75, pathPosition: 0.75),
                 (time: 0.875, pathPosition: 0.875),
                 (time: 1, pathPosition: 1)));
+        }
+
+        /// <summary>
+        /// The count says how many circles to lay down. The division goes on saying how far apart they are, so
+        /// asking for more carries the stream past the end of the slider rather than packing them in tighter.
+        /// </summary>
+        [Test]
+        public void TestTheCountFitsMoreInThanTheDivisionDoes()
+        {
+            Slider slider = null;
+
+            AddStep("select first slider", () =>
+            {
+                slider = (Slider)EditorBeatmap.HitObjects.First(h => h is Slider);
+                EditorClock.Seek(slider.StartTime);
+                EditorBeatmap.SelectedHitObjects.Add(slider);
+            });
+
+            convertToStream();
+
+            AddAssert("the division gives five", () => streamCreatedFor(slider,
+                (time: 0, pathPosition: 0),
+                (time: 0.25, pathPosition: 0.25),
+                (time: 0.5, pathPosition: 0.5),
+                (time: 0.75, pathPosition: 0.75),
+                (time: 1, pathPosition: 1)));
+
+            AddStep("ask for nine", () => panel.NoteCount.Value = 9);
+
+            // still a quarter apart -- the four extra land after the slider has finished, and the path is still
+            // covered end to end because that is what the positions are spread over.
+            AddAssert("nine of them, a quarter apart", () => streamCreatedFor(slider,
+                (time: 0, pathPosition: 0),
+                (time: 0.25, pathPosition: 0.125),
+                (time: 0.5, pathPosition: 0.25),
+                (time: 1, pathPosition: 0.5),
+                (time: 1.5, pathPosition: 0.75),
+                (time: 2, pathPosition: 1)));
+
+            AddStep("move the panel's division", () => panel.Divisor.Value = 8);
+            AddAssert("the count follows it again", () => panel.NoteCount.Value, () => Is.EqualTo(9));
         }
 
         [Test]
@@ -93,13 +132,13 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                 EditorClock.Seek(slider.StartTime);
                 EditorBeatmap.SelectedHitObjects.Add(slider);
             });
+            convertToStream();
+
             AddStep("change beat divisor", () =>
             {
                 beatDivisor.ValidDivisors.Value = BeatDivisorPresetCollection.TRIPLETS;
                 beatDivisor.Value = 3;
             });
-
-            convertToStream();
 
             // the division does not divide this slider evenly, so the last circle lands short of its end in time.
             // The stream still covers the whole shape: the positions are spread from one end of the path to the
@@ -164,6 +203,8 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             => AddStep("take the conversion", () => panel.ChildrenOfType<RoundedButton>()
                                                         .Single(b => b.Text.Equals(EditorStrings.ConvertToStream))
                                                         .TriggerClick());
+
+        private StreamConversionPanel panel => Editor.ChildrenOfType<StreamConversionPanel>().Single();
 
         private void convertToStream()
         {

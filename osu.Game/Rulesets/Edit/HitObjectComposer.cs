@@ -905,6 +905,15 @@ namespace osu.Game.Rulesets.Edit
         /// </summary>
         public abstract Playfield Playfield { get; }
 
+        /// <summary>
+        /// Keeps an object drawn whatever the current time is, or stops doing so.
+        /// </summary>
+        /// <remarks>
+        /// Offered here because the playfield's own way of saying this is not reachable from a ruleset. A preview
+        /// that runs past the moment being looked at is no use if only the part near the playhead is drawn.
+        /// </remarks>
+        public void KeepAlive(HitObject hitObject, bool keepAlive) => Playfield.SetKeepAlive(hitObject, keepAlive);
+
         public abstract ComposeBlueprintContainer BlueprintContainer { get; }
 
         /// <summary>
