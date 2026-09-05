@@ -562,7 +562,7 @@ namespace osu.Game.Screens.Edit
                                             new OsuMenuItemSpacer(),
                                             insertBreakMenuItem = new EditorMenuItem(EditorStrings.InsertBreak, MenuItemType.Standard, insertBreak),
                                             new OsuMenuItemSpacer(),
-                                            new EditorMenuItem(ComboColourStudioStrings.ComboColourStudio, MenuItemType.Standard, () => comboColourStudio?.ToggleVisibility()),
+                                            new EditorMenuItem(ComboColourStudioStrings.MenuItem, MenuItemType.Standard, () => comboColourStudio?.ToggleVisibility()),
                                             new EditorMenuItem(CollabStrings.MenuItem, MenuItemType.Standard, () => collab?.ToggleVisibility()),
                                             placementPresetsMenuItem = new EditorMenuItem(PlacementPresetStrings.MenuItem, MenuItemType.Standard, () => placementPresets?.ToggleVisibility())
                                             {

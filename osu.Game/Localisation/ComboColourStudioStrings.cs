@@ -15,6 +15,15 @@ namespace osu.Game.Localisation
         public static LocalisableString ComboColourStudio => new TranslatableString(getKey(@"combo_colour_studio"), @"Combo colour studio");
 
         /// <summary>
+        /// "Combo colour studio..."
+        /// </summary>
+        /// <remarks>
+        /// Kept apart from the heading above so the ellipsis, which says the entry opens something rather than doing
+        /// it, stays out of the panel's own title.
+        /// </remarks>
+        public static LocalisableString MenuItem => new TranslatableString(getKey(@"menu_item"), @"Combo colour studio...");
+
+        /// <summary>
         /// "No colour points yet"
         /// </summary>
         public static LocalisableString NoPointsYet => new TranslatableString(getKey(@"no_points_yet"), @"No colour points yet");

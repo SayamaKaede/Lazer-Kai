@@ -11,6 +11,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Platform;
 using osu.Game.Graphics;
@@ -18,6 +19,7 @@ using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Input.Bindings;
 using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Dialog;
@@ -35,7 +37,7 @@ namespace osu.Game.Screens.Edit.ComboColours
     /// rather than on a file. Deliberately not modal: a layout is built by listening to the song and watching the
     /// playfield, so the editor has to stay usable while this is open.
     /// </remarks>
-    public partial class ComboColourStudioOverlay : VisibilityContainer
+    public partial class ComboColourStudioOverlay : VisibilityContainer, IKeyBindingHandler<GlobalAction>
     {
         public const float WIDTH = 460;
 
@@ -135,7 +137,7 @@ namespace osu.Game.Screens.Edit.ComboColours
             };
         }
 
-        private Drawable createHeader() => new Container
+        private Drawable createHeader() => new HeaderBar(() => this)
         {
             RelativeSizeAxes = Axes.X,
             Height = 40,
@@ -337,6 +339,42 @@ namespace osu.Game.Screens.Edit.ComboColours
         protected override void PopIn() => this.FadeIn(200, Easing.OutQuint);
 
         protected override void PopOut() => this.FadeOut(200, Easing.OutQuint);
+
+        /// <summary>
+        /// Escape closes the panel rather than leaving the editor.
+        /// </summary>
+        public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
+        {
+            if (e.Action != GlobalAction.Back || State.Value != Visibility.Visible)
+                return false;
+
+            Hide();
+            return true;
+        }
+
+        public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
+        {
+        }
+
+        /// <summary>
+        /// The bar along the top: dragging it moves the panel.
+        /// </summary>
+        /// <remarks>
+        /// The panel covers part of the playfield, and what a layout is being built against is what is underneath it.
+        /// </remarks>
+        private partial class HeaderBar : Container
+        {
+            private readonly Func<Drawable> panel;
+
+            public HeaderBar(Func<Drawable> panel)
+            {
+                this.panel = panel;
+            }
+
+            protected override bool OnDragStart(DragStartEvent e) => true;
+
+            protected override void OnDrag(DragEvent e) => panel().Position += e.Delta;
+        }
 
         public partial class ApplyConfirmationDialog : PopupDialog
         {

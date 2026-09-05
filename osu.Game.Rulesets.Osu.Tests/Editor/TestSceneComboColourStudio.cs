@@ -13,6 +13,8 @@ using osu.Game.Localisation;
 using osu.Game.Screens.Edit.ComboColours;
 using osu.Game.Screens.Edit.Components.Menus;
 using osu.Game.Tests.Beatmaps;
+using osuTK;
+using osuTK.Input;
 
 namespace osu.Game.Rulesets.Osu.Tests.Editor
 {
@@ -77,10 +79,54 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             }, () => Is.False);
         }
 
+        /// <summary>
+        /// The bar along the top moves the panel, the way the other two panels the edit menu opens do. The panel
+        /// covers part of the playfield, and what a layout is being built against is what is underneath it.
+        /// </summary>
+        [Test]
+        public void TestTheHeaderMovesThePanel()
+        {
+            Vector2 startPosition = default;
+            Vector2 grabPoint = default;
+
+            AddStep("open it from the edit menu", openFromMenu);
+            AddUntilStep("shown", () => panel().State.Value, () => Is.EqualTo(Visibility.Visible));
+
+            AddStep("grab the header", () =>
+            {
+                startPosition = panel().Position;
+                grabPoint = panel().ToScreenSpace(new Vector2(panel().DrawWidth / 2, 20));
+                InputManager.MoveMouseTo(grabPoint);
+                InputManager.PressButton(MouseButton.Left);
+            });
+
+            AddStep("drag it", () => InputManager.MoveMouseTo(grabPoint + new Vector2(60, 40)));
+            AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
+
+            AddAssert("the panel moved", () => panel().Position, () => Is.Not.EqualTo(startPosition));
+        }
+
+        /// <summary>
+        /// Escape closes the panel rather than leaving the editor, the way it does on the other two.
+        /// </summary>
+        [Test]
+        public void TestEscapeClosesThePanel()
+        {
+            AddStep("open it from the edit menu", openFromMenu);
+            AddUntilStep("shown", () => panel().State.Value, () => Is.EqualTo(Visibility.Visible));
+
+            AddStep("press escape", () => InputManager.Key(Key.Escape));
+
+            AddUntilStep("closed", () => panel().State.Value, () => Is.EqualTo(Visibility.Hidden));
+
+            // escape leaves the editor when nothing has taken it, so this also says the panel took it.
+            AddAssert("and the editor is still open", () => Editor.ChildrenOfType<ComboColourStudioOverlay>().Any(), () => Is.True);
+        }
+
         private void openFromMenu()
             => Editor.ChildrenOfType<EditorMenuBar>().Single()
                      .Items.Single(i => i.Text.Value.Equals(CommonStrings.MenuBarEdit))
-                     .Items.Single(i => i.Text.Value.Equals(ComboColourStudioStrings.ComboColourStudio))
+                     .Items.Single(i => i.Text.Value.Equals(ComboColourStudioStrings.MenuItem))
                      .Action.Value?.Invoke();
 
         private int rowCount() => panel().Points.Count;
