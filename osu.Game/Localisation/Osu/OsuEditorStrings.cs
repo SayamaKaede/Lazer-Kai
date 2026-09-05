@@ -30,6 +30,11 @@ namespace osu.Game.Localisation.Osu
         public static LocalisableString GridFromPointsTool => new TranslatableString(getKey(@"grid_from_points_tool"), @"Grid");
 
         /// <summary>
+        /// "Streams"
+        /// </summary>
+        public static LocalisableString StreamTool => new TranslatableString(getKey(@"stream_tool"), @"Streams");
+
+        /// <summary>
         /// "Toggle position snap grid"
         /// </summary>
         public static LocalisableString ToggleGridSnap => new TranslatableString(getKey(@"toggle_grid_snap"), @"Toggle position snap grid");

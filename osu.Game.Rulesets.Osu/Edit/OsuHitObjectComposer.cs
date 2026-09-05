@@ -113,7 +113,8 @@ namespace osu.Game.Rulesets.Osu.Edit
             new HitCircleCompositionTool(),
             new SliderCompositionTool(),
             new SpinnerCompositionTool(),
-            gridFromPointsTool
+            gridFromPointsTool,
+            new StreamCompositionTool()
         };
 
         private readonly Bindable<bool> hideGridFromPointsTool = new Bindable<bool>();
@@ -180,6 +181,9 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             AddInternal(DistanceSnapProvider);
             AddInternal(StreamConversionPanel);
+
+            // in the playfield's own space, above everything else there, so the anchors sit where the shape is.
+            PlayfieldContentContainer.Add(DrawableRuleset.CreatePlayfieldAdjustmentContainer().WithChild(new StreamShapeEditor()));
             DistanceSnapProvider.AttachToToolbox(RightToolbox);
 
             // Give a bit of breathing room around the playfield content.
