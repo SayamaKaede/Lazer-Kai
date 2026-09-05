@@ -47,6 +47,18 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         }
 
         /// <summary>
+        /// The list is a file on disk, so it can come back damaged or edited by hand. One entry nobody can read is
+        /// not worth taking the whole list down with.
+        /// </summary>
+        [Test]
+        public void TestAPresetThatCannotBeReadComesBackEmpty()
+        {
+            var damaged = new PlacementPreset { Content = @"{ this is not what was written }" };
+
+            Assert.That(damaged.GetObjects(), Is.Empty);
+        }
+
+        /// <summary>
         /// A slider's position is its head, so the area it covers is nowhere near centred on that point. Centring on
         /// the head would put most of a curve off to one side of where it was asked for.
         /// </summary>

@@ -1,7 +1,9 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
+using osu.Framework.Logging;
 using osu.Game.IO.Serialization;
 using osu.Game.Rulesets.Objects;
 
@@ -38,12 +40,25 @@ namespace osu.Game.Screens.Edit.Presets
         /// <summary>
         /// Reads the objects back out, or an empty list if this preset cannot be read.
         /// </summary>
+        /// <remarks>
+        /// A preset that cannot be read is skipped rather than raised: the file is on disk where it can be edited
+        /// by hand, and one unreadable entry is not worth taking the whole list down with it. The same reasoning
+        /// the store reads the file itself with.
+        /// </remarks>
         public IList<HitObject> GetObjects()
         {
             if (string.IsNullOrEmpty(Content))
                 return new List<HitObject>();
 
-            return Content.Deserialize<ClipboardContent>().HitObjects ?? new List<HitObject>();
+            try
+            {
+                return Content.Deserialize<ClipboardContent>().HitObjects ?? new List<HitObject>();
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Could not read a placement preset");
+                return new List<HitObject>();
+            }
         }
 
         /// <summary>
