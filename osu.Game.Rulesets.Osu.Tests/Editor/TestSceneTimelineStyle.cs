@@ -9,6 +9,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Game.Configuration;
+using osu.Game.Graphics;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Objects;
@@ -289,6 +290,42 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             InputManager.PressButton(MouseButton.Left);
             InputManager.MoveMouseTo(new Vector2(area.Centre.X - area.Width * 0.2f, aboveTheObjects));
             InputManager.ReleaseButton(MouseButton.Left);
+        }
+
+        /// <summary>
+        /// A spinner is nobody's combo colour, and stable's timeline leaves it out of them. So does this fork's
+        /// layout: only upstream's own layout gives a spinner a combo colour.
+        /// </summary>
+        [Test]
+        public void TestOnlyUpstreamsLayoutColoursASpinner()
+        {
+            AddStep("lay down a spinner", () =>
+            {
+                EditorBeatmap.Clear();
+                EditorBeatmap.Add(new Spinner { StartTime = 1000, Duration = 1000 });
+            });
+
+            AddStep("use the lazer layout", () => setStyle(EditorTimelineStyle.Lazer));
+            AddUntilStep("it takes a combo colour", () => spinnerIsGrey(), () => Is.False);
+
+            AddStep("use the stable layout", () => setStyle(EditorTimelineStyle.Stable));
+            AddUntilStep("it is grey", () => spinnerIsGrey(), () => Is.True);
+
+            AddStep("use the Lazer-Kai layout", () => setStyle(EditorTimelineStyle.LazerKai));
+            AddUntilStep("it is grey there too", () => spinnerIsGrey(), () => Is.True);
+        }
+
+        /// <summary>
+        /// The left of the object's bar: a spinner runs for a while, so the bar is a gradient away from the colour
+        /// it was given, and that colour is the end it starts at.
+        /// </summary>
+        private bool spinnerIsGrey()
+        {
+            var circle = objects().Single().ChildrenOfType<TimelineHitObjectBlueprint.ExtendableCircle>().First();
+
+            return Precision.AlmostEquals(circle.Colour.TopLeft.SRGB.R, OsuColour.Gray(0.6f).R, 0.01f)
+                   && Precision.AlmostEquals(circle.Colour.TopLeft.SRGB.G, OsuColour.Gray(0.6f).G, 0.01f)
+                   && Precision.AlmostEquals(circle.Colour.TopLeft.SRGB.B, OsuColour.Gray(0.6f).B, 0.01f);
         }
 
         private Timeline timeline() => Editor.ChildrenOfType<Timeline>().Single();

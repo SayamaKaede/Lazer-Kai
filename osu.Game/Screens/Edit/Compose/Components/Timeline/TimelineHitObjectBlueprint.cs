@@ -481,9 +481,10 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                     colour = displayColour.DisplayColour.Value;
                     break;
 
-                // stable's timeline leaves a spinner out of the combo colours, so the style that is stable's leaves
-                // it out too. It reads as what it is either way: there is only ever one of them at a time.
-                case IHasComboInformation when isSpinner && timelineStyle.Value == EditorTimelineStyle.Stable:
+                // stable's timeline leaves a spinner out of the combo colours, and so does this fork's layout: only
+                // upstream's own layout colours one. It reads as what it is either way -- there is only ever one of
+                // them at a time -- and the colour is better spent on the notes around it.
+                case IHasComboInformation when isSpinner && timelineStyle.Value != EditorTimelineStyle.Lazer:
                     colour = spinner_grey;
                     break;
 
