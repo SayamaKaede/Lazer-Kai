@@ -13,6 +13,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Collab;
 using osu.Game.Screens.Edit.Components.Menus;
 using osu.Game.Screens.Edit.Components.Timelines.Summary;
@@ -231,6 +232,23 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddStep("open the panel again", openFromMenu);
             AddStep("stop asking", () => overlay().ChildrenOfType<OsuCheckbox>().Single().Current.Value = false);
             AddUntilStep("the light went out", () => followingBand(), () => Is.Zero);
+        }
+
+        /// <summary>
+        /// The panel is read against the beatmap being composed, and it blocks whatever it covers. Left open on the
+        /// design or timing screen it takes their controls with it.
+        /// </summary>
+        [Test]
+        public void TestThePanelClosesWhenAnotherScreenIsOpened()
+        {
+            AddStep("open the panel", openFromMenu);
+            AddUntilStep("shown", () => overlay().State.Value, () => Is.EqualTo(Visibility.Visible));
+
+            AddStep("go to the timing screen", () => Editor.Mode.Value = EditorScreenMode.Timing);
+            AddUntilStep("closed", () => overlay().State.Value, () => Is.EqualTo(Visibility.Hidden));
+
+            AddStep("go back to compose", () => Editor.Mode.Value = EditorScreenMode.Compose);
+            AddAssert("and stays closed until asked for again", () => overlay().State.Value, () => Is.EqualTo(Visibility.Hidden));
         }
 
         private float followingBand() => Editor.ChildrenOfType<CollabPlayheadPart>().Single().ChildrenOfType<Box>().Single().Alpha;

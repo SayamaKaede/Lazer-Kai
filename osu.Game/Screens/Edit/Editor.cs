@@ -1778,9 +1778,16 @@ namespace osu.Game.Screens.Edit
             // opened. Without this, flashlight would go on covering the design and timing screens too.
             ModOverlays.Alpha = e.NewValue == EditorScreenMode.Compose ? 1 : 0;
 
-            // a preset goes into the playfield, so the list has nothing to put anywhere on the other screens.
+            // the panels the menus open are read against the beatmap being composed, and they sit above whatever
+            // screen is showing while blocking the clicks that land on them. Left open, they cover the design and
+            // timing screens and take the controls underneath with them.
             if (e.NewValue != EditorScreenMode.Compose)
+            {
                 placementPresets?.Hide();
+                comboColourStudio?.Hide();
+                collab?.Hide();
+                difficultyGraphDetail?.Hide();
+            }
 
             var lastScreen = currentScreen;
 

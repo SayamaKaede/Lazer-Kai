@@ -10,6 +10,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
+using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.ComboColours;
 using osu.Game.Screens.Edit.Components.Menus;
 using osu.Game.Tests.Beatmaps;
@@ -121,6 +122,23 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
             // escape leaves the editor when nothing has taken it, so this also says the panel took it.
             AddAssert("and the editor is still open", () => Editor.ChildrenOfType<ComboColourStudioOverlay>().Any(), () => Is.True);
+        }
+
+        /// <summary>
+        /// The panel is read against the beatmap being composed, and it blocks whatever it covers. Left open on the
+        /// design or timing screen it takes their controls with it.
+        /// </summary>
+        [Test]
+        public void TestThePanelClosesWhenAnotherScreenIsOpened()
+        {
+            AddStep("open it from the edit menu", openFromMenu);
+            AddUntilStep("shown", () => panel().State.Value, () => Is.EqualTo(Visibility.Visible));
+
+            AddStep("go to the timing screen", () => Editor.Mode.Value = EditorScreenMode.Timing);
+            AddUntilStep("closed", () => panel().State.Value, () => Is.EqualTo(Visibility.Hidden));
+
+            AddStep("go back to compose", () => Editor.Mode.Value = EditorScreenMode.Compose);
+            AddAssert("and stays closed until asked for again", () => panel().State.Value, () => Is.EqualTo(Visibility.Hidden));
         }
 
         private void openFromMenu()
