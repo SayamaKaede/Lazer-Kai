@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using osu.Framework.Graphics;
 using osu.Framework.Utils;
 using osu.Game.Rulesets.Objects;
@@ -31,6 +32,109 @@ namespace osu.Game.Rulesets.Osu.Edit
         public readonly record struct Note(double Time, Vector2 Position);
 
         /// <summary>
+        /// What one stretch of a stream is told to do. A shape that turns a corner is laid down a stretch at a
+        /// time, so that a circle lands on the corner itself rather than the run stepping over it.
+        /// </summary>
+        public record struct Stretch
+        {
+            /// <summary>
+            /// How many circles this stretch holds, counting the ones on the anchors at both of its ends. The
+            /// circle on a corner belongs to the stretches either side of it and is only laid down once, so a
+            /// shape's total is one fewer than these add up to for every corner it turns.
+            /// </summary>
+            public int Count { get; set; }
+
+            public double Acceleration { get; set; }
+
+            public StreamEasing Easing { get; set; }
+
+            public float Zigzag { get; set; }
+
+            public int ZigzagPeriod { get; set; }
+
+            public ZigzagShape ZigzagShape { get; set; }
+
+            public Stretch(int count)
+            {
+                Count = count;
+                Acceleration = 1;
+                Easing = StreamEasing.None;
+                Zigzag = 0;
+                ZigzagPeriod = 1;
+                ZigzagShape = ZigzagShape.Even;
+            }
+        }
+
+        /// <summary>
+        /// Where the shape turns a corner, as progress along it. A corner is a red anchor: the point where one
+        /// segment of the path ends and the next begins.
+        /// </summary>
+        /// <remarks>
+        /// The end of the path is not one of these. What comes back is only the corners in between, oldest first.
+        /// </remarks>
+        public static IReadOnlyList<double> CornersOf(Slider slider)
+        {
+            var corners = slider.Path.GetSegmentEnds().ToList();
+
+            // the last one is the end of the path rather than a corner, and anything at or past the end is not a
+            // corner either -- a path told it is longer than it is reports those.
+            return corners.Take(Math.Max(corners.Count - 1, 0))
+                          .Where(c => c > 0.001 && c < 0.999)
+                          .ToList();
+        }
+
+        /// <summary>
+        /// The circles a slider becomes, laid down a stretch at a time.
+        /// </summary>
+        /// <remarks>
+        /// Each stretch runs from one corner to the next and puts a circle on both, so the corner itself is played
+        /// rather than stepped over. The stretch after it starts from that same circle rather than adding another.
+        ///
+        /// The times are the beat throughout: one circle every <paramref name="spacing"/>, however the stretches
+        /// divide the shape up.
+        /// </remarks>
+        public static IReadOnlyList<Note> PlanStretches(Slider slider, double spacing, IReadOnlyList<Stretch> stretches,
+                                                        Func<double, double>? curve = null)
+        {
+            var notes = new List<Note>();
+
+            if (spacing <= 0 || stretches.Count == 0)
+                return notes;
+
+            var corners = CornersOf(slider);
+            double from = 0;
+
+            for (int s = 0; s < stretches.Count; s++)
+            {
+                var stretch = stretches[s];
+                double to = s < corners.Count ? corners[s] : 1;
+
+                // the first circle of a stretch is the last of the one before it, already laid down.
+                int first = s == 0 ? 0 : 1;
+
+                for (int i = first; i < stretch.Count; i++)
+                {
+                    double within = stretch.Count > 1 ? (double)i / (stretch.Count - 1) : 0;
+
+                    float amplitude = stretch.Zigzag * Reach(stretch.ZigzagShape, within);
+
+                    double along = curve != null
+                        ? Math.Clamp(curve(Math.Clamp(within, 0, 1)), 0, 1)
+                        : Warp(within, stretch.Acceleration, stretch.Easing.ToEasing());
+
+                    double progress = from + (to - from) * along;
+
+                    notes.Add(new Note(slider.StartTime + notes.Count * spacing,
+                        PositionAt(slider, progress, notes.Count, amplitude, stretch.ZigzagPeriod)));
+                }
+
+                from = to;
+            }
+
+            return notes;
+        }
+
+        /// <summary>
         /// The circles a slider becomes.
         /// </summary>
         /// <param name="slider">The slider being replaced.</param>
@@ -49,21 +153,25 @@ namespace osu.Game.Rulesets.Osu.Edit
         /// one or the other rather than both, since two curves over the same thing is a puzzle rather than a
         /// setting.
         /// </param>
+        /// <param name="noteCount">
+        /// How many circles to lay down, in place of however many the division fits. The spacing is untouched, so
+        /// asking for more carries the stream on past the end of the slider at the same rate rather than packing
+        /// them in tighter -- the division is what the hand is playing to, and that should not change underneath.
+        /// The positions still run from one end of the path to the other.
+        /// </param>
         public static IReadOnlyList<Note> Plan(Slider slider, double spacing, double acceleration = 1,
                                                Easing easing = Easing.None, float zigzag = 0, int zigzagPeriod = 1,
-                                               ZigzagShape zigzagShape = ZigzagShape.Even, Func<double, double>? curve = null)
+                                               ZigzagShape zigzagShape = ZigzagShape.Even, Func<double, double>? curve = null,
+                                               int? noteCount = null)
         {
             var notes = new List<Note>();
+
+            int count;
 
             if (spacing <= 0)
                 return notes;
 
-            int count = 0;
-
-            // the same reckoning the game's own conversion uses: a circle every division for as long as the
-            // slider lasts, the last one landing on its end when it divides evenly.
-            for (double time = slider.StartTime; !Precision.DefinitelyBigger(time, slider.GetEndTime(), 1); time += spacing)
-                count++;
+            count = noteCount is int asked && asked > 1 ? asked : CountFor(slider, spacing);
 
             for (int i = 0; i < count; i++)
             {
@@ -80,6 +188,23 @@ namespace osu.Game.Rulesets.Osu.Edit
             }
 
             return notes;
+        }
+
+        /// <summary>
+        /// How many circles a division puts on a slider: one every division for as long as the slider lasts, the
+        /// last landing on its end when it divides evenly. The same reckoning the game's own conversion uses.
+        /// </summary>
+        public static int CountFor(Slider slider, double spacing)
+        {
+            double duration = slider.GetEndTime() - slider.StartTime;
+
+            // worked out rather than counted a step at a time. A slider whose velocity has not been applied yet has
+            // no length in time, and walking towards an end that never arrives does not come back.
+            if (spacing <= 0 || !double.IsFinite(duration) || duration < 0)
+                return 0;
+
+            // a millisecond of slack, so a division that all but divides evenly still reaches the end.
+            return (int)Math.Floor((duration + 1) / spacing) + 1;
         }
 
         /// <summary>
