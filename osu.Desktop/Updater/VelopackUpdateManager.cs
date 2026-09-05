@@ -5,9 +5,11 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using osu.Framework.Allocation;
+using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Framework.Threading;
 using osu.Game;
+using osu.Game.Configuration;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Screens.Play;
@@ -42,6 +44,11 @@ namespace osu.Desktop.Updater
         /// The release stream setting has no part here — there is one stream.
         /// </remarks>
         private static IUpdateSource CreateSource() => new GithubSource(@"https://github.com/SayamaKaede/Lazer-Kai-Releases", null, false);
+
+        public override osu.Game.Configuration.ReleaseStream? FixedReleaseStream => osu.Game.Configuration.ReleaseStream.LazerKai;
+
+        // there is nowhere else to get a build of this from, so there is nothing to point at.
+        public override LocalisableString? FixedReleaseStreamNote => null;
 
         /// <summary>
         /// The folder a packaged build lives in, which is the one above the versioned folder the executable sits in.

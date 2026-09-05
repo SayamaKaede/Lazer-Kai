@@ -66,7 +66,10 @@ namespace osu.Game.Overlays.Settings.Sections.General
                     configReleaseStream.Value = updateManager.FixedReleaseStream.Value;
 
                     releaseStreamDropdown.Items = [updateManager.FixedReleaseStream.Value];
-                    releaseStreamDropdownNote.Value = new SettingsNote.Data(GeneralSettingsStrings.ChangeReleaseStreamPackageManagerWarning, SettingsNote.Type.Informational);
+
+                    releaseStreamDropdownNote.Value = updateManager.FixedReleaseStreamNote is LocalisableString note
+                        ? new SettingsNote.Data(note, SettingsNote.Type.Informational)
+                        : null;
                     releaseStreamDropdown.Current.Disabled = true;
                 }
                 else

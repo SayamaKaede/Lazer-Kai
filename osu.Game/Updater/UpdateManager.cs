@@ -5,6 +5,7 @@ using System;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using osu.Framework.Localisation;
 using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -36,6 +37,11 @@ namespace osu.Game.Updater
                                          GetType() != typeof(UpdateManager);
 
         public virtual ReleaseStream? FixedReleaseStream => null;
+
+        /// <summary>
+        /// What to say about a stream that cannot be changed here, or null to say nothing.
+        /// </summary>
+        public virtual LocalisableString? FixedReleaseStreamNote => GeneralSettingsStrings.ChangeReleaseStreamPackageManagerWarning;
 
         [Resolved]
         private OsuConfigManager config { get; set; } = null!;

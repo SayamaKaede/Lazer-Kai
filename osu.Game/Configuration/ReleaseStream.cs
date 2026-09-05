@@ -10,6 +10,13 @@ namespace osu.Game.Configuration
         Lazer,
 
         [Description("Tachyon (Unstable)")]
-        Tachyon
+        Tachyon,
+
+        /// <summary>
+        /// The only one this fork has. Its releases come from one place, so offering a choice would be naming
+        /// streams that do not exist.
+        /// </summary>
+        [Description("Lazer-Kai")]
+        LazerKai
     }
 }
