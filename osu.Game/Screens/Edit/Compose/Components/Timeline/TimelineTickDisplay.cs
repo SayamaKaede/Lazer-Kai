@@ -51,6 +51,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         /// </summary>
         private const float stable_tick_extent = 0.1f;
 
+        /// <summary>
+        /// How much longer the mark at the start of a bar is drawn than the beats between them.
+        /// </summary>
+        /// <remarks>
+        /// Settled by eye against a real beatmap rather than worked out (2026-09-05).
+        /// </remarks>
+        private const float bar_tick_scale = 1.5f;
+
         private readonly Cached tickCache = new Cached();
 
         [BackgroundDependencyLoader]
@@ -157,12 +165,17 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
                         if (alongTheEdges)
                         {
-                            addLine(xPos, size, colour, Anchor.BottomLeft, Anchor.BottomCentre, size.Y * stable_tick_extent);
+                            // the start of a bar reaches further than the beats inside it, so the bars can be counted
+                            // without reading the colours. Only in this fork's layout: stable's is stable's.
+                            float extent = size.Y * stable_tick_extent
+                                           * (fromTheTopToo && indexInBar == 0 ? bar_tick_scale : 1);
+
+                            addLine(xPos, size, colour, Anchor.BottomLeft, Anchor.BottomCentre, extent);
 
                             // a second mark growing in from the top, so that a beat is readable from either side of
                             // the objects resting between them. Stable itself only has the one along the bottom.
                             if (fromTheTopToo)
-                                addLine(xPos, size, colour, Anchor.TopLeft, Anchor.TopCentre, size.Y * stable_tick_extent);
+                                addLine(xPos, size, colour, Anchor.TopLeft, Anchor.TopCentre, extent);
                         }
                         else
                             addLine(xPos, size, colour, Anchor.CentreLeft, Anchor.Centre, size.Y);

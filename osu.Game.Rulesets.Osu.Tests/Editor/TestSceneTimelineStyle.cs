@@ -346,6 +346,29 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         /// <summary>The lowest edge any tick reaches, which is the edge they are drawn from.</summary>
         private float bottomTickEdge() => visibleTicks().Max(t => t.ScreenSpaceDrawQuad.BottomLeft.Y);
 
+        /// <summary>
+        /// The mark at the start of a bar reaches further than the beats inside it, so the bars can be counted
+        /// without reading the colours. Only in this fork's layout: stable's is stable's.
+        /// </summary>
+        [Test]
+        public void TestOnlyThisForksLayoutStretchesTheBarTick()
+        {
+            float inStable = 0;
+
+            AddStep("use the stable layout", () => setStyle(EditorTimelineStyle.Stable));
+            AddUntilStep("read how long the bar tick is", () =>
+            {
+                inStable = tallestTick();
+                return inStable > 0;
+            });
+
+            AddStep("use the Lazer-Kai layout", () => setStyle(EditorTimelineStyle.LazerKai));
+            AddUntilStep("it reaches further", () => tallestTick(), () => Is.GreaterThan(inStable));
+
+            AddStep("back to the stable layout", () => setStyle(EditorTimelineStyle.Stable));
+            AddUntilStep("and stable's is unchanged", () => tallestTick(), () => Is.EqualTo(inStable).Within(0.5f));
+        }
+
         private float tallestTick() => visibleTicks().Max(t => t.ScreenSpaceDrawQuad.Height);
 
         private IEnumerable<PointVisualisation> visibleTicks() =>
