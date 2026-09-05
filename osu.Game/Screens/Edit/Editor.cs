@@ -1197,7 +1197,7 @@ namespace osu.Game.Screens.Edit
                     return true;
 
                 case GlobalAction.EditorBackupNow:
-                    autoBackup.Backup();
+                    autoBackup.Backup(asked: true);
                     return true;
 
                 case GlobalAction.EditorToggleHitsounds:
@@ -2027,7 +2027,7 @@ namespace osu.Game.Screens.Edit
                         State = { BindTarget = editorAutoBackup },
                     },
                     new OsuMenuItemSpacer(),
-                    new EditorMenuItem(EditorStrings.BackupNow, MenuItemType.Standard, () => autoBackup.Backup())
+                    new EditorMenuItem(EditorStrings.BackupNow, MenuItemType.Standard, () => autoBackup.Backup(asked: true))
                     {
                         Hotkey = new Hotkey(GlobalAction.EditorBackupNow)
                     },

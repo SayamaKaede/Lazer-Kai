@@ -207,6 +207,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:open_backup_folder"] = @"この譜面のバックアップフォルダを開く",
             [$@"{editor_prefix}:notify_on_backup"] = @"バックアップ完了時に通知を出す",
             [$@"{editor_prefix}:backup_written"] = @"バックアップしました",
+            [$@"{editor_prefix}:backup_up_to_date"] = @"バックアップは最新です",
 
             // colours
             [$@"{editor_prefix}:colour_default"] = @"既定",

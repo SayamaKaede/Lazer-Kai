@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Platform;
@@ -93,7 +94,12 @@ namespace osu.Game.Screens.Edit
         /// <summary>
         /// Writes a backup now, unless the beatmap is unchanged since the last one.
         /// </summary>
-        public void Backup()
+        /// <param name="asked">
+        /// Whether somebody asked for this one rather than the clock coming round. A backup that was asked for is
+        /// always reported, including when there was nothing to write: the alternative is a keypress that does
+        /// nothing visible and no way to tell it apart from one that did not arrive.
+        /// </param>
+        public void Backup(bool asked = false)
         {
             string content;
 
@@ -110,7 +116,12 @@ namespace osu.Game.Screens.Edit
             string hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(content)));
 
             if (hash == lastWrittenHash)
+            {
+                if (asked)
+                    announce(EditorStrings.BackupUpToDate);
+
                 return;
+            }
 
             lastWrittenHash = hash;
 
@@ -132,15 +143,8 @@ namespace osu.Game.Screens.Edit
 
                     prune(directory);
 
-                    if (notifyOnBackup.Value)
-                        notifications?.Post(new SimpleNotification
-                        {
-                            Text = EditorStrings.BackupWritten,
-                            Icon = FontAwesome.Solid.Save,
-                            // a backup is routine. It should get out of the way after a couple of seconds rather than
-                            // sitting there for twelve and flashing the taskbar as an important notification would.
-                            IsImportant = false,
-                        });
+                    if (asked || notifyOnBackup.Value)
+                        announce(EditorStrings.BackupWritten);
                 }
                 catch (Exception e)
                 {
@@ -148,6 +152,15 @@ namespace osu.Game.Screens.Edit
                 }
             });
         }
+
+        private void announce(LocalisableString what) => notifications?.Post(new SimpleNotification
+        {
+            Text = what,
+            Icon = FontAwesome.Solid.Save,
+            // a backup is routine. It should get out of the way after a couple of seconds rather than sitting there
+            // for twelve and flashing the taskbar as an important notification would.
+            IsImportant = false,
+        });
 
         private string encode()
         {

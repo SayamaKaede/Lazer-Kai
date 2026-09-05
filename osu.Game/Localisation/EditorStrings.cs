@@ -946,6 +946,11 @@ namespace osu.Game.Localisation
         public static LocalisableString BackupWritten => new TranslatableString(getKey(@"backup_written"), @"Backup written");
 
         /// <summary>
+        /// "The backup is already up to date"
+        /// </summary>
+        public static LocalisableString BackupUpToDate => new TranslatableString(getKey(@"backup_up_to_date"), @"The backup is already up to date");
+
+        /// <summary>
         /// "Notify when a backup is written"
         /// </summary>
         public static LocalisableString NotifyOnBackup => new TranslatableString(getKey(@"notify_on_backup"), @"Notify when a backup is written");
