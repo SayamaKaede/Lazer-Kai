@@ -95,11 +95,14 @@ namespace osu.Game
     [Cached(typeof(OsuGame))]
     public partial class OsuGame : OsuGameBase, IKeyBindingHandler<GlobalAction>, ILocalUserPlayInfo, IPerformFromScreenRunner, IOverlayManager, ILinkHandler
     {
+        // named apart from lazer's own pipe so that this build and a standard osu! installation can be open at the
+        // same time. Binding the pipe is what decides which process is the primary instance, so sharing the name is
+        // what made the second one to start refuse to, whichever it was.
 #if DEBUG
         // Different port allows running release and debug builds alongside each other.
-        public const string IPC_PIPE_NAME = "osu-lazer-debug";
+        public const string IPC_PIPE_NAME = "lazer-kai-debug";
 #else
-        public const string IPC_PIPE_NAME = "osu-lazer";
+        public const string IPC_PIPE_NAME = "lazer-kai";
 #endif
 
         /// <summary>

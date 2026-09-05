@@ -4,7 +4,6 @@
 using System;
 using System.IO;
 using System.Runtime.Versioning;
-using osu.Desktop.LegacyIpc;
 using osu.Desktop.Windows;
 using osu.Framework;
 using osu.Framework.Development;
@@ -25,8 +24,6 @@ namespace osu.Desktop
 #else
         private const string base_game_name = @"osu";
 #endif
-
-        private static LegacyTcpIpcProvider? legacyIpc;
 
         private static bool isFirstRun;
 
@@ -125,19 +122,10 @@ namespace osu.Desktop
                     }
                 }
 
-                if (host.IsPrimaryInstance)
-                {
-                    try
-                    {
-                        Logger.Log("Starting legacy IPC provider...");
-                        legacyIpc = new LegacyTcpIpcProvider();
-                        legacyIpc.Bind();
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error(ex, "Failed to start legacy IPC provider");
-                    }
-                }
+                // the legacy provider is deliberately not started here. It listens on the one port stable talks to,
+                // and this build is made to sit alongside a standard osu! installation: whichever of the two opened
+                // first would take the port and the other would go without. Stable's messages are for the client
+                // being played on, which is not this one.
 
                 if (tournamentClient)
                     host.Run(new TournamentGame());
