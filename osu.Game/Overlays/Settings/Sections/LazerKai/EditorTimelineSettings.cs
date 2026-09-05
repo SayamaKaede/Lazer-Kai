@@ -11,7 +11,7 @@ using osu.Game.Screens.Edit;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
 {
-    public partial class EditorTimelineSettings : SettingsSubsection
+    public partial class EditorTimelineSettings : LazerKaiSubsection
     {
         protected override LocalisableString Header => LazerKaiSettingsStrings.TimelineHeader;
 

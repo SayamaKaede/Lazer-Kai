@@ -14,7 +14,7 @@ using osu.Game.Screens.Edit;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
 {
-    public partial class BackupSettings : SettingsSubsection
+    public partial class BackupSettings : LazerKaiSubsection
     {
         protected override LocalisableString Header => LazerKaiSettingsStrings.BackupHeader;
 

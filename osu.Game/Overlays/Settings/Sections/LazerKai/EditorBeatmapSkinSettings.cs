@@ -21,7 +21,7 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
     /// They are their own settings rather than the gameplay ones read from a second place: a mapper turning the
     /// beatmap's hitsounds off to hear what they are writing has said nothing about how the beatmap should play.
     /// </remarks>
-    public partial class EditorBeatmapSkinSettings : SettingsSubsection
+    public partial class EditorBeatmapSkinSettings : LazerKaiSubsection
     {
         protected override LocalisableString Header => LazerKaiSettingsStrings.BeatmapSkinHeader;
 

@@ -9,7 +9,7 @@ using osu.Game.Localisation;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
 {
-    public partial class EditorStatusSettings : SettingsSubsection
+    public partial class EditorStatusSettings : LazerKaiSubsection
     {
         protected override LocalisableString Header => LazerKaiSettingsStrings.StatusHeader;
 

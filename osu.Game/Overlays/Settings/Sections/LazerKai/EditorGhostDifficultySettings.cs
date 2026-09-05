@@ -11,7 +11,7 @@ using osu.Game.Screens.Edit;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
 {
-    public partial class EditorGhostDifficultySettings : SettingsSubsection
+    public partial class EditorGhostDifficultySettings : LazerKaiSubsection
     {
         protected override LocalisableString Header => LazerKaiSettingsStrings.GhostDifficultyHeader;
 

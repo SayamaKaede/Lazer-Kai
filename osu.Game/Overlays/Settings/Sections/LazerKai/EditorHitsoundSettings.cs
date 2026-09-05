@@ -10,7 +10,7 @@ using osu.Game.Screens.Edit;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
 {
-    public partial class EditorHitsoundSettings : SettingsSubsection
+    public partial class EditorHitsoundSettings : LazerKaiSubsection
     {
         protected override LocalisableString Header => LazerKaiSettingsStrings.HitsoundHeader;
 

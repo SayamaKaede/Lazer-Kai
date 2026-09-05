@@ -19,7 +19,7 @@ using osu.Game.Utils;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
 {
-    public partial class ExternalToolSettings : SettingsSubsection
+    public partial class ExternalToolSettings : LazerKaiSubsection
     {
         protected override LocalisableString Header => LazerKaiSettingsStrings.ExternalToolHeader;
 

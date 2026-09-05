@@ -10,7 +10,7 @@ using osu.Game.Localisation;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
 {
-    public partial class EditorButtonShapeSettings : SettingsSubsection
+    public partial class EditorButtonShapeSettings : LazerKaiSubsection
     {
         protected override LocalisableString Header => LazerKaiSettingsStrings.ButtonShapeHeader;
 
