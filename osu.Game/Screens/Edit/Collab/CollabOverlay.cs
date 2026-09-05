@@ -161,6 +161,7 @@ namespace osu.Game.Screens.Edit.Collab
                                     }
                                 },
                                 createTotals(),
+                                createPlayheadToggle(),
                                 createFooter(),
                             }
                         },
@@ -228,6 +229,34 @@ namespace osu.Game.Screens.Edit.Collab
                     Direction = FillDirection.Full,
                     Padding = new MarginPadding(10),
                     Spacing = new Vector2(8, 6),
+                },
+            }
+        };
+
+        /// <summary>
+        /// Keeps the strip along the bottom saying whose stretch the song is in, panel open or not.
+        /// </summary>
+        /// <remarks>
+        /// Sits with the totals rather than among the buttons below, which act on the split: this changes nothing
+        /// about the beatmap and is turned on to watch it play through.
+        /// </remarks>
+        private Drawable createPlayheadToggle() => new Container
+        {
+            RelativeSizeAxes = Axes.X,
+            AutoSizeAxes = Axes.Y,
+            Children = new Drawable[]
+            {
+                new Box
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Colour = colourProvider.Background3,
+                },
+                new OsuCheckbox
+                {
+                    RelativeSizeAxes = Axes.X,
+                    Padding = new MarginPadding { Horizontal = 10, Vertical = 4 },
+                    LabelText = CollabStrings.FollowPlayhead,
+                    Current = highlight.FollowPlayhead,
                 },
             }
         };
@@ -360,6 +389,13 @@ namespace osu.Game.Screens.Edit.Collab
                     Pointed = pointed => point(theirs, pointed ? theirs : null, colour),
                 });
             }
+
+            // published here rather than in the rebuild above because an assignment changes who owns what without
+            // changing where anything is, and the strip has to follow that too.
+            highlight.Bands.Value = blocks
+                                    .Where(b => project.Assignment.ContainsKey(b.Key) && project.Names.Contains(project.Assignment[b.Key]))
+                                    .Select(b => new CollabBand(b.Start, b.End, CollabColours.For(project.Names.IndexOf(project.Assignment[b.Key]))))
+                                    .ToArray();
 
             var unclaimed = blocks.Where(b => !project.Assignment.ContainsKey(b.Key)).ToArray();
             double unassigned = unclaimed.Sum(b => b.DrainTime);

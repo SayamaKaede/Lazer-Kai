@@ -107,6 +107,12 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary
                     Origin = Anchor.Centre,
                     RelativeSizeAxes = Axes.Both,
                 },
+                new CollabPlayheadPart
+                {
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    RelativeSizeAxes = Axes.Both,
+                },
                 new CollabPart
                 {
                     Anchor = Anchor.Centre,

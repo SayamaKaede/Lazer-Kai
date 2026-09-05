@@ -313,6 +313,7 @@ namespace osu.Game.Localisation
             [$@"{collab_prefix}:menu_item"] = @"Collab Manager...",
             [$@"{collab_prefix}:no_bookmarks_yet"] = @"区切りたい位置にブックマークを追加すると、そこが担当範囲になります",
             [$@"{collab_prefix}:unassigned"] = @"未割り当て",
+            [$@"{collab_prefix}:follow_playhead"] = @"常に下部タイムラインの現在位置で色分けを表示",
             [$@"{collab_prefix}:add_collaborator"] = @"マッパーを追加",
             [$@"{collab_prefix}:copy_split"] = @"リストをコピー",
             [$@"{collab_prefix}:whole_beatmap"] = @"譜面全体 {0}",

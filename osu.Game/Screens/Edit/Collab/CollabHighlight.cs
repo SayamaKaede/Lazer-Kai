@@ -41,6 +41,25 @@ namespace osu.Game.Screens.Edit.Collab
         /// </remarks>
         public readonly BindableBool Open = new BindableBool();
 
+        /// <summary>
+        /// Whether the strip keeps saying whose stretch the playhead is in, whether the panel is open or not.
+        /// </summary>
+        /// <remarks>
+        /// For watching a split go past rather than for building one — recording a run through the beatmap with the
+        /// colours readable as it plays. Deliberately not saved: it is turned on for a take and would otherwise be
+        /// found still on weeks later, colouring a strip nobody was asking about.
+        /// </remarks>
+        public readonly BindableBool FollowPlayhead = new BindableBool();
+
+        /// <summary>
+        /// Every stretch that has somebody on it, with their colour, for following the playhead through.
+        /// </summary>
+        /// <remarks>
+        /// Published by the panel as it rebuilds, which it does from the beatmap's own events rather than from its
+        /// update loop -- so this stays right while the panel is closed and the bookmarks are being moved about.
+        /// </remarks>
+        public readonly Bindable<CollabBand[]> Bands = new Bindable<CollabBand[]>(Array.Empty<CollabBand>());
+
         /// <summary>Whoever asked for the current light, so that only they can put it out.</summary>
         private object? owner;
 

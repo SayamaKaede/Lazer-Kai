@@ -31,6 +31,12 @@ namespace osu.Game.Localisation
         public static LocalisableString Unassigned => new TranslatableString(getKey(@"unassigned"), @"unassigned");
 
         /// <summary>
+        /// "Always colour the bottom timeline at the playhead"
+        /// </summary>
+        public static LocalisableString FollowPlayhead => new TranslatableString(getKey(@"follow_playhead"),
+            @"Always colour the bottom timeline at the playhead");
+
+        /// <summary>
         /// "Add collaborator"
         /// </summary>
         public static LocalisableString AddCollaborator => new TranslatableString(getKey(@"add_collaborator"), @"Add collaborator");
