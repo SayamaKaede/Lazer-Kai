@@ -369,7 +369,36 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddUntilStep("and stable's is unchanged", () => tallestTick(), () => Is.EqualTo(inStable).Within(0.5f));
         }
 
+        /// <summary>
+        /// A mark reaching a tenth of the height reads as a mark; at the width upstream draws its full-height lines
+        /// at, it starts to read as an object instead. The layouts that keep the marks to the edges draw them
+        /// thinner for it.
+        /// </summary>
+        [Test]
+        public void TestTheEdgeLayoutsDrawThinnerTicks()
+        {
+            float acrossTheWholeHeight = 0;
+
+            AddStep("use the lazer layout", () => setStyle(EditorTimelineStyle.Lazer));
+            AddUntilStep("read how wide a tick is", () =>
+            {
+                acrossTheWholeHeight = widestTick();
+                return acrossTheWholeHeight > 0;
+            });
+
+            AddStep("use the stable layout", () => setStyle(EditorTimelineStyle.Stable));
+            AddUntilStep("they are thinner", () => widestTick(), () => Is.LessThan(acrossTheWholeHeight));
+
+            AddStep("use the Lazer-Kai layout", () => setStyle(EditorTimelineStyle.LazerKai));
+            AddUntilStep("thinner there too", () => widestTick(), () => Is.LessThan(acrossTheWholeHeight));
+
+            AddStep("back to the lazer layout", () => setStyle(EditorTimelineStyle.Lazer));
+            AddUntilStep("upstream's are as they were", () => widestTick(), () => Is.EqualTo(acrossTheWholeHeight).Within(0.5f));
+        }
+
         private float tallestTick() => visibleTicks().Max(t => t.ScreenSpaceDrawQuad.Height);
+
+        private float widestTick() => visibleTicks().Max(t => t.ScreenSpaceDrawQuad.Width);
 
         private IEnumerable<PointVisualisation> visibleTicks() =>
             Editor.ChildrenOfType<TimelineTickDisplay>().Single().ChildrenOfType<PointVisualisation>().Where(t => t.Alpha > 0);

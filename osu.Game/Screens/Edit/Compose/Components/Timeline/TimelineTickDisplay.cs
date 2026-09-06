@@ -59,6 +59,16 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         /// </remarks>
         private const float bar_tick_scale = 1.5f;
 
+        /// <summary>
+        /// How wide the marks are drawn in the layouts that keep them to the edges.
+        /// </summary>
+        /// <remarks>
+        /// Thinner than upstream draws them: a mark that reaches only a tenth of the height reads as a mark rather
+        /// than as a line, and at the full width it starts to read as an object instead. Settled by eye against a
+        /// real beatmap rather than worked out (2026-09-06).
+        /// </remarks>
+        private const float tick_width_scale = 0.75f;
+
         private readonly Cached tickCache = new Cached();
 
         [BackgroundDependencyLoader]
@@ -202,7 +212,10 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 var line = getNextUsableLine();
 
                 line.X = xPos;
-                line.Width = TICK_WIDTH * size.X;
+
+                // only where the marks are short ones along the edges. Across the whole height they are the
+                // upstream layout's own, and their width goes with it.
+                line.Width = TICK_WIDTH * size.X * (alongTheEdges ? tick_width_scale : 1);
                 line.Height = height;
                 line.Colour = colour;
                 line.Anchor = anchor;
