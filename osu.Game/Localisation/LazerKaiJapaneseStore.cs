@@ -253,7 +253,6 @@ namespace osu.Game.Localisation
             [$@"{settings_prefix}:timeline_header"] = @"上部タイムライン",
             [$@"{settings_prefix}:selection_header"] = @"選択・範囲選択枠",
             [$@"{settings_prefix}:status_header"] = @"STATUS",
-            [$@"{settings_prefix}:composing_header"] = @"配置",
             [$@"{settings_prefix}:input_header"] = @"操作",
             [$@"{settings_prefix}:test_play_header"] = @"Mod",
             [$@"{settings_prefix}:backup_header"] = @"バックアップ",
@@ -272,8 +271,6 @@ namespace osu.Game.Localisation
             [$@"{settings_prefix}:export_logs_failed"] = @"ログを書き出せませんでした。",
             [$@"{settings_prefix}:show_mapping_tools_path"] = @"Mapping Tools のパスを表示",
             [$@"{settings_prefix}:hide_mapping_tools_path"] = @"Mapping Tools のパスを隠す",
-            [$@"{settings_prefix}:applies_game_wide"] = @"エディター外にも適用されます",
-            [$@"{settings_prefix}:editor_only"] = @"エディターを開いている間だけ有効です",
             [$@"{settings_prefix}:takes_effect_on_reopen"] = @"次にエディターを開いたときに反映されます",
             [$@"{settings_prefix}:no_delay"] = @"無し",
             [$@"{settings_prefix}:minutes"] = @"{0}分",
@@ -361,6 +358,7 @@ namespace osu.Game.Localisation
             [$@"{preset_prefix}:assign_a_key"] = @"数字キーを割り当てる",
             [$@"{preset_prefix}:remove"] = @"削除",
             [$@"{binding_prefix}:editor_toggle_placement_presets"] = @"配置プリセットを開く",
+
         };
 
         private const string editor_prefix = @"osu.Game.Resources.Localisation.Editor";

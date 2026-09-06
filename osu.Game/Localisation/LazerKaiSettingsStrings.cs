@@ -87,11 +87,6 @@ namespace osu.Game.Localisation
         public static LocalisableString StatusHeader => new TranslatableString(getKey(@"status_header"), @"STATUS");
 
         /// <summary>
-        /// "Composing"
-        /// </summary>
-        public static LocalisableString ComposingHeader => new TranslatableString(getKey(@"composing_header"), @"Composing");
-
-        /// <summary>
         /// "Input"
         /// </summary>
         public static LocalisableString InputHeader => new TranslatableString(getKey(@"input_header"), @"Input");
@@ -107,19 +102,9 @@ namespace osu.Game.Localisation
         public static LocalisableString BackupHeader => new TranslatableString(getKey(@"backup_header"), @"Backups");
 
         /// <summary>
-        /// "Applies outside the editor as well"
-        /// </summary>
-        public static LocalisableString AppliesGameWide => new TranslatableString(getKey(@"applies_game_wide"), @"Applies outside the editor as well");
-
-        /// <summary>
         /// "Takes effect the next time the editor is opened"
         /// </summary>
         public static LocalisableString TakesEffectOnReopen => new TranslatableString(getKey(@"takes_effect_on_reopen"), @"Takes effect the next time the editor is opened");
-
-        /// <summary>
-        /// "Only while the editor is open"
-        /// </summary>
-        public static LocalisableString EditorOnly => new TranslatableString(getKey(@"editor_only"), @"Only while the editor is open");
 
         /// <summary>
         /// "Instant"
