@@ -69,7 +69,6 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 },
                 new SettingsCheckbox
                 {
-                    TooltipText = EditorStrings.SwapRightAndMiddleMouseDescription,
                     LabelText = EditorStrings.SwapRightAndMiddleMouse,
                     Current = config.GetBindable<bool>(OsuSetting.SwapRightAndMiddleMouse)
                 },

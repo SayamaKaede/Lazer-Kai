@@ -58,40 +58,12 @@ namespace osu.Game.Tests.Visual.SongSelect
                 Beatmap.Value = working;
                 onlineLookupResult.Value = online;
             });
-            AddStep("no success rate", () =>
+            AddStep("no hitsounds", () =>
             {
                 var (working, online) = createTestBeatmap();
 
-                online.Result!.Beatmaps.Single().PlayCount = 0;
-                online.Result!.Beatmaps.Single().PassCount = 0;
-
-                Beatmap.Value = working;
-                onlineLookupResult.Value = online;
-            });
-            AddStep("no user ratings", () =>
-            {
-                var (working, online) = createTestBeatmap();
-
-                online.Result!.Ratings = Array.Empty<int>();
-
-                Beatmap.Value = working;
-                onlineLookupResult.Value = online;
-            });
-            AddStep("no fail times", () =>
-            {
-                var (working, online) = createTestBeatmap();
-
-                online.Result!.Beatmaps.Single().FailTimes = null;
-
-                Beatmap.Value = working;
-                onlineLookupResult.Value = online;
-            });
-            AddStep("no metrics", () =>
-            {
-                var (working, online) = createTestBeatmap();
-
-                online.Result!.Ratings = Array.Empty<int>();
-                online.Result!.Beatmaps.Single().FailTimes = null;
+                foreach (var hitObject in working.Beatmap.HitObjects)
+                    hitObject.Samples.Clear();
 
                 Beatmap.Value = working;
                 onlineLookupResult.Value = online;
@@ -131,23 +103,9 @@ namespace osu.Game.Tests.Visual.SongSelect
         {
             AddStep("online beatmapset", () => (Beatmap.Value, onlineLookupResult.Value) = createTestBeatmap());
 
-            AddUntilStep("rating wedge visible", () => wedge.RatingsVisible);
-            AddUntilStep("fail time wedge visible", () => wedge.FailRetryVisible);
-            AddStep("online beatmapset with local diff", () =>
-            {
-                var (working, lookupResult) = createTestBeatmap();
-
-                working.BeatmapInfo.ResetOnlineInfo();
-
-                Beatmap.Value = working;
-                onlineLookupResult.Value = lookupResult;
-            });
-            AddUntilStep("rating wedge hidden", () => !wedge.RatingsVisible);
-            AddUntilStep("fail time wedge hidden", () => !wedge.FailRetryVisible);
-
             // just check for text everywhere on the wedge as the classes are private and generic
-            AddAssert("genre is still visible", () => wedge.ChildrenOfType<OsuSpriteText>().Any(t => t.Text == "Pop"));
-            AddAssert("language is still visible", () => wedge.ChildrenOfType<OsuSpriteText>().Any(t => t.Text == "English"));
+            AddAssert("genre is visible", () => wedge.ChildrenOfType<OsuSpriteText>().Any(t => t.Text == "Pop"));
+            AddAssert("language is visible", () => wedge.ChildrenOfType<OsuSpriteText>().Any(t => t.Text == "English"));
 
             AddStep("local beatmap", () =>
             {
@@ -156,11 +114,31 @@ namespace osu.Game.Tests.Visual.SongSelect
                 Beatmap.Value = working;
                 onlineLookupResult.Value = Screens.Select.SongSelect.BeatmapSetLookupResult.Completed(null);
             });
-            AddAssert("rating wedge still hidden", () => !wedge.RatingsVisible);
-            AddAssert("fail time wedge still hidden", () => !wedge.FailRetryVisible);
 
             AddAssert("genre is cleared", () => wedge.ChildrenOfType<OsuSpriteText>().All(t => t.Text != "Pop"));
             AddAssert("language is cleared", () => wedge.ChildrenOfType<OsuSpriteText>().All(t => t.Text != "English"));
+        }
+
+        [Test]
+        public void TestMappingSummaryReadWithoutTheBeatmapBeingOnline()
+        {
+            AddStep("local beatmap", () =>
+            {
+                var (working, _) = createTestBeatmap();
+
+                working.BeatmapInfo.ResetOnlineInfo();
+
+                Beatmap.Value = working;
+                onlineLookupResult.Value = Screens.Select.SongSelect.BeatmapSetLookupResult.Completed(null);
+            });
+
+            AddUntilStep("mapping wedge visible", () => wedge.MappingVisible);
+
+            // the beatmap is read on another thread, so the figures arrive after everything else on the wedge.
+            AddUntilStep("density is read", () => wedge.ChildrenOfType<OsuSpriteText>().Any(t => t.Text.ToString().EndsWith("/s", StringComparison.Ordinal)));
+
+            AddStep("null beatmap", () => Beatmap.SetDefault());
+            AddUntilStep("mapping wedge hidden", () => !wedge.MappingVisible);
         }
 
         [Test]

@@ -1478,11 +1478,6 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString CtrlClickCyclesCurveTypeDescription => new TranslatableString(getKey(@"ctrl_click_cycles_curve_type_description"), @"Ctrl-clicking what stable calls a white anchor turns it red.");
 
-        /// <summary>
-        /// "Right click deletes, and the wheel button opens the menu. Only while the editor is open."
-        /// </summary>
-        public static LocalisableString SwapRightAndMiddleMouseDescription => new TranslatableString(getKey(@"swap_right_and_middle_mouse_description"), @"Right click deletes, and the wheel button opens the menu. Only while the editor is open.");
-
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

@@ -4,16 +4,20 @@
 using System;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Framework.Audio.Sample;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
+using osu.Framework.Extensions.LocalisationExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Localisation;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
+using osu.Game.Extensions;
 using osu.Game.Graphics.Containers;
 using osu.Game.Localisation;
 using osu.Game.Online;
@@ -35,16 +39,18 @@ namespace osu.Game.Screens.Select
         private MetadataDisplay submitted = null!;
         private MetadataDisplay ranked = null!;
 
-        private Drawable ratingsWedge = null!;
-        private SuccessRateDisplay successRateDisplay = null!;
-        private UserRatingDisplay userRatingDisplay = null!;
-        private RatingSpreadDisplay ratingSpreadDisplay = null!;
+        private MetadataDisplay density = null!;
+        private MetadataDisplay snap = null!;
+        private MetadataDisplay unsnapped = null!;
+        private MetadataDisplay breaks = null!;
+        private MetadataDisplay redLines = null!;
+        private MetadataDisplay volume = null!;
+        private MetadataDisplay sliderVelocity = null!;
+        private MetadataDisplay kiai = null!;
 
-        private Drawable failRetryWedge = null!;
-        private FailRetryDisplay failRetryDisplay = null!;
+        private Drawable mappingWedge = null!;
 
-        public bool RatingsVisible => ratingsWedge.Alpha > 0;
-        public bool FailRetryVisible => failRetryWedge.Alpha > 0;
+        public bool MappingVisible => mappingWedge.Alpha > 0;
 
         protected override bool StartHidden => true;
 
@@ -181,7 +187,7 @@ namespace osu.Game.Screens.Select
                             },
                         },
                     }),
-                    new ShearAligningWrapper(ratingsWedge = new Container
+                    new ShearAligningWrapper(mappingWedge = new Container
                     {
                         Alpha = 0f,
                         CornerRadius = 10,
@@ -200,45 +206,56 @@ namespace osu.Game.Screens.Select
                                 ColumnDimensions = new[]
                                 {
                                     new Dimension(),
-                                    new Dimension(GridSizeMode.Absolute, 10),
                                     new Dimension(),
-                                    new Dimension(GridSizeMode.Absolute, 10),
                                     new Dimension(),
                                 },
-                                Padding = new MarginPadding { Left = SongSelect.WEDGE_CONTENT_MARGIN, Right = 40f, Vertical = 16 },
+                                Padding = new MarginPadding { Left = SongSelect.WEDGE_CONTENT_MARGIN, Right = 35, Vertical = 16 },
                                 Content = new[]
                                 {
                                     new[]
                                     {
-                                        successRateDisplay = new SuccessRateDisplay(),
-                                        Empty(),
-                                        userRatingDisplay = new UserRatingDisplay(),
-                                        Empty(),
-                                        ratingSpreadDisplay = new RatingSpreadDisplay(),
+                                        new FillFlowContainer
+                                        {
+                                            RelativeSizeAxes = Axes.X,
+                                            AutoSizeAxes = Axes.Y,
+                                            Direction = FillDirection.Vertical,
+                                            Spacing = new Vector2(0f, 10f),
+                                            Children = new[]
+                                            {
+                                                density = new MetadataDisplay(MappingSummaryStrings.Density),
+                                                snap = new MetadataDisplay(MappingSummaryStrings.Snap),
+                                                unsnapped = new MetadataDisplay(MappingSummaryStrings.Unsnapped),
+                                            },
+                                        },
+                                        new FillFlowContainer
+                                        {
+                                            RelativeSizeAxes = Axes.X,
+                                            AutoSizeAxes = Axes.Y,
+                                            Direction = FillDirection.Vertical,
+                                            Spacing = new Vector2(0f, 10f),
+                                            Children = new[]
+                                            {
+                                                redLines = new MetadataDisplay(MappingSummaryStrings.BpmChanges),
+                                                volume = new MetadataDisplay(MappingSummaryStrings.Volume),
+                                                sliderVelocity = new MetadataDisplay(MappingSummaryStrings.SliderVelocity),
+                                            },
+                                        },
+                                        new FillFlowContainer
+                                        {
+                                            RelativeSizeAxes = Axes.X,
+                                            AutoSizeAxes = Axes.Y,
+                                            Direction = FillDirection.Vertical,
+                                            Spacing = new Vector2(0f, 10f),
+                                            Children = new[]
+                                            {
+                                                kiai = new MetadataDisplay(MappingSummaryStrings.Kiai),
+                                                breaks = new MetadataDisplay(MappingSummaryStrings.Breaks),
+                                            },
+                                        },
                                     },
                                 },
                             },
                         }
-                    }),
-                    new ShearAligningWrapper(failRetryWedge = new Container
-                    {
-                        Alpha = 0f,
-                        CornerRadius = 10,
-                        Masking = true,
-                        RelativeSizeAxes = Axes.X,
-                        AutoSizeAxes = Axes.Y,
-                        Children = new Drawable[]
-                        {
-                            new WedgeBackground(),
-                            new Container
-                            {
-                                RelativeSizeAxes = Axes.X,
-                                AutoSizeAxes = Axes.Y,
-                                Shear = -OsuGame.SHEAR,
-                                Padding = new MarginPadding { Left = SongSelect.WEDGE_CONTENT_MARGIN, Right = 40f, Vertical = 16 },
-                                Child = failRetryDisplay = new FailRetryDisplay(),
-                            },
-                        },
                     }),
                 }
             };
@@ -277,36 +294,24 @@ namespace osu.Game.Screens.Select
 
         private void updateSubWedgeVisibility()
         {
-            // We could consider hiding individual wedges based on zero data in the future.
-            // Needs some experimentation on what looks good.
-
-            var beatmapInfo = beatmap.Value.BeatmapInfo;
-            var currentOnlineBeatmap = onlineLookupResult.Value?.Result?.Beatmaps.SingleOrDefault(b => b.OnlineID == beatmapInfo.OnlineID);
-
-            if (State.Value == Visibility.Visible && currentOnlineBeatmap != null)
+            // unlike the online figures this replaced, this reads the beatmap itself, so it has something to say
+            // about every beatmap. It stays up while the next one is being read, showing its values as loading.
+            if (State.Value == Visibility.Visible && !beatmap.IsDefault)
             {
-                // play show sounds only if the wedges were previously hidden
-                if (ratingsWedge.Alpha < 1)
+                // play show sounds only if the wedge was previously hidden
+                if (mappingWedge.Alpha < 1)
                     playWedgeAppearSound();
 
-                ratingsWedge.FadeIn(transition_duration, Easing.OutQuint)
+                mappingWedge.FadeIn(transition_duration, Easing.OutQuint)
                             .MoveToX(0, transition_duration, Easing.OutQuint);
-
-                failRetryWedge.Delay(100)
-                              .FadeIn(transition_duration, Easing.OutQuint)
-                              .MoveToX(0, transition_duration, Easing.OutQuint);
             }
             else
             {
-                // play hide sounds only if the wedges were previously visible
-                if (ratingsWedge.Alpha > 0)
+                // play hide sounds only if the wedge was previously visible
+                if (mappingWedge.Alpha > 0)
                     playWedgeHideSound();
 
-                failRetryWedge.FadeOut(transition_duration, Easing.OutQuint)
-                              .MoveToX(-50, transition_duration, Easing.OutQuint);
-
-                ratingsWedge.Delay(100)
-                            .FadeOut(transition_duration, Easing.OutQuint)
+                mappingWedge.FadeOut(transition_duration, Easing.OutQuint)
                             .MoveToX(-50, transition_duration, Easing.OutQuint);
             }
         }
@@ -375,7 +380,75 @@ namespace osu.Game.Screens.Select
             submitted.Date = beatmapSetInfo.DateSubmitted;
             ranked.Date = beatmapSetInfo.DateRanked;
 
+            updateMappingDisplay();
             updateOnlineDisplay();
+        }
+
+        private CancellationTokenSource? summaryCancellationSource;
+
+        private void updateMappingDisplay()
+        {
+            summaryCancellationSource?.Cancel();
+            summaryCancellationSource = new CancellationTokenSource();
+
+            foreach (var display in new[] { density, snap, unsnapped, breaks, redLines, volume, sliderVelocity, kiai })
+                display.Data = null;
+
+            updateSubWedgeVisibility();
+
+            if (beatmap.IsDefault)
+                return;
+
+            var working = beatmap.Value;
+            var token = summaryCancellationSource.Token;
+
+            Task.Run(() =>
+            {
+                // reading the beatmap decodes it, which is far too slow to do while the carousel is being scrolled.
+                var decoded = working.Beatmap;
+
+                // `WorkingBeatmap.Beatmap` gives back nothing when the file cannot be read, which leaves the
+                // values showing as loading -- the honest thing to show for figures that could not be read.
+                if (decoded == null)
+                    return;
+
+                var summary = MappingSummary.Read(decoded);
+
+                Schedule(() =>
+                {
+                    if (token.IsCancellationRequested)
+                        return;
+
+                    showSummary(summary);
+                });
+            }, token);
+        }
+
+        private void showSummary(MappingSummary summary)
+        {
+            density.Data = (MappingSummaryStrings.DensityValue(summary.Density), null);
+
+            snap.Data = (summary.Divisors.Count > 0
+                ? string.Join(' ', summary.Divisors.Select(d => $@"1/{d}"))
+                : "-", null);
+
+            unsnapped.Data = (summary.UnsnappedObjects > 0
+                ? summary.UnsnappedObjects.ToLocalisableString(@"N0")
+                : MappingSummaryStrings.NoneOfThem, null);
+
+            breaks.Data = (summary.BreakTime > 0 ? summary.BreakTime.ToFormattedDuration() : "-", null);
+
+            redLines.Data = (MappingSummaryStrings.TimesOver(summary.TimingPoints), null);
+
+            volume.Data = (summary.LowestVolume == summary.HighestVolume
+                ? LocalisableString.Interpolate($@"{summary.HighestVolume}%")
+                : LocalisableString.Interpolate($@"{summary.LowestVolume}% - {summary.HighestVolume}%"), null);
+
+            sliderVelocity.Data = (Precision.AlmostEquals(summary.LowestVelocity, summary.HighestVelocity)
+                ? LocalisableString.Interpolate($@"{summary.HighestVelocity:0.00}x")
+                : LocalisableString.Interpolate($@"{summary.LowestVelocity:0.00}x - {summary.HighestVelocity:0.00}x"), null);
+
+            kiai.Data = (summary.KiaiTime > 0 ? summary.KiaiTime.ToFormattedDuration() : "-", null);
         }
 
         private void updateOnlineDisplay()
@@ -395,25 +468,13 @@ namespace osu.Game.Screens.Select
             }
             else
             {
-                var beatmapInfo = beatmap.Value.BeatmapInfo;
-
                 var onlineBeatmapSet = onlineLookupResult.Value.Result;
-                var onlineBeatmap = onlineBeatmapSet.Beatmaps.SingleOrDefault(b => b.OnlineID == beatmapInfo.OnlineID);
 
                 genre.Data = (onlineBeatmapSet.Genre.Name, () => songSelect?.AddToSearch(onlineBeatmapSet.Genre.Name));
                 language.Data = (onlineBeatmapSet.Language.Name, () => songSelect?.AddToSearch(onlineBeatmapSet.Language.Name));
-
-                if (onlineBeatmap != null)
-                {
-                    userRatingDisplay.Data = onlineBeatmapSet.Ratings;
-                    ratingSpreadDisplay.Data = onlineBeatmapSet.Ratings;
-                    successRateDisplay.Data = (onlineBeatmap.PassCount, onlineBeatmap.PlayCount);
-                    failRetryDisplay.Data = onlineBeatmap.FailTimes ?? new APIFailTimes();
-                }
             }
 
             updateUserTags();
-            updateSubWedgeVisibility();
         }
 
         private CancellationTokenSource? userTagsCancellationSource;
@@ -455,6 +516,8 @@ namespace osu.Game.Screens.Select
         {
             userTagsCancellationSource?.Cancel();
             userTagsCancellationSource = null;
+            summaryCancellationSource?.Cancel();
+            summaryCancellationSource = null;
             base.Dispose(isDisposing);
         }
     }

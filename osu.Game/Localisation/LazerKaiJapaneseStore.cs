@@ -360,12 +360,26 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:advance_by_previous_spacing_on_placement_description"] = @"ノーツを配置後、自動で直前のノーツとの間隔ぶん、自動で移動します。毎回のホイール操作が不要になります",
             [$@"{editor_prefix}:freehand_slider_placement_description"] = @"スライダーを置くときに誤爆しがちな場合はオフに",
             [$@"{editor_prefix}:ctrl_click_cycles_curve_type_description"] = @"例えば、Stableでいう白点にCtrl+クリックすると、赤点になります",
-            [$@"{editor_prefix}:swap_right_and_middle_mouse_description"] = @"右クリックで削除、ホイールクリックでメニューを表示する方式になります。エディターを開いている間だけ有効です",
             // profile
             // named after the game's own listings on the same page, which read 「ゲスト難易度のビートマップ」,
             // 「Pendingのビートマップ」 and 「Graveyardのビートマップ」.
             [$@"{profile_prefix}:guest_pending_title"] = @"ゲスト難易度のPendingビートマップ",
             [$@"{profile_prefix}:guest_graveyard_title"] = @"ゲスト難易度のGraveyardビートマップ",
+
+            // what a beatmap is made of, on the details tab at song select
+            [$@"{mapping_prefix}:density"] = @"密度",
+            [$@"{mapping_prefix}:density_value"] = @"{0}個/秒",
+            // these four keep their English names in Japanese as well: they are what the editor calls them, and a
+            // mapper reads them here as the same things.
+            [$@"{mapping_prefix}:snap"] = @"Snap",
+            [$@"{mapping_prefix}:unsnapped"] = @"Unsnapped",
+            [$@"{mapping_prefix}:none_of_them"] = @"なし",
+            [$@"{mapping_prefix}:bpm_changes"] = @"BPM変更",
+            [$@"{mapping_prefix}:times_over"] = @"{0}回",
+            [$@"{mapping_prefix}:volume"] = @"音量",
+            [$@"{mapping_prefix}:slider_velocity"] = @"SV",
+            [$@"{mapping_prefix}:kiai"] = @"Kiai",
+            [$@"{mapping_prefix}:breaks"] = @"休憩時間",
 
             // placement presets
             [$@"{preset_prefix}:header"] = @"配置プリセット",
@@ -394,6 +408,7 @@ namespace osu.Game.Localisation
         private const string collab_prefix = @"osu.Game.Resources.Localisation.Collab";
         private const string export_prefix = @"osu.Game.Resources.Localisation.BeatmapExport";
         private const string preset_prefix = @"osu.Game.Resources.Localisation.PlacementPreset";
+        private const string mapping_prefix = @"osu.Game.Resources.Localisation.MappingSummary";
 
         public LazerKaiJapaneseStore(ILocalisationStore fallback)
         {
