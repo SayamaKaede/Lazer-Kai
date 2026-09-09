@@ -10,6 +10,8 @@ using osu.Framework.Input.Events;
 using osu.Framework.Utils;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
+using osu.Game.Rulesets.Edit;
+using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Screens.Edit;
 using osuTK;
@@ -23,8 +25,20 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
         public Action<DragEvent>? Drag { get; set; }
         public Action? EndDrag { get; set; }
 
+        /// <summary>
+        /// The slider this marker adjusts the length of, once it is known.
+        /// </summary>
+        /// <remarks>
+        /// Only used to leave it out of <see cref="ReceivePositionalInputAt"/>'s reckoning below, so the marker is
+        /// not made to stand aside for the very object it belongs to.
+        /// </remarks>
+        public HitObject? Owner { get; set; }
+
         [Resolved]
         private OsuColour colours { get; set; } = null!;
+
+        [Resolved(CanBeNull = true)]
+        private HitObjectComposer? composer { get; set; }
 
         /// <summary>
         /// The thickness the marker is drawn at before the user's setting scales it.
@@ -61,6 +75,38 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
         {
             base.LoadComplete();
             updateState();
+        }
+
+        /// <summary>
+        /// Stands aside where a selected object is under the cursor.
+        /// </summary>
+        /// <remarks>
+        /// The marker is drawn on top of everything behind the slider's tail and takes the mouse for itself, so a
+        /// circle sitting under that tail could be seen and selected but not picked up -- every attempt caught the
+        /// slider instead. What is selected is what the user has already said they are working on, so it wins.
+        ///
+        /// Declining positional input rather than the click itself, so the marker does not light up under the
+        /// cursor either: offering a grab that will not happen is the same problem one step earlier.
+        ///
+        /// The slider this marker belongs to does not count. When it is the selected one, the marker is the point.
+        /// </remarks>
+        public override bool ReceivePositionalInputAt(Vector2 screenSpacePos)
+        {
+            if (!base.ReceivePositionalInputAt(screenSpacePos))
+                return false;
+
+            var selected = composer?.BlueprintContainer.SelectionHandler.SelectedBlueprints;
+
+            if (selected == null)
+                return true;
+
+            foreach (var blueprint in selected)
+            {
+                if (blueprint.Item != Owner && blueprint.ReceivePositionalInputAt(screenSpacePos))
+                    return false;
+            }
+
+            return true;
         }
 
         protected override bool OnHover(HoverEvent e)

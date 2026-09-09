@@ -111,6 +111,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             // tail will always have a non-null end drag marker.
             Debug.Assert(TailOverlay.EndDragMarker != null);
 
+            TailOverlay.EndDragMarker.Owner = HitObject;
             TailOverlay.EndDragMarker.StartDrag += startAdjustingLength;
             TailOverlay.EndDragMarker.Drag += adjustLength;
             TailOverlay.EndDragMarker.EndDrag += endAdjustLength;

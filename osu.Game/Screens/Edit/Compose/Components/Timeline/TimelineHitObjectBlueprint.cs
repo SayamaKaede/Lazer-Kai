@@ -725,6 +725,42 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             public override bool HandlePositionalInput => hitObject != null;
 
             /// <summary>
+            /// The blueprints around this one, for <see cref="ReceivePositionalInputAt"/> below.
+            /// </summary>
+            private TimelineBlueprintContainer? blueprints;
+
+            /// <summary>
+            /// Stands aside where a selected object is under the cursor.
+            /// </summary>
+            /// <remarks>
+            /// The handle covers the end of its object, so anything landing on that end is behind it: the handle
+            /// answered every click there, and dragging lengthened the slider rather than moving what was under it.
+            /// Only the sliver of the object poking out could be grabbed. What is selected is what the user has
+            /// already said they are working on, so it wins.
+            ///
+            /// Declining positional input rather than the click itself, so the handle does not grow under the
+            /// cursor either: offering a grab that will not happen is the same problem one step earlier.
+            ///
+            /// The object this handle belongs to does not count. When it is the selected one, the handle is the point.
+            /// </remarks>
+            public override bool ReceivePositionalInputAt(Vector2 screenSpacePos)
+            {
+                if (!base.ReceivePositionalInputAt(screenSpacePos))
+                    return false;
+
+                if (blueprints == null)
+                    return true;
+
+                foreach (var blueprint in blueprints.SelectionHandler.SelectedBlueprints)
+                {
+                    if (blueprint.Item != hitObject && blueprint.ReceivePositionalInputAt(screenSpacePos))
+                        return false;
+                }
+
+                return true;
+            }
+
+            /// <summary>
             /// The height objects are drawn at, which this is sized from so it stays round.
             /// </summary>
             public float CircleSize
@@ -807,6 +843,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             protected override void LoadComplete()
             {
                 base.LoadComplete();
+
+                blueprints = this.FindClosestParent<TimelineBlueprintContainer>();
 
                 updateState();
                 FinishTransforms();
