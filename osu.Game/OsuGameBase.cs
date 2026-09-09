@@ -280,6 +280,8 @@ namespace osu.Game
 
             Resources.AddStore(new DllResourceStore(OsuResources.ResourceAssembly));
 
+            dependencies.Cache(new LazerKaiArtwork(Host, Storage));
+
             dependencies.Cache(realm = new RealmAccess(Storage, CLIENT_DATABASE_FILENAME, Host.UpdateThread));
 
             dependencies.CacheAs<RulesetStore>(RulesetStore = new RealmRulesetStore(realm, Storage));
