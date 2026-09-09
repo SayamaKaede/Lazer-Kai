@@ -134,6 +134,9 @@ namespace osu.Game.Rulesets.Osu.UI.Cursor
         {
             base.Update();
 
+            if (ScreenSpacePositionSource?.Invoke() is Vector2 position)
+                CursorMovedTo(position);
+
             Invalidate(Invalidation.DrawNode);
 
             const int fade_clock_reset_threshold = 1000000;
@@ -170,11 +173,33 @@ namespace osu.Game.Rulesets.Osu.UI.Cursor
 
         public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => true;
 
+        /// <summary>
+        /// Where the trail follows, in screen space, when the mouse is not what it follows. Returns null while
+        /// whatever is leading has nowhere to point.
+        /// </summary>
+        /// <remarks>
+        /// The editor draws autoplay's cursor, and its trail belongs to that rather than to the mapper's pointer,
+        /// which is off doing editing work.
+        /// </remarks>
+        public Func<Vector2?> ScreenSpacePositionSource { get; set; }
+
         protected override bool OnMouseMove(MouseMoveEvent e)
         {
-            AddTrail(e.ScreenSpaceMousePosition);
+            // something else is leading, and letting the mouse lay a trail as well would draw two of them.
+            if (ScreenSpacePositionSource == null)
+                CursorMovedTo(e.ScreenSpaceMousePosition);
+
             return base.OnMouseMove(e);
         }
+
+        /// <summary>
+        /// The cursor has arrived at <paramref name="screenSpacePosition"/>.
+        /// </summary>
+        /// <remarks>
+        /// Separate from <see cref="AddTrail"/> because a trail does not necessarily lay a part down for every
+        /// position it is given -- stable's puts them down on a timer instead.
+        /// </remarks>
+        protected virtual void CursorMovedTo(Vector2 screenSpacePosition) => AddTrail(screenSpacePosition);
 
         protected void AddTrail(Vector2 position)
         {

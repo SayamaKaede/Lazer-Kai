@@ -138,7 +138,10 @@ namespace osu.Game.Rulesets.Osu.UI.Cursor
             ActiveCursor.ScaleTo(0.8f, 450, Easing.OutQuint);
         }
 
-        private partial class DefaultCursorTrail : CursorTrail
+        /// <remarks>
+        /// Not private: the editor draws autoplay's cursor with the same trail behind it.
+        /// </remarks>
+        public partial class DefaultCursorTrail : CursorTrail
         {
             [BackgroundDependencyLoader]
             private void load(TextureStore textures)

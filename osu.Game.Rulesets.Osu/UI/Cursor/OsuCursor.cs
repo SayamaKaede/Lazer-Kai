@@ -85,8 +85,14 @@ namespace osu.Game.Rulesets.Osu.UI.Cursor
         protected override void LoadComplete()
         {
             base.LoadComplete();
-            cursorScale.Value = CalculateCursorScale();
+            UpdateCursorScale();
         }
+
+        /// <summary>
+        /// Works the scale out again, for anything feeding <see cref="CalculateCursorScale"/> a value that can
+        /// change while the cursor is on screen. The settings it reads already do this for themselves.
+        /// </summary>
+        protected void UpdateCursorScale() => cursorScale.Value = CalculateCursorScale();
 
         protected virtual Drawable CreateCursorContent() => cursorScaleContainer = new Container
         {

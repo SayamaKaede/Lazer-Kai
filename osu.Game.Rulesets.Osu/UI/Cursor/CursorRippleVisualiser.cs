@@ -43,16 +43,27 @@ namespace osu.Game.Rulesets.Osu.UI.Cursor
             if ((Clock as IGameplayClock)?.IsRewinding == true)
                 return false;
 
-            if (showRipples.Value)
-            {
-                AddInternal(ripplePool.Get(r =>
-                {
-                    r.Position = e.MousePosition;
-                    r.Scale = CursorScale;
-                }));
-            }
-
+            Ripple(e.MousePosition);
             return false;
+        }
+
+        /// <summary>
+        /// Sends a ripple out from <paramref name="position"/>, in this drawable's own space.
+        /// </summary>
+        /// <remarks>
+        /// Public so that a press which did not come from the keyboard can raise one -- the editor draws autoplay's
+        /// cursor, and the presses it shows are autoplay's rather than anybody's.
+        /// </remarks>
+        public void Ripple(Vector2 position)
+        {
+            if (!showRipples.Value)
+                return;
+
+            AddInternal(ripplePool.Get(r =>
+            {
+                r.Position = position;
+                r.Scale = CursorScale;
+            }));
         }
 
         public void OnReleased(KeyBindingReleaseEvent<OsuAction> e)

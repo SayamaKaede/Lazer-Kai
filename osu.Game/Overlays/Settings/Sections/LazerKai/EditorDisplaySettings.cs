@@ -25,6 +25,8 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     LabelText = EditorStrings.ShowPlayAreaBorder,
                     Current = config.GetBindable<bool>(OsuSetting.EditorShowPlayAreaBorder)
                 },
+                // autoplay's cursor is deliberately not here: it lives in the editor's own 表示 menu, where it can
+                // be turned on for the pattern being looked at and off again without leaving the editor.
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.DetectOffscreen,

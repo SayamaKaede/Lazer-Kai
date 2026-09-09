@@ -172,6 +172,11 @@ namespace osu.Game.Rulesets.Osu.Edit
         [Cached]
         protected readonly StreamConversionPanel StreamConversionPanel = new StreamConversionPanel();
 
+        /// <summary>
+        /// Where autoplay's cursor would be. Kept because flashlight reads its position as well as drawing it.
+        /// </summary>
+        private AutoCursorDisplay autoCursor;
+
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
@@ -185,6 +190,9 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             // in the playfield's own space, above everything else there, so the anchors sit where the shape is.
             PlayfieldContentContainer.Add(DrawableRuleset.CreatePlayfieldAdjustmentContainer().WithChild(new StreamShapeEditor()));
+
+            // over the objects rather than under them, the way a cursor sits over what it is pointing at.
+            PlayfieldContentContainer.Add(DrawableRuleset.CreatePlayfieldAdjustmentContainer().WithChild(autoCursor = new AutoCursorDisplay()));
             DistanceSnapProvider.AttachToToolbox(RightToolbox);
 
             // Give a bit of breathing room around the playfield content.
