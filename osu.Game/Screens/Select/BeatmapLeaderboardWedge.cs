@@ -20,6 +20,7 @@ using osu.Framework.Input.Events;
 using osu.Framework.Threading;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Cursor;
@@ -99,6 +100,15 @@ namespace osu.Game.Screens.Select
 
         private readonly List<ScheduledDelegate> scoreSfxDelegates = new List<ScheduledDelegate>();
 
+        /// <summary>
+        /// How far in the list of scores sits when there is no slant to make room for, and how much room it keeps
+        /// below its last score.
+        /// </summary>
+        /// <remarks>Settled by eye on 2026-09-08: flush against the edge cut the rank numbers off.</remarks>
+        private const float scores_inset_left = 24;
+
+        private const float scores_inset_bottom = 0;
+
         [BackgroundDependencyLoader]
         private void load(AudioManager audio)
         {
@@ -118,15 +128,10 @@ namespace osu.Game.Screens.Select
                         {
                             RelativeSizeAxes = Axes.X,
                             AutoSizeAxes = Axes.Y,
-                            Padding = new MarginPadding
-                            {
-                                Top = 5,
-                                // Left padding offsets the shear to create a visually appealing list display.
-                                Left = 80f,
-                                // Bottom padding ensures the last entry's full width is displayed
-                                // (ie it is fully on screen after shear is considered).
-                                Bottom = BeatmapLeaderboardScore.HEIGHT * 3
-                            },
+                            // Left padding offsets the shear to create a visually appealing list display.
+                            // Bottom padding ensures the last entry's full width is displayed
+                            // (ie it is fully on screen after shear is considered).
+                            // Both are what a slant asks for, so both are settled against the slant in updateInset().
                         },
                     },
                     personalBestDisplay = new Container
@@ -202,8 +207,25 @@ namespace osu.Game.Screens.Select
             ruleset.BindValueChanged(_ => RefetchScores());
             mods.BindValueChanged(_ => refetchScoresFromMods());
 
+            updateInset();
+
             RefetchScores();
         }
+
+        /// <summary>
+        /// Puts the list where the slant leaves room for it.
+        /// </summary>
+        /// <remarks>
+        /// Upstream's numbers are written for its own slant: the list starts 80 in and walks left as it goes down,
+        /// so the top of it is on screen and the bottom of it deliberately runs off. With no slant nothing walks,
+        /// and both numbers become a plain inset -- a different question, answered separately above.
+        /// </remarks>
+        private void updateInset() => scoresContainer.Padding = new MarginPadding
+        {
+            Top = 5,
+            Left = UiPalette.RoomForSlant(scores_inset_left, 80f),
+            Bottom = UiPalette.RoomForSlant(scores_inset_bottom, BeatmapLeaderboardScore.HEIGHT * 3),
+        };
 
         protected override void PopIn()
         {
