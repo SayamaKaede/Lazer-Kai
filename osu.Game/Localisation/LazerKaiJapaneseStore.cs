@@ -47,6 +47,12 @@ namespace osu.Game.Localisation
             // composing
             [$@"{editor_prefix}:advance_by_previous_spacing_on_placement"] = @"オブジェクト配置後に自動で次へシーク",
             [$@"{editor_prefix}:freehand_slider_placement"] = @"ドラッグでスライダーを描く",
+            [$@"{editor_prefix}:auto_new_combo"] = @"自動New Combo",
+            [$@"{editor_prefix}:auto_new_combo_description"] = @"小節を開くノーツに、置いた時点でNew Comboを付けます。すでに置いてあるものは変更しません",
+            [$@"{editor_prefix}:auto_new_combo_interval"] = @"頻度",
+            [$@"{editor_prefix}:auto_new_combo_half_bar"] = @"半小節ごと",
+            [$@"{editor_prefix}:auto_new_combo_one_bar"] = @"1小節ごと",
+            [$@"{editor_prefix}:auto_new_combo_two_bars"] = @"2小節ごと",
             [$@"{editor_prefix}:default_addition_bank"] = @"Addition bankの初期値",
             [$@"{editor_prefix}:default_addition_bank_description"] = @"Addition bankを持たないノーツにWhistle・Finish・Clapを付けたとき、このbankになります",
             [$@"{editor_prefix}:hide_grid_from_points_tool"] = @"ToolsのGRIDボタンを非表示",

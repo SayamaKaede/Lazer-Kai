@@ -389,6 +389,37 @@ namespace osu.Game.Localisation
         public static LocalisableString FreehandSliderPlacement => new TranslatableString(getKey(@"freehand_slider_placement"), @"Draw sliders freehand by dragging");
 
         /// <summary>
+        /// "Automatic new combo"
+        /// </summary>
+        public static LocalisableString AutoNewCombo => new TranslatableString(getKey(@"auto_new_combo"), @"Automatic new combo");
+
+        /// <summary>
+        /// "Whatever opens a bar is given a new combo as it is placed. Nothing already in the beatmap is touched."
+        /// </summary>
+        public static LocalisableString AutoNewComboDescription => new TranslatableString(getKey(@"auto_new_combo_description"),
+            @"Whatever opens a bar is given a new combo as it is placed. Nothing already in the beatmap is touched.");
+
+        /// <summary>
+        /// "How often"
+        /// </summary>
+        public static LocalisableString AutoNewComboIntervalLabel => new TranslatableString(getKey(@"auto_new_combo_interval"), @"How often");
+
+        /// <summary>
+        /// "Every half bar"
+        /// </summary>
+        public static LocalisableString AutoNewComboHalfBar => new TranslatableString(getKey(@"auto_new_combo_half_bar"), @"Every half bar");
+
+        /// <summary>
+        /// "Every bar"
+        /// </summary>
+        public static LocalisableString AutoNewComboOneBar => new TranslatableString(getKey(@"auto_new_combo_one_bar"), @"Every bar");
+
+        /// <summary>
+        /// "Every two bars"
+        /// </summary>
+        public static LocalisableString AutoNewComboTwoBars => new TranslatableString(getKey(@"auto_new_combo_two_bars"), @"Every two bars");
+
+        /// <summary>
         /// "Keep mod preview up to date while editing"
         /// </summary>
         public static LocalisableString LiveModPreview => new TranslatableString(getKey(@"live_mod_preview"), @"Keep mod preview up to date while editing");

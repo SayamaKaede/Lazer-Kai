@@ -2,7 +2,9 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Game.Graphics.UserInterfaceV2;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
 using osu.Game.Localisation;
@@ -13,9 +15,19 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
     {
         protected override LocalisableString Header => LazerKaiSettingsStrings.InputHeader;
 
+        private readonly Bindable<bool> autoNewCombo = new Bindable<bool>();
+
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
+            config.BindWith(OsuSetting.EditorAutoNewCombo, autoNewCombo);
+
+            var autoNewComboInterval = new FormEnumDropdown<AutoNewComboInterval>
+            {
+                Caption = EditorStrings.AutoNewComboIntervalLabel,
+                Current = config.GetBindable<AutoNewComboInterval>(OsuSetting.EditorAutoNewComboInterval),
+            };
+
             Children = new Drawable[]
             {
                 new SettingsCheckbox
@@ -24,6 +36,13 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     TooltipText = EditorStrings.AdvanceByPreviousSpacingOnPlacementDescription,
                     Current = config.GetBindable<bool>(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement)
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.AutoNewCombo,
+                    TooltipText = EditorStrings.AutoNewComboDescription,
+                    Current = autoNewCombo
+                },
+                new SettingsItemV2(autoNewComboInterval),
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.FreehandSliderPlacement,
@@ -61,6 +80,9 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     Current = config.GetBindable<bool>(OsuSetting.EditorAutoGenerateBreaks)
                 },
             };
+
+            // how often says nothing while nothing is being started, so it follows the switch above it.
+            autoNewCombo.BindValueChanged(on => autoNewComboInterval.Current.Disabled = !on.NewValue, true);
         }
     }
 }

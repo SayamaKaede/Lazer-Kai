@@ -337,6 +337,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSliderEndDragMarkerScale, 1f, 0.5f, 2f, 0.01f);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerOpacity, 1f, 0.1f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorAutoGenerateBreaks, true);
+            SetDefault(OsuSetting.EditorAutoNewCombo, false);
+            SetDefault(OsuSetting.EditorAutoNewComboInterval, AutoNewComboInterval.OneBar);
             SetDefault(OsuSetting.EditorCollapsedToolboxGroups, string.Empty);
             SetDefault(OsuSetting.EditorToolboxGroupOrder, string.Empty);
 
@@ -628,6 +630,12 @@ namespace osu.Game.Configuration
         /// Whether sliders can be drawn freehand by dragging during placement.
         /// </summary>
         EditorFreehandSliderPlacement,
+
+        /// <summary>Whether an object placed by hand is given a new combo when it opens a bar.</summary>
+        EditorAutoNewCombo,
+
+        /// <summary>How far apart those combos are wanted.</summary>
+        EditorAutoNewComboInterval,
 
         /// <summary>
         /// Whether the timeline's slider velocity / volume / sample bank labels stay expanded even where objects are dense.

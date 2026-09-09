@@ -105,6 +105,8 @@ namespace osu.Game.Rulesets.Edit
         private IBindable<bool> hasTiming = null!;
         private Bindable<bool> autoSeekOnPlacement = null!;
         private Bindable<bool> advanceByPreviousSpacingOnPlacement = null!;
+        private Bindable<bool> autoNewCombo = null!;
+        private Bindable<AutoNewComboInterval> autoNewComboInterval = null!;
         private Bindable<bool> liveModPreview = null!;
         private Bindable<bool> alwaysExpandLeftToolbox = null!;
 
@@ -137,6 +139,8 @@ namespace osu.Game.Rulesets.Edit
 
             autoSeekOnPlacement = config.GetBindable<bool>(OsuSetting.EditorAutoSeekOnPlacement);
             advanceByPreviousSpacingOnPlacement = config.GetBindable<bool>(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement);
+            autoNewCombo = config.GetBindable<bool>(OsuSetting.EditorAutoNewCombo);
+            autoNewComboInterval = config.GetBindable<AutoNewComboInterval>(OsuSetting.EditorAutoNewComboInterval);
             liveModPreview = config.GetBindable<bool>(OsuSetting.EditorLiveModPreview);
             alwaysExpandLeftToolbox = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox);
 
@@ -689,6 +693,23 @@ namespace osu.Game.Rulesets.Edit
             EditorBeatmap.PlacementObject.Value = null;
         }
 
+        /// <summary>
+        /// Gives an object being placed a new combo, if it is what opens its bar and nothing else has.
+        /// </summary>
+        /// <remarks>
+        /// Only what is being placed by hand: pasting, and the tools that lay down a whole run at once, carry the
+        /// combos they were given. Deciding before the object goes in, so that the object and its combo arrive
+        /// together and one undo takes both back.
+        /// </remarks>
+        private void startComboIfItOpensABar(HitObject hitObject)
+        {
+            if (!autoNewCombo.Value || hitObject is not IHasComboInformation combo || combo.NewCombo)
+                return;
+
+            if (AutomaticNewCombo.ShouldStartCombo(hitObject, EditorBeatmap.ControlPointInfo, EditorBeatmap.HitObjects, autoNewComboInterval.Value.Bars()))
+                combo.NewCombo = true;
+        }
+
         public void CommitPlacement(HitObject hitObject)
         {
             EditorBeatmap.PlacementObject.Value = null;
@@ -697,6 +718,9 @@ namespace osu.Game.Rulesets.Edit
 
             foreach (var h in EditorBeatmap.HitObjects.Where(ho => blueprintContainer.CurrentHitObjectPlacement?.ReplacesExistingObject(ho) == true).ToArray())
                 EditorBeatmap.Remove(h);
+
+            startComboIfItOpensABar(hitObject);
+
             EditorBeatmap.Add(hitObject);
             EditorBeatmap.EndChange();
 
