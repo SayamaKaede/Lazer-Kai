@@ -63,6 +63,7 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
             AddStep("back to the stock layout", () => config.GetBindable<EditorTimelineStyle>(OsuSetting.EditorTimelineStyle).SetDefault());
             AddStep("back to the stock rows", () => config.GetBindable<bool>(OsuSetting.EditorHideTimelinePoints).SetDefault());
+            AddStep("bring the volume row back", () => config.GetBindable<bool>(OsuSetting.EditorHideTimelineVolume).SetDefault());
             AddStep("let the timeline be dragged again", () => config.GetBindable<bool>(OsuSetting.EditorTimelineDragToSeek).SetDefault());
         }
 
@@ -327,6 +328,81 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                    && Precision.AlmostEquals(circle.Colour.TopLeft.SRGB.G, OsuColour.Gray(0.6f).G, 0.01f)
                    && Precision.AlmostEquals(circle.Colour.TopLeft.SRGB.B, OsuColour.Gray(0.6f).B, 0.01f);
         }
+
+        /// <summary>
+        /// The volume row can be given up on its own, which is a different thing from giving up both: the velocity
+        /// row stays where it is and the objects take what the volume row leaves.
+        /// </summary>
+        [Test]
+        public void TestTheVolumeRowCanBeHiddenOnItsOwn()
+        {
+            float stockHeight = 0;
+            float bothHiddenHeight = 0;
+
+            AddUntilStep("read how tall an object is", () =>
+            {
+                stockHeight = objectBottom() - objectTop();
+                return stockHeight > 0;
+            });
+
+            AddStep("hide both rows", () => config.SetValue(OsuSetting.EditorHideTimelinePoints, true));
+            AddUntilStep("read it with both away", () =>
+            {
+                bothHiddenHeight = objectBottom() - objectTop();
+                return bothHiddenHeight > stockHeight;
+            });
+
+            AddStep("bring the rows back", () => config.SetValue(OsuSetting.EditorHideTimelinePoints, false));
+            AddUntilStep("back to the stock height", () => objectBottom() - objectTop(), () => Is.EqualTo(stockHeight).Within(0.5f));
+
+            AddStep("hide the volume row only", () => config.SetValue(OsuSetting.EditorHideTimelineVolume, true));
+
+            AddUntilStep("the object grew", () => objectBottom() - objectTop(), () => Is.GreaterThan(stockHeight));
+            AddAssert("but not by as much as with both away", () => objectBottom() - objectTop(), () => Is.LessThan(bothHiddenHeight));
+
+            AddAssert("the volume row is gone", () => volumeRowShown(), () => Is.False);
+            AddAssert("the velocity row is still there", () => velocityRowShown(), () => Is.True);
+        }
+
+        /// <summary>
+        /// The object grows into the row that went away, so whatever was above that row has to come down with it.
+        /// Left where it was, the velocity row plus the taller object reach past the top of the timeline.
+        /// </summary>
+        [Test]
+        public void TestNothingReachesPastTheTopWithTheVolumeRowHidden()
+        {
+            AddStep("use the Lazer-Kai layout", () => setStyle(EditorTimelineStyle.LazerKai));
+            AddStep("hide the volume row", () => config.SetValue(OsuSetting.EditorHideTimelineVolume, true));
+
+            AddUntilStep("the velocity row is still inside the timeline",
+                () => velocityRowTop(), () => Is.GreaterThanOrEqualTo(timeline().ScreenSpaceDrawQuad.TopLeft.Y - 1));
+
+            AddAssert("and so are the objects", () => objectTop(), () => Is.GreaterThanOrEqualTo(timeline().ScreenSpaceDrawQuad.TopLeft.Y - 1));
+        }
+
+        private float velocityRowTop()
+            => Editor.ChildrenOfType<DifficultyPointPiece>().First(p => p.IsPresent).ScreenSpaceDrawQuad.TopLeft.Y;
+
+        /// <summary>
+        /// Asking for both while the volume row is already away gives both: the two settings are about different
+        /// things and the wider one wins.
+        /// </summary>
+        [Test]
+        public void TestHidingBothWhileTheVolumeRowIsAwayHidesBoth()
+        {
+            AddStep("hide the volume row only", () => config.SetValue(OsuSetting.EditorHideTimelineVolume, true));
+            AddStep("then hide both", () => config.SetValue(OsuSetting.EditorHideTimelinePoints, true));
+
+            AddUntilStep("the velocity row went too", () => velocityRowShown(), () => Is.False);
+        }
+
+        /// <remarks>
+        /// Read from whether the piece is actually being drawn rather than from its own alpha: the node pieces are
+        /// hidden by the container holding them, which leaves each of them saying it is fully visible.
+        /// </remarks>
+        private bool volumeRowShown() => Editor.ChildrenOfType<SamplePointPiece>().Any(p => p.IsPresent && p.Parent?.IsPresent != false);
+
+        private bool velocityRowShown() => Editor.ChildrenOfType<DifficultyPointPiece>().Any(p => p.IsPresent);
 
         private Timeline timeline() => Editor.ChildrenOfType<Timeline>().Single();
 

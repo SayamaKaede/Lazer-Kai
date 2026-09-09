@@ -326,9 +326,11 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorAutoBackupInterval, 5.0, 1.0, 30.0, 1.0);
             SetDefault(OsuSetting.EditorAutoBackupKeepCount, 20, 5, 200);
             SetDefault(OsuSetting.EditorHideTimelinePoints, false);
+
             SetDefault(OsuSetting.EditorTimelineStyle, EditorTimelineStyle.Lazer);
             SetDefault(OsuSetting.EditorTimelineDragToSeek, true);
             SetDefault(OsuSetting.EditorTimelineUseSkin, false);
+            SetDefault(OsuSetting.EditorHideTimelineVolume, false);
 
             SetDefault(OsuSetting.CollabOverlayOpacity, 1f, 0.2f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorTimelineDragAreaScale, 0.5f, 0.5f, 1f, 0.01f);
@@ -1059,6 +1061,9 @@ namespace osu.Game.Configuration
         /// Whether the timeline draws its objects with the skin's own circles, ends and reverse arrows.
         /// </summary>
         EditorTimelineUseSkin,
+
+        /// <summary>Whether the timeline's volume row alone gives up its space to the objects.</summary>
+        EditorHideTimelineVolume,
 
         /// <summary>The colour of the outline drawn around a selected object itself.</summary>
         EditorObjectOutlineColour,

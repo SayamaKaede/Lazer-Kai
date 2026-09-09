@@ -52,6 +52,17 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         /// </summary>
         public const float POINT_ROW_HEIGHT = 15;
 
+        /// <summary>
+        /// What the objects are drawn at with only the volume row hidden.
+        /// </summary>
+        /// <remarks>
+        /// Exactly what the row gives up. Settled by eye against the real timeline on 2026-09-08, and it landed on
+        /// the arithmetic rather than beside it.
+        /// </remarks>
+        private const float volume_hidden_circle_size = circle_size + POINT_ROW_HEIGHT;
+
+        private const float stable_volume_hidden_circle_size = stable_circle_size + POINT_ROW_HEIGHT;
+
 
         /// <summary>
         /// How solid the combo colour is drawn while the skin's pieces are being used.
@@ -101,6 +112,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private readonly Container<UnsnapMarker>? repeatUnsnaps;
 
         private readonly Bindable<bool> hideTimelinePoints = new Bindable<bool>();
+
+        private readonly Bindable<bool> hideTimelineVolume = new Bindable<bool>();
 
         [Resolved(CanBeNull = true)]
         private EditorReferenceDifficulty? referenceDifficulty { get; set; }
@@ -234,10 +247,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private void load(OsuConfigManager config)
         {
             config.BindWith(OsuSetting.EditorHideTimelinePoints, hideTimelinePoints);
+            config.BindWith(OsuSetting.EditorHideTimelineVolume, hideTimelineVolume);
             config.BindWith(OsuSetting.EditorTimelineStyle, timelineStyle);
             config.BindWith(OsuSetting.EditorTimelineUseSkin, useSkin);
 
             hideTimelinePoints.BindValueChanged(_ => updateSizing());
+            hideTimelineVolume.BindValueChanged(_ => updateSizing());
 
             timelineStyle.BindValueChanged(_ =>
             {
@@ -269,12 +284,19 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         /// rows over them rather than one on either side, which leaves more of the height for the objects themselves.
         /// The four numbers were settled by eye against a real beatmap rather than worked out.
         /// </remarks>
-        public static float CircleSizeFor(bool pointRowsHidden, EditorTimelineStyle style)
+        /// <param name="pointRowsHidden">Whether both rows have given up their space.</param>
+        /// <param name="volumeRowHidden">Whether the volume row alone has.</param>
+        /// <param name="style">Which layout the timeline is being read in.</param>
+        public static float CircleSizeFor(bool pointRowsHidden, bool volumeRowHidden, EditorTimelineStyle style)
         {
             if (style.RestsOnTheBottomEdge())
-                return pointRowsHidden ? stable_expanded_circle_size : stable_circle_size;
+                return pointRowsHidden ? stable_expanded_circle_size
+                    : volumeRowHidden ? stable_volume_hidden_circle_size
+                    : stable_circle_size;
 
-            return pointRowsHidden ? expanded_circle_size : circle_size;
+            return pointRowsHidden ? expanded_circle_size
+                : volumeRowHidden ? volume_hidden_circle_size
+                : circle_size;
         }
 
         /// <summary>
@@ -300,9 +322,11 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             }
 
             // velocity goes above volume rather than the other way round: volume belongs to the object itself, so it
-            // reads better sitting right on it.
+            // reads better sitting right on it. With volume away, velocity takes the row it left rather than leaving
+            // a gap where it was -- the object has already grown into that space, and the two together would reach
+            // past the top of the timeline.
             if (difficultyPointPiece != null)
-                difficultyPointPiece.Y = above ? -POINT_ROW_HEIGHT : 0;
+                difficultyPointPiece.Y = above && !volumeRowHidden ? -POINT_ROW_HEIGHT : 0;
         }
 
         /// <summary>
@@ -314,10 +338,15 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         /// </summary>
         private bool pointRowsHidden => hideTimelinePoints.Value || referenceDifficulty?.Beatmap.Value != null;
 
+        /// <summary>
+        /// Whether the volume row alone is giving up its space. Never while both rows are already away.
+        /// </summary>
+        private bool volumeRowHidden => hideTimelineVolume.Value && !pointRowsHidden;
+
         // half of what the rows give up goes to the difficulty being referenced, so the objects stay their stock size
         // rather than growing into all of it.
         private float currentCircleSize => referenceDifficulty?.Beatmap.Value != null ? circle_size
-            : CircleSizeFor(hideTimelinePoints.Value, timelineStyle.Value);
+            : CircleSizeFor(hideTimelinePoints.Value, volumeRowHidden, timelineStyle.Value);
 
         private void updateSizing()
         {
@@ -353,8 +382,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             // hidden rather than removed, so the pieces come back the moment the setting does.
             float pointAlpha = pointRowsHidden ? 0 : 1;
 
-            samplePointPiece.Alpha = pointAlpha;
-            sampleComponents.Alpha = pointAlpha;
+            // the volume row can be given up on its own. The velocity row sits above the object rather than on it,
+            // so it rides up with the object as it grows and needs nothing doing to it.
+            float volumeAlpha = pointRowsHidden || volumeRowHidden ? 0 : 1;
+
+            samplePointPiece.Alpha = volumeAlpha;
+            sampleComponents.Alpha = volumeAlpha;
 
             if (difficultyPointPiece != null)
                 difficultyPointPiece.Alpha = pointAlpha;

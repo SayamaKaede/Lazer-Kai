@@ -65,6 +65,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private readonly Bindable<bool> hideTimelinePoints = new Bindable<bool>();
 
+        private readonly Bindable<bool> hideTimelineVolume = new Bindable<bool>();
+
         private readonly Bindable<EditorTimelineStyle> timelineStyle = new Bindable<EditorTimelineStyle>();
 
         private readonly BindableBool dragToSeek = new BindableBool();
@@ -79,10 +81,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             alwaysExpandPointLabels = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandTimelinePointLabels);
 
             config.BindWith(OsuSetting.EditorHideTimelinePoints, hideTimelinePoints);
+            config.BindWith(OsuSetting.EditorHideTimelineVolume, hideTimelineVolume);
             config.BindWith(OsuSetting.EditorTimelineStyle, timelineStyle);
             config.BindWith(OsuSetting.EditorTimelineDragToSeek, dragToSeek);
 
             hideTimelinePoints.BindValueChanged(_ => updateLayout());
+            hideTimelineVolume.BindValueChanged(_ => updateLayout());
             timelineStyle.BindValueChanged(_ => updateLayout());
 
             SelectableAreaBackground background;
@@ -116,7 +120,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             {
                 Anchor = Origin = Anchor.BottomLeft;
                 RelativeSizeAxes = Axes.X;
-                Height = TimelineHitObjectBlueprint.CircleSizeFor(hidden, timelineStyle.Value);
+                Height = TimelineHitObjectBlueprint.CircleSizeFor(hidden, hideTimelineVolume.Value && !hidden, timelineStyle.Value);
                 Y = 0;
                 return;
             }

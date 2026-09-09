@@ -1161,6 +1161,17 @@ namespace osu.Game.Localisation
             @"Brings the look and the feel closer to stable's.");
 
         /// <summary>
+        /// "Hide the volume row"
+        /// </summary>
+        public static LocalisableString HideTimelineVolume => new TranslatableString(getKey(@"hide_timeline_volume"), @"Hide the volume row");
+
+        /// <summary>
+        /// "The objects take the space it gives up. The velocity row stays."
+        /// </summary>
+        public static LocalisableString HideTimelineVolumeDescription => new TranslatableString(getKey(@"hide_timeline_volume_description"),
+            @"The objects take the space it gives up. The velocity row stays.");
+
+        /// <summary>
         /// "Reverse handle size"
         /// </summary>
         public static LocalisableString TimelineDragAreaScale => new TranslatableString(getKey(@"timeline_drag_area_scale"), @"Reverse handle size");

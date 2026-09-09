@@ -50,6 +50,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     TooltipText = EditorStrings.HideTimelinePointsDescription,
                     Current = config.GetBindable<bool>(OsuSetting.EditorHideTimelinePoints)
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.HideTimelineVolume,
+                    TooltipText = EditorStrings.HideTimelineVolumeDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorHideTimelineVolume)
+                },
                 new SettingsItemV2(new FormSliderBar<float>
                 {
                     Caption = EditorStrings.TimelineDragAreaScale,
