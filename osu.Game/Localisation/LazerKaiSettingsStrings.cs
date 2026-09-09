@@ -42,9 +42,9 @@ namespace osu.Game.Localisation
         public static LocalisableString DisplayHeader => new TranslatableString(getKey(@"display_header"), @"Editor display");
 
         /// <summary>
-        /// "Difficulty graph"
+        /// "Bottom timeline"
         /// </summary>
-        public static LocalisableString DifficultyGraphHeader => new TranslatableString(getKey(@"difficulty_graph_header"), @"Difficulty graph");
+        public static LocalisableString DifficultyGraphHeader => new TranslatableString(getKey(@"difficulty_graph_header"), @"Bottom timeline");
 
         /// <summary>
         /// "Ghost difficulty"

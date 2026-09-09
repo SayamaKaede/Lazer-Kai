@@ -40,10 +40,12 @@ namespace osu.Game.Tests.Visual.Editing
         private static readonly Dictionary<GlobalAction, LocalisableString> menu_labels = new Dictionary<GlobalAction, LocalisableString>
         {
             [GlobalAction.EditorToggleDifficultyGraph] = EditorStrings.ShowDifficultyGraph,
+            [GlobalAction.EditorToggleVolumeGraph] = EditorStrings.ShowVolumeGraph,
             [GlobalAction.EditorTogglePlayAreaBorder] = EditorStrings.ShowPlayAreaBorder,
             [GlobalAction.EditorToggleOffscreenDetection] = EditorStrings.DetectOffscreen,
             [GlobalAction.EditorToggleLeftToolboxExpansion] = EditorStrings.AlwaysExpandLeftToolbox,
             [GlobalAction.EditorToggleTimelinePointLabels] = EditorStrings.AlwaysExpandTimelinePointLabels,
+            [GlobalAction.EditorToggleAutoCursor] = EditorStrings.ShowAutoCursor,
         };
 
         [TearDownSteps]
@@ -54,10 +56,12 @@ namespace osu.Game.Tests.Visual.Editing
                 foreach (var setting in new[]
                          {
                              OsuSetting.EditorShowDifficultyGraph,
+                             OsuSetting.EditorShowVolumeGraph,
                              OsuSetting.EditorShowPlayAreaBorder,
                              OsuSetting.EditorDetectOffscreen,
                              OsuSetting.EditorAlwaysExpandLeftToolbox,
                              OsuSetting.EditorAlwaysExpandTimelinePointLabels,
+                             OsuSetting.EditorShowAutoCursor,
                          })
                 {
                     config.GetBindable<bool>(setting).SetDefault();
@@ -66,10 +70,12 @@ namespace osu.Game.Tests.Visual.Editing
         }
 
         [TestCase(GlobalAction.EditorToggleDifficultyGraph, OsuSetting.EditorShowDifficultyGraph)]
+        [TestCase(GlobalAction.EditorToggleVolumeGraph, OsuSetting.EditorShowVolumeGraph)]
         [TestCase(GlobalAction.EditorTogglePlayAreaBorder, OsuSetting.EditorShowPlayAreaBorder)]
         [TestCase(GlobalAction.EditorToggleOffscreenDetection, OsuSetting.EditorDetectOffscreen)]
         [TestCase(GlobalAction.EditorToggleLeftToolboxExpansion, OsuSetting.EditorAlwaysExpandLeftToolbox)]
         [TestCase(GlobalAction.EditorToggleTimelinePointLabels, OsuSetting.EditorAlwaysExpandTimelinePointLabels)]
+        [TestCase(GlobalAction.EditorToggleAutoCursor, OsuSetting.EditorShowAutoCursor)]
         public void TestActionMovesItsOwnSetting(GlobalAction action, OsuSetting setting)
         {
             bool started = false;
@@ -88,10 +94,12 @@ namespace osu.Game.Tests.Visual.Editing
         /// finds out here that it took.
         /// </remarks>
         [TestCase(GlobalAction.EditorToggleDifficultyGraph)]
+        [TestCase(GlobalAction.EditorToggleVolumeGraph)]
         [TestCase(GlobalAction.EditorTogglePlayAreaBorder)]
         [TestCase(GlobalAction.EditorToggleOffscreenDetection)]
         [TestCase(GlobalAction.EditorToggleLeftToolboxExpansion)]
         [TestCase(GlobalAction.EditorToggleTimelinePointLabels)]
+        [TestCase(GlobalAction.EditorToggleAutoCursor)]
         public void TestMenuItemNamesTheBinding(GlobalAction action)
         {
             AddAssert("menu item carries the hotkey",

@@ -75,6 +75,9 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary
                         },
                     }
                 },
+                // over the centre line as well as over the difficulty curve: the volume sits at half its range for
+                // most beatmaps, which is exactly where that line is drawn, and it was hidden under it.
+                new VolumeGraphPart(),
                 new BreakPart
                 {
                     Anchor = Anchor.Centre,

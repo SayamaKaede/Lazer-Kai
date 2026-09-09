@@ -253,6 +253,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorRightToolboxWidth, 250f, 150f, 500f, 1f);
             SetDefault(OsuSetting.RemoveDragThreshold, false);
             SetDefault(OsuSetting.EditorShowPlayAreaBorder, true);
+            SetDefault(OsuSetting.EditorShowAutoCursor, false);
             SetDefault(OsuSetting.EditorDetectOffscreen, true);
             SetDefault(OsuSetting.EditorNotifyOnBackup, true);
             SetDefault(OsuSetting.EditorToolButtonSquareness, 0f, 0f, 0.3f, 0.01f);
@@ -312,6 +313,11 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.01f);
+
+            SetDefault(OsuSetting.EditorShowVolumeGraph, false);
+            SetDefault(OsuSetting.EditorVolumeGraphColour, EditorSelectionColour.Default);
+            SetDefault(OsuSetting.EditorVolumeGraphThickness, 2f, 1f, 6f, 0.5f);
+            SetDefault(OsuSetting.EditorVolumeGraphOpacity, 0.8f, 0.1f, 1f, 0.01f);
             // the top of the range is where the column count stops, so every part of the slider does something.
             SetDefault(OsuSetting.EditorDifficultyGraphDetail, DifficultyGraphPart.DEFAULT_DETAIL, 0.25f, 3f, 0.05f);
             // the detail screen is a room rather than a strip, so how finely it is worth drawing there is a separate
@@ -690,6 +696,9 @@ namespace osu.Game.Configuration
         /// </summary>
         EditorShowPlayAreaBorder,
 
+        /// <summary>Whether the editor draws where autoplay's cursor would be.</summary>
+        EditorShowAutoCursor,
+
         /// <summary>
         /// Whether the editor marks objects which leave the visible play area.
         /// </summary>
@@ -813,6 +822,26 @@ namespace osu.Game.Configuration
         /// How densely the editor's difficulty graph is drawn, as a proportion of its usual detail.
         /// </summary>
         EditorDifficultyGraphDetail,
+
+        /// <summary>
+        /// Whether the volume is drawn over the summary timeline.
+        /// </summary>
+        EditorShowVolumeGraph,
+
+        /// <summary>
+        /// Colour of that line.
+        /// </summary>
+        EditorVolumeGraphColour,
+
+        /// <summary>
+        /// How thick it is drawn.
+        /// </summary>
+        EditorVolumeGraphThickness,
+
+        /// <summary>
+        /// How solid it is drawn.
+        /// </summary>
+        EditorVolumeGraphOpacity,
 
         /// <summary>
         /// How densely the difficulty graph's detail screen is drawn, as a proportion of its usual detail.

@@ -275,6 +275,12 @@ namespace osu.Game.Localisation
             new TranslatableString(getKey(@"editor_toggle_difficulty_graph"), @"Toggle the difficulty graph");
 
         /// <summary>
+        /// "Toggle the volume graph"
+        /// </summary>
+        public static LocalisableString EditorToggleVolumeGraph =>
+            new TranslatableString(getKey(@"editor_toggle_volume_graph"), @"Toggle the volume graph");
+
+        /// <summary>
         /// "Toggle the play area border"
         /// </summary>
         public static LocalisableString EditorTogglePlayAreaBorder =>
@@ -285,6 +291,12 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString EditorToggleOffscreenDetection =>
             new TranslatableString(getKey(@"editor_toggle_offscreen_detection"), @"Toggle offscreen detection");
+
+        /// <summary>
+        /// "Toggle autoplay's cursor"
+        /// </summary>
+        public static LocalisableString EditorToggleAutoCursor =>
+            new TranslatableString(getKey(@"editor_toggle_auto_cursor"), @"Toggle autoplay's cursor");
 
         /// <summary>
         /// "Toggle keeping the left toolbox expanded"

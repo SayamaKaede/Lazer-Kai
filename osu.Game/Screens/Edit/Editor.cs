@@ -328,10 +328,12 @@ namespace osu.Game.Screens.Edit
         private Bindable<double> editorSeekAnimationDuration;
         private Bindable<bool> editorAlwaysExpandLeftToolbox;
         private Bindable<bool> editorShowPlayAreaBorder;
+        private Bindable<bool> editorShowAutoCursor;
         private Bindable<bool> editorDetectOffscreen;
         private Bindable<bool> editorShowTimeline;
         private Bindable<bool> editorShowDifficultyGraph;
         private Bindable<bool> editorAutoBackup;
+        private Bindable<bool> editorShowVolumeGraph;
 
         private EditorAutoBackup autoBackup;
 
@@ -497,10 +499,12 @@ namespace osu.Game.Screens.Edit
             editorSeekAnimationDuration = config.GetBindable<double>(OsuSetting.EditorSeekAnimationDuration);
             editorAlwaysExpandLeftToolbox = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox);
             editorShowPlayAreaBorder = config.GetBindable<bool>(OsuSetting.EditorShowPlayAreaBorder);
+            editorShowAutoCursor = config.GetBindable<bool>(OsuSetting.EditorShowAutoCursor);
             editorDetectOffscreen = config.GetBindable<bool>(OsuSetting.EditorDetectOffscreen);
             editorShowTimeline = config.GetBindable<bool>(OsuSetting.EditorShowTimeline);
             editorShowDifficultyGraph = config.GetBindable<bool>(OsuSetting.EditorShowDifficultyGraph);
             editorAutoBackup = config.GetBindable<bool>(OsuSetting.EditorAutoBackup);
+            editorShowVolumeGraph = config.GetBindable<bool>(OsuSetting.EditorShowVolumeGraph);
 
             // These two settings don't work together. Make them mutually exclusive to let the user know.
             editorAutoSeekOnPlacement.BindValueChanged(enabled =>
@@ -626,10 +630,20 @@ namespace osu.Game.Screens.Edit
                                                 State = { BindTarget = editorShowDifficultyGraph },
                                                 Hotkey = new Hotkey(GlobalAction.EditorToggleDifficultyGraph),
                                             },
+                                            new ToggleMenuItem(EditorStrings.ShowVolumeGraph)
+                                            {
+                                                State = { BindTarget = editorShowVolumeGraph },
+                                                Hotkey = new Hotkey(GlobalAction.EditorToggleVolumeGraph),
+                                            },
                                             new ToggleMenuItem(EditorStrings.ShowPlayAreaBorder)
                                             {
                                                 State = { BindTarget = editorShowPlayAreaBorder },
                                                 Hotkey = new Hotkey(GlobalAction.EditorTogglePlayAreaBorder),
+                                            },
+                                            new ToggleMenuItem(EditorStrings.ShowAutoCursor)
+                                            {
+                                                State = { BindTarget = editorShowAutoCursor },
+                                                Hotkey = new Hotkey(GlobalAction.EditorToggleAutoCursor),
                                             },
                                             new ToggleMenuItem(EditorStrings.DetectOffscreen)
                                             {
@@ -845,8 +859,14 @@ namespace osu.Game.Screens.Edit
             editorShowDifficultyGraph.BindValueChanged(shown =>
                 announceState(EditorStrings.ShowDifficultyGraph, shown.NewValue ? EditorStrings.Shown : EditorStrings.Hidden));
 
+            editorShowVolumeGraph.BindValueChanged(shown =>
+                announceState(EditorStrings.ShowVolumeGraph, shown.NewValue ? EditorStrings.Shown : EditorStrings.Hidden));
+
             editorShowPlayAreaBorder.BindValueChanged(shown =>
                 announceState(EditorStrings.ShowPlayAreaBorder, shown.NewValue ? EditorStrings.Shown : EditorStrings.Hidden));
+
+            editorShowAutoCursor.BindValueChanged(shown =>
+                announceState(EditorStrings.ShowAutoCursor, shown.NewValue ? EditorStrings.Shown : EditorStrings.Hidden));
 
             editorDetectOffscreen.BindValueChanged(on => announceEnabled(EditorStrings.DetectOffscreen, on.NewValue));
 
@@ -1231,12 +1251,20 @@ namespace osu.Game.Screens.Edit
                     editorShowDifficultyGraph.Value = !editorShowDifficultyGraph.Value;
                     return true;
 
+                case GlobalAction.EditorToggleVolumeGraph:
+                    editorShowVolumeGraph.Value = !editorShowVolumeGraph.Value;
+                    return true;
+
                 case GlobalAction.EditorTogglePlayAreaBorder:
                     editorShowPlayAreaBorder.Value = !editorShowPlayAreaBorder.Value;
                     return true;
 
                 case GlobalAction.EditorToggleOffscreenDetection:
                     editorDetectOffscreen.Value = !editorDetectOffscreen.Value;
+                    return true;
+
+                case GlobalAction.EditorToggleAutoCursor:
+                    editorShowAutoCursor.Value = !editorShowAutoCursor.Value;
                     return true;
 
                 case GlobalAction.EditorToggleLeftToolboxExpansion:

@@ -43,6 +43,28 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     Current = config.GetBindable<float>(OsuSetting.EditorDifficultyGraphDetail),
                     DisplayAsPercentage = true,
                 }),
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.ShowVolumeGraph,
+                    TooltipText = EditorStrings.ShowVolumeGraphDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorShowVolumeGraph)
+                },
+                new SettingsEnumDropdown<EditorSelectionColour>
+                {
+                    LabelText = EditorStrings.VolumeGraphColour,
+                    Current = config.GetBindable<EditorSelectionColour>(OsuSetting.EditorVolumeGraphColour)
+                },
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.VolumeGraphThickness,
+                    Current = config.GetBindable<float>(OsuSetting.EditorVolumeGraphThickness),
+                }),
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.VolumeGraphOpacity,
+                    Current = config.GetBindable<float>(OsuSetting.EditorVolumeGraphOpacity),
+                    DisplayAsPercentage = true,
+                }),
             };
         }
     }

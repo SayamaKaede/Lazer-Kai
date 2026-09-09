@@ -70,6 +70,8 @@ namespace osu.Game.Localisation
 
             // display
             [$@"{editor_prefix}:show_play_area_border"] = @"プレイ画面の枠を表示",
+            [$@"{editor_prefix}:show_auto_cursor"] = @"Autoのカーソルを表示",
+            [$@"{editor_prefix}:show_auto_cursor_description"] = @"再生中もシーク中も、Autoと同じ動きでカーソルを表示します",
             [$@"{editor_prefix}:detect_offscreen"] = @"Offscreen検知",
             // stream conversion
             [$@"{editor_prefix}:convert_to_stream"] = @"連打に変換",
@@ -92,10 +94,15 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:grid_defaults_description"] = @"エディターを開いたときのグリッドの初期値です。間隔は、譜面に保存されている値より優先されます",
             [$@"{editor_prefix}:show_unsnap_markers"] = @"スナップから外れたノーツに印を付ける",
             [$@"{editor_prefix}:show_unsnap_markers_description"] = @"2msより大きいズレの場合にのみ機能します",
-            [$@"{editor_prefix}:show_difficulty_graph"] = @"難易度グラフ",
-            [$@"{editor_prefix}:difficulty_graph_colour"] = @"色",
-            [$@"{editor_prefix}:difficulty_graph_opacity"] = @"不透明度",
-            [$@"{editor_prefix}:difficulty_graph_detail"] = @"精密さ",
+            [$@"{editor_prefix}:show_difficulty_graph"] = @"難易度グラフを表示",
+            [$@"{editor_prefix}:difficulty_graph_colour"] = @"難易度グラフの色",
+            [$@"{editor_prefix}:show_volume_graph"] = @"音量のグラフを表示",
+            [$@"{editor_prefix}:show_volume_graph_description"] = @"曲全体の音量の移り変わりを下部タイムラインに線で表示します",
+            [$@"{editor_prefix}:volume_graph_colour"] = @"音量グラフの色",
+            [$@"{editor_prefix}:volume_graph_thickness"] = @"音量グラフの太さ",
+            [$@"{editor_prefix}:volume_graph_opacity"] = @"音量グラフの不透明度",
+            [$@"{editor_prefix}:difficulty_graph_opacity"] = @"難易度グラフの不透明度",
+            [$@"{editor_prefix}:difficulty_graph_detail"] = @"難易度グラフの精密さ",
             [$@"{editor_prefix}:difficulty_graph_detail_screen"] = @"難易度グラフの詳細",
             [$@"{editor_prefix}:difficulty_graph_per_skill"] = @"スキル別",
             [$@"{editor_prefix}:difficulty_graph_total"] = @"合計",
@@ -301,6 +308,7 @@ namespace osu.Game.Localisation
             [$@"{binding_prefix}:editor_next_reference_difficulty"] = @"ゴーストを一つ上の難易度に",
             [$@"{binding_prefix}:editor_previous_reference_difficulty"] = @"ゴーストを一つ下の難易度に",
             [$@"{binding_prefix}:editor_toggle_difficulty_graph"] = @"難易度グラフの表示を切り替え",
+            [$@"{binding_prefix}:editor_toggle_volume_graph"] = @"音量のグラフの表示を切り替え",
             [$@"{binding_prefix}:editor_toggle_play_area_border"] = @"プレイ画面の枠の表示を切り替え",
             [$@"{binding_prefix}:editor_toggle_offscreen_detection"] = @"Offscreen検知を切り替え",
             [$@"{binding_prefix}:editor_toggle_left_toolbox_expansion"] = @"左ツールボックスを常に展開するかを切り替え",
@@ -370,7 +378,11 @@ namespace osu.Game.Localisation
             [$@"{preset_prefix}:assign_a_key"] = @"数字キーを割り当てる",
             [$@"{preset_prefix}:remove"] = @"削除",
             [$@"{binding_prefix}:editor_toggle_placement_presets"] = @"配置プリセットを開く",
+            [$@"{binding_prefix}:editor_toggle_auto_cursor"] = @"Autoのカーソルの表示を切り替え",
 
+            // the volume row on its own
+            [$@"{editor_prefix}:hide_timeline_volume"] = @"音量の行を非表示",
+            [$@"{editor_prefix}:hide_timeline_volume_description"] = @"空いた分だけノーツが大きくなります。SVの行はそのままです",
         };
 
         private const string editor_prefix = @"osu.Game.Resources.Localisation.Editor";

@@ -663,19 +663,45 @@ namespace osu.Game.Localisation
             @"Only marks an object more than 2ms away from the nearest snap.");
 
         /// <summary>
-        /// "Colour"
+        /// "Difficulty graph colour"
         /// </summary>
-        public static LocalisableString DifficultyGraphColour => new TranslatableString(getKey(@"difficulty_graph_colour"), @"Colour");
+        public static LocalisableString DifficultyGraphColour => new TranslatableString(getKey(@"difficulty_graph_colour"), @"Difficulty graph colour");
 
         /// <summary>
-        /// "Opacity"
+        /// "Difficulty graph opacity"
         /// </summary>
-        public static LocalisableString DifficultyGraphOpacity => new TranslatableString(getKey(@"difficulty_graph_opacity"), @"Opacity");
+        public static LocalisableString DifficultyGraphOpacity => new TranslatableString(getKey(@"difficulty_graph_opacity"), @"Difficulty graph opacity");
 
         /// <summary>
-        /// "Detail"
+        /// "Difficulty graph detail"
         /// </summary>
-        public static LocalisableString DifficultyGraphDetail => new TranslatableString(getKey(@"difficulty_graph_detail"), @"Detail");
+        public static LocalisableString DifficultyGraphDetail => new TranslatableString(getKey(@"difficulty_graph_detail"), @"Difficulty graph detail");
+
+        /// <summary>
+        /// "Show the volume over the song"
+        /// </summary>
+        public static LocalisableString ShowVolumeGraph => new TranslatableString(getKey(@"show_volume_graph"), @"Show the volume over the song");
+
+        /// <summary>
+        /// "Draws how loud the beatmap is over its length across the bottom timeline."
+        /// </summary>
+        public static LocalisableString ShowVolumeGraphDescription => new TranslatableString(getKey(@"show_volume_graph_description"),
+            @"Draws how loud the beatmap is over its length across the bottom timeline.");
+
+        /// <summary>
+        /// "Volume graph colour"
+        /// </summary>
+        public static LocalisableString VolumeGraphColour => new TranslatableString(getKey(@"volume_graph_colour"), @"Volume graph colour");
+
+        /// <summary>
+        /// "Volume graph thickness"
+        /// </summary>
+        public static LocalisableString VolumeGraphThickness => new TranslatableString(getKey(@"volume_graph_thickness"), @"Volume graph thickness");
+
+        /// <summary>
+        /// "Volume graph opacity"
+        /// </summary>
+        public static LocalisableString VolumeGraphOpacity => new TranslatableString(getKey(@"volume_graph_opacity"), @"Volume graph opacity");
 
         /// <summary>
         /// "Difficulty graph in detail"
@@ -842,6 +868,17 @@ namespace osu.Game.Localisation
         /// "Show the play area border"
         /// </summary>
         public static LocalisableString ShowPlayAreaBorder => new TranslatableString(getKey(@"show_play_area_border"), @"Show the play area border");
+
+        /// <summary>
+        /// "Show autoplay's cursor"
+        /// </summary>
+        public static LocalisableString ShowAutoCursor => new TranslatableString(getKey(@"show_auto_cursor"), @"Show autoplay's cursor");
+
+        /// <summary>
+        /// "Draws where the cursor would be while scrubbing or playing back, moving exactly as autoplay does."
+        /// </summary>
+        public static LocalisableString ShowAutoCursorDescription => new TranslatableString(getKey(@"show_auto_cursor_description"),
+            @"Draws where the cursor would be while scrubbing or playing back, moving exactly as autoplay does.");
 
         /// <summary>
         /// "Offscreen detection"
