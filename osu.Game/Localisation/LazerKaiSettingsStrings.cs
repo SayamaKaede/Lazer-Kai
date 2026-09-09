@@ -201,6 +201,32 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString ExportHeader => new TranslatableString(getKey(@"export_header"), @"Export");
 
+        /// <summary>
+        /// "Appearance"
+        /// </summary>
+        public static LocalisableString AppearanceHeader => new TranslatableString(getKey(@"appearance_header"), @"Appearance");
+
+        /// <summary>
+        /// "Theme"
+        /// </summary>
+        public static LocalisableString UiTheme => new TranslatableString(getKey(@"ui_theme"), @"Theme");
+
+        /// <summary>
+        /// "Takes effect the next time the game is started."
+        /// </summary>
+        public static LocalisableString UiThemeDescription => new TranslatableString(getKey(@"ui_theme_description"),
+            @"Takes effect the next time the game is started.");
+
+        /// <summary>
+        /// "osu!lazer"
+        /// </summary>
+        public static LocalisableString UiThemeLazer => new TranslatableString(getKey(@"ui_theme_lazer"), @"osu!lazer");
+
+        /// <summary>
+        /// "Lazer-Kai"
+        /// </summary>
+        public static LocalisableString UiThemeLazerKai => new TranslatableString(getKey(@"ui_theme_lazer_kai"), @"Lazer-Kai");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

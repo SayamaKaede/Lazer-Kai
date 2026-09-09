@@ -113,7 +113,12 @@ namespace osu.Game
         /// <summary>
         /// A common shear factor applied to most components of the game.
         /// </summary>
-        public static readonly Vector2 SHEAR = new Vector2(0.2f, 0);
+        /// <remarks>
+        /// Read from <see cref="UiPalette"/> rather than fixed, so that a theme can change the slant. It is settled
+        /// during startup and does not move afterwards, which is what lets the few values computed from it at class
+        /// initialisation stay correct.
+        /// </remarks>
+        public static Vector2 SHEAR => UiPalette.Shear;
 
         /// <summary>
         /// For elements placed close to the screen edge, this is the margin to leave to the edge.

@@ -366,6 +366,10 @@ namespace osu.Game
 
             dependencies.Cache(SessionStatics = new SessionStatics());
             dependencies.Cache(hitErrorTracker = new SessionAverageHitErrorTracker());
+            // before anything is built out of them: the colours below, and every screen after this, read the look
+            // once as they load.
+            UiPalette.Apply(LocalConfig);
+
             dependencies.Cache(Colours = new OsuColour());
 
             RegisterImportHandler(BeatmapManager);

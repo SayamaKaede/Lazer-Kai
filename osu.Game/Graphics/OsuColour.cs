@@ -17,8 +17,10 @@ namespace osu.Game.Graphics
 {
     public class OsuColour
     {
-        public static Color4 Gray(float amt) => new Color4(amt, amt, amt, 1f);
-        public static Color4 Gray(byte amt) => new Color4(amt, amt, amt, 255);
+        // the flat greys the whole game is built on. Routed through the palette so that a theme can put a little
+        // colour in them without every call site having to know about it.
+        public static Color4 Gray(float amt) => UiPalette.Grey(amt);
+        public static Color4 Gray(byte amt) => UiPalette.Grey(amt / 255f);
 
         /// <summary>
         /// The maximum star rating colour which can be distinguished against a black background.

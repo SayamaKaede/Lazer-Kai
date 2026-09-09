@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using osu.Game.Graphics;
 using osuTK.Graphics;
 
 namespace osu.Game.Overlays
@@ -67,6 +68,7 @@ namespace osu.Game.Overlays
         /// <param name="hue">The proposed hue degree.</param>
         public void ChangeColourScheme(int hue) => Hue = hue;
 
-        private Color4 getColour(float saturation, float lightness) => Framework.Graphics.Colour4.FromHSL(Hue / 360f, saturation, lightness);
+        // every shade above comes through here, so this is the one place a theme has to bend to repaint the game.
+        private Color4 getColour(float saturation, float lightness) => UiPalette.Resolve(Hue, saturation, lightness);
     }
 }

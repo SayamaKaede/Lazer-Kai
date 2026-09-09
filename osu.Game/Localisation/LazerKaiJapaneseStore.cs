@@ -242,15 +242,21 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:mapping_tools_failed_to_start"] = @"Mapping Tools を起動できませんでした。",
 
             // settings section
-            [$@"{settings_prefix}:section_header"] = @"Lazer-Kai",
             // the fork's name is written the same way in Japanese; it is here so that it reads as decided rather
             // than as a string nobody got to.
             [$@"{settings_prefix}:section_header"] = @"Lazer-Kai",
+            // the look the game wears.
+            [$@"{settings_prefix}:appearance_header"] = @"見た目",
+            [$@"{settings_prefix}:ui_theme"] = @"テーマ",
+            [$@"{settings_prefix}:ui_theme_description"] = @"次回の起動から適用されます",
+            [$@"{settings_prefix}:ui_theme_lazer"] = @"osu!lazer",
+            [$@"{settings_prefix}:ui_theme_lazer_kai"] = @"Lazer-Kai",
+
             [$@"{settings_prefix}:beatmap_section_header"] = @"譜面",
             [$@"{settings_prefix}:test_play_section_header"] = @"Mods",
             [$@"{settings_prefix}:other_section_header"] = @"その他",
             [$@"{settings_prefix}:display_header"] = @"表示",
-            [$@"{settings_prefix}:difficulty_graph_header"] = @"難易度グラフ",
+            [$@"{settings_prefix}:difficulty_graph_header"] = @"下部タイムライン",
             [$@"{settings_prefix}:ghost_difficulty_header"] = @"ゴースト表示",
             [$@"{settings_prefix}:hitsound_header"] = @"ヒットサウンド",
             [$@"{settings_prefix}:other_customisation_header"] = @"その他のカスタマイズ",

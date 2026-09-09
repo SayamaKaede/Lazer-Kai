@@ -37,6 +37,7 @@ namespace osu.Game.Overlays.Settings.Sections
         {
             Children = new Drawable[]
             {
+                new AppearanceSettings(),
                 new EditorDisplaySettings(),
                 new EditorDifficultyGraphSettings(),
                 new EditorGhostDifficultySettings(),

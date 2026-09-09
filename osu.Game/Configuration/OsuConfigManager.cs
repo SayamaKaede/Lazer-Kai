@@ -11,6 +11,7 @@ using osu.Framework.Extensions.LocalisationExtensions;
 using osu.Framework.Localisation;
 using osu.Framework.Platform;
 using osu.Game.Beatmaps.Drawables.Cards;
+using osu.Game.Graphics;
 using osu.Game.Input;
 using osu.Game.Input.Bindings;
 using osu.Game.Localisation;
@@ -358,6 +359,10 @@ namespace osu.Game.Configuration
 
             SetDefault(OsuSetting.DashboardSortMode, UserSortCriteria.LastVisit);
             SetDefault(OsuSetting.DashboardDisplayStyle, OverlayPanelDisplayStyle.Card);
+
+            // the look the game wears, which is nothing to do with the editor and so is kept away from it.
+            SetDefault(OsuSetting.UiTheme, UiPaletteValues.Default.Theme);
+
         }
 
         protected override bool CheckLookupContainsPrivateInformation(OsuSetting lookup)
@@ -1077,6 +1082,8 @@ namespace osu.Game.Configuration
         /// <summary>Which format song select writes a beatmap out in.</summary>
         BeatmapExportFormat,
 
+        /// <summary>Which look the game paints itself in.</summary>
+        UiTheme,
 
     }
 }
