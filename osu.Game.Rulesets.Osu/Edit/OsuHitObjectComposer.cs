@@ -17,6 +17,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
+using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics;
@@ -238,6 +239,33 @@ namespace osu.Game.Rulesets.Osu.Edit
                     FreehandSliderToolboxGroup
                 }
             );
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            // the overlays have been handed to the editor by now, which is where the flashlight ends up.
+            leadFlashlightByAutoplay();
+        }
+
+        /// <summary>
+        /// Points the previewed flashlight at autoplay's cursor instead of the mouse.
+        /// </summary>
+        /// <remarks>
+        /// The mapper's pointer is off placing objects and dragging anchors, so a lit area that followed it would be
+        /// nothing like the one anyone will play through. Autoplay's path is the same one the cursor display draws,
+        /// so the two agree with each other whether or not the cursor is being shown.
+        /// </remarks>
+        private void leadFlashlightByAutoplay()
+        {
+            var flashlight = ModOverlays.SelectMany(o => o.ChildrenOfType<ModFlashlight<OsuHitObject>.Flashlight>()).FirstOrDefault();
+
+            if (flashlight == null)
+                return;
+
+            autoCursor.PathWanted.Value = true;
+            flashlight.ScreenSpacePositionSource = () => autoCursor.ScreenSpacePosition;
         }
 
         private void updatePositionSnapGrid(ValueChangedEvent<PositionSnapGridType> obj)

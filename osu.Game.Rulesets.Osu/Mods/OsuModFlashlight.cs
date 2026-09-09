@@ -73,13 +73,17 @@ namespace osu.Game.Rulesets.Osu.Mods
 
             protected override bool OnMouseMove(MouseMoveEvent e)
             {
-                var position = FlashlightPosition;
-                var destination = e.MousePosition;
-
-                FlashlightPosition = Interpolation.ValueAt(
-                    Math.Min(Math.Abs(Clock.ElapsedFrameTime), followDelay), position, destination, 0, followDelay, Easing.Out);
+                // something else is leading, and letting the mouse pull the lit area around as well would fight it.
+                if (ScreenSpacePositionSource == null)
+                    LeadFlashlightTo(e.MousePosition);
 
                 return base.OnMouseMove(e);
+            }
+
+            protected override void LeadFlashlightTo(Vector2 position)
+            {
+                FlashlightPosition = Interpolation.ValueAt(
+                    Math.Min(Math.Abs(Clock.ElapsedFrameTime), followDelay), FlashlightPosition, position, 0, followDelay, Easing.Out);
             }
 
             // as per https://github.com/peppy/osu-stable-reference/blob/baa8705f782c0de2b10a7387d78014c61c8b17fb/osu!/GameModes/Play/Rulesets/Ruleset.cs#L532-L535,

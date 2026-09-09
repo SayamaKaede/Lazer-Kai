@@ -169,6 +169,29 @@ namespace osu.Game.Rulesets.Mods
 
             protected abstract string FragmentShader { get; }
 
+            /// <summary>
+            /// Where the lit area is being led from, in screen space, when the mouse is not the one leading it.
+            /// Returns null while whatever is leading has nowhere to point.
+            /// </summary>
+            /// <remarks>
+            /// The editor's mod preview sets this to autoplay's cursor. A mapper's own pointer is off doing editing
+            /// work, so a flashlight that followed it would show a lit area nobody will ever play with.
+            /// </remarks>
+            public Func<Vector2?>? ScreenSpacePositionSource { get; set; }
+
+            protected override void Update()
+            {
+                base.Update();
+
+                if (ScreenSpacePositionSource?.Invoke() is Vector2 position)
+                    LeadFlashlightTo(ToLocalSpace(position));
+            }
+
+            /// <summary>
+            /// Moves the lit area towards <paramref name="position"/>, in this drawable's own space.
+            /// </summary>
+            protected virtual void LeadFlashlightTo(Vector2 position) => FlashlightPosition = position;
+
             public float GetSize()
             {
                 float size = DefaultFlashlightSize * sizeMultiplier;

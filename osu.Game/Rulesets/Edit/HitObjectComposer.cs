@@ -783,6 +783,12 @@ namespace osu.Game.Rulesets.Edit
         /// leaves the beatmap showing all around it — along the edges of the composer, on the timeline, and on the bottom
         /// bar. For flashlight that is the difference between being able to practise on it and not.
         /// </remarks>
+        /// <summary>
+        /// Whatever the preview mods draw over the playfield, wherever <see cref="spreadModOverlaysAcrossTheScreen"/>
+        /// left it. Only worth reading once loading has completed.
+        /// </summary>
+        protected IEnumerable<Drawable> ModOverlays => (IEnumerable<Drawable>?)host?.ModOverlays ?? DrawableRuleset.Overlays;
+
         private void spreadModOverlaysAcrossTheScreen()
         {
             if (host == null)
