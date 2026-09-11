@@ -52,12 +52,21 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private const float stable_tick_extent = 0.1f;
 
         /// <summary>
-        /// How much longer the mark at the start of a bar is drawn than the beats between them.
+        /// How much longer the mark at the start of a bar is drawn than the beats between them, in this fork's layout.
         /// </summary>
         /// <remarks>
         /// Settled by eye against a real beatmap rather than worked out (2026-09-05).
         /// </remarks>
         private const float bar_tick_scale = 1.5f;
+
+        /// <summary>
+        /// The same, in the stable layout.
+        /// </summary>
+        /// <remarks>
+        /// Asked for at twice the length the stable layout had drawn it (2026-09-11): stable's marks along the bottom
+        /// are short enough that the start of a bar was only told apart by its colour.
+        /// </remarks>
+        private const float stable_bar_tick_scale = 2f;
 
         /// <summary>
         /// How wide the marks are drawn in the layouts that keep them to the edges.
@@ -176,9 +185,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                         if (alongTheEdges)
                         {
                             // the start of a bar reaches further than the beats inside it, so the bars can be counted
-                            // without reading the colours. Only in this fork's layout: stable's is stable's.
-                            float extent = size.Y * stable_tick_extent
-                                           * (fromTheTopToo && indexInBar == 0 ? bar_tick_scale : 1);
+                            // without reading the colours.
+                            float barScale = fromTheTopToo ? bar_tick_scale : stable_bar_tick_scale;
+                            float extent = size.Y * stable_tick_extent * (indexInBar == 0 ? barScale : 1);
 
                             addLine(xPos, size, colour, Anchor.BottomLeft, Anchor.BottomCentre, extent);
 
