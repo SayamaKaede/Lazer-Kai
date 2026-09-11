@@ -252,6 +252,12 @@ namespace osu.Game.Localisation
             // the fork's name is written the same way in Japanese; it is here so that it reads as decided rather
             // than as a string nobody got to.
             [$@"{settings_prefix}:section_header"] = @"Lazer-Kai",
+
+            // the manual that ships beside the game
+            [$@"{settings_prefix}:manual_header"] = @"説明書",
+            [$@"{settings_prefix}:open_manual"] = @"説明書を開く",
+            [$@"{settings_prefix}:open_manual_description"] = @"このビルドに同梱されている説明書を、ブラウザで表示します",
+
             // the look the game wears.
             [$@"{settings_prefix}:appearance_header"] = @"見た目",
             [$@"{settings_prefix}:ui_theme"] = @"テーマ",
