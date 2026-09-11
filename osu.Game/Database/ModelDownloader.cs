@@ -48,9 +48,27 @@ namespace osu.Game.Database
 
         public void DownloadAsUpdate(TModel originalModel, bool minimiseDownloadSize) => Download(originalModel, minimiseDownloadSize, originalModel);
 
-        protected bool Download(T model, bool minimiseDownloadSize, TModel? originalModel)
+        protected bool Download(T model, bool minimiseDownloadSize, TModel? originalModel) => start(model, minimiseDownloadSize, originalModel, null);
+
+        /// <summary>
+        /// Downloads without a notification of its own, for something that reports on a batch of downloads as one.
+        /// </summary>
+        /// <param name="model">The <typeparamref name="T"/> to be downloaded.</param>
+        /// <param name="minimiseDownloadSize">Whether this download should be optimised for slow connections. Generally means extras are not included in the download bundle.</param>
+        /// <param name="follow">
+        /// Handed the request before it is started, so nothing it reports can be missed. Whoever follows it takes over
+        /// telling the user how it went, being refused for downloading too much included.
+        /// </param>
+        /// <returns>Whether the download was started.</returns>
+        public bool DownloadWithoutNotification(T model, bool minimiseDownloadSize, Action<ArchiveDownloadRequest<T>> follow)
+            => start(model, minimiseDownloadSize, null, follow);
+
+        private bool start(T model, bool minimiseDownloadSize, TModel? originalModel, Action<ArchiveDownloadRequest<T>>? follow)
         {
             if (!canDownload(model)) return false;
+
+            // a request somebody is following is theirs to report on.
+            bool reportsItself = follow == null;
 
             var request = CreateDownloadRequest(model, minimiseDownloadSize);
 
@@ -97,8 +115,13 @@ namespace osu.Game.Database
                 return true;
             };
 
+            follow?.Invoke(request);
+
             CurrentDownloads.Add(request);
-            PostNotification?.Invoke(notification);
+
+            // the notification is still made either way: an import reports its progress into it, posted or not.
+            if (reportsItself)
+                PostNotification?.Invoke(notification);
 
             api?.PerformAsync(request);
 
@@ -117,11 +140,17 @@ namespace osu.Game.Database
                 {
                     if (error is WebException webException && webException.Message == @"TooManyRequests")
                     {
-                        notification.Close(false);
-                        PostNotification?.Invoke(new TooManyDownloadsNotification());
+                        if (reportsItself)
+                        {
+                            notification.Close(false);
+                            PostNotification?.Invoke(new TooManyDownloadsNotification());
+                        }
                     }
-                    else
+                    else if (reportsItself)
                         Logger.Error(error, $"{importer.HumanisedModelName.Titleize()} download failed!");
+                    // an error posts a notification of its own, which one per failure in a batch would bury the batch's under.
+                    else
+                        Logger.Log($"{importer.HumanisedModelName.Titleize()} download failed: {error}");
                 }
             }
         }

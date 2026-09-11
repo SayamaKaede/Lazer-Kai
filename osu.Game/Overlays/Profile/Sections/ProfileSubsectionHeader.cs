@@ -30,6 +30,11 @@ namespace osu.Game.Overlays.Profile.Sections
 
         private CounterPill counterPill = null!;
 
+        /// <summary>
+        /// Something to sit after the counter, acting on the whole listing. Set before this is loaded.
+        /// </summary>
+        public Drawable? Trailing { get; init; }
+
         public ProfileSubsectionHeader(LocalisableString text, CounterVisibilityState counterState)
         {
             this.text = text;
@@ -41,6 +46,9 @@ namespace osu.Game.Overlays.Profile.Sections
         {
             AutoSizeAxes = Axes.Both;
             Padding = new MarginPadding { Vertical = 10 };
+
+            FillFlowContainer flow;
+
             InternalChildren = new Drawable[]
             {
                 new CircularContainer
@@ -58,7 +66,7 @@ namespace osu.Game.Overlays.Profile.Sections
                         Colour = colourProvider.Highlight1
                     }
                 },
-                new FillFlowContainer
+                flow = new FillFlowContainer
                 {
                     AutoSizeAxes = Axes.Both,
                     Direction = FillDirection.Horizontal,
@@ -81,6 +89,13 @@ namespace osu.Game.Overlays.Profile.Sections
                     }
                 }
             };
+
+            if (Trailing != null)
+            {
+                Trailing.Anchor = Anchor.CentreLeft;
+                Trailing.Origin = Anchor.CentreLeft;
+                flow.Add(Trailing);
+            }
         }
 
         protected override void LoadComplete()
@@ -112,6 +127,10 @@ namespace osu.Game.Overlays.Profile.Sections
             }
 
             counterPill.Alpha = alpha;
+
+            // it acts on the whole listing, and an empty one leaves it nothing to act on.
+            if (Trailing != null)
+                Trailing.Alpha = current.Value > 0 ? 1 : 0;
         }
     }
 

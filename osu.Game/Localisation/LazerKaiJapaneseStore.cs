@@ -375,6 +375,18 @@ namespace osu.Game.Localisation
             // 「Pendingのビートマップ」 and 「Graveyardのビートマップ」.
             [$@"{profile_prefix}:guest_pending_title"] = @"ゲスト難易度のPendingビートマップ",
             [$@"{profile_prefix}:guest_graveyard_title"] = @"ゲスト難易度のGraveyardビートマップ",
+            // downloading a whole listing at once
+            [$@"{profile_prefix}:download_all"] = @"すべてダウンロード",
+            [$@"{profile_prefix}:download_all_tooltip"] = @"長押しで、この項目の未入手の譜面をすべてダウンロードします",
+            [$@"{profile_prefix}:download_all_needs_login"] = @"ダウンロードにはログインが必要です",
+            [$@"{profile_prefix}:download_all_reading"] = @"項目の一覧を取得しています…",
+            [$@"{profile_prefix}:download_all_could_not_read"] = @"一覧を取得できませんでした",
+            [$@"{profile_prefix}:download_all_nothing_left"] = @"この項目の譜面は、すべて入手済みです",
+            [$@"{profile_prefix}:download_all_progress"] = @"ダウンロード中 {0}/{1}",
+            [$@"{profile_prefix}:download_all_already_have"] = @"{0}件は入手済み",
+            [$@"{profile_prefix}:download_all_unavailable"] = @"{0}件は配布停止",
+            [$@"{profile_prefix}:download_all_done"] = @"{0}件の譜面をダウンロードしました",
+            [$@"{profile_prefix}:download_all_failed"] = @"{0}件は失敗しました",
 
             // what a beatmap is made of, on the details tab at song select
             [$@"{mapping_prefix}:density"] = @"密度",

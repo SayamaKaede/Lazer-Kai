@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
@@ -83,6 +84,21 @@ namespace osu.Game.Overlays.Profile.Sections.Beatmaps
 
         private CancellationTokenSource? loadCancellation;
 
+        /// <summary>
+        /// The whole listing, once the searches have been read to their ends. Replaced whenever the user changes.
+        /// </summary>
+        /// <remarks>
+        /// The listing is read in full anyway, to count it, so asking for all of it costs nothing more than waiting for
+        /// that to finish.
+        /// </remarks>
+        private TaskCompletionSource<IReadOnlyList<APIBeatmapSet>> wholeListing = new TaskCompletionSource<IReadOnlyList<APIBeatmapSet>>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>
+        /// Whether a search failed partway, leaving the listing short. What arrived is still shown, but downloading
+        /// "all" of a listing known to be short would quietly leave the rest behind.
+        /// </summary>
+        private bool readFailed;
+
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
 
@@ -125,6 +141,10 @@ namespace osu.Game.Overlays.Profile.Sections.Beatmaps
             }
         };
 
+        protected override Drawable CreateHeaderTrailing() => new DownloadAllControl(readWholeListing);
+
+        private Task<IReadOnlyList<APIBeatmapSet>> readWholeListing(CancellationToken cancellationToken) => wholeListing.Task.WaitAsync(cancellationToken);
+
         protected override void LoadComplete()
         {
             base.LoadComplete();
@@ -162,8 +182,16 @@ namespace osu.Game.Overlays.Profile.Sections.Beatmaps
             SetCount(0);
             setContentVisible(false);
 
+            // whoever was waiting on the previous user's listing is not waiting on this one.
+            wholeListing.TrySetCanceled();
+            wholeListing = new TaskCompletionSource<IReadOnlyList<APIBeatmapSet>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            readFailed = false;
+
             if (e.NewValue?.User == null)
+            {
+                wholeListing.SetResult(Array.Empty<APIBeatmapSet>());
                 return;
+            }
 
             foreach (var category in categories)
                 streams.Add(new SearchStream(category));
@@ -210,6 +238,7 @@ namespace osu.Game.Overlays.Profile.Sections.Beatmaps
                         return;
 
                     stream.Exhausted = true;
+                    readFailed = true;
                     done();
                 });
 
@@ -276,15 +305,23 @@ namespace osu.Game.Overlays.Profile.Sections.Beatmaps
         /// </remarks>
         private void collect()
         {
-            waiting.AddRange(streams.SelectMany(s => s.Buffer)
-                                    // a cursor walking an index that is being written to can hand the same set
-                                    // back twice.
-                                    .GroupBy(s => s.OnlineID)
-                                    .Select(g => g.First())
-                                    .OrderByDescending(s => s.LastUpdated ?? DateTimeOffset.MinValue));
+            var listing = streams.SelectMany(s => s.Buffer)
+                                 // a cursor walking an index that is being written to can hand the same set
+                                 // back twice.
+                                 .GroupBy(s => s.OnlineID)
+                                 .Select(g => g.First())
+                                 .OrderByDescending(s => s.LastUpdated ?? DateTimeOffset.MinValue)
+                                 .ToArray();
+
+            waiting.AddRange(listing);
 
             foreach (var stream in streams)
                 stream.Buffer.Clear();
+
+            if (readFailed)
+                wholeListing.TrySetException(new InvalidOperationException(@"A search failed partway, so the listing is incomplete."));
+            else
+                wholeListing.TrySetResult(listing);
 
             display();
         }
@@ -353,6 +390,7 @@ namespace osu.Game.Overlays.Profile.Sections.Beatmaps
         protected override void Dispose(bool isDisposing)
         {
             cancel();
+            wholeListing.TrySetCanceled();
             base.Dispose(isDisposing);
         }
 

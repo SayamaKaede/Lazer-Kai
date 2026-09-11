@@ -36,13 +36,19 @@ namespace osu.Game.Overlays.Profile.Sections
             {
                 header = new ProfileSubsectionHeader(headerText, counterVisibilityState)
                 {
-                    Alpha = string.IsNullOrEmpty(headerText.ToString()) ? 0 : 1
+                    Alpha = string.IsNullOrEmpty(headerText.ToString()) ? 0 : 1,
+                    Trailing = CreateHeaderTrailing(),
                 },
                 CreateContent()
             };
         }
 
         protected abstract Drawable CreateContent();
+
+        /// <summary>
+        /// Something to sit after the heading's counter, acting on the whole listing. Nothing by default.
+        /// </summary>
+        protected virtual Drawable? CreateHeaderTrailing() => null;
 
         protected void SetCount(int value) => header.Current.Value = value;
     }

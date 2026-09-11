@@ -26,6 +26,63 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString GuestGraveyardTitle => new TranslatableString(getKey(@"guest_graveyard_title"), @"Graveyarded Guest Participation Beatmaps");
 
+        /// <summary>
+        /// "Download all"
+        /// </summary>
+        public static LocalisableString DownloadAll => new TranslatableString(getKey(@"download_all"), @"Download all");
+
+        /// <summary>
+        /// "Hold to download every beatmap in this listing that you do not have yet."
+        /// </summary>
+        public static LocalisableString DownloadAllTooltip => new TranslatableString(getKey(@"download_all_tooltip"),
+            @"Hold to download every beatmap in this listing that you do not have yet.");
+
+        /// <summary>
+        /// "Log in to download."
+        /// </summary>
+        public static LocalisableString DownloadAllNeedsLogin => new TranslatableString(getKey(@"download_all_needs_login"), @"Log in to download.");
+
+        /// <summary>
+        /// "Reading the listing..."
+        /// </summary>
+        public static LocalisableString DownloadAllReading => new TranslatableString(getKey(@"download_all_reading"), @"Reading the listing...");
+
+        /// <summary>
+        /// "The listing could not be read."
+        /// </summary>
+        public static LocalisableString DownloadAllCouldNotRead => new TranslatableString(getKey(@"download_all_could_not_read"), @"The listing could not be read.");
+
+        /// <summary>
+        /// "Every beatmap in this listing is downloaded already."
+        /// </summary>
+        public static LocalisableString DownloadAllNothingLeft => new TranslatableString(getKey(@"download_all_nothing_left"),
+            @"Every beatmap in this listing is downloaded already.");
+
+        /// <summary>
+        /// "Downloading {0}/{1}"
+        /// </summary>
+        public static LocalisableString DownloadAllProgress(int done, int total) => new TranslatableString(getKey(@"download_all_progress"), @"Downloading {0}/{1}", done, total);
+
+        /// <summary>
+        /// "{0} downloaded already"
+        /// </summary>
+        public static LocalisableString DownloadAllAlreadyHave(int count) => new TranslatableString(getKey(@"download_all_already_have"), @"{0} downloaded already", count);
+
+        /// <summary>
+        /// "{0} taken down"
+        /// </summary>
+        public static LocalisableString DownloadAllUnavailable(int count) => new TranslatableString(getKey(@"download_all_unavailable"), @"{0} taken down", count);
+
+        /// <summary>
+        /// "Downloaded {0} beatmaps."
+        /// </summary>
+        public static LocalisableString DownloadAllDone(int count) => new TranslatableString(getKey(@"download_all_done"), @"Downloaded {0} beatmaps.", count);
+
+        /// <summary>
+        /// "{0} failed"
+        /// </summary>
+        public static LocalisableString DownloadAllFailed(int count) => new TranslatableString(getKey(@"download_all_failed"), @"{0} failed", count);
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }
