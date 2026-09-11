@@ -37,6 +37,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
         private const float line_thickness = 2;
 
         /// <summary>
+        /// The room above a button that directly follows another row, where the two otherwise touch and read as one
+        /// crowded block. Settled against the real thing through a tuning slider (2026-09-11).
+        /// </summary>
+        protected const float BUTTON_GAP = 10;
+
+        /// <summary>
         /// Whether this group carries the fork's mark behind its rows. Every one of them does.
         /// </summary>
         protected internal virtual bool ShowsMark => true;

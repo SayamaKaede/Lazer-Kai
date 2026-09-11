@@ -38,6 +38,14 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 Current = config.GetBindable<int>(OsuSetting.EditorAutoBackupKeepCount),
             };
 
+            var openFolder = new SettingsButton
+            {
+                // straight under a checkbox, which it would otherwise touch.
+                Margin = new MarginPadding { Top = BUTTON_GAP },
+                Text = EditorStrings.OpenBackupFolder,
+                Action = () => storage.GetStorageForDirectory(EditorAutoBackup.BACKUP_DIRECTORY).PresentExternally(),
+            };
+
             Children = new Drawable[]
             {
                 new SettingsCheckbox
@@ -52,11 +60,7 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     LabelText = EditorStrings.NotifyOnBackup,
                     Current = config.GetBindable<bool>(OsuSetting.EditorNotifyOnBackup)
                 },
-                new SettingsButton
-                {
-                    Text = EditorStrings.OpenBackupFolder,
-                    Action = () => storage.GetStorageForDirectory(EditorAutoBackup.BACKUP_DIRECTORY).PresentExternally(),
-                },
+                openFolder,
             };
 
             // the interval and count say nothing while backups are off, so they follow the switch above them.

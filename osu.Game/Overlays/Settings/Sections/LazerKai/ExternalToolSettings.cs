@@ -52,16 +52,20 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 Action = () => shown.Toggle(),
             };
 
+            var export = new SettingsButton
+            {
+                // straight after another button, which it would otherwise touch.
+                Margin = new MarginPadding { Top = BUTTON_GAP },
+                Text = LazerKaiSettingsStrings.ExportLogs,
+                TooltipText = LazerKaiSettingsStrings.ExportLogsDescription,
+                Action = exportLogs,
+            };
+
             Children = new Drawable[]
             {
                 reveal,
                 path,
-                new SettingsButton
-                {
-                    Text = LazerKaiSettingsStrings.ExportLogs,
-                    TooltipText = LazerKaiSettingsStrings.ExportLogsDescription,
-                    Action = exportLogs,
-                },
+                export,
             };
 
             // out of sight until it is asked for. A path very often carries the account name of whoever is at
