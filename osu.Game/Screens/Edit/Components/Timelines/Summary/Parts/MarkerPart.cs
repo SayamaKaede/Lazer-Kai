@@ -36,7 +36,21 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
 
         private double? lastSeekTime;
 
-        protected override bool OnDragStart(DragStartEvent e) => true;
+        /// <summary>
+        /// Whether a press belongs to the object being placed rather than to this timeline.
+        /// </summary>
+        /// <remarks>
+        /// A path is finished by releasing the right button (the middle one with the buttons swapped), and a path's end
+        /// often runs down onto this timeline. Taking that press for a seek meant the release never reached the path:
+        /// the slider stayed open and the clock jumped to wherever the click had landed. The left button still seeks
+        /// here as it always has, and with nothing being placed every button does.
+        /// </remarks>
+        private bool belongsToPlacement(osuTK.Input.MouseButton button)
+            => button != osuTK.Input.MouseButton.Left && EditorBeatmap.PlacementObject.Value != null;
+
+        // the right button can start a drag in this fork, for scrolling, so a hand that moves during the click would
+        // otherwise seek by dragging instead.
+        protected override bool OnDragStart(DragStartEvent e) => !belongsToPlacement(e.Button);
 
         protected override void OnDrag(DragEvent e)
         {
@@ -52,6 +66,9 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
 
         protected override bool OnMouseDown(MouseDownEvent e)
         {
+            if (belongsToPlacement(e.Button))
+                return false;
+
             seekToPosition(e.ScreenSpaceMousePosition, instant: true);
             return true;
         }

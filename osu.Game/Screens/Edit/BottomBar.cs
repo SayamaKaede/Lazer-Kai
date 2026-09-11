@@ -134,7 +134,20 @@ namespace osu.Game.Screens.Edit
             return base.ReceivePositionalInputAt(screenSpacePos);
         }
 
-        protected override bool OnMouseDown(MouseDownEvent e) => true;
+        [Resolved]
+        private EditorBeatmap editorBeatmap { get; set; } = null!;
+
+        /// <remarks>
+        /// While something is being placed, the timeline's share of the bar lets every button but the left one through,
+        /// for the same reason it opens up when the timeline is off: a path whose end runs down onto the timeline is
+        /// finished by a click on it, and that click has to reach the path. The marker on the timeline steps aside for
+        /// the same buttons. The left one is still held, so a click on the bar never becomes an anchor in the beatmap.
+        /// </remarks>
+        protected override bool OnMouseDown(MouseDownEvent e)
+            => !(e.Button != osuTK.Input.MouseButton.Left
+                 && editorBeatmap.PlacementObject.Value != null
+                 && summaryTimeline.ScreenSpaceDrawQuad.Contains(e.ScreenSpaceMousePosition));
+
         protected override bool OnClick(ClickEvent e) => true;
     }
 }
