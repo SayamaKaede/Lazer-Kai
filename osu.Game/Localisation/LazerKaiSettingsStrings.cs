@@ -243,6 +243,22 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString UiThemeLazerKai => new TranslatableString(getKey(@"ui_theme_lazer_kai"), @"Lazer-Kai");
 
+        /// <summary>
+        /// "Skin for each mode"
+        /// </summary>
+        public static LocalisableString RulesetSkinHeader => new TranslatableString(getKey(@"ruleset_skin_header"), @"Skin for each mode");
+
+        /// <summary>
+        /// "Not set"
+        /// </summary>
+        public static LocalisableString RulesetSkinNotSet => new TranslatableString(getKey(@"ruleset_skin_not_set"), @"Not set");
+
+        /// <summary>
+        /// "Used while this mode is selected. When not set, the skin chosen in the skin settings is used."
+        /// </summary>
+        public static LocalisableString RulesetSkinDescription => new TranslatableString(getKey(@"ruleset_skin_description"),
+            @"Used while this mode is selected. When not set, the skin chosen in the skin settings is used.");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

@@ -254,6 +254,8 @@ namespace osu.Game
 
         private Bindable<string> configSkin;
 
+        private RulesetSkinSwitcher rulesetSkinSwitcher;
+
         private RealmDetachedBeatmapStore detachedBeatmapStore;
 
         private ScreenStackFooter screenStackFooter;
@@ -481,8 +483,18 @@ namespace osu.Game
             // Transfer skin from config to realm instance once on startup.
             SkinManager.SetSkinFromConfiguration(configSkin.Value);
 
+            // Lazer-Kai: each ruleset can have a skin of its own, which must not end up as the skin setting — that is
+            // what the rulesets without one get. Made before the handler below, which asks it.
+            rulesetSkinSwitcher = new RulesetSkinSwitcher();
+
             // Transfer any runtime changes back to configuration file.
-            SkinManager.CurrentSkinInfo.ValueChanged += skin => configSkin.Value = skin.NewValue.ID.ToString();
+            SkinManager.CurrentSkinInfo.ValueChanged += skin =>
+            {
+                if (!rulesetSkinSwitcher.Applying)
+                    configSkin.Value = skin.NewValue.ID.ToString();
+            };
+
+            Add(rulesetSkinSwitcher);
 
             UserPlayingState.BindValueChanged(p =>
             {

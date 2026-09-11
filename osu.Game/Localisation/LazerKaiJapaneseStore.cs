@@ -291,6 +291,10 @@ namespace osu.Game.Localisation
             [$@"{settings_prefix}:mapping_tools_path_description"] = @"Mapping Tools.exe の場所。空欄なら通常のインストール先を使用します",
             [$@"{settings_prefix}:mapping_tools_not_detected"] = @"Mapping Tools が見つかりません",
             [$@"{settings_prefix}:export_logs"] = @"送信用にログを書き出す",
+            // モードごとのスキン
+            [$@"{settings_prefix}:ruleset_skin_header"] = @"モードごとのスキン",
+            [$@"{settings_prefix}:ruleset_skin_not_set"] = @"指定なし",
+            [$@"{settings_prefix}:ruleset_skin_description"] = @"このモードを選んでいる間に使用するスキン。指定なしなら、スキン設定で選んだスキンを使用します",
             [$@"{settings_prefix}:export_logs_description"] = @"直近のログを、Windowsのアカウント名を伏せた状態でコピーし、その場所を開きます",
             [$@"{settings_prefix}:exported_logs"] = @"ログを{0}件書き出しました。クリックすると場所を開きます",
             [$@"{settings_prefix}:export_logs_failed"] = @"ログを書き出せませんでした。",

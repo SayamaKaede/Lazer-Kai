@@ -1,9 +1,12 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Collections.Generic;
+using osu.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
+using osu.Game.IO;
 using osu.Game.Localisation;
 using osu.Game.Overlays.Settings.Sections.LazerKai;
 
@@ -35,9 +38,21 @@ namespace osu.Game.Overlays.Settings.Sections
 
         public LazerKaiSection()
         {
-            Children = new Drawable[]
+            var groups = new List<Drawable>();
+
+            // the manual is only beside the executable in a build that was published, and a row that opens nothing
+            // is worse than no row at all. Decided here rather than inside the group: a subsection takes its alpha
+            // from the settings search, so one that faded itself out would be faded back in the moment the panel
+            // filtered anything.
+            string? manual = LazerKaiManual.Find(RuntimeInfo.StartupDirectory);
+
+            if (manual != null)
+                groups.Add(new ManualSettings(manual));
+
+            groups.AddRange(new Drawable[]
             {
                 new AppearanceSettings(),
+                new RulesetSkinSettings(),
                 new EditorDisplaySettings(),
                 new EditorDifficultyGraphSettings(),
                 new EditorGhostDifficultySettings(),
@@ -46,7 +61,9 @@ namespace osu.Game.Overlays.Settings.Sections
                 new EditorTimelineSettings(),
                 new EditorSelectionSettings(),
                 new EditorStatusSettings(),
-            };
+            });
+
+            Children = groups;
         }
     }
 

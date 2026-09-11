@@ -301,6 +301,12 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorGridDefaultType, EditorGridShape.Square);
             SetDefault(OsuSetting.MappingToolsPath, string.Empty);
 
+            // empty for "not set": that ruleset then gets the skin setting's skin, as every ruleset did before these.
+            SetDefault(OsuSetting.RulesetSkinOsu, string.Empty);
+            SetDefault(OsuSetting.RulesetSkinTaiko, string.Empty);
+            SetDefault(OsuSetting.RulesetSkinCatch, string.Empty);
+            SetDefault(OsuSetting.RulesetSkinMania, string.Empty);
+
             // on by default, which is what the editor did before there was a switch. Somebody who has not gone
             // looking for this should not find the beatmap they opened looking like a different beatmap.
             SetDefault(OsuSetting.EditorBeatmapColours, true);
@@ -1113,6 +1119,18 @@ namespace osu.Game.Configuration
 
         /// <summary>Which look the game paints itself in.</summary>
         UiTheme,
+
+        /// <summary>The skin put on while osu! is selected. Empty for the skin setting's.</summary>
+        RulesetSkinOsu,
+
+        /// <summary>The skin put on while osu!taiko is selected. Empty for the skin setting's.</summary>
+        RulesetSkinTaiko,
+
+        /// <summary>The skin put on while osu!catch is selected. Empty for the skin setting's.</summary>
+        RulesetSkinCatch,
+
+        /// <summary>The skin put on while osu!mania is selected. Empty for the skin setting's.</summary>
+        RulesetSkinMania,
 
     }
 }
