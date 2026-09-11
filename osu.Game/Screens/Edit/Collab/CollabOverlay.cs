@@ -73,6 +73,11 @@ namespace osu.Game.Screens.Edit.Collab
 
         private List<CollabBlock> blocks = new List<CollabBlock>();
 
+        /// <summary>
+        /// Whether the rows and totals are behind <see cref="blocks"/>, waiting for the panel to be looked at.
+        /// </summary>
+        private bool rowsStale = true;
+
         private CollabInputBlocker panel = null!;
         private FillFlowContainer rows = null!;
         private FillFlowContainer totals = null!;
@@ -345,15 +350,43 @@ namespace osu.Game.Screens.Edit.Collab
         /// <summary>
         /// Works the stretches out again from the beatmap as it now stands.
         /// </summary>
+        /// <remarks>
+        /// The stretches, what is assigned in them and the strip on the timeline are worked out here and now: they are
+        /// cheap, and the strip is followed on the timeline whether the panel is open or not.
+        ///
+        /// The rows and totals are not. They are drawables, and throwing them away and making them again is where the
+        /// time goes — 13.5ms a time on a real catch beatmap (measured 2026-09-11). A change to the beatmap arrives here
+        /// once per mouse movement while an object is being dragged, since each movement is its own change, and a few
+        /// thousand of them froze the editor for tens of seconds with the panel not even open. So nothing is made while
+        /// it is closed, and while it is open the rows catch up once a frame rather than once per change.
+        /// </remarks>
         private void rebuild()
         {
-            // the rows about to be thrown away are never told the pointer left them.
-            highlight.Clear();
-
             blocks = CollabBlocks.For(editorBeatmap, editorBeatmap.Bookmarks);
 
             if (project.DropAssignmentsOutsideOf(blocks))
                 save();
+
+            updateBands();
+
+            rowsStale = true;
+
+            if (State.Value == Visibility.Visible)
+                Scheduler.AddOnce(rebuildRows);
+        }
+
+        /// <summary>
+        /// Makes the rows and totals again, if the stretches have changed since they were last made.
+        /// </summary>
+        private void rebuildRows()
+        {
+            if (!rowsStale)
+                return;
+
+            rowsStale = false;
+
+            // the rows about to be thrown away are never told the pointer left them.
+            highlight.Clear();
 
             emptyText.Alpha = blocks.Count > 1 ? 0 : 1;
 
@@ -368,6 +401,17 @@ namespace osu.Game.Screens.Edit.Collab
             wholeText.Text = CollabStrings.WholeBeatmap(ComposeStatusDisplay.DrainTimeReadout(ComposeStatusDisplay.DrainTimeFor(editorBeatmap)));
 
             updateTotals();
+        }
+
+        /// <summary>
+        /// Publishes every stretch that has somebody on it, in their colour, for the timeline's strip.
+        /// </summary>
+        private void updateBands()
+        {
+            highlight.Bands.Value = blocks
+                                    .Where(b => project.Assignment.ContainsKey(b.Key) && project.Names.Contains(project.Assignment[b.Key]))
+                                    .Select(b => new CollabBand(b.Start, b.End, CollabColours.For(project.Names.IndexOf(project.Assignment[b.Key]))))
+                                    .ToArray();
         }
 
         private void updateTotals()
@@ -390,12 +434,9 @@ namespace osu.Game.Screens.Edit.Collab
                 });
             }
 
-            // published here rather than in the rebuild above because an assignment changes who owns what without
-            // changing where anything is, and the strip has to follow that too.
-            highlight.Bands.Value = blocks
-                                    .Where(b => project.Assignment.ContainsKey(b.Key) && project.Names.Contains(project.Assignment[b.Key]))
-                                    .Select(b => new CollabBand(b.Start, b.End, CollabColours.For(project.Names.IndexOf(project.Assignment[b.Key]))))
-                                    .ToArray();
+            // here as well as in the rebuild: an assignment changes who owns what without changing where anything is,
+            // and the strip has to follow that too.
+            updateBands();
 
             var unclaimed = blocks.Where(b => !project.Assignment.ContainsKey(b.Key)).ToArray();
             double unassigned = unclaimed.Sum(b => b.DrainTime);
@@ -503,6 +544,9 @@ namespace osu.Game.Screens.Edit.Collab
 
         protected override void PopIn()
         {
+            // the rows were left behind while the panel was closed; they catch up before anyone sees them.
+            rebuildRows();
+
             focused = true;
             highlight.Open.Value = true;
             this.FadeIn(200, Easing.OutQuint);
