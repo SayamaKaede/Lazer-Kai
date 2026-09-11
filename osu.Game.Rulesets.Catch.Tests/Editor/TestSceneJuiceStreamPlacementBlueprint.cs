@@ -6,9 +6,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using osu.Framework.Allocation;
 using osu.Framework.Extensions.ObjectExtensions;
+using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Catch.Edit.Blueprints;
 using osu.Game.Rulesets.Catch.Objects;
 using osu.Game.Rulesets.Catch.Objects.Drawables;
@@ -110,6 +113,44 @@ namespace osu.Game.Rulesets.Catch.Tests.Editor
             addPlacementSteps(times, positions);
             AddAssert("start time is correct", () => Precision.AlmostEquals(lastObject.StartTime, times[0]));
             AddAssert("end time is correct", () => Precision.AlmostEquals(lastObject.EndTime, times[1], 1e-3));
+        }
+
+        [Resolved]
+        private OsuConfigManager config { get; set; }
+
+        [TearDownSteps]
+        public void RestoreButtons() => AddStep("buttons back as they were", () => config.GetBindable<bool>(OsuSetting.SwapRightAndMiddleMouse).SetDefault());
+
+        /// <summary>
+        /// With right and middle traded, the physical right button reaches here as the middle one — the trade happens
+        /// where input comes in, so pressing middle here is what the right button does in the game. It still has to be
+        /// the one that finishes, the way it is for osu!'s sliders: only the button's name changed, not the hand.
+        /// </summary>
+        [Test]
+        public void TestTheRightButtonStillFinishesWithTheButtonsSwapped()
+        {
+            AddStep("swap right and middle", () => config.SetValue(OsuSetting.SwapRightAndMiddleMouse, true));
+
+            addMoveAndClickSteps(300, 100);
+            AddMoveStep(800, 200);
+            AddClickStep(MouseButton.Middle);
+
+            AddAssert("juice stream is placed", () => lastObject != null);
+        }
+
+        /// <summary>
+        /// And the physical middle button, which now arrives as the right one, does not.
+        /// </summary>
+        [Test]
+        public void TestTheMiddleButtonDoesNotFinishWithTheButtonsSwapped()
+        {
+            AddStep("swap right and middle", () => config.SetValue(OsuSetting.SwapRightAndMiddleMouse, true));
+
+            addMoveAndClickSteps(300, 100);
+            AddMoveStep(800, 200);
+            AddClickStep(MouseButton.Right);
+
+            AddAssert("still being placed", () => lastObject == null);
         }
 
         protected override DrawableHitObject CreateHitObject(HitObject hitObject) => new DrawableJuiceStream((JuiceStream)hitObject);

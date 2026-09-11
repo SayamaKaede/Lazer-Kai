@@ -1,10 +1,13 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Input;
 using osu.Framework.Input.Events;
 using osu.Framework.Utils;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Catch.Edit.Blueprints.Components;
 using osu.Game.Rulesets.Catch.Objects;
 using osu.Game.Rulesets.Edit;
@@ -25,6 +28,18 @@ namespace osu.Game.Rulesets.Catch.Edit.Blueprints
 
         private InputManager inputManager = null!;
 
+        private Bindable<bool> swapRightAndMiddleMouse = null!;
+
+        /// <summary>
+        /// The button that finishes the stream.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately tied to the physical right button rather than to <see cref="MouseButton.Right"/>, the same way
+        /// osu!'s sliders are: trading right and middle happens where input comes in, so that button arrives here as
+        /// <see cref="MouseButton.Middle"/>. Without this, trading them left a stream that only the wheel could finish.
+        /// </remarks>
+        private MouseButton finishButton => swapRightAndMiddleMouse.Value ? MouseButton.Middle : MouseButton.Right;
+
         protected override bool IsValidForPlacement => base.IsValidForPlacement && (PlacementActive == PlacementState.Waiting || Precision.DefinitelyBigger(HitObject.Duration, 0));
 
         public JuiceStreamPlacementBlueprint()
@@ -43,6 +58,12 @@ namespace osu.Game.Rulesets.Catch.Edit.Blueprints
 
             if (PlacementActive == PlacementState.Active)
                 editablePath.UpdateFrom(HitObjectContainer, HitObject);
+        }
+
+        [BackgroundDependencyLoader]
+        private void load(OsuConfigManager config)
+        {
+            swapRightAndMiddleMouse = config.GetBindable<bool>(OsuSetting.SwapRightAndMiddleMouse);
         }
 
         protected override void LoadComplete()
@@ -66,15 +87,16 @@ namespace osu.Game.Rulesets.Catch.Edit.Blueprints
                     return true;
 
                 case PlacementState.Active:
-                    switch (e.Button)
+                    if (e.Button == MouseButton.Left)
                     {
-                        case MouseButton.Left:
-                            editablePath.AddNewVertex();
-                            return true;
+                        editablePath.AddNewVertex();
+                        return true;
+                    }
 
-                        case MouseButton.Right:
-                            EndPlacement(true);
-                            return true;
+                    if (e.Button == finishButton)
+                    {
+                        EndPlacement(true);
+                        return true;
                     }
 
                     break;
