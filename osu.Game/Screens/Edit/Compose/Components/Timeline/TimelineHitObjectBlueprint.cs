@@ -442,11 +442,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         /// Whether the skin's own circles, ends and reverse arrows are what this object is drawn with.
         /// </summary>
         /// <remarks>
-        /// The pieces are the osu! ruleset's, so this is off for the others: their objects are not circles and would
-        /// be drawn as something they are not. A skin that does not draw in the stable format has none of them, and
-        /// the timeline stays as it was rather than losing its objects.
+        /// The pieces are osu!'s, and every ruleset gets them (asked for on 2026-09-11): a taiko hit or a mania note
+        /// drawn as a circle still reads as a note at its moment, and before this, mapping in another mode meant the
+        /// timeline switched looks along with it. A skin that does not draw in the stable format has none of them,
+        /// and the timeline stays as it was rather than losing its objects.
         /// </remarks>
-        private bool skinned => useSkin.Value && osuRuleset && TimelineSkinPieces.Available(skin);
+        private bool skinned => useSkin.Value && TimelineSkinPieces.Available(skin);
 
         private bool osuRuleset => editorBeatmap.BeatmapInfo.Ruleset.OnlineID == 0;
 
