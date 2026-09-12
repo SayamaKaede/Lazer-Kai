@@ -454,6 +454,13 @@ namespace osu.Game.Configuration
                             LookupKeyBindings(GlobalAction.RandomSkin))
                     );
                 }),
+                // Lazer-Kai: a skin picked while the selected ruleset has one of its own goes into that ruleset's setting
+                // rather than the one above, and has to be announced from there too. The skin shortcuts are pressed
+                // blind, and this toast is the only way to tell which skin they landed on.
+                rulesetSkinToast(OsuSetting.RulesetSkinOsu, @"osu!"),
+                rulesetSkinToast(OsuSetting.RulesetSkinTaiko, @"osu!taiko"),
+                rulesetSkinToast(OsuSetting.RulesetSkinCatch, @"osu!catch"),
+                rulesetSkinToast(OsuSetting.RulesetSkinMania, @"osu!mania"),
                 new TrackedSetting<float>(OsuSetting.UIScale, scale => new SettingDescription(
                         rawValue: scale,
                         name: GraphicsSettingsStrings.UIScaling,
@@ -463,6 +470,26 @@ namespace osu.Game.Configuration
                 ),
             };
         }
+
+        /// <summary>
+        /// The skin toast, for one ruleset's own skin. The ruleset is named in the heading, since the skin setting's own
+        /// toast looks the same otherwise and the two mean different things.
+        /// </summary>
+        private TrackedSetting<string> rulesetSkinToast(OsuSetting setting, string rulesetName) => new TrackedSetting<string>(setting, skin =>
+        {
+            LocalisableString skinName = Guid.TryParse(skin, out var id)
+                ? LookupSkinName(id)
+                : LazerKaiSettingsStrings.RulesetSkinNotSet;
+
+            return new SettingDescription(
+                rawValue: skin,
+                name: new TranslatableString(@"_", @"{0} ({1})", SkinSettingsStrings.SkinSectionHeader, rulesetName),
+                value: skinName,
+                shortcut: new TranslatableString(@"_", @"{0}: {1}",
+                    GlobalActionKeyBindingStrings.RandomSkin,
+                    LookupKeyBindings(GlobalAction.RandomSkin))
+            );
+        });
 
         public Func<Guid, string> LookupSkinName { private get; set; } = _ => @"unknown";
         public Func<GlobalAction, LocalisableString> LookupKeyBindings { private get; set; } = _ => @"unknown";

@@ -21,8 +21,13 @@ namespace osu.Game.Skinning
     ///
     /// The skin setting keeps what it had: it is what a ruleset with no skin of its own gets, so a ruleset's skin must
     /// not be written over it. The game writes every change of skin back into that setting, and asks
-    /// <see cref="Applying"/> first to leave these changes out. A skin picked by hand while a ruleset's own is on is
-    /// still written back, so it becomes the skin for the rulesets without one.
+    /// <see cref="Applying"/> first to leave these changes out.
+    ///
+    /// A skin picked while a ruleset's own is on — in the skin section, with the skin shortcuts, on any screen — replaces
+    /// that ruleset's skin rather than the skin setting (<see cref="TryRecordForRuleset"/>). Written into the skin setting
+    /// instead, it went on for the moment and then stayed there, with the ruleset's own still set and doing nothing,
+    /// until that was cleared and set again (reported 2026-09-11). A ruleset with none of its own still takes it into
+    /// the skin setting.
     /// </remarks>
     public partial class RulesetSkinSwitcher : Component
     {
@@ -72,6 +77,28 @@ namespace osu.Game.Skinning
             apply();
         }
 
+        /// <summary>
+        /// Takes a skin the user picked as the selected ruleset's own, if that ruleset has one.
+        /// </summary>
+        /// <returns>Whether it was taken. If not, it belongs to the skin setting.</returns>
+        public bool TryRecordForRuleset(string skinId)
+        {
+            // the game's first skin is put on from the setting before this has loaded, and belongs to the setting anyway.
+            if (!IsLoaded)
+                return false;
+
+            if (chosenForRuleset() == null)
+                return false;
+
+            // the random entry is only a way to a real skin: picking it is followed at once by the skin it lands on,
+            // which is what gets recorded. Recorded itself, it would read as a skin that is gone.
+            if (skinId == SkinInfo.RANDOM_SKIN.ToString())
+                return true;
+
+            rulesetSkins[ruleset.Value.OnlineID].Value = skinId;
+            return true;
+        }
+
         private void apply()
         {
             string target = chosenForRuleset() ?? skinSetting.Value;
@@ -101,7 +128,7 @@ namespace osu.Game.Skinning
 
             // one deleted since it was chosen is as good as none. Handed on regardless, the skin manager would put
             // triangles on in its place — a skin nobody chose, where the skin setting's is what "none" promises.
-            if (!Guid.TryParse(setting.Value, out var id) || skins.GetAllUsableSkins().All(s => s.ID != id))
+            if (!Guid.TryParse(setting.Value, out var id) || id == SkinInfo.RANDOM_SKIN || skins.GetAllUsableSkins().All(s => s.ID != id))
                 return null;
 
             return setting.Value;

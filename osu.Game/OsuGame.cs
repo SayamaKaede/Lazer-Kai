@@ -487,11 +487,17 @@ namespace osu.Game
             // what the rulesets without one get. Made before the handler below, which asks it.
             rulesetSkinSwitcher = new RulesetSkinSwitcher();
 
-            // Transfer any runtime changes back to configuration file.
+            // Transfer any runtime changes back to configuration file — or, for a skin picked while the selected ruleset
+            // has one of its own, into that ruleset's, which is the one it replaced.
             SkinManager.CurrentSkinInfo.ValueChanged += skin =>
             {
-                if (!rulesetSkinSwitcher.Applying)
-                    configSkin.Value = skin.NewValue.ID.ToString();
+                if (rulesetSkinSwitcher.Applying)
+                    return;
+
+                string id = skin.NewValue.ID.ToString();
+
+                if (!rulesetSkinSwitcher.TryRecordForRuleset(id))
+                    configSkin.Value = id;
             };
 
             Add(rulesetSkinSwitcher);

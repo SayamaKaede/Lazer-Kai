@@ -2,12 +2,16 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Testing;
+using osu.Game.Overlays.OSD;
 using osu.Game.Configuration;
 using osu.Game.Rulesets;
 using osu.Game.Skinning;
+using osuTK.Input;
 
 namespace osu.Game.Tests.Visual.Navigation
 {
@@ -85,21 +89,94 @@ namespace osu.Game.Tests.Visual.Navigation
         }
 
         /// <summary>
-        /// A skin picked by hand while a ruleset's own is on becomes the skin setting's, and so the skin for every
-        /// ruleset without one of its own.
+        /// A skin picked while a ruleset's own is on — in the skin section, with the skin shortcuts, anywhere — replaces
+        /// that ruleset's skin. Written into the skin setting instead, it went on for the moment and then stayed there,
+        /// with the ruleset's own skin still set and doing nothing, until that was cleared and set again (reported
+        /// 2026-09-11).
         /// </summary>
         [Test]
-        public void TestPickingOneByHandStillChangesTheSkinSetting()
+        public void TestPickingOneWhileARulesetsOwnIsOnChangesThatOne()
         {
             AddStep("taiko gets triangles", () => Game.LocalConfig.SetValue(OsuSetting.RulesetSkinTaiko, SkinInfo.TRIANGLES_SKIN.ToString()));
             AddStep("switch to taiko", () => Game.Ruleset.Value = rulesets.GetRuleset(1)!);
             AddUntilStep("triangles is on", currentSkin, () => Is.EqualTo(SkinInfo.TRIANGLES_SKIN));
 
-            AddStep("pick classic by hand", () => skins.SetSkinFromConfiguration(SkinInfo.CLASSIC_SKIN.ToString()));
-            AddAssert("the skin setting has classic", skinSetting, () => Is.EqualTo(SkinInfo.CLASSIC_SKIN.ToString()));
+            AddStep("pick classic", () => skins.SetSkinFromConfiguration(SkinInfo.CLASSIC_SKIN.ToString()));
+            AddAssert("taiko's skin is classic now", () => Game.LocalConfig.Get<string>(OsuSetting.RulesetSkinTaiko), () => Is.EqualTo(SkinInfo.CLASSIC_SKIN.ToString()));
+            AddAssert("the skin setting still has argon", skinSetting, () => Is.EqualTo(SkinInfo.ARGON_SKIN.ToString()));
 
             AddStep("switch to mania, which has none", () => Game.Ruleset.Value = rulesets.GetRuleset(3)!);
+            AddUntilStep("argon is on", currentSkin, () => Is.EqualTo(SkinInfo.ARGON_SKIN));
+
+            AddStep("back to taiko", () => Game.Ruleset.Value = rulesets.GetRuleset(1)!);
             AddUntilStep("classic is on", currentSkin, () => Is.EqualTo(SkinInfo.CLASSIC_SKIN));
+        }
+
+        /// <summary>
+        /// The shortcut the report was about, pressed the way somebody presses it.
+        /// </summary>
+        [Test]
+        public void TestTheNextSkinShortcutChangesARulesetsOwnSkin()
+        {
+            AddStep("taiko gets triangles", () => Game.LocalConfig.SetValue(OsuSetting.RulesetSkinTaiko, SkinInfo.TRIANGLES_SKIN.ToString()));
+            AddStep("switch to taiko", () => Game.Ruleset.Value = rulesets.GetRuleset(1)!);
+            AddUntilStep("triangles is on", currentSkin, () => Is.EqualTo(SkinInfo.TRIANGLES_SKIN));
+
+            AddStep("press the next skin shortcut", pressNextSkin);
+            AddUntilStep("the skin moved on", currentSkin, () => Is.Not.EqualTo(SkinInfo.TRIANGLES_SKIN));
+
+            AddAssert("taiko's skin went with it", () => Game.LocalConfig.Get<string>(OsuSetting.RulesetSkinTaiko), () => Is.EqualTo(currentSkin().ToString()));
+            AddAssert("the skin setting still has argon", skinSetting, () => Is.EqualTo(SkinInfo.ARGON_SKIN.ToString()));
+        }
+
+        /// <summary>
+        /// A ruleset with no skin of its own takes the shortcut into the skin setting, as it always did.
+        /// </summary>
+        [Test]
+        public void TestTheNextSkinShortcutOnARulesetWithoutOneChangesTheSkinSetting()
+        {
+            AddStep("press the next skin shortcut", pressNextSkin);
+            AddUntilStep("the skin moved on", currentSkin, () => Is.Not.EqualTo(SkinInfo.ARGON_SKIN));
+
+            AddAssert("the skin setting went with it", skinSetting, () => Is.EqualTo(currentSkin().ToString()));
+            AddAssert("osu! still has none of its own", () => Game.LocalConfig.Get<string>(OsuSetting.RulesetSkinOsu), () => Is.Empty);
+        }
+
+        /// <summary>
+        /// The skin shortcuts are pressed blind, and the toast is the only way to tell which skin they landed on. A skin
+        /// that went into a ruleset's own setting rather than the skin setting was left without one (reported 2026-09-11).
+        /// </summary>
+        [Test]
+        public void TestTheShortcutSaysWhichSkinItLandedOn()
+        {
+            AddStep("taiko gets triangles", () => Game.LocalConfig.SetValue(OsuSetting.RulesetSkinTaiko, SkinInfo.TRIANGLES_SKIN.ToString()));
+            AddStep("switch to taiko", () => Game.Ruleset.Value = rulesets.GetRuleset(1)!);
+            AddUntilStep("triangles is on", currentSkin, () => Is.EqualTo(SkinInfo.TRIANGLES_SKIN));
+
+            AddStep("press the next skin shortcut", pressNextSkin);
+            AddUntilStep("the skin moved on", currentSkin, () => Is.Not.EqualTo(SkinInfo.TRIANGLES_SKIN));
+
+            // the mode in the heading keeps a toast from the skin setting's own changes, made while setting up, from
+            // passing for this one. A toast's heading is drawn in capitals, so it is matched without regard to case.
+            AddUntilStep("a toast names it, as taiko's", () => Game.ChildrenOfType<TrackedSettingToast>().Any(toast =>
+            {
+                string[] texts = toast.ChildrenOfType<SpriteText>().Select(t => t.Text.ToString()).ToArray();
+                return texts.Contains(nameOf(currentSkin())) && texts.Any(t => t.Contains(@"osu!taiko", StringComparison.OrdinalIgnoreCase));
+            }));
+        }
+
+        /// <summary>
+        /// The name a toast gives a skin, looked up the way the game looks it up for the skin setting's own toast.
+        /// </summary>
+        private string nameOf(Guid id) => skins.Query(s => s.ID == id)?.ToString() ?? @"Unknown";
+
+        private void pressNextSkin()
+        {
+            InputManager.PressKey(Key.ControlLeft);
+            InputManager.PressKey(Key.ShiftLeft);
+            InputManager.Key(Key.T);
+            InputManager.ReleaseKey(Key.ShiftLeft);
+            InputManager.ReleaseKey(Key.ControlLeft);
         }
 
         private Guid currentSkin() => skins.CurrentSkinInfo.Value.ID;
