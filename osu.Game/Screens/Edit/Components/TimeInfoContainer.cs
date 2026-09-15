@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using osu.Framework.Extensions.LocalisationExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Game.Graphics.Sprites;
@@ -24,6 +25,7 @@ namespace osu.Game.Screens.Edit.Components
         private OsuSpriteText bpm = null!;
         private OsuSpriteText progress = null!;
         private OsuSpriteText starRating = null!;
+        private OsuSpriteText kiai = null!;
 
         [Resolved]
         private EditorBeatmap editorBeatmap { get; set; } = null!;
@@ -73,6 +75,15 @@ namespace osu.Game.Screens.Edit.Components
                             Font = OsuFont.Torus.With(size: 14, weight: FontWeight.SemiBold, fixedWidth: true),
                             Spacing = new Vector2(-1, 0),
                         },
+                        // the same colour as kiai on the bottom timeline beside it.
+                        kiai = new OsuSpriteText
+                        {
+                            Text = @"Kiai",
+                            Colour = colours.Purple1,
+                            // not fixed width: that is for digits that change, and spreads a word's letters apart.
+                            Font = OsuFont.Torus.With(size: 14, weight: FontWeight.SemiBold),
+                            Alpha = 0,
+                        },
                     }
                 }
             };
@@ -94,13 +105,16 @@ namespace osu.Game.Screens.Edit.Components
 
         private double? lastBPM;
         private double? lastProgress;
+        private bool? lastKiai;
 
         protected override void Update()
         {
             base.Update();
 
             double newBPM = editorBeatmap.ControlPointInfo.TimingPointAt(editorClock.CurrentTime).BPM;
-            double newProgress = (int)(editorClock.CurrentTime / editorClock.TrackLength * 100);
+            // floored to a tenth, like the star rating beside it is floored to a hundredth.
+            double newProgress = (int)(editorClock.CurrentTime / editorClock.TrackLength * 1000) / 10.0;
+            bool newKiai = editorBeatmap.ControlPointInfo.EffectPointAt(editorClock.CurrentTime).KiaiMode;
 
             if (lastBPM != newBPM)
             {
@@ -111,7 +125,13 @@ namespace osu.Game.Screens.Edit.Components
             if (lastProgress != newProgress)
             {
                 lastProgress = newProgress;
-                progress.Text = @$"{newProgress:0}%";
+                progress.Text = LocalisableString.Interpolate($@"{newProgress.ToLocalisableString(@"0.0")}%");
+            }
+
+            if (lastKiai != newKiai)
+            {
+                lastKiai = newKiai;
+                kiai.Alpha = newKiai ? 1 : 0;
             }
         }
 
