@@ -26,6 +26,9 @@ namespace osu.Game.Overlays.Settings.Sections
     ///
     /// Split by when a setting is reached for rather than by what it changes: what the screen looks like, what
     /// the beatmap is made of, testing it, and the things that are neither.
+    ///
+    /// Each of the four also lists its own subsections in the sidebar while it is being read
+    /// (<see cref="SettingsSection.ListSubsectionsInSidebar"/>): even split four ways, a group was a long scroll away.
     /// </remarks>
     public partial class LazerKaiSection : SettingsSection
     {
@@ -38,6 +41,8 @@ namespace osu.Game.Overlays.Settings.Sections
 
         public LazerKaiSection()
         {
+            ListSubsectionsInSidebar = true;
+
             var groups = new List<Drawable>();
 
             // the manual is only beside the executable in a build that was published, and a row that opens nothing
@@ -79,6 +84,7 @@ namespace osu.Game.Overlays.Settings.Sections
         public LazerKaiBeatmapSection()
         {
             UseSmallerSidebarButton = true;
+            ListSubsectionsInSidebar = true;
 
             Children = new Drawable[]
             {
@@ -103,6 +109,7 @@ namespace osu.Game.Overlays.Settings.Sections
         public LazerKaiTestPlaySection()
         {
             UseSmallerSidebarButton = true;
+            ListSubsectionsInSidebar = true;
 
             Children = new Drawable[]
             {
@@ -123,6 +130,7 @@ namespace osu.Game.Overlays.Settings.Sections
         public LazerKaiOtherSection()
         {
             UseSmallerSidebarButton = true;
+            ListSubsectionsInSidebar = true;
 
             Children = new Drawable[]
             {

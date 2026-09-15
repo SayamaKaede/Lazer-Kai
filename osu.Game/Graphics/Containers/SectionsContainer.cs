@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using osu.Framework.Allocation;
@@ -212,6 +213,30 @@ namespace osu.Game.Graphics.Containers
         }
 
         public void ScrollToTop() => scrollContainer.ScrollTo(0);
+
+        /// <summary>
+        /// Of some drawables inside the sections, in the order they are laid out, the one being read: the same rule that
+        /// picks <see cref="SelectedSection"/>, for things smaller than a section.
+        /// </summary>
+        public TItem? CurrentOf<TItem>(IReadOnlyList<TItem> items)
+            where TItem : Drawable
+        {
+            if (items.Count == 0)
+                return null;
+
+            if (Precision.AlmostBigger(0, scrollContainer.Current))
+                return items[0];
+
+            if (Precision.AlmostBigger(scrollContainer.Current, scrollContainer.ScrollableExtent))
+                return items[^1];
+
+            float fixedHeaderSize = FixedHeader?.LayoutSize.Y ?? 0;
+            float lenience = Math.Min(items.Min(d => d.DrawHeight) / 2.0f, scrollContainer.DisplayableContent * 0.05f);
+            float scrollCentre = fixedHeaderSize + scrollContainer.DisplayableContent * scroll_y_centre + lenience;
+
+            return items.TakeWhile(item => scrollContainer.GetChildPosInContent(item) - (float)scrollContainer.Current - scrollCentre <= 0)
+                        .LastOrDefault() ?? items[0];
+        }
 
         protected virtual UserTrackingScrollContainer CreateScrollContainer() => new UserTrackingScrollContainer();
 

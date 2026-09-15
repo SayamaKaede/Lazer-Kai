@@ -34,6 +34,11 @@ namespace osu.Game.Overlays.Settings
 
         public bool UseSmallerSidebarButton { get; init; }
 
+        /// <summary>
+        /// Whether the sidebar lists this section's subsections under its button while the section is being read.
+        /// </summary>
+        public bool ListSubsectionsInSidebar { get; init; }
+
         public virtual IEnumerable<LocalisableString> FilterTerms => new[] { Header };
 
         public const int ITEM_SPACING = 14;

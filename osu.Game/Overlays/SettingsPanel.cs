@@ -53,6 +53,7 @@ namespace osu.Game.Overlays
 
         protected SettingsSidebar Sidebar;
         private SidebarIconButton selectedSidebarButton;
+        private SidebarSubsectionButton selectedSubsectionButton;
 
         public SettingsSectionsContainer SectionsContainer { get; private set; }
 
@@ -216,6 +217,42 @@ namespace osu.Game.Overlays
             base.UpdateAfterChildren();
 
             ContentContainer.Margin = new MarginPadding { Left = Sidebar?.DrawWidth ?? 0 };
+
+            updateSubsectionButtons();
+        }
+
+        private void updateSubsectionButtons()
+        {
+            if (Sidebar == null)
+                return;
+
+            var section = SectionsContainer.SelectedSection.Value;
+            var listed = new List<SidebarSubsectionButton>();
+
+            foreach (var button in Sidebar.Children.OfType<SidebarSubsectionButton>())
+            {
+                button.UpdateShown(button.Section == section);
+
+                if (button.Alpha > 0)
+                    listed.Add(button);
+            }
+
+            var current = SectionsContainer.CurrentOf(listed.Select(b => b.Subsection).ToList());
+            var currentButton = listed.FirstOrDefault(b => b.Subsection == current);
+
+            if (currentButton == selectedSubsectionButton)
+                return;
+
+            if (selectedSubsectionButton != null)
+                selectedSubsectionButton.Selected = false;
+
+            selectedSubsectionButton = currentButton;
+
+            if (selectedSubsectionButton != null)
+            {
+                selectedSubsectionButton.Selected = true;
+                Sidebar.ScrollIntoView(selectedSubsectionButton);
+            }
         }
 
         private const double fade_in_duration = 500;
@@ -252,6 +289,10 @@ namespace osu.Game.Overlays
                 {
                     Sidebar.Add(button);
 
+                    // listed and unlisted as sections are read, rather than faded in with the sections.
+                    if (button is SidebarSubsectionButton)
+                        continue;
+
                     button.FadeOut()
                           .Delay(delay)
                           .FadeInFromZero(fade_in_duration, Easing.OutQuint);
@@ -272,7 +313,7 @@ namespace osu.Game.Overlays
             });
         }
 
-        private IEnumerable<SidebarIconButton> createSidebarButtons()
+        private IEnumerable<SidebarButton> createSidebarButtons()
         {
             foreach (var section in SectionsContainer)
             {
@@ -287,6 +328,25 @@ namespace osu.Game.Overlays
                         SectionsContainer.ScrollTo(section);
                     },
                 };
+
+                if (!section.ListSubsectionsInSidebar)
+                    continue;
+
+                foreach (var subsection in section.Children.OfType<SettingsSubsection>())
+                {
+                    yield return new SidebarSubsectionButton
+                    {
+                        Section = section,
+                        Subsection = subsection,
+                        Action = () =>
+                        {
+                            if (!SectionsContainer.IsLoaded)
+                                return;
+
+                            SectionsContainer.ScrollTo(subsection);
+                        },
+                    };
+                }
             }
         }
 

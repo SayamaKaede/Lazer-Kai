@@ -54,6 +54,11 @@ namespace osu.Game.Graphics.Containers
 
         protected FillFlowContainer FillFlow { get; }
 
+        /// <summary>
+        /// What <see cref="FillFlow"/> scrolls in when it is taller than this container.
+        /// </summary>
+        protected OsuScrollContainer ScrollContainer { get; }
+
         protected ExpandingContainer(float contractedWidth, float expandedWidth)
         {
             this.contractedWidth = contractedWidth;
@@ -62,7 +67,7 @@ namespace osu.Game.Graphics.Containers
             RelativeSizeAxes = Axes.Y;
             Width = contractedWidth;
 
-            InternalChild = CreateScrollContainer().With(s =>
+            InternalChild = ScrollContainer = CreateScrollContainer().With(s =>
             {
                 s.RelativeSizeAxes = Axes.Both;
                 s.ScrollbarVisible = false;

@@ -22,6 +22,11 @@ namespace osu.Game.Overlays.Settings
 
         protected abstract LocalisableString Header { get; }
 
+        /// <summary>
+        /// The heading, for the sidebar to list the subsection under.
+        /// </summary>
+        public LocalisableString SidebarHeader => Header;
+
         public virtual IEnumerable<LocalisableString> FilterTerms => new[] { Header };
 
         public bool MatchingFilter

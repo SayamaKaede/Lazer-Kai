@@ -26,6 +26,15 @@ namespace osu.Game.Overlays.Settings
 
         protected override bool ExpandOnHover => false;
 
+        /// <summary>
+        /// Scrolls the list just far enough that a button is in view.
+        /// </summary>
+        /// <remarks>
+        /// With a section's subsections listed, the list can be taller than the screen, and the row being read is
+        /// exactly the one that ends up below it.
+        /// </remarks>
+        public void ScrollIntoView(Drawable button) => ScrollContainer.ScrollIntoView(button);
+
         private readonly bool showBackButton;
 
         public SettingsSidebar(bool showBackButton)
