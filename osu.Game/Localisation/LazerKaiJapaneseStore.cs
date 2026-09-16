@@ -148,6 +148,9 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:always_expand_timeline_point_labels"] = @"ラベルを常に展開",
             [$@"{editor_prefix}:hide_timeline_points"] = @"SV・音量のラベルを非表示",
             [$@"{editor_prefix}:hide_timeline_points_description"] = @"非表示にしたぶん、ノーツが大きくなり、操作しやすくなります",
+            [$@"{editor_prefix}:show_nightcore_cymbals"] = @"NightCoreシンバルの位置を表示",
+            [$@"{editor_prefix}:show_nightcore_cymbals_description"] = @"NightCoreのシンバルが鳴る位置を、上部タイムラインに表示します。赤線の位置と、そこから4小節ごとです",
+
             [$@"{editor_prefix}:timeline_style"] = @"表示形式",
             [$@"{editor_prefix}:timeline_style_lazer"] = @"Lazer",
             [$@"{editor_prefix}:timeline_style_stable"] = @"Stable",

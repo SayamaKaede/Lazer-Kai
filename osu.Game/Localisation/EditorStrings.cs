@@ -1478,6 +1478,17 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString CtrlClickCyclesCurveTypeDescription => new TranslatableString(getKey(@"ctrl_click_cycles_curve_type_description"), @"Ctrl-clicking what stable calls a white anchor turns it red.");
 
+        /// <summary>
+        /// "Show nightcore cymbals"
+        /// </summary>
+        public static LocalisableString ShowNightcoreCymbals => new TranslatableString(getKey(@"show_nightcore_cymbals"), @"Show nightcore cymbals");
+
+        /// <summary>
+        /// "Marks the top timeline where nightcore's cymbal falls: on each red line, and every four bars after it."
+        /// </summary>
+        public static LocalisableString ShowNightcoreCymbalsDescription => new TranslatableString(getKey(@"show_nightcore_cymbals_description"),
+            @"Marks the top timeline where nightcore's cymbal falls: on each red line, and every four bars after it.");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

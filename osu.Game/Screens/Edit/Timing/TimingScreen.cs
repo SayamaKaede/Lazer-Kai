@@ -93,6 +93,7 @@ namespace osu.Game.Screens.Edit.Timing
             base.ConfigureTimeline(timelineArea);
 
             timelineArea.Timeline.AlwaysShowControlPoints = true;
+            timelineArea.Timeline.ShowNightcoreCymbals = true;
         }
     }
 }

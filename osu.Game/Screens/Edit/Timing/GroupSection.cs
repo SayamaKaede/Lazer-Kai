@@ -10,6 +10,7 @@ using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Localisation;
 using osuTK;
 
 namespace osu.Game.Screens.Edit.Timing
@@ -53,6 +54,13 @@ namespace osu.Game.Screens.Edit.Timing
                     Direction = FillDirection.Vertical,
                     Children = new Drawable[]
                     {
+                        // above the time of the selected group, since it is about the whole beatmap rather than one group.
+                        new FormCheckBox
+                        {
+                            Caption = EditorStrings.ShowNightcoreCymbals,
+                            HintText = EditorStrings.ShowNightcoreCymbalsDescription,
+                            Current = configManager.GetBindable<bool>(OsuSetting.EditorTimelineShowNightcoreCymbals),
+                        },
                         textBox = new FormTextBox
                         {
                             Caption = "Time",

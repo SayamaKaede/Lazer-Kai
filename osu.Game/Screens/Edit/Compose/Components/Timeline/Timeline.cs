@@ -82,6 +82,18 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private TimelineTickDisplay ticks = null!;
 
+        private TimelineNightcoreCymbalDisplay nightcoreCymbals = null!;
+
+        /// <summary>
+        /// Whether this timeline marks where nightcore's cymbal falls, when the setting for it is on. Only the timing
+        /// screen does: the compose screen has objects on its timeline for the marks to sit over.
+        /// </summary>
+        public bool ShowNightcoreCymbals
+        {
+            get => nightcoreCymbals.Enabled;
+            set => nightcoreCymbals.Enabled = value;
+        }
+
         private Drawable tickProxy = null!;
 
         private Container tickAndObjectLayer = null!;
@@ -160,6 +172,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                         referenceObjects = new TimelineReferenceObjectDisplay(),
                         centreMarker.CreateProxy(),
                         tickProxy = ticks.CreateProxy(),
+                        // above the ticks, which otherwise run over the mark.
+                        nightcoreCymbals = new TimelineNightcoreCymbalDisplay { RelativeSizeAxes = Axes.Both },
                         userContent,
                     }
                 },

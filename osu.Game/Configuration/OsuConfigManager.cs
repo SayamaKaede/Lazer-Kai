@@ -228,6 +228,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorTimelineShowTimingChanges, true);
             SetDefault(OsuSetting.EditorTimelineShowBreaks, true);
             SetDefault(OsuSetting.EditorTimelineShowTicks, true);
+            SetDefault(OsuSetting.EditorTimelineShowNightcoreCymbals, false);
 
             SetDefault(OsuSetting.EditorContractSidebars, false);
 
@@ -1158,6 +1159,9 @@ namespace osu.Game.Configuration
 
         /// <summary>The skin put on while osu!mania is selected. Empty for the skin setting's.</summary>
         RulesetSkinMania,
+
+        /// <summary>Whether the top timeline marks where nightcore's cymbal falls.</summary>
+        EditorTimelineShowNightcoreCymbals,
 
     }
 }
