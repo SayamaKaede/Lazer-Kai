@@ -32,6 +32,69 @@ namespace osu.Game.Tests.Database
     {
         private const int count_beatmaps = 12;
 
+        /// <summary>
+        /// A difficulty of one's own -- a guest difficulty being made, most often -- is not in the update, and used to go
+        /// down with the set the update replaces. It is carried over instead (2026-09-16 request).
+        /// </summary>
+        [Test]
+        public void TestDifficultyMissingFromUpdateIsKept()
+        {
+            RunTestWithRealmAsync(async (realm, storage) =>
+            {
+                var importer = new BeatmapImporter(storage, realm);
+                using var rulesets = new RealmRulesetStore(realm, storage);
+
+                using var __ = getBeatmapArchive(out string pathOriginal);
+                using var _ = getBeatmapArchiveWithModifications(out string pathWithOwnDifficulty, directory =>
+                {
+                    // a difficulty the online set does not have.
+                    var existing = directory.GetFiles("*.osu").First();
+                    string[] lines = File.ReadAllLines(existing.FullName);
+
+                    for (int i = 0; i < lines.Length; i++)
+                    {
+                        if (lines[i].StartsWith(@"Version:", StringComparison.Ordinal))
+                            lines[i] = @"Version:my own";
+                    }
+
+                    File.WriteAllLines(Path.Combine(directory.FullName, "my own.osu"), lines);
+                });
+
+                var importBeforeUpdate = await importer.Import(new ImportTask(pathWithOwnDifficulty));
+
+                Assert.That(importBeforeUpdate, Is.Not.Null);
+                Debug.Assert(importBeforeUpdate != null);
+
+                realm.Run(r => r.Refresh());
+                Assert.That(importBeforeUpdate.Value.Beatmaps, Has.Count.EqualTo(count_beatmaps + 1));
+
+                // what the editor marks a difficulty saved here with, which is what tells it apart from one the
+                // mapper took out of the set upstream.
+                importBeforeUpdate.PerformWrite(s => s.Beatmaps.Single(b => b.DifficultyName == @"my own").Status = BeatmapOnlineStatus.LocallyModified);
+
+                var importAfterUpdate = await importer.ImportAsUpdate(new ProgressNotification(), new ImportTask(pathOriginal), importBeforeUpdate.Value);
+
+                Assert.That(importAfterUpdate, Is.Not.Null);
+                Debug.Assert(importAfterUpdate != null);
+
+                realm.Run(r => r.Refresh());
+
+                importAfterUpdate.PerformRead(updated =>
+                {
+                    var kept = updated.Beatmaps.SingleOrDefault(b => b.DifficultyName == @"my own");
+
+                    Assert.That(kept, Is.Not.Null, "the difficulty the update does not have was not kept");
+                    Assert.That(updated.Beatmaps, Has.Count.EqualTo(count_beatmaps + 1));
+
+                    // it has to be readable from the updated set, and must not be able to ask for an update of its own.
+                    Assert.That(kept!.File, Is.Not.Null);
+                    Assert.That(kept.OnlineID, Is.LessThanOrEqualTo(0));
+                });
+
+                checkCount<BeatmapSetInfo>(realm, 1);
+            });
+        }
+
         [Test]
         public void TestNewDifficultyAdded()
         {

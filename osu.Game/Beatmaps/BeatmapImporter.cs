@@ -18,6 +18,7 @@ using osu.Game.Database;
 using osu.Game.Extensions;
 using osu.Game.IO;
 using osu.Game.IO.Archives;
+using osu.Game.Models;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Objects.Types;
@@ -112,6 +113,17 @@ namespace osu.Game.Beatmaps
                             realm.Remove(beatmap.Metadata);
                             realm.Remove(beatmap);
                         }
+                        // A difficulty written here and not uploaded -- a guest difficulty being made, most often -- is
+                        // the user's own work, and is carried over rather than going down with the set being replaced,
+                        // which is where it used to end up (2026-09-16 request). Saving in the editor is what marks it,
+                        // so a difficulty the mapper took out of the set upstream is still removed, as before.
+                        // One the update still has under the same name is left alone too: that is an edited copy of an
+                        // online difficulty, and two of the same name in one set is worse than the old behaviour.
+                        else if (beatmap.Status == BeatmapOnlineStatus.LocallyModified
+                                 && updated.Beatmaps.All(b => !string.Equals(b.DifficultyName, beatmap.DifficultyName, StringComparison.Ordinal)))
+                        {
+                            keep(beatmap, original, updated);
+                        }
                         else
                         {
                             // If the beatmap differs in the original, leave it in a soft-deleted state but reset online info.
@@ -135,6 +147,39 @@ namespace osu.Game.Beatmaps
             });
 
             return first;
+        }
+
+        /// <summary>
+        /// Moves a difficulty the update does not have from the set being replaced into the updated set, with the file
+        /// it is read from.
+        /// </summary>
+        private static void keep(BeatmapInfo beatmap, BeatmapSetInfo original, BeatmapSetInfo updated)
+        {
+            var file = beatmap.File;
+
+            if (file == null)
+            {
+                // without its .osu there is nothing to carry over; leave it behind the way it was before.
+                beatmap.ResetOnlineInfo();
+                return;
+            }
+
+            string filename = file.Filename;
+
+            // the updated set decides what its filenames mean, so one already taken is given way to.
+            for (int attempt = 1; updated.Files.Any(f => string.Equals(f.Filename, filename, StringComparison.OrdinalIgnoreCase)); attempt++)
+                filename = $"{Path.GetFileNameWithoutExtension(file.Filename)} ({attempt}){Path.GetExtension(file.Filename)}";
+
+            updated.Files.Add(new RealmNamedFileUsage(file.File, filename));
+
+            original.Beatmaps.Remove(beatmap);
+            updated.Beatmaps.Add(beatmap);
+            beatmap.BeatmapSet = updated;
+
+            // it is not part of the online set any more, so it must not be able to ask for an update of its own.
+            beatmap.ResetOnlineInfo();
+
+            Logger.Log($"Keeping difficulty \"{beatmap.DifficultyName}\", which the update does not have", LoggingTarget.Database);
         }
 
         private static void transferCollectionReferences(Realm realm, BeatmapSetInfo original, BeatmapSetInfo updated)
