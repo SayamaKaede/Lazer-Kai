@@ -41,11 +41,13 @@ using osu.Game.Localisation;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Overlays.Mods;
 using osu.Game.Overlays.Volume;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Scoring;
+using osu.Game.Screens.Edit;
 using osu.Game.Screens.Footer;
 using osu.Game.Screens.Menu;
 using osu.Game.Screens.Play;
@@ -1224,6 +1226,12 @@ namespace osu.Game.Screens.Select
         [Resolved]
         private RealmAccess realm { get; set; } = null!;
 
+        [Resolved]
+        private IBeatmapUpdater beatmapUpdater { get; set; } = null!;
+
+        [Resolved]
+        private INotificationOverlay? notificationOverlay { get; set; }
+
         public virtual IEnumerable<OsuMenuItem> GetForwardActions(BeatmapInfo beatmap)
         {
             yield return new OsuMenuItem(GlobalActionKeyBindingStrings.Select, MenuItemType.Highlighted, () => SelectAndRun(beatmap, OnStart))
@@ -1264,6 +1272,77 @@ namespace osu.Game.Screens.Select
         public void Delete(BeatmapSetInfo beatmapSet) => dialogOverlay?.Push(new BeatmapDeleteDialog(beatmapSet));
 
         public void RestoreAllHidden(BeatmapSetInfo beatmapSet) => beatmaps.Restore(beatmapSet);
+
+        /// <summary>
+        /// Deletes one difficulty, where the game otherwise only deletes whole sets outside the editor.
+        /// </summary>
+        /// <remarks>
+        /// The last difficulty of a set is not offered: a set with nothing in it is not something song select can show,
+        /// and deleting the set is what that means.
+        /// </remarks>
+        public void DeleteDifficulty(BeatmapInfo beatmap)
+        {
+            if (beatmap.BeatmapSet?.Beatmaps.Count < 2)
+                return;
+
+            if (dialogOverlay == null)
+                delete();
+            else
+                dialogOverlay.Push(new DeleteDifficultyConfirmationDialog(beatmap.DifficultyName, Math.Max(beatmap.TotalObjectCount, 0), delete));
+
+            void delete() => beatmaps.DeleteDifficultyImmediately(beatmap);
+        }
+
+        /// <summary>
+        /// Asks the server about this beatmap set now.
+        /// </summary>
+        /// <remarks>
+        /// The update mark compares the beatmap's hash against the online hash last written to it, and that hash is only
+        /// rewritten when the set is imported or when the server says over the live connection that it changed. Nothing
+        /// asks on a schedule, so a beatmap updated online can sit unmarked until the message arrives -- this asks
+        /// straight away, the same way an import does.
+        /// </remarks>
+        public void CheckForUpdate(BeatmapSetInfo beatmapSet)
+        {
+            string name = beatmapSet.Metadata.GetDisplayTitle();
+            Guid id = beatmapSet.ID;
+
+            var progress = new ProgressNotification
+            {
+                Text = LazerKaiSongSelectStrings.Checking(name),
+                State = ProgressNotificationState.Active,
+            };
+
+            notificationOverlay?.Post(progress);
+
+            // the panels carry copies detached from the database, and processing has to happen on what is in it.
+            Task.Run(() => realm.Run(r =>
+                    {
+                        var managed = r.Find<BeatmapSetInfo>(id) ?? throw new InvalidOperationException($"{name} is no longer in the database.");
+
+                        beatmapUpdater.Process(managed, MetadataLookupScope.OnlineFirst);
+                        return managed.AllBeatmapsUpToDate;
+                    }))
+                .ContinueWith(task => Schedule(() =>
+                {
+                    if (task.IsFaulted)
+                    {
+                        Logger.Log($"Checking {name} for an update failed: {task.Exception}");
+                        progress.State = ProgressNotificationState.Cancelled;
+                        notificationOverlay?.Post(new SimpleErrorNotification { Text = LazerKaiSongSelectStrings.CheckFailed });
+                        return;
+                    }
+
+                    bool upToDate = task.GetResultSafely();
+
+                    progress.State = ProgressNotificationState.Cancelled;
+                    notificationOverlay?.Post(new SimpleNotification
+                    {
+                        Text = upToDate ? LazerKaiSongSelectStrings.UpToDate(name) : LazerKaiSongSelectStrings.UpdateAvailable(name),
+                        Icon = upToDate ? FontAwesome.Solid.Check : FontAwesome.Solid.SyncAlt,
+                    });
+                }));
+        }
 
         private GroupedBeatmap? beforeScopedSelection;
 

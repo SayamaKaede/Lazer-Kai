@@ -194,6 +194,14 @@ namespace osu.Game.Localisation
             [$@"{export_prefix}:format_lazer"] = @"Lazer向け（変換しない / .olz）",
             [$@"{export_prefix}:export_difficulty"] = @"この難易度を出力",
             [$@"{export_prefix}:export_set"] = @"このセットを出力",
+
+            // 曲選択画面
+            [$@"{song_select_prefix}:check_for_update"] = @"更新を確認",
+            [$@"{song_select_prefix}:checking"] = @"「{0}」の更新を確認しています...",
+            [$@"{song_select_prefix}:up_to_date"] = @"「{0}」は最新です",
+            [$@"{song_select_prefix}:update_available"] = @"「{0}」に更新があります",
+            [$@"{song_select_prefix}:check_failed"] = @"更新を確認できませんでした。オンラインに接続していますか？",
+            [$@"{song_select_prefix}:delete_difficulty"] = @"この難易度を削除...",
             [$@"{editor_prefix}:selection_handle_colour"] = @"8点ハンドルの色",
             [$@"{editor_prefix}:selection_handle_size"] = @"8点ハンドルの大きさ",
             [$@"{editor_prefix}:slider_anchor_size"] = @"スライダーアンカーの大きさ",
@@ -429,6 +437,7 @@ namespace osu.Game.Localisation
         private const string profile_prefix = @"osu.Game.Resources.Localisation.LazerKaiProfile";
         private const string collab_prefix = @"osu.Game.Resources.Localisation.Collab";
         private const string export_prefix = @"osu.Game.Resources.Localisation.BeatmapExport";
+        private const string song_select_prefix = @"osu.Game.Resources.Localisation.LazerKaiSongSelect";
         private const string preset_prefix = @"osu.Game.Resources.Localisation.PlacementPreset";
         private const string mapping_prefix = @"osu.Game.Resources.Localisation.MappingSummary";
 

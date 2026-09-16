@@ -267,6 +267,12 @@ namespace osu.Game.Screens.Select
                     if (beatmapSet.GetOnlineURL(api, ruleset.Value) is string url)
                         items.Add(new OsuMenuItem(CommonStrings.CopyLink, MenuItemType.Standard, () => game?.CopyToClipboard(url)));
 
+                    // the update mark waits to be told the beatmap changed; this asks now.
+                    items.Add(new OsuMenuItem(LazerKaiSongSelectStrings.CheckForUpdate, MenuItemType.Standard, () => songSelect?.CheckForUpdate(beatmapSet))
+                    {
+                        Icon = FontAwesome.Solid.SyncAlt
+                    });
+
                     items.Add(new OsuMenuItemSpacer());
                 }
 

@@ -331,6 +331,10 @@ namespace osu.Game.Screens.Select
                     Icon = FontAwesome.Solid.FileExport
                 });
 
+                // the game otherwise only deletes whole sets outside the editor.
+                if (beatmap.BeatmapSet?.Beatmaps.Count > 1)
+                    items.Add(new OsuMenuItem(LazerKaiSongSelectStrings.DeleteDifficulty, MenuItemType.Destructive, () => songSelect?.DeleteDifficulty(beatmap)));
+
                 return items.ToArray();
             }
         }

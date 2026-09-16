@@ -27,6 +27,16 @@ namespace osu.Game.Screens.Select
         void RestoreAllHidden(BeatmapSetInfo beatmapSet);
 
         /// <summary>
+        /// Asks the server about the given beatmap set now, rather than waiting to be told it changed.
+        /// </summary>
+        void CheckForUpdate(BeatmapSetInfo beatmapSet);
+
+        /// <summary>
+        /// Requests the user for confirmation to delete a single difficulty, leaving the rest of its set alone.
+        /// </summary>
+        void DeleteDifficulty(BeatmapInfo beatmap);
+
+        /// <summary>
         /// Opens the manage collections dialog.
         /// </summary>
         void ManageCollections();

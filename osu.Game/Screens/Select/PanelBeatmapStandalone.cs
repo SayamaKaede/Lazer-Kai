@@ -344,6 +344,19 @@ namespace osu.Game.Screens.Select
                     Icon = FontAwesome.Solid.FileExport
                 });
 
+                // the update mark waits to be told the beatmap changed; this asks now.
+                if (beatmap.BeatmapSet is BeatmapSetInfo beatmapSet && beatmapSet.OnlineID > 0)
+                {
+                    items.Add(new OsuMenuItem(LazerKaiSongSelectStrings.CheckForUpdate, MenuItemType.Standard, () => songSelect?.CheckForUpdate(beatmapSet))
+                    {
+                        Icon = FontAwesome.Solid.SyncAlt
+                    });
+                }
+
+                // the game otherwise only deletes whole sets outside the editor.
+                if (beatmap.BeatmapSet?.Beatmaps.Count > 1)
+                    items.Add(new OsuMenuItem(LazerKaiSongSelectStrings.DeleteDifficulty, MenuItemType.Destructive, () => songSelect?.DeleteDifficulty(beatmap)));
+
                 return items.ToArray();
             }
         }
