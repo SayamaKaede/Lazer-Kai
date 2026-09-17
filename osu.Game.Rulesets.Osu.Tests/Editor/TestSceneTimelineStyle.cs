@@ -424,25 +424,49 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
         /// <summary>
         /// The mark at the start of a bar reaches further than the beats inside it, so the bars can be counted
-        /// without reading the colours. Only in this fork's layout: stable's is stable's.
+        /// without reading the colours. Upstream's lines across the whole height tell the two apart by a tenth at
+        /// most; both layouts that keep the marks to the edges stretch it further than that. Stable's as well as this
+        /// fork's: its marks along the bottom were short enough that the start of a bar was told apart only by its
+        /// colour.
         /// </summary>
         [Test]
-        public void TestOnlyThisForksLayoutStretchesTheBarTick()
+        public void TestTheEdgeLayoutsStretchTheBarTick()
         {
-            float inStable = 0;
+            float inLazer = 0;
 
-            AddStep("use the stable layout", () => setStyle(EditorTimelineStyle.Stable));
-            AddUntilStep("read how long the bar tick is", () =>
+            AddStep("use the lazer layout", () => setStyle(EditorTimelineStyle.Lazer));
+            AddUntilStep("read how far a bar reaches past a beat", () =>
             {
-                inStable = tallestTick();
-                return inStable > 0;
+                inLazer = barOverBeat();
+                return inLazer > 0;
             });
 
-            AddStep("use the Lazer-Kai layout", () => setStyle(EditorTimelineStyle.LazerKai));
-            AddUntilStep("it reaches further", () => tallestTick(), () => Is.GreaterThan(inStable));
+            // with a margin: an edge layout that did not stretch the bar draws the same proportions as upstream's
+            // at a tenth of the size, and the rounding at that size alone reads as a hair further.
+            AddStep("use the stable layout", () => setStyle(EditorTimelineStyle.Stable));
+            AddUntilStep("it reaches further past a beat", barOverBeat, () => Is.GreaterThan(inLazer + stretch_margin));
 
-            AddStep("back to the stable layout", () => setStyle(EditorTimelineStyle.Stable));
-            AddUntilStep("and stable's is unchanged", () => tallestTick(), () => Is.EqualTo(inStable).Within(0.5f));
+            AddStep("use the Lazer-Kai layout", () => setStyle(EditorTimelineStyle.LazerKai));
+            AddUntilStep("there too", barOverBeat, () => Is.GreaterThan(inLazer + stretch_margin));
+        }
+
+        private const float stretch_margin = 0.1f;
+
+        /// <summary>
+        /// How many times the length of a beat's mark the one at the start of a bar is drawn: the longest mark over
+        /// the longest of the rest.
+        /// </summary>
+        private float barOverBeat()
+        {
+            float[] heights = visibleTicks().Select(t => t.ScreenSpaceDrawQuad.Height).ToArray();
+
+            if (heights.Length == 0)
+                return 0;
+
+            float bar = heights.Max();
+            float beat = heights.Where(h => h < bar - 0.5f).DefaultIfEmpty(0).Max();
+
+            return beat > 0 ? bar / beat : 0;
         }
 
         /// <summary>
