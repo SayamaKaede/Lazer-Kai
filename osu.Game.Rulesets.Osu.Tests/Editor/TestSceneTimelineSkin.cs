@@ -7,8 +7,10 @@ using osu.Framework.Allocation;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Testing;
+using osu.Framework.Utils;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
+using osu.Game.Graphics;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Screens.Edit.Compose.Components.Timeline;
@@ -194,10 +196,11 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
         /// <summary>
         /// Stable leaves a spinner out of the combo colours and lazer does not, so which of the two happens follows
-        /// the style the timeline is laid out in.
+        /// the style the timeline is laid out in. This fork's layout leaves it out as well, which
+        /// <see cref="TestSceneTimelineStyle"/> covers; what this adds is the colour coming back.
         /// </summary>
         [Test]
-        public void TestASpinnerLosesItsComboColourOnlyInTheStableStyle()
+        public void TestASpinnerKeepsItsComboColourOnlyInLazersStyle()
         {
             AddStep("lay the timeline out lazer's way", () => config.SetValue(OsuSetting.EditorTimelineStyle, EditorTimelineStyle.Lazer));
             AddStep("add a spinner", () => EditorBeatmap.Add(new Spinner { StartTime = 1000, Duration = 2000 }));
@@ -216,11 +219,18 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         /// Read off the bar rather than off the setting: what is being checked is that the object is drawn grey, not
         /// that a branch was taken.
         /// </summary>
+        /// <remarks>
+        /// Grey the way the game's own greys are, rather than equal channels: the fork's theme puts a little colour
+        /// in every one of them, so under it the three channels of a grey are never equal.
+        /// </remarks>
         private bool spinnerIsGrey()
         {
-            var colour = bar().Colour.TopLeft.Linear;
+            var colour = bar().Colour.TopLeft.SRGB;
+            var grey = OsuColour.Gray(0.6f);
 
-            return colour.R == colour.G && colour.G == colour.B;
+            return Precision.AlmostEquals(colour.R, grey.R, 0.01f)
+                   && Precision.AlmostEquals(colour.G, grey.G, 0.01f)
+                   && Precision.AlmostEquals(colour.B, grey.B, 0.01f);
         }
 
         /// <summary>
