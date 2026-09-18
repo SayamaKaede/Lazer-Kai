@@ -294,9 +294,11 @@ namespace osu.Game.Rulesets.Mania.Tests.Editor
 
             AddStep("Release tail", () => InputManager.ReleaseButton(MouseButton.Left));
 
-            AddAssert("Duration is lower, other is unchanged", () =>
-                ((HoldNote)EditorBeatmap.HitObjects[0]).Duration < 937.5f &&
-                ((HoldNote)EditorBeatmap.HitObjects[^1]).Duration == 937.5f
+            // the two ends sit on top of each other on the timeline, and the selected one is what the user is working on:
+            // the other note's handle stands aside for it, so the selected note is the one dragged, and on its own.
+            AddAssert("Selected duration is lower, other is unchanged", () =>
+                ((HoldNote)EditorBeatmap.HitObjects[0]).Duration == 937.5f &&
+                ((HoldNote)EditorBeatmap.HitObjects[^1]).Duration < 937.5f
             );
         }
 

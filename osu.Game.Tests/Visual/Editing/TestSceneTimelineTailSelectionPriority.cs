@@ -78,6 +78,70 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("the handle has the cursor", () => InputManager.PositionalInputQueue.Contains(handle));
         }
 
+        /// <remarks>
+        /// Several objects selected are only ever being moved, so a slider's end among them is somewhere to take hold of
+        /// the selection rather than to add a repeat.
+        /// </remarks>
+        [Test]
+        public void TestTheHandleStandsAsideWhenItsSliderIsSelectedWithTheCircle()
+        {
+            AddStep("select the slider and the circle", () =>
+            {
+                EditorBeatmap.SelectedHitObjects.Clear();
+                EditorBeatmap.SelectedHitObjects.AddRange(new HitObject[] { slider, circle });
+            });
+
+            AddAssert("the handle lets the cursor through", () => InputManager.PositionalInputQueue.Contains(handle), () => Is.False);
+        }
+
+        /// <remarks>
+        /// Nothing selected is under the handle here, so it is being one of several selected that moves it aside.
+        /// </remarks>
+        [Test]
+        public void TestTheHandleStandsAsideWhenItsSliderIsOneOfSeveralSelected()
+        {
+            moveTheCircleAwayAndSelectBoth();
+
+            AddAssert("the handle lets the cursor through", () => InputManager.PositionalInputQueue.Contains(handle), () => Is.False);
+        }
+
+        [Test]
+        public void TestDraggingTheTailOfOneOfSeveralSelectedMovesThemRatherThanAddingARepeat()
+        {
+            double sliderStartedAt = 0;
+            double circleStartedAt = 0;
+            int repeatsBefore = 0;
+
+            moveTheCircleAwayAndSelectBoth();
+
+            AddStep("remember where things are", () =>
+            {
+                sliderStartedAt = slider.StartTime;
+                circleStartedAt = circle.StartTime;
+                repeatsBefore = slider.RepeatCount;
+            });
+
+            AddStep("take hold on the tail", () =>
+            {
+                InputManager.MoveMouseTo(handle);
+                InputManager.PressButton(MouseButton.Left);
+            });
+
+            AddStep("drag along the timeline", () =>
+            {
+                var from = handle.ScreenSpaceDrawQuad.Centre;
+
+                for (int step = 1; step <= 10; step++)
+                    InputManager.MoveMouseTo(from + new Vector2(6 * step, 0));
+            });
+
+            AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
+
+            AddAssert("the slider moved", () => slider.StartTime, () => Is.Not.EqualTo(sliderStartedAt));
+            AddAssert("the circle moved with it", () => circle.StartTime - circleStartedAt, () => Is.EqualTo(slider.StartTime - sliderStartedAt).Within(0.001));
+            AddAssert("the slider gained no repeat", () => slider.RepeatCount, () => Is.EqualTo(repeatsBefore));
+        }
+
         [Test]
         public void TestTheHandleStandsAsideForTheSelectedCircleUnderIt()
         {
@@ -127,5 +191,22 @@ namespace osu.Game.Tests.Visual.Editing
             EditorBeatmap.SelectedHitObjects.Clear();
             EditorBeatmap.SelectedHitObjects.Add(circle);
         });
+
+        private void moveTheCircleAwayAndSelectBoth()
+        {
+            AddStep("move the circle off the tail", () =>
+            {
+                circle.StartTime = slider.StartTime - 500;
+                EditorBeatmap.Update(circle);
+            });
+
+            AddStep("select the slider and the circle", () =>
+            {
+                EditorBeatmap.SelectedHitObjects.Clear();
+                EditorBeatmap.SelectedHitObjects.AddRange(new HitObject[] { slider, circle });
+            });
+
+            AddStep("put the cursor back on the handle", () => InputManager.MoveMouseTo(handle));
+        }
     }
 }

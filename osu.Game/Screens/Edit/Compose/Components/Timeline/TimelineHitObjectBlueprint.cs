@@ -731,7 +731,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             private TimelineBlueprintContainer? blueprints;
 
             /// <summary>
-            /// Stands aside where a selected object is under the cursor.
+            /// Stands aside where a selected object is under the cursor, and where the object this handle belongs to has
+            /// repeats and is one of several selected.
             /// </summary>
             /// <remarks>
             /// The handle covers the end of its object, so anything landing on that end is behind it: the handle
@@ -742,7 +743,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             /// Declining positional input rather than the click itself, so the handle does not grow under the
             /// cursor either: offering a grab that will not happen is the same problem one step earlier.
             ///
-            /// The object this handle belongs to does not count. When it is the selected one, the handle is the point.
+            /// When the object this handle belongs to is selected, the handle is the point: that end is as much what
+            /// the user is working on as anything under it, and the handle is what is drawn on top. Standing aside
+            /// then left two selected hold notes ending together each waiting on the other, so neither end could be
+            /// taken hold of and the drag moved the whole selection instead.
+            ///
+            /// Except for an object with repeats. Several objects selected are only ever being moved, and taking hold of
+            /// a slider's end among them added a repeat to it instead. Hold notes and the like keep the handle, which
+            /// lengthens every selected one starting and ending with it.
             /// </remarks>
             public override bool ReceivePositionalInputAt(Vector2 screenSpacePos)
             {
@@ -752,9 +760,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 if (blueprints == null)
                     return true;
 
+                if (beatmap.SelectedHitObjects.Contains(hitObject))
+                    return !(hitObject is IHasRepeats && beatmap.SelectedHitObjects.Count > 1);
+
                 foreach (var blueprint in blueprints.SelectionHandler.SelectedBlueprints)
                 {
-                    if (blueprint.Item != hitObject && blueprint.ReceivePositionalInputAt(screenSpacePos))
+                    if (blueprint.ReceivePositionalInputAt(screenSpacePos))
                         return false;
                 }
 
