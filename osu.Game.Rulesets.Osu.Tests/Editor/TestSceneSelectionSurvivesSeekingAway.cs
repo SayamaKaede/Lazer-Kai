@@ -10,6 +10,7 @@ using osu.Game.Configuration;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Tests.Beatmaps;
 
 namespace osu.Game.Rulesets.Osu.Tests.Editor
@@ -39,7 +40,12 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
             AddStep("seek well past it", () => EditorClock.Seek(EditorBeatmap.HitObjects.First().GetEndTime() + 5000));
             AddUntilStep("still selected", () => EditorBeatmap.SelectedHitObjects.Count, () => Is.EqualTo(1));
-            AddAssert("still grabbable", () => selectable(), () => Is.True);
+
+            // only what is on screen keeps a blueprint. A selected object further away is given one while the pointer
+            // rests on it, which is how it is taken hold of from there (TestSceneLargeSelection drags one).
+            AddStep("rest the pointer on it", () => InputManager.MoveMouseTo(
+                Editor.ChildrenOfType<OsuPlayfield>().First().ToScreenSpace(((OsuHitObject)EditorBeatmap.HitObjects.First()).StackedPosition)));
+            AddUntilStep("still grabbable", () => selectable(), () => Is.True);
         }
 
         [Test]

@@ -3,6 +3,7 @@
 
 #nullable disable
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
@@ -256,7 +257,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
             switch (e.Key)
             {
                 case Key.Escape:
-                    if (!SelectionHandler.SelectedBlueprints.Any())
+                    if (!SelectedItems.Any())
                         return false;
 
                     DeselectAll();
@@ -333,14 +334,37 @@ namespace osu.Game.Screens.Edit.Compose.Components
             OnBlueprintAdded(blueprint.Item);
         }
 
-        protected void RemoveBlueprintFor(T item)
+        /// <summary>
+        /// Removes an item's blueprint and takes the item out of the selection with it, for an item that is gone.
+        /// </summary>
+        protected void RemoveBlueprintFor(T item) => removeBlueprintFor(item, true);
+
+        /// <summary>
+        /// Removes an item's blueprint but leaves the item selected, for when only what draws the item has gone away
+        /// (its time is no longer on screen) and the item itself is still there to be edited.
+        /// </summary>
+        /// <remarks>
+        /// A selection used to keep every one of its items drawn, blueprint and all, however far they were from the
+        /// current time, so that no blueprint could go away while its item was selected. With every object of a long
+        /// beatmap selected, that took seconds to set up and most of every frame afterwards. What is selected is
+        /// <see cref="SelectedItems"/>; <see cref="Components.SelectionHandler{T}.SelectedBlueprints"/> holds only the
+        /// blueprints that exist at the moment.
+        /// </remarks>
+        protected void RemoveBlueprintKeepingSelection(T item) => removeBlueprintFor(item, false);
+
+        private void removeBlueprintFor(T item, bool deselect)
         {
             if (!blueprintMap.Remove(item, out var blueprintToRemove))
                 return;
 
-            blueprintToRemove.Deselect();
+            if (deselect)
+                blueprintToRemove.Deselect();
+
             blueprintToRemove.Selected -= OnBlueprintSelected;
             blueprintToRemove.Deselected -= OnBlueprintDeselected;
+
+            if (!deselect)
+                SelectionHandler.HandleBlueprintRemoved(blueprintToRemove);
 
             SelectionBlueprints.Remove(blueprintToRemove, true);
 
@@ -372,6 +396,14 @@ namespace osu.Game.Screens.Edit.Compose.Components
         /// <param name="item">The item to retrieve the blueprint of.</param>
         /// <returns>The blueprint.</returns>
         protected SelectionBlueprint<T> GetBlueprintFor(T item) => blueprintMap[item];
+
+        /// <summary>
+        /// Retrieves an item's blueprint, if it has one at the moment.
+        /// </summary>
+        /// <param name="item">The item to retrieve the blueprint of.</param>
+        /// <returns>The blueprint, or null.</returns>
+        [CanBeNull]
+        protected SelectionBlueprint<T> TryGetBlueprintFor(T item) => blueprintMap.GetValueOrDefault(item);
 
         #endregion
 
@@ -574,7 +606,19 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
             // Movement is tracked from the blueprint of the earliest item, since it only makes sense to distance snap from that item
             movementBlueprints = SortForMovement(SelectionHandler.SelectedBlueprints).Select(b => (b, b.ScreenSpaceSnapPoints)).ToArray();
+            OnMovementBlueprintsChanged(movementBlueprints.Select(m => m.blueprint.Item).ToArray());
             return true;
+        }
+
+        /// <summary>
+        /// Called when the blueprints a movement is carried out with are decided, and with nothing once it is over.
+        /// </summary>
+        /// <remarks>
+        /// A blueprint going away in the middle of a movement ends the movement, so this is where they are held on to.
+        /// </remarks>
+        /// <param name="items">The items whose blueprints are being moved.</param>
+        protected virtual void OnMovementBlueprintsChanged(IReadOnlyList<T> items)
+        {
         }
 
         /// <summary>
@@ -609,6 +653,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 return false;
 
             movementBlueprints = null;
+            OnMovementBlueprintsChanged(Array.Empty<T>());
 
             return true;
         }

@@ -4,7 +4,6 @@
 #nullable disable
 
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
@@ -49,7 +48,6 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
             Beatmap.HitObjectAdded += AddBlueprintFor;
             Beatmap.HitObjectRemoved += RemoveBlueprintFor;
-            Beatmap.SelectedHitObjects.CollectionChanged += updateSelectionLifetime;
 
             if (Composer != null)
             {
@@ -58,7 +56,8 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
                 usageEventBuffer = new HitObjectUsageEventBuffer(Composer.Playfield);
                 usageEventBuffer.HitObjectUsageBegan += AddBlueprintFor;
-                usageEventBuffer.HitObjectUsageFinished += RemoveBlueprintFor;
+                // an object leaving the time on screen stays selected; see RemoveBlueprintKeepingSelection.
+                usageEventBuffer.HitObjectUsageFinished += RemoveBlueprintKeepingSelection;
                 usageEventBuffer.HitObjectUsageTransferred += TransferBlueprintFor;
             }
         }
@@ -106,8 +105,9 @@ namespace osu.Game.Screens.Edit.Compose.Components
             base.DragOperationCompleted();
 
             // handle positional change etc.
-            foreach (var blueprint in SelectionBlueprints)
-                Beatmap.Update(blueprint.Item);
+            // the selection moves as a whole, including what has no blueprint because its time is not on screen.
+            foreach (var item in SelectionBlueprints.Select(b => b.Item).Union(SelectedItems))
+                Beatmap.Update(item);
         }
 
         protected override bool OnDoubleClick(DoubleClickEvent e)
@@ -125,42 +125,57 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
         protected override void SelectAll()
         {
-            Composer.Playfield.KeepAllAlive();
             SelectedItems.AddRange(Beatmap.HitObjects.Except(SelectedItems).ToArray());
         }
 
+        private readonly HashSet<HitObject> keptForMovement = new HashSet<HitObject>();
+        private HitObject keptForPointer;
+
+        protected override void OnMovementBlueprintsChanged(IReadOnlyList<HitObject> items)
+        {
+            base.OnMovementBlueprintsChanged(items);
+
+            // what is being dragged keeps its blueprint until the drag is over, even if its time leaves the screen meanwhile.
+            var previous = keptForMovement.ToArray();
+
+            keptForMovement.Clear();
+            keptForMovement.UnionWith(items);
+
+            foreach (var item in previous.Concat(items))
+                updateKeepAlive(item);
+        }
+
         /// <summary>
-        /// Ensures that newly-selected hitobjects are kept alive
-        /// and drops that keep-alive from newly-deselected objects.
+        /// Gives one object a blueprint while the pointer is over it, even though its time is not on screen.
         /// </summary>
-        private void updateSelectionLifetime(object sender, NotifyCollectionChangedEventArgs e)
+        /// <remarks>
+        /// Only what is on screen has a blueprint, but a selected object stays where it can be taken hold of however far
+        /// the timeline has moved on: selecting a pattern, moving to another part of the beatmap and dragging it from
+        /// there is an ordinary way to work. A drag can only start from a blueprint, so one is made for whatever
+        /// selected object the pointer rests on, before the button goes down.
+        /// </remarks>
+        /// <param name="item">The object, or null to let go of the last one.</param>
+        protected void KeepBlueprintUnderPointer(HitObject item)
         {
-            if (e.NewItems != null)
-            {
-                foreach (HitObject newSelection in e.NewItems)
-                    Composer.Playfield.SetKeepAlive(newSelection, true);
-            }
+            if (ReferenceEquals(keptForPointer, item))
+                return;
 
-            if (e.OldItems != null)
-            {
-                foreach (HitObject oldSelection in e.OldItems)
-                    Composer.Playfield.SetKeepAlive(oldSelection, false);
-            }
+            var previous = keptForPointer;
+            keptForPointer = item;
+
+            if (previous != null)
+                updateKeepAlive(previous);
+            if (item != null)
+                updateKeepAlive(item);
         }
 
-        protected override void OnBlueprintSelected(SelectionBlueprint<HitObject> blueprint)
-        {
-            base.OnBlueprintSelected(blueprint);
+        /// <summary>
+        /// The object given a blueprint by <see cref="KeepBlueprintUnderPointer"/>, if any.
+        /// </summary>
+        protected HitObject KeptUnderPointer => keptForPointer;
 
-            Composer.Playfield.SetKeepAlive(blueprint.Item, true);
-        }
-
-        protected override void OnBlueprintDeselected(SelectionBlueprint<HitObject> blueprint)
-        {
-            base.OnBlueprintDeselected(blueprint);
-
-            Composer.Playfield.SetKeepAlive(blueprint.Item, false);
-        }
+        private void updateKeepAlive(HitObject item) =>
+            Composer?.Playfield.SetKeepAlive(item, keptForMovement.Contains(item) || ReferenceEquals(keptForPointer, item));
 
         protected override void Dispose(bool isDisposing)
         {
@@ -170,7 +185,6 @@ namespace osu.Game.Screens.Edit.Compose.Components
             {
                 Beatmap.HitObjectAdded -= AddBlueprintFor;
                 Beatmap.HitObjectRemoved -= RemoveBlueprintFor;
-                Beatmap.SelectedHitObjects.CollectionChanged -= updateSelectionLifetime;
             }
 
             usageEventBuffer?.Dispose();

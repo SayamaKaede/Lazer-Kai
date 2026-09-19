@@ -49,7 +49,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
         /// <returns>The relevant menu items.</returns>
         protected override IEnumerable<MenuItem> GetContextMenuItemsForSelection(IEnumerable<SelectionBlueprint<HitObject>> selection)
         {
-            if (SelectedBlueprints.All(b => b.Item is IHasComboInformation) && composer.SelectionNewComboState != null)
+            if (SelectedItems.All(h => h is IHasComboInformation) && composer.SelectionNewComboState != null)
             {
                 yield return new TernaryStateToggleMenuItem(EditorStrings.NewCombo)
                 {

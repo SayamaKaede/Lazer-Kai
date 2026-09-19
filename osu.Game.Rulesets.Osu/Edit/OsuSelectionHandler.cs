@@ -15,6 +15,7 @@ using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Beatmaps;
+using osu.Game.Rulesets.Osu.Edit.Blueprints;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Screens.Edit.Compose.Components;
@@ -28,6 +29,13 @@ namespace osu.Game.Rulesets.Osu.Edit
     {
         [Resolved]
         private OsuGridToolboxGroup gridToolbox { get; set; } = null!;
+
+        /// <summary>
+        /// The outlines of the selected objects that have no blueprint, which the selection box covers as well.
+        /// </summary>
+        internal SelectedObjectOutlines? Outlines { get; init; }
+
+        protected override IEnumerable<Quad> GetSelectionQuadsWithoutBlueprints() => Outlines?.SelectionQuads ?? base.GetSelectionQuadsWithoutBlueprints();
 
         protected override void OnSelectionChanged()
         {
@@ -138,9 +146,8 @@ namespace osu.Game.Rulesets.Osu.Edit
                 EditorBeatmap.BeginChange();
             }
 
-            var firstBlueprint = SelectedBlueprints.FirstOrDefault();
-
-            if (firstBlueprint == null)
+            // the selection rather than its blueprints, which only exist for what is on screen.
+            if (SelectedItems.Count == 0)
                 return false;
 
             moveObjects(selectedMovableObjects, delta);

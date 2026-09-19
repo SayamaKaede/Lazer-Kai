@@ -9,6 +9,7 @@ using osu.Framework.Input.Events;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Osu.Edit.Blueprints;
 using osu.Game.Rulesets.Osu.Edit.Blueprints.HitCircles;
 using osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders;
 using osu.Game.Rulesets.Osu.Edit.Blueprints.Spinners;
@@ -29,13 +30,70 @@ namespace osu.Game.Rulesets.Osu.Edit
         {
         }
 
+        // behind the blueprints and the selection box. Created up front, since the selection handler is created during the
+        // base class's loading and needs it.
+        private readonly SelectedObjectOutlines selectedObjectOutlines = new SelectedObjectOutlines { Depth = 1 };
+
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
             limitedDistanceSnap = config.GetBindable<bool>(OsuSetting.EditorLimitedDistanceSnap);
+
+            AddInternal(selectedObjectOutlines);
         }
 
-        protected override SelectionHandler<HitObject> CreateSelectionHandler() => new OsuSelectionHandler();
+        protected override SelectionHandler<HitObject> CreateSelectionHandler() => new OsuSelectionHandler { Outlines = selectedObjectOutlines };
+
+        protected override void OnBlueprintAdded(HitObject item)
+        {
+            base.OnBlueprintAdded(item);
+            selectedObjectOutlines.BlueprintAdded(item);
+        }
+
+        protected override void OnBlueprintRemoved(HitObject item)
+        {
+            base.OnBlueprintRemoved(item);
+            selectedObjectOutlines.BlueprintRemoved(item);
+        }
+
+        private Vector2? lastPointerPosition;
+        private int lastOutlinesVersion;
+
+        protected override void Update()
+        {
+            base.Update();
+            updateBlueprintUnderPointer();
+        }
+
+        /// <summary>
+        /// An outline cannot be dragged, so the selected object under the pointer is given a blueprint for as long as the
+        /// pointer stays on it. See <see cref="EditorBlueprintContainer.KeepBlueprintUnderPointer"/>.
+        /// </summary>
+        private void updateBlueprintUnderPointer()
+        {
+            var mouse = InputManager.CurrentState.Mouse;
+
+            // whatever has been taken hold of stays, while a button is down: it may be in the middle of being dragged.
+            if (mouse.Buttons.HasAnyButtonPressed)
+                return;
+
+            if (KeptUnderPointer != null)
+            {
+                // once its blueprint is there, its outline is gone, so the blueprint is what says the pointer is still on it.
+                var blueprint = TryGetBlueprintFor(KeptUnderPointer);
+
+                if (blueprint != null ? blueprint.ReceivePositionalInputAt(mouse.Position) : selectedObjectOutlines.FindAt(mouse.Position, EditorClock.CurrentTime) == KeptUnderPointer)
+                    return;
+            }
+
+            // the search goes through every outline, so only when something it depends on has changed.
+            if (lastPointerPosition == mouse.Position && lastOutlinesVersion == selectedObjectOutlines.Version && KeptUnderPointer == null)
+                return;
+
+            lastPointerPosition = mouse.Position;
+            lastOutlinesVersion = selectedObjectOutlines.Version;
+            KeepBlueprintUnderPointer(selectedObjectOutlines.Count > 0 ? selectedObjectOutlines.FindAt(mouse.Position, EditorClock.CurrentTime) : null);
+        }
 
         public override HitObjectSelectionBlueprint? CreateHitObjectBlueprintFor(HitObject hitObject)
         {

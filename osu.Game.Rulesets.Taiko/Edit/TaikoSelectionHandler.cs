@@ -21,7 +21,8 @@ namespace osu.Game.Rulesets.Taiko.Edit
 
         protected override IEnumerable<MenuItem> GetContextMenuItemsForSelection(IEnumerable<SelectionBlueprint<HitObject>> selection)
         {
-            if (selection.All(s => s.Item is Hit))
+            // the selection rather than its blueprints, which only exist for what is on screen.
+            if (SelectedItems.All(h => h is Hit))
             {
                 yield return new TernaryStateToggleMenuItem("Rim")
                 {
@@ -30,7 +31,7 @@ namespace osu.Game.Rulesets.Taiko.Edit
                 };
             }
 
-            if (selection.All(s => s.Item is TaikoHitObject))
+            if (SelectedItems.All(h => h is TaikoHitObject))
             {
                 yield return new TernaryStateToggleMenuItem("Strong")
                 {

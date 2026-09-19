@@ -114,9 +114,8 @@ namespace osu.Game.Rulesets.Catch.Edit
                 EditorBeatmap.BeginChange();
             }
 
-            var firstBlueprint = SelectedBlueprints.FirstOrDefault();
-
-            if (firstBlueprint == null)
+            // the selection rather than its blueprints, which only exist for what is on screen.
+            if (SelectedItems.Count == 0)
                 return false;
 
             moveSelection(deltaX);

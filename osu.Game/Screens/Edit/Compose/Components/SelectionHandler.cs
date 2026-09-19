@@ -255,6 +255,12 @@ namespace osu.Game.Screens.Edit.Compose.Components
             selectedBlueprints.Remove(blueprint);
         }
 
+        /// <summary>
+        /// Handle a blueprint going away while its item stays selected.
+        /// </summary>
+        /// <param name="blueprint">The blueprint.</param>
+        internal void HandleBlueprintRemoved(SelectionBlueprint<T> blueprint) => selectedBlueprints.Remove(blueprint);
+
         protected virtual bool ShouldQuickDelete(MouseButtonEvent e) => e.Button == MouseButton.Middle || (e.ShiftPressed && e.Button == MouseButton.Right);
 
         /// <summary>
@@ -365,20 +371,35 @@ namespace osu.Game.Screens.Edit.Compose.Components
         {
             base.Update();
 
-            if (selectedBlueprints.Count == 0)
-                return;
+            RectangleF? coveredRect = null;
 
             // Move the rectangle to cover the items
-            RectangleF selectionRect = ToLocalSpace(selectedBlueprints[0].SelectionQuad).AABBFloat;
+            foreach (var blueprint in selectedBlueprints)
+                coveredRect = cover(coveredRect, blueprint.SelectionQuad);
 
-            for (int i = 1; i < selectedBlueprints.Count; i++)
-                selectionRect = RectangleF.Union(selectionRect, ToLocalSpace(selectedBlueprints[i].SelectionQuad).AABBFloat);
+            foreach (var quad in GetSelectionQuadsWithoutBlueprints())
+                coveredRect = cover(coveredRect, quad);
+
+            if (coveredRect is not RectangleF selectionRect)
+                return;
 
             selectionRect = selectionRect.Inflate(INFLATE_SIZE);
 
             SelectionBox.Position = selectionRect.Location;
             SelectionBox.Size = selectionRect.Size;
         }
+
+        private RectangleF cover(RectangleF? rect, Quad screenSpaceQuad)
+        {
+            RectangleF local = ToLocalSpace(screenSpaceQuad).AABBFloat;
+            return rect is RectangleF existing ? RectangleF.Union(existing, local) : local;
+        }
+
+        /// <summary>
+        /// The screen-space extents of the selected items that have no blueprint at the moment, so that the selection box
+        /// still covers the whole selection. <see cref="SelectedBlueprints"/> only holds the blueprints that exist.
+        /// </summary>
+        protected virtual IEnumerable<Quad> GetSelectionQuadsWithoutBlueprints() => Enumerable.Empty<Quad>();
 
         #endregion
 
@@ -395,7 +416,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
                 items.AddRange(GetContextMenuItemsForSelection(SelectedBlueprints));
 
-                if (SelectedBlueprints.Count == 1)
+                if (SelectedItems.Count == 1 && SelectedBlueprints.Count == 1)
                     items.AddRange(SelectedBlueprints[0].ContextMenuItems);
 
                 items.Add(new OsuMenuItem(CommonStrings.ButtonsDelete, MenuItemType.Destructive, DeleteSelected)

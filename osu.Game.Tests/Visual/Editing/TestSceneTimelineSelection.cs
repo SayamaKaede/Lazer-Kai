@@ -361,7 +361,12 @@ namespace osu.Game.Tests.Visual.Editing
             AddStep("jump editor clock", () => EditorClock.Seek(60000));
             AddStep("end drag", () => InputManager.ReleaseButton(MouseButton.Left));
             assertSelectionIs(addedObjects.Skip(1));
-            AddAssert("all blueprints are present", () => blueprintContainer.SelectionBlueprints.Count == EditorBeatmap.SelectedHitObjects.Count);
+            // only what is on screen has a blueprint now, so not every selected object has one (see TestSceneLargeSelection).
+            // what is on screen does, and shows as selected.
+            AddUntilStep("the object on screen has a blueprint", () => blueprintContainer.SelectionBlueprints.Any(b => b.Item == addedObjects[4]));
+            AddAssert("every blueprint of a selected object shows it", () => blueprintContainer.SelectionBlueprints
+                                                                                     .Where(b => EditorBeatmap.SelectedHitObjects.Contains(b.Item))
+                                                                                     .All(b => b.IsSelected));
         }
 
         [Test]

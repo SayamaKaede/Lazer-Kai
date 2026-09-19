@@ -364,10 +364,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             SelectedItems.RemoveAll(hitObject => !shouldBeSelected(hitObject));
 
             foreach (var hitObject in Beatmap.HitObjects.Except(SelectedItems).Where(shouldBeSelected))
-            {
-                Composer.Playfield.SetKeepAlive(hitObject, true);
                 SelectedItems.Add(hitObject);
-            }
 
             bool shouldBeSelected(HitObject hitObject)
             {
