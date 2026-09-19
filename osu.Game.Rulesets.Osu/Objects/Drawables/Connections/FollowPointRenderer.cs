@@ -4,6 +4,7 @@
 #nullable disable
 
 using System.Collections.Generic;
+using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
@@ -130,10 +131,32 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables.Connections
             return connection;
         }
 
-        private void onStartTimeChanged(OsuHitObject hitObject)
+        private void onStartTimeChanged(OsuHitObject hitObject) => Scheduler.AddOnce(reorderEntries);
+
+        /// <summary>
+        /// Puts the entries back in start time order and reconnects them, once for however many objects moved.
+        /// </summary>
+        /// <remarks>
+        /// Taking one object out and putting it back searched the whole list for it, so dragging a selection along the
+        /// timeline, which moves every object in it on every frame, searched the list once per object per frame.
+        /// </remarks>
+        private void reorderEntries()
         {
-            removeEntry(hitObject);
-            addEntry(hitObject);
+            // OrderBy rather than List.Sort: objects at the same time have to keep the order they are in, as the
+            // comparer in addEntry explains.
+            var ordered = lifetimeEntries.OrderBy(e => e.Start.StartTime).ToArray();
+
+            lifetimeEntries.Clear();
+            lifetimeEntries.AddRange(ordered);
+
+            for (int i = 0; i < ordered.Length; i++)
+            {
+                var end = i < ordered.Length - 1 ? ordered[i + 1].Start : null;
+
+                // the setter rebinds and recalculates, so it is only worth it where the connection actually moved.
+                if (!ReferenceEquals(ordered[i].End, end))
+                    ordered[i].End = end;
+            }
         }
 
         protected override void Dispose(bool isDisposing)

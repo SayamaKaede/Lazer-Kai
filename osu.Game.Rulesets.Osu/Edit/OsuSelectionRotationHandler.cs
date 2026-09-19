@@ -34,15 +34,17 @@ namespace osu.Game.Rulesets.Osu.Edit
         {
             base.LoadComplete();
 
-            selectedItems.CollectionChanged += (_, __) => updateState();
+            // once a frame: adding a large selection one object at a time would otherwise measure all of it each time.
+            selectedItems.CollectionChanged += (_, __) => Scheduler.AddOnce(updateState);
             updateState();
         }
 
         private void updateState()
         {
-            var quad = GeometryUtils.GetSurroundingQuad(selectedMovableObjects);
+            var objects = selectedMovableObjects.ToArray();
+            var quad = GeometryUtils.GetSurroundingQuad(objects);
             CanRotateAroundSelectionOrigin.Value = quad.Width > 0 || quad.Height > 0;
-            CanRotateAroundPlayfieldOrigin.Value = selectedMovableObjects.Any();
+            CanRotateAroundPlayfieldOrigin.Value = objects.Length > 0;
         }
 
         private OsuHitObject[]? objectsInRotation;

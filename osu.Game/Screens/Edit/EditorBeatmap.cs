@@ -491,6 +491,10 @@ namespace osu.Game.Screens.Edit
             if (batchPendingUpdates.Count == 0 && batchPendingDeletes.Count == 0 && batchPendingInserts.Count == 0)
                 return;
 
+            // before anything reads the beatmap, since what has changed may have been the times objects are ordered by.
+            if (hitObjectOrderOutOfDate)
+                reorderHitObjects();
+
             // if the user is doing edits to this beatmaps via this flow, we better bump the beatmap version
             // because the beatmap encoder can only output this specific beatmap version anyway,
             // so *not* bumping it could lead to results that look misleading at best.
@@ -536,25 +540,55 @@ namespace osu.Game.Screens.Edit
             startTimeBindables[hitObject] = hitObject.StartTimeBindable.GetBoundCopy();
             startTimeBindables[hitObject].ValueChanged += _ =>
             {
-                // For now we'll remove and re-add the hitobject. This is not optimal and can be improved if required.
-                mutableHitObjects.Remove(hitObject);
-
-                int insertionIndex = findInsertionIndex(PlayableBeatmap.HitObjects, hitObject.StartTime);
-                mutableHitObjects.Insert(insertionIndex + 1, hitObject);
+                // the list is put back in start time order once the changes are in, rather than moving each object
+                // within it as it changes: see reorderHitObjects.
+                hitObjectOrderOutOfDate = true;
 
                 Update(hitObject);
             };
         }
 
+        private bool hitObjectOrderOutOfDate;
+
+        /// <summary>
+        /// Puts the hit objects back in start time order, once for however many of them have moved.
+        /// </summary>
+        /// <remarks>
+        /// Taking each object out of the list and putting it back where its new time belongs searched the list for it,
+        /// so dragging a selection along the timeline, which moves every object in it on every frame, searched the
+        /// whole beatmap once per object per frame.
+        /// </remarks>
+        private void reorderHitObjects()
+        {
+            hitObjectOrderOutOfDate = false;
+
+            // OrderBy rather than List.Sort, so that objects sharing a start time keep the order they are in.
+            var ordered = PlayableBeatmap.HitObjects.OrderBy(h => h.StartTime).ToArray();
+
+            mutableHitObjects.Clear();
+
+            foreach (var hitObject in ordered)
+                mutableHitObjects.Add(hitObject);
+        }
+
         private int findInsertionIndex(IReadOnlyList<HitObject> list, double startTime)
         {
-            for (int i = 0; i < list.Count; i++)
+            // the list is in start time order, so this bisects it rather than walking it: an object being dragged looks
+            // this up on every frame, and a selection being dragged looks it up once per object per frame.
+            int low = 0;
+            int high = list.Count;
+
+            while (low < high)
             {
-                if (list[i].StartTime > startTime)
-                    return i - 1;
+                int middle = (low + high) / 2;
+
+                if (list[middle].StartTime > startTime)
+                    high = middle;
+                else
+                    low = middle + 1;
             }
 
-            return list.Count - 1;
+            return low - 1;
         }
 
         public double SnapTime(double time, double? referenceTime) => ControlPointInfo.GetClosestSnappedTime(time, BeatDivisor, referenceTime);

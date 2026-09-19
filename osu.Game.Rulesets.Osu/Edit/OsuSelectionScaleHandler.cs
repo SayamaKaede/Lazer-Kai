@@ -56,26 +56,31 @@ namespace osu.Game.Rulesets.Osu.Edit
         {
             base.LoadComplete();
 
-            selectedItems.CollectionChanged += (_, __) => updateState();
+            selectedItems.CollectionChanged += (_, __) => Scheduler.AddOnce(updateState);
             editorBeatmap.HitObjectUpdated += hitObjectUpdated;
             updateState();
         }
 
-        private void hitObjectUpdated(HitObject hitObject)
-        {
-            if (selectedMovableObjects.Contains(hitObject))
-                updateState();
-        }
+        /// <summary>
+        /// The state below is about the selection as a whole, so it is worked out once a frame rather than once per
+        /// object.
+        /// </summary>
+        /// <remarks>
+        /// Moving a selection updates every object in it, and measuring the whole selection for each one is quadratic:
+        /// dragging a whole beatmap along the timeline spent over a second of every frame in here.
+        /// </remarks>
+        private void hitObjectUpdated(HitObject hitObject) => Scheduler.AddOnce(updateState);
 
         private void updateState()
         {
-            var quad = GeometryUtils.GetSurroundingQuad(selectedMovableObjects);
+            var objects = selectedMovableObjects.ToArray();
+            var quad = GeometryUtils.GetSurroundingQuad(objects);
 
             CanScaleX.Value = Precision.DefinitelyBigger(quad.Width, 0);
             CanScaleY.Value = Precision.DefinitelyBigger(quad.Height, 0);
             CanScaleDiagonally.Value = CanScaleX.Value && CanScaleY.Value;
-            CanScaleFromPlayfieldOrigin.Value = selectedMovableObjects.Any();
-            IsScalingSlider.Value = selectedMovableObjects.Count() == 1 && selectedMovableObjects.First() is Slider;
+            CanScaleFromPlayfieldOrigin.Value = objects.Length > 0;
+            IsScalingSlider.Value = objects.Length == 1 && objects[0] is Slider;
         }
 
         private Dictionary<OsuHitObject, OriginalHitObjectState>? objectsInScale;
