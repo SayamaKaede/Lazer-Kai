@@ -4,11 +4,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Utils;
+using osu.Game.Configuration;
 using osu.Game.Extensions;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Rulesets.Edit;
@@ -29,6 +31,14 @@ namespace osu.Game.Rulesets.Osu.Edit
     {
         [Resolved]
         private OsuGridToolboxGroup gridToolbox { get; set; } = null!;
+
+        private readonly Bindable<bool> allowOutsidePlayArea = new Bindable<bool>();
+
+        [BackgroundDependencyLoader]
+        private void load(OsuConfigManager config)
+        {
+            config.BindWith(OsuSetting.EditorAllowOutsidePlayArea, allowOutsidePlayArea);
+        }
 
         /// <summary>
         /// The outlines of the selected objects that have no blueprint, which the selection box covers as well.
@@ -125,8 +135,11 @@ namespace osu.Game.Rulesets.Osu.Edit
             foreach (var h in hitObjects)
                 h.Position += localDelta;
 
-            // but this will be corrected.
-            moveSelectionInBounds();
+            // but this will be corrected, unless the selection is allowed outside the play area. The correction is
+            // what cancels out a drag whenever the selection already reaches outside -- a slider ending past an edge,
+            // or a whole screen's worth of pattern -- leaving it impossible to move at all.
+            if (!allowOutsidePlayArea.Value)
+                moveSelectionInBounds();
 
             // manually update stacking.
             // this intentionally bypasses the editor `UpdateState()` / beatmap processor flow for performance reasons,

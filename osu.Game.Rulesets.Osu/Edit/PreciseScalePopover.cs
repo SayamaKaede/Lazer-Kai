@@ -43,6 +43,8 @@ namespace osu.Game.Rulesets.Osu.Edit
         private OsuCheckbox xCheckBox = null!;
         private OsuCheckbox yCheckBox = null!;
 
+        private readonly Bindable<bool> allowOutsidePlayArea = new Bindable<bool>();
+
         private Bindable<EditorOrigin> configScaleOrigin = null!;
 
         private BindableList<HitObject> selectedItems { get; } = new BindableList<HitObject>();
@@ -61,6 +63,7 @@ namespace osu.Game.Rulesets.Osu.Edit
             selectedItems.BindTo(editorBeatmap.SelectedHitObjects);
 
             configScaleOrigin = config.GetBindable<EditorOrigin>(OsuSetting.EditorScaleOrigin);
+            config.BindWith(OsuSetting.EditorAllowOutsidePlayArea, allowOutsidePlayArea);
 
             Child = new FillFlowContainer
             {
@@ -265,6 +268,14 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             const float min_scale = 0.05f;
             const float max_scale = 10;
+
+            // a selection allowed outside the play area is not held to a range that keeps it inside.
+            if (allowOutsidePlayArea.Value)
+            {
+                scaleInputBindable.MaxValue = max_scale;
+                scaleInputBindable.MinValue = min_scale;
+                return;
+            }
 
             var scale = scaleHandler.ClampScaleToPlayfieldBounds(new Vector2(max_scale), getOriginPosition(scaleInfo.Value), getAdjustAxis(scaleInfo.Value), getRotation(scaleInfo.Value));
 

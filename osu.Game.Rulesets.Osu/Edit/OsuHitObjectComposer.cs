@@ -442,7 +442,9 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             // A grid which doesn't perfectly fit the playfield can produce a position that is outside of the playfield.
             // We need to clamp the position to the playfield bounds to ensure that the snapped position is always in bounds.
-            pos = Vector2.Clamp(pos, Vector2.Zero, OsuPlayfield.BASE_SIZE);
+            // The grid carries on past the play area, so while objects are allowed out there, the snap follows it out.
+            if (!allowOutsidePlayArea.Value)
+                pos = Vector2.Clamp(pos, Vector2.Zero, OsuPlayfield.BASE_SIZE);
 
             var playfield = PlayfieldAtScreenSpacePosition(screenSpacePosition);
             return new SnapResult(positionSnapGrid.ToScreenSpace(pos), fallbackTime, playfield);

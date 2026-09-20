@@ -11,6 +11,7 @@ using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Utils;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
@@ -46,10 +47,13 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         private BindableList<HitObject> selectedItems { get; } = new BindableList<HitObject>();
 
+        private readonly Bindable<bool> allowOutsidePlayArea = new Bindable<bool>();
+
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
             selectedItems.BindTo(editorBeatmap.SelectedHitObjects);
+            config.BindWith(OsuSetting.EditorAllowOutsidePlayArea, allowOutsidePlayArea);
         }
 
         protected override void LoadComplete()
@@ -121,7 +125,8 @@ namespace osu.Game.Rulesets.Osu.Edit
             }
             else
             {
-                scale = ClampScaleToPlayfieldBounds(scale, actualOrigin, adjustAxis, axisRotation);
+                if (!allowOutsidePlayArea.Value)
+                    scale = ClampScaleToPlayfieldBounds(scale, actualOrigin, adjustAxis, axisRotation);
 
                 foreach (var (ho, originalState) in objectsInScale)
                 {
@@ -129,7 +134,8 @@ namespace osu.Game.Rulesets.Osu.Edit
                 }
             }
 
-            moveSelectionInBounds();
+            if (!allowOutsidePlayArea.Value)
+                moveSelectionInBounds();
         }
 
         public override void Commit()
@@ -192,7 +198,8 @@ namespace osu.Game.Rulesets.Osu.Edit
             Quad scaledQuad = GeometryUtils.GetSurroundingQuad(new OsuHitObject[] { slider });
             (bool xInBounds, bool yInBounds) = isQuadInBounds(scaledQuad);
 
-            if (xInBounds && yInBounds && slider.Path.HasValidLengthForPlacement)
+            // a slider allowed outside the play area is only put back for a length the game cannot place.
+            if ((allowOutsidePlayArea.Value || (xInBounds && yInBounds)) && slider.Path.HasValidLengthForPlacement)
                 return;
 
             for (int i = 0; i < slider.Path.ControlPoints.Count; i++)
