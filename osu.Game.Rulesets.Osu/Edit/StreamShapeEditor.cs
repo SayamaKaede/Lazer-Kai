@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -76,7 +77,58 @@ namespace osu.Game.Rulesets.Osu.Edit
             placing = null;
 
             if (slider != null)
-                AddInternal(visualiser = new PathControlPointVisualiser<Slider>(slider, true));
+            {
+                AddInternal(visualiser = new PathControlPointVisualiser<Slider>(slider, true)
+                {
+                    RemoveControlPointsRequested = points => removeAnchors(slider, points),
+                });
+            }
+        }
+
+        /// <summary>
+        /// Takes anchors out of the shape, which is how a shape is tidied up after it has been drawn.
+        /// </summary>
+        /// <remarks>
+        /// Two of them stay: the first is where the shape starts, and a shape of two anchors has nothing left to be
+        /// once its end is gone. A slider handles this by deleting itself instead, which is no use here — the run is
+        /// what is being made, and it would be deleted out from under the panel that is making it.
+        /// </remarks>
+        private void removeAnchors(Slider slider, List<PathControlPoint> toRemove)
+        {
+            var anchors = slider.Path.ControlPoints;
+
+            foreach (var anchor in toRemove)
+            {
+                if (anchors.Count <= 2 || ReferenceEquals(anchor, anchors[0]))
+                    continue;
+
+                anchors.Remove(anchor);
+            }
+
+            visualiser?.EnsureValidPathTypes();
+
+            // the length is worked out from the path, so it is put back the way a drag puts it back.
+            visualiser?.RestoreLength();
+        }
+
+        /// <summary>
+        /// Deletes the anchor the pointer is on, by the same gesture that deletes anything else in the editor.
+        /// </summary>
+        /// <remarks>
+        /// The shape is not in the beatmap, so nothing selects it and the quick delete that works through a
+        /// selection never reaches these anchors.
+        /// </remarks>
+        private bool deleteTheAnchorUnderThePointer()
+        {
+            var piece = visualiser?.Pieces.FirstOrDefault(p => p.IsHovered);
+
+            if (piece == null || shape.Value == null)
+                return false;
+
+            changeHandler?.BeginChange();
+            removeAnchors(shape.Value, new List<PathControlPoint> { piece.ControlPoint });
+            changeHandler?.EndChange();
+            return true;
         }
 
         // in the way of the playfield only while there is a shape being shaped, and then only to keep hold of the
@@ -90,6 +142,12 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             switch (e.Button)
             {
+                // what deletes anything else in the editor: the wheel button, or shift and the right one. With the
+                // buttons swapped over, the wheel button is what the right one sends.
+                case MouseButton.Middle:
+                case MouseButton.Right when e.ShiftPressed:
+                    return deleteTheAnchorUnderThePointer();
+
                 case MouseButton.Left when e.ControlPressed:
                     changeHandler?.BeginChange();
                     placing = addAnchor(shape.Value, e.MousePosition);
