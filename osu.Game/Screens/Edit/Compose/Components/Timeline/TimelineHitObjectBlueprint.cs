@@ -28,6 +28,7 @@ using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Skinning;
 using osuTK;
 using osuTK.Graphics;
+using osuTK.Input;
 
 namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 {
@@ -879,6 +880,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             protected override bool OnMouseDown(MouseDownEvent e)
             {
+                // only the button that drags an end takes hold of it. Everything else a button does here is about the
+                // object rather than its end -- deleting it with the wheel button or shift and the right, the context
+                // menu -- and has to reach the blueprint underneath, which is where those are handled.
+                if (e.Button != MouseButton.Left)
+                    return false;
+
                 hasMouseDown = true;
 
                 // taking hold of an end is working on that object, and with the skin's own end drawn here there is

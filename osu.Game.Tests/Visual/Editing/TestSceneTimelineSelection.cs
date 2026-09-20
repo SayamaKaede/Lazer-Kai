@@ -14,6 +14,7 @@ using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Objects;
@@ -213,6 +214,31 @@ namespace osu.Game.Tests.Visual.Editing
             AddStep("release shift", () => InputManager.ReleaseKey(Key.ShiftLeft));
 
             AddAssert("no hitobjects in beatmap", () => EditorBeatmap.HitObjects.Count == 0);
+        }
+
+        /// <summary>
+        /// The handle on a slider's end takes hold of its object, which took hold of every button with it: a quick
+        /// delete over the end selected the slider and stopped there, leaving no way to delete it from that spot.
+        /// </summary>
+        [Test]
+        public void TestQuickDeleteOverASliderEnd()
+        {
+            var addedObject = new Slider
+            {
+                StartTime = 0,
+                Path = new SliderPath(new[]
+                {
+                    new PathControlPoint(new Vector2(0), PathType.LINEAR),
+                    new PathControlPoint(new Vector2(100, 0)),
+                })
+            };
+
+            AddStep("add slider", () => EditorBeatmap.Add(addedObject));
+
+            AddStep("move to the end handle", () => InputManager.MoveMouseTo(Editor.ChildrenOfType<TimelineHitObjectBlueprint.DragArea>().Last()));
+            AddStep("middle click", () => InputManager.Click(MouseButton.Middle));
+
+            AddAssert("no hitobjects in beatmap", () => EditorBeatmap.HitObjects.Count, () => Is.Zero);
         }
 
         [Test]
