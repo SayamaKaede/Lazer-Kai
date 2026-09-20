@@ -16,8 +16,10 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
+using osu.Game.Rulesets.Edit;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
@@ -36,8 +38,31 @@ namespace osu.Game.Screens.Edit.Compose.Components
         [Resolved]
         private BindableBeatDivisor beatDivisor { get; set; } = null!;
 
+        /// <summary>
+        /// Whether the row of ticks above the divisor may be given over to what the inspector says about the
+        /// selection. Only the one in the editor's timeline offers it: the one inside a panel has no inspector to
+        /// stand in for, and its ticks are the point of it.
+        /// </summary>
+        public bool CanShowInspector { get; init; }
+
+        [Resolved(CanBeNull = true)]
+        private HitObjectComposer? composer { get; set; }
+
+        private readonly Bindable<bool> showInspector = new Bindable<bool>();
+
+        /// <summary>
+        /// Settled by hand on a real beatmap: three lines of text fit, and the divisor beneath keeps its place.
+        /// </summary>
+        private const float inspector_height = 45;
+
+        private const float inspector_text_size = 13;
+
+        private Drawable tickArea = null!;
+        private Container inspectorArea = null!;
+        private GridContainer grid = null!;
+
         [BackgroundDependencyLoader]
-        private void load(OverlayColourProvider colourProvider)
+        private void load(OverlayColourProvider colourProvider, OsuConfigManager config)
         {
             Masking = true;
 
@@ -49,7 +74,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
                     RelativeSizeAxes = Axes.Both,
                     Colour = colourProvider.Background3,
                 },
-                new GridContainer
+                grid = new GridContainer
                 {
                     RelativeSizeAxes = Axes.Both,
                     Content = new[]
@@ -59,7 +84,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
                             new Container
                             {
                                 RelativeSizeAxes = Axes.Both,
-                                Children = new Drawable[]
+                                Children = new[]
                                 {
                                     new Box
                                     {
@@ -67,10 +92,20 @@ namespace osu.Game.Screens.Edit.Compose.Components
                                         RelativeSizeAxes = Axes.Both,
                                         Colour = colourProvider.Background5,
                                     },
-                                    new TickSliderBar(beatDivisor)
+                                    tickArea = new TickSliderBar(beatDivisor)
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                    }
+                                    },
+                                    inspectorArea = new Container
+                                    {
+                                        Name = "Inspector area",
+                                        RelativeSizeAxes = Axes.Both,
+                                        // what it says about a single object runs to several lines, and the timeline
+                                        // sits directly above: it is cut off at the edge rather than drawn over it.
+                                        Masking = true,
+                                        Padding = new MarginPadding { Horizontal = 6, Vertical = 3 },
+                                        Alpha = 0,
+                                    },
                                 }
                             }
                         },
@@ -147,13 +182,14 @@ namespace osu.Game.Screens.Edit.Compose.Components
                             }
                         },
                     },
-                    RowDimensions = new[]
-                    {
-                        new Dimension(GridSizeMode.Absolute, 40),
-                        new Dimension(GridSizeMode.Absolute, 20),
-                    }
+                    RowDimensions = rowsWithTickAreaOf(default_tick_area_height)
                 }
             };
+
+            if (!CanShowInspector)
+                return;
+
+            config.BindWith(OsuSetting.EditorTimelineInspector, showInspector);
         }
 
         protected override void LoadComplete()
@@ -165,7 +201,44 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 if (valid.NewValue.Type == BeatDivisorType.Custom)
                     lastCustomDivisor = valid.NewValue.Presets.Last();
             }, true);
+
+            if (!CanShowInspector)
+                return;
+
+            showInspector.BindValueChanged(_ => updateInspector(), true);
         }
+
+        private void updateInspector()
+        {
+            bool showing = showInspector.Value;
+
+            if (showing && inspectorArea.Count == 0)
+            {
+                var inspector = composer?.CreateCompactInspector(inspector_text_size);
+
+                // a ruleset with nothing to put there keeps its ticks.
+                if (inspector == null)
+                {
+                    showing = false;
+                }
+                else
+                {
+                    inspectorArea.Add(inspector);
+                }
+            }
+
+            tickArea.Alpha = showing ? 0 : 1;
+            inspectorArea.Alpha = showing ? 1 : 0;
+            grid.RowDimensions = rowsWithTickAreaOf(showing ? inspector_height : default_tick_area_height);
+        }
+
+        private const float default_tick_area_height = 40;
+
+        private static Dimension[] rowsWithTickAreaOf(float height) => new[]
+        {
+            new Dimension(GridSizeMode.Absolute, height),
+            new Dimension(GridSizeMode.Absolute, 20),
+        };
 
         protected override bool OnMouseDown(MouseDownEvent e) => true;
         protected override bool OnClick(ClickEvent e) => true;

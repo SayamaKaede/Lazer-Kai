@@ -34,14 +34,20 @@ namespace osu.Game.Rulesets.Osu.Edit
 
                 if (precedingObject != null && precedingObject is not Spinner)
                 {
-                    AddHeader("From previous");
-                    AddValue($"{snapProvider.ReadCurrentDistanceSnap(precedingObject, firstInSelection):N2}x ({(firstInSelection.StackedPosition - precedingObject.StackedEndPosition).Length:#,0.##}px)");
+                    // the two distances share the strip's last line, and the pixels are left to the panel: what the
+                    // strip is read for is the multiplier.
+                    AddHeader("From previous", "Prev", CompactLine.NewLine);
+                    AddValue(Compact
+                        ? $"{snapProvider.ReadCurrentDistanceSnap(precedingObject, firstInSelection):N2}x"
+                        : $"{snapProvider.ReadCurrentDistanceSnap(precedingObject, firstInSelection):N2}x ({(firstInSelection.StackedPosition - precedingObject.StackedEndPosition).Length:#,0.##}px)");
                 }
 
                 if (nextObject != null && nextObject is not Spinner)
                 {
-                    AddHeader("To next");
-                    AddValue($"{snapProvider.ReadCurrentDistanceSnap(lastInSelection, nextObject):N2}x ({(nextObject.StackedPosition - lastInSelection.StackedEndPosition).Length:#,0.##}px)");
+                    AddHeader("To next", "Next");
+                    AddValue(Compact
+                        ? $"{snapProvider.ReadCurrentDistanceSnap(lastInSelection, nextObject):N2}x"
+                        : $"{snapProvider.ReadCurrentDistanceSnap(lastInSelection, nextObject):N2}x ({(nextObject.StackedPosition - lastInSelection.StackedEndPosition).Length:#,0.##}px)");
                 }
             }
         }

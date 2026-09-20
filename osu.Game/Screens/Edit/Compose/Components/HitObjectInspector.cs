@@ -50,7 +50,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
         private void updateInspectorText()
         {
-            InspectorText.Clear();
+            BeginInspectorText();
             rollingTextUpdate?.Cancel();
             rollingTextUpdate = null;
 
@@ -71,6 +71,17 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 rollingTextUpdate ??= Scheduler.AddDelayed(updateInspectorText, 250);
         }
 
+        /// <summary>
+        /// A time as the inspector writes it. The strip leaves off the fraction of a millisecond: a slider's end
+        /// carries one, and it is three characters that push the line over the width the strip has.
+        /// </summary>
+        private string time(double milliseconds) => Compact ? $"{milliseconds:#,0}" : $"{milliseconds:#,0.##}";
+
+        /// <summary>
+        /// The unit after a time, which the strip leaves off: every number on that line is a time already.
+        /// </summary>
+        private string ms => Compact ? string.Empty : " ms";
+
         protected virtual void AddInspectorValues(HitObject[] objects)
         {
             switch (objects.Length)
@@ -84,66 +95,66 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
                     if (selected is IHasDuration duration)
                     {
-                        AddHeader("Time");
-                        AddValue($"{selected.StartTime:#,0.##} - {duration.EndTime:#,0.##} ms");
+                        AddHeader("Time", line: CompactLine.NewLine);
+                        AddValue($"{time(selected.StartTime)} - {time(duration.EndTime)}{ms}");
 
                         if (selected is IHasRepeats repeats && repeats.RepeatCount > 0)
                         {
-                            AddHeader("Duration");
+                            AddHeader("Duration", line: CompactLine.LeftOut);
                             AddValue($"{duration.Duration:#,0.##} ms");
                             AddValue($"({repeats.RepeatCount:#,0.##} repeats)");
                         }
                         else
                         {
-                            AddHeader("Duration");
+                            AddHeader("Duration", line: CompactLine.LeftOut);
                             AddValue($"{duration.Duration:#,0.##} ms");
                         }
                     }
                     else
                     {
-                        AddHeader("Time");
-                        AddValue($"{selected.StartTime:#,0.##} ms");
+                        AddHeader("Time", line: CompactLine.NewLine);
+                        AddValue($"{time(selected.StartTime)}{ms}");
                     }
 
                     switch (selected)
                     {
                         case IHasPosition pos:
-                            AddHeader("Position");
+                            AddHeader("Position", line: CompactLine.NewLine);
                             AddValue($"({pos.X:#,0.##}, {pos.Y:#,0.##})");
                             break;
 
                         case IHasXPosition x:
-                            AddHeader("Position");
+                            AddHeader("Position", line: CompactLine.NewLine);
                             AddValue($"{x.X:#,0.##}");
                             break;
 
                         case IHasYPosition y:
-                            AddHeader("Position");
+                            AddHeader("Position", line: CompactLine.NewLine);
                             AddValue($"{y.Y:#,0.##}");
                             break;
                     }
 
                     if (selected is IHasSliderVelocity sliderVelocity)
                     {
-                        AddHeader("Slider Velocity");
+                        AddHeader("Slider Velocity", line: CompactLine.LeftOut);
                         AddValue($"{sliderVelocity.SliderVelocityMultiplier:#,0.00}x");
                         AddValue($"(actual: {sliderVelocity.SliderVelocityMultiplier * EditorBeatmap.Difficulty.SliderMultiplier:#,0.00}x)");
                     }
 
                     if (selected is IHasDistance distance)
                     {
-                        AddHeader("Distance covered");
+                        AddHeader("Distance covered", line: CompactLine.LeftOut);
                         AddValue($"{distance.Distance:#,0.##} px");
                     }
 
                     break;
 
                 default:
-                    AddHeader("Object count");
+                    AddHeader("Object count", line: CompactLine.LeftOut);
                     AddValue($"{objects.Length:#,0.##}");
 
-                    AddHeader("Selection");
-                    AddValue($"{objects.Min(o => o.StartTime):#,0.##} ms - {objects.Max(o => o.GetEndTime()):#,0.##} ms");
+                    AddHeader("Selection", line: CompactLine.NewLine);
+                    AddValue($"{time(objects.Min(o => o.StartTime))}{ms} - {time(objects.Max(o => o.GetEndTime()))}{ms}");
                     break;
             }
         }

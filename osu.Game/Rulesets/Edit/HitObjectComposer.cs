@@ -562,6 +562,7 @@ namespace osu.Game.Rulesets.Edit
 
         protected virtual Drawable CreateHitObjectInspector() => new HitObjectInspector();
 
+
         /// <summary>
         /// Draws another difficulty faintly underneath the one being edited, or clears it away when there is none.
         /// </summary>
@@ -924,6 +925,13 @@ namespace osu.Game.Rulesets.Edit
         public virtual void RevertBeatmapPreviewMods()
         {
         }
+
+        /// <summary>
+        /// The same values as the inspector panel's, laid out for a strip rather than a panel, or null where the
+        /// ruleset has nothing to put there.
+        /// </summary>
+        /// <param name="textSize">The size of the text, which the strip that holds it decides.</param>
+        public virtual EditorInspector? CreateCompactInspector(float textSize) => null;
 
         public const float TOOLBOX_CONTRACTED_SIZE_LEFT = 60;
         public const float TOOLBOX_CONTRACTED_SIZE_RIGHT = 120;

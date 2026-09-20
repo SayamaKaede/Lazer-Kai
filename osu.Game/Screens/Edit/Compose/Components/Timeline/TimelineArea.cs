@@ -34,8 +34,6 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colourProvider, OsuColour colours, Editor? editor)
         {
-            const float padding = 10;
-
             InternalChildren = new Drawable[]
             {
                 new Box
@@ -57,8 +55,10 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                     ColumnDimensions = new[]
                     {
                         new Dimension(),
-                        new Dimension(GridSizeMode.Absolute, 35),
-                        new Dimension(GridSizeMode.Absolute, HitObjectComposer.TOOLBOX_CONTRACTED_SIZE_RIGHT),
+                        // the gap that used to sit between the zoom buttons and the divisor is given to the divisor:
+                        // the strip above it is what needs the width, and the buttons are the size of their icons.
+                        new Dimension(GridSizeMode.Absolute, 25),
+                        new Dimension(GridSizeMode.Absolute, HitObjectComposer.TOOLBOX_CONTRACTED_SIZE_RIGHT + 10),
                     },
                     Content = new[]
                     {
@@ -83,7 +83,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                             {
                                 RelativeSizeAxes = Axes.Both,
                                 Name = @"Zoom controls",
-                                Padding = new MarginPadding { Right = padding },
+                                // no gap before the divisor beside it: the strip above the divisor needs the width
+                                // more than the two of them need separating, and the backgrounds differ anyway.
                                 Children = new Drawable[]
                                 {
                                     new Box
@@ -118,7 +119,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                                     }
                                 }
                             },
-                            new BeatDivisorControl { RelativeSizeAxes = Axes.Both }
+                            new BeatDivisorControl { RelativeSizeAxes = Axes.Both, CanShowInspector = true }
                         },
                     },
                 }

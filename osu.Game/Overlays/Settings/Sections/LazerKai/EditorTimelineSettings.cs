@@ -28,6 +28,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 }),
                 new SettingsCheckbox
                 {
+                    LabelText = EditorStrings.TimelineInspector,
+                    TooltipText = EditorStrings.TimelineInspectorDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorTimelineInspector)
+                },
+                new SettingsCheckbox
+                {
                     LabelText = EditorStrings.TimelineDragToSeek,
                     TooltipText = EditorStrings.TimelineDragToSeekDescription,
                     Current = config.GetBindable<bool>(OsuSetting.EditorTimelineDragToSeek)
