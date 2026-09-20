@@ -64,6 +64,16 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
         private Bindable<bool> swapRightAndMiddleMouse { get; set; } = null!;
 
         /// <summary>
+        /// The shape to draw with, or automatic to leave it to how many points the segment holds.
+        /// </summary>
+        private Bindable<SliderPlacementAnchorType> placementAnchorType { get; set; } = null!;
+
+        /// <summary>
+        /// The shape an added anchor makes, which is what the parts divided off with a red anchor take.
+        /// </summary>
+        private Bindable<SliderAnchorType> anchorType { get; set; } = null!;
+
+        /// <summary>
         /// The button which finishes the path.
         /// </summary>
         /// <remarks>
@@ -101,6 +111,8 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             limitedDistanceSnap = config.GetBindable<bool>(OsuSetting.EditorLimitedDistanceSnap);
             freehandPlacement = config.GetBindable<bool>(OsuSetting.EditorFreehandSliderPlacement);
             swapRightAndMiddleMouse = config.GetBindable<bool>(OsuSetting.SwapRightAndMiddleMouse);
+            placementAnchorType = config.GetBindable<SliderPlacementAnchorType>(OsuSetting.EditorSliderAnchorTypeForPlacement);
+            anchorType = config.GetBindable<SliderAnchorType>(OsuSetting.EditorSliderAnchorType);
         }
 
         protected override void LoadComplete()
@@ -353,6 +365,21 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             if (state == SliderPlacementState.Drawing)
             {
                 segmentStart.Type = PathType.BSpline(4);
+                return;
+            }
+
+            // the shape asked for in the settings, read every frame so that changing it reaches a slider already being
+            // drawn. Alt+1 to alt+4 set the type for one segment and are handled above.
+            if (placementAnchorType.Value.ToPathType() is PathType chosen)
+            {
+                // only the part the slider starts with is the one it is placed as. A part divided off with the user's
+                // own red anchor is theirs, so it takes the shape an added anchor makes -- the same setting that
+                // shapes a part added to a finished slider, and the reason a perfect curve does not survive a
+                // division the way it cannot in stable.
+                bool dividedOff = HitObject.Path.ControlPoints[0] != segmentStart;
+
+                segmentStart.Type = dividedOff ? anchorType.Value.ToPathType() : chosen;
+                controlPointVisualiser.EnsureValidPathTypes();
                 return;
             }
 

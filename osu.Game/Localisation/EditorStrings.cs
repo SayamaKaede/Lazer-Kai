@@ -767,9 +767,10 @@ namespace osu.Game.Localisation
         public static LocalisableString AnchorAddType => new TranslatableString(getKey(@"anchor_add_type"), @"Shape a new anchor makes");
 
         /// <summary>
-        /// "Ctrl+1 to ctrl+4 switch between these while editing."
+        /// "Ctrl+1 to ctrl+4 switch between these while editing. A perfect curve is the usual choice."
         /// </summary>
-        public static LocalisableString AnchorAddTypeDescription => new TranslatableString(getKey(@"anchor_add_type_description"), @"Ctrl+1 to ctrl+4 switch between these while editing.");
+        public static LocalisableString AnchorAddTypeDescription => new TranslatableString(getKey(@"anchor_add_type_description"),
+            @"Ctrl+1 to ctrl+4 switch between these while editing. A perfect curve is the usual choice.");
 
         /// <summary>
         /// "Straight"
@@ -795,6 +796,44 @@ namespace osu.Game.Localisation
         /// "New anchors: {0}"
         /// </summary>
         public static LocalisableString AnchorAddTypeChanged(LocalisableString type) => new TranslatableString(getKey(@"anchor_add_type_changed"), @"New anchors: {0}", type);
+
+        /// <summary>
+        /// "Inspector above the beat divisor"
+        /// </summary>
+        public static LocalisableString TimelineInspector => new TranslatableString(getKey(@"timeline_inspector"), @"Inspector above the beat divisor");
+
+        /// <summary>
+        /// "What the inspector panel says about the selection, in place of the row of ticks."
+        /// </summary>
+        public static LocalisableString TimelineInspectorDescription => new TranslatableString(getKey(@"timeline_inspector_description"),
+            @"What the inspector panel says about the selection, in place of the row of ticks.");
+
+        /// <summary>
+        /// "Keep objects on whole coordinates"
+        /// </summary>
+        public static LocalisableString IntegerPositions => new TranslatableString(getKey(@"integer_positions"), @"Keep objects on whole coordinates");
+
+        /// <summary>
+        /// "A fraction of a pixel is kept here and rounded off everywhere else, which moves objects onto and off stacks once a beatmap leaves the editor."
+        /// </summary>
+        public static LocalisableString IntegerPositionsDescription => new TranslatableString(getKey(@"integer_positions_description"),
+            @"A fraction of a pixel is kept here and rounded off everywhere else, which moves objects onto and off stacks once a beatmap leaves the editor.");
+
+        /// <summary>
+        /// "Shape a slider is placed with"
+        /// </summary>
+        public static LocalisableString PlacementAnchorType => new TranslatableString(getKey(@"placement_anchor_type"), @"Shape a slider is placed with");
+
+        /// <summary>
+        /// "The shape a slider is drawn with as it is placed. Alt+1 to alt+4 still override it for the segment being drawn."
+        /// </summary>
+        public static LocalisableString PlacementAnchorTypeDescription => new TranslatableString(getKey(@"placement_anchor_type_description"),
+            @"The shape a slider is drawn with as it is placed. Alt+1 to alt+4 still override it for the segment being drawn.");
+
+        /// <summary>
+        /// "Automatic"
+        /// </summary>
+        public static LocalisableString PlacementAnchorTypeAutomatic => new TranslatableString(getKey(@"placement_anchor_type_automatic"), @"Automatic");
 
         /// <summary>
         /// "Allow objects outside the play area"

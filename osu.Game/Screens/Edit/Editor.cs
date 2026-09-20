@@ -327,6 +327,7 @@ namespace osu.Game.Screens.Edit
         private Bindable<float> editorSliderAnchorScale;
         private Bindable<double> editorSeekAnimationDuration;
         private Bindable<bool> editorAlwaysExpandLeftToolbox;
+        private Bindable<SliderPlacementAnchorType> editorPlacementAnchorType;
         private Bindable<bool> editorShowPlayAreaBorder;
         private Bindable<bool> editorShowAutoCursor;
         private Bindable<bool> editorDetectOffscreen;
@@ -498,6 +499,7 @@ namespace osu.Game.Screens.Edit
             editorSliderAnchorScale = config.GetBindable<float>(OsuSetting.EditorSliderAnchorScale);
             editorSeekAnimationDuration = config.GetBindable<double>(OsuSetting.EditorSeekAnimationDuration);
             editorAlwaysExpandLeftToolbox = config.GetBindable<bool>(OsuSetting.EditorAlwaysExpandLeftToolbox);
+            editorPlacementAnchorType = config.GetBindable<SliderPlacementAnchorType>(OsuSetting.EditorSliderAnchorTypeForPlacement);
             editorShowPlayAreaBorder = config.GetBindable<bool>(OsuSetting.EditorShowPlayAreaBorder);
             editorShowAutoCursor = config.GetBindable<bool>(OsuSetting.EditorShowAutoCursor);
             editorDetectOffscreen = config.GetBindable<bool>(OsuSetting.EditorDetectOffscreen);
@@ -554,7 +556,7 @@ namespace osu.Game.Screens.Edit
                                     },
                                     new MenuItem(CommonStrings.MenuBarEdit)
                                     {
-                                        Items = new[]
+                                        Items = new MenuItem[]
                                         {
                                             undoMenuItem = new EditorMenuItem(CommonStrings.Undo, MenuItemType.Standard, Undo) { Hotkey = new Hotkey(PlatformAction.Undo) },
                                             redoMenuItem = new EditorMenuItem(CommonStrings.Redo, MenuItemType.Standard, Redo) { Hotkey = new Hotkey(PlatformAction.Redo) },
@@ -571,6 +573,11 @@ namespace osu.Game.Screens.Edit
                                             placementPresetsMenuItem = new EditorMenuItem(PlacementPresetStrings.MenuItem, MenuItemType.Standard, () => placementPresets?.ToggleVisibility())
                                             {
                                                 Hotkey = new Hotkey(GlobalAction.EditorTogglePlacementPresets)
+                                            },
+                                            new OsuMenuItemSpacer(),
+                                            new MenuItem(EditorStrings.PlacementAnchorType)
+                                            {
+                                                Items = placementAnchorTypeMenuItems()
                                             },
                                         }
                                     },
@@ -871,6 +878,9 @@ namespace osu.Game.Screens.Edit
             editorDetectOffscreen.BindValueChanged(on => announceEnabled(EditorStrings.DetectOffscreen, on.NewValue));
 
             editorAlwaysExpandLeftToolbox.BindValueChanged(on => announceEnabled(EditorStrings.AlwaysExpandLeftToolbox, on.NewValue));
+
+            editorPlacementAnchorType.BindValueChanged(type =>
+                announceState(EditorStrings.PlacementAnchorType, type.NewValue.GetLocalisableDescription()));
 
             editorAlwaysExpandTimelinePointLabels.BindValueChanged(on =>
                 announceEnabled(EditorStrings.AlwaysExpandTimelinePointLabels, on.NewValue));
@@ -1712,6 +1722,37 @@ namespace osu.Game.Screens.Edit
         /// </summary>
         private void announceEnabled(LocalisableString what, bool on)
             => announceState(what, on ? CommonStrings.Enabled.ToLower() : CommonStrings.Disabled.ToLower());
+
+        /// <summary>
+        /// The shapes a slider can be placed with, as one menu item each, ticked to show which is in use.
+        /// </summary>
+        private MenuItem[] placementAnchorTypeMenuItems()
+        {
+            var items = new List<MenuItem>();
+
+            foreach (var shape in Enum.GetValues<SliderPlacementAnchorType>())
+            {
+                var item = new ToggleMenuItem(shape.GetLocalisableDescription());
+
+                item.State.Value = editorPlacementAnchorType.Value == shape;
+
+                // only one shape can be in use, so picking one is what turns the rest off. Unticking the one in use
+                // asks for the same shape again, which is why the item is not allowed to turn itself off.
+                item.State.BindValueChanged(on =>
+                {
+                    if (on.NewValue)
+                        editorPlacementAnchorType.Value = shape;
+                    else if (editorPlacementAnchorType.Value == shape)
+                        item.State.Value = true;
+                });
+
+                editorPlacementAnchorType.BindValueChanged(chosen => item.State.Value = chosen.NewValue == shape);
+
+                items.Add(item);
+            }
+
+            return items.ToArray();
+        }
 
         /// <summary>
         /// Reports something the editor just did, for actions whose key binding has no other visible result.

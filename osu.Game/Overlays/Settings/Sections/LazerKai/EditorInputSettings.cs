@@ -61,6 +61,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     TooltipText = EditorStrings.AnchorAddTypeDescription,
                     Current = config.GetBindable<SliderAnchorType>(OsuSetting.EditorSliderAnchorType)
                 },
+                new SettingsEnumDropdown<SliderPlacementAnchorType>
+                {
+                    LabelText = EditorStrings.PlacementAnchorType,
+                    TooltipText = EditorStrings.PlacementAnchorTypeDescription,
+                    Current = config.GetBindable<SliderPlacementAnchorType>(OsuSetting.EditorSliderAnchorTypeForPlacement)
+                },
                 new SettingsCheckbox
                 {
                     LabelText = EditorStrings.AllowOutsidePlayArea,

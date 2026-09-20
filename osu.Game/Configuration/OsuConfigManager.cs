@@ -318,6 +318,9 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSelectableAfterEndTime, 400.0, 0.0, 2000.0, 50.0);
             SetDefault(OsuSetting.EditorSliderAnchorType, SliderAnchorType.PerfectCurve);
             SetDefault(OsuSetting.EditorAllowOutsidePlayArea, false);
+            SetDefault(OsuSetting.EditorSliderAnchorTypeForPlacement, SliderPlacementAnchorType.Automatic);
+            SetDefault(OsuSetting.EditorTimelineInspector, false);
+            SetDefault(OsuSetting.EditorIntegerPositions, true);
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.01f);
@@ -1183,6 +1186,23 @@ namespace osu.Game.Configuration
         /// inside after every drag.
         /// </summary>
         EditorAllowOutsidePlayArea,
+
+        /// <summary>
+        /// The shape a slider is drawn with while it is being placed, or automatic to leave it to the number of
+        /// points in the segment.
+        /// </summary>
+        EditorSliderAnchorTypeForPlacement,
+
+        /// <summary>
+        /// Whether what the inspector says about the selection is shown above the beat divisor, in place of the row
+        /// of ticks.
+        /// </summary>
+        EditorTimelineInspector,
+
+        /// <summary>
+        /// Whether objects are put on whole coordinates, since a fraction of a pixel survives here and nowhere else.
+        /// </summary>
+        EditorIntegerPositions,
 
     }
 }
