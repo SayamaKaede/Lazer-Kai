@@ -94,12 +94,14 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
         {
         }
 
-        private readonly Bindable<bool> arcOnAnchorAdd = new Bindable<bool>();
+        private readonly Bindable<bool> stableSliderControls = new Bindable<bool>();
+        private readonly Bindable<SliderAnchorType> anchorType = new Bindable<SliderAnchorType>();
 
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
-            config.BindWith(OsuSetting.EditorArcOnAnchorAdd, arcOnAnchorAdd);
+            config.BindWith(OsuSetting.EditorStableSliderControls, stableSliderControls);
+            config.BindWith(OsuSetting.EditorSliderAnchorType, anchorType);
 
             InternalChildren = new Drawable[]
             {
@@ -462,8 +464,8 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             // Move the control points from the insertion index onwards to make room for the insertion
             controlPoints.Insert(insertionIndex, pathControlPoint);
 
-            if (arcOnAnchorAdd.Value)
-                SliderAnchorInsertion.MakeArcAroundInsertion(controlPoints, insertionIndex);
+            if (stableSliderControls.Value)
+                SliderAnchorInsertion.ShapeAroundInsertion(controlPoints, insertionIndex, anchorType.Value.ToPathType());
 
             ControlPointVisualiser?.EnsureValidPathTypes();
 

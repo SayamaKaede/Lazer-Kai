@@ -13,6 +13,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Game.Configuration;
 using osu.Framework.Caching;
+using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
@@ -184,6 +185,9 @@ namespace osu.Game.Rulesets.Osu.Edit
             // the toolbox buttons are added by the base composer, which has already run by this point.
             config.BindWith(OsuSetting.EditorHideGridFromPointsTool, hideGridFromPointsTool);
             config.BindWith(OsuSetting.SwapRightAndMiddleMouse, swapRightAndMiddleMouse);
+            config.BindWith(OsuSetting.EditorStableSliderControls, stableSliderControls);
+            config.BindWith(OsuSetting.EditorSliderAnchorType, anchorType);
+            config.BindWith(OsuSetting.EditorAllowOutsidePlayArea, allowOutsidePlayArea);
             hideGridFromPointsTool.BindValueChanged(hidden => SetToolVisibility(gridFromPointsTool, !hidden.NewValue), true);
 
             AddInternal(DistanceSnapProvider);
@@ -546,13 +550,42 @@ namespace osu.Game.Rulesets.Osu.Edit
             return base.OnMouseDown(e);
         }
 
+        private readonly Bindable<bool> stableSliderControls = new Bindable<bool>();
+
+        private readonly Bindable<bool> allowOutsidePlayArea = new Bindable<bool>();
+        private readonly Bindable<SliderAnchorType> anchorType = new Bindable<SliderAnchorType>();
+
         protected override bool OnKeyDown(KeyDownEvent e)
         {
             if (e.Repeat)
                 return false;
 
+            if (tryPickAnchorType(e))
+                return true;
+
             handleToggleViaKey(e);
             return base.OnKeyDown(e);
+        }
+
+        /// <summary>
+        /// Ctrl and a number pick the shape a new anchor makes, which is otherwise a trip to the settings.
+        /// </summary>
+        /// <remarks>
+        /// The shape is only used while sliders are shaped stable's way, so the keys do nothing while that is off
+        /// rather than quietly setting something that has no effect. Alt and a number is the editor's own shortcut
+        /// for the type of an anchor already placed, and is left alone.
+        /// </remarks>
+        private bool tryPickAnchorType(KeyDownEvent e)
+        {
+            if (!stableSliderControls.Value || !e.ControlPressed || e.ShiftPressed || e.AltPressed)
+                return false;
+
+            if (e.Key < Key.Number1 || e.Key > Key.Number4)
+                return false;
+
+            anchorType.Value = (SliderAnchorType)(e.Key - Key.Number1);
+            onScreenDisplay?.Display(new EditorToast(EditorStrings.AnchorAddTypeChanged(anchorType.Value.GetLocalisableDescription())));
+            return true;
         }
 
         protected override void OnKeyUp(KeyUpEvent e)

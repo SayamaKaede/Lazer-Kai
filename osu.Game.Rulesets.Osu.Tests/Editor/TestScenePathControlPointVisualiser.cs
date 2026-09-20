@@ -272,7 +272,7 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         [Test]
         public void TestCtrlClickCyclesOnEveryClick()
         {
-            AddStep("cycle the curve type on ctrl+click", () => config.SetValue(OsuSetting.EditorCtrlClickCyclesCurveType, true));
+            AddStep("cycle the curve type on ctrl+click", () => config.SetValue(OsuSetting.EditorStableSliderControls, true));
 
             createVisualiser(true);
 
@@ -282,15 +282,17 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
             moveMouseToControlPoint(1);
 
-            // the point starts on inherit, so the cycle runs from the top of the list.
+            // what a click on an anchor is about is the shape leading up to it, so it is the segment arriving there
+            // that changes — the one starting at the first point, which the path is still in at point 1.
             ctrlClick();
-            assertControlPointPathType(1, PathType.LINEAR);
+            assertControlPointPathType(0, PathType.BEZIER);
+            assertControlPointPathType(1, null);
 
             ctrlClick();
-            assertControlPointPathType(1, PathType.BEZIER);
+            assertControlPointPathType(0, PathType.PERFECT_CURVE);
 
             ctrlClick();
-            assertControlPointPathType(1, PathType.PERFECT_CURVE);
+            assertControlPointPathType(0, PathType.BSpline(4));
         }
 
         private void ctrlClick() => AddStep("ctrl+click", () =>

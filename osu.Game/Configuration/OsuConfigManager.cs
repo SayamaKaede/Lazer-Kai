@@ -313,10 +313,11 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorBeatmapColours, true);
             SetDefault(OsuSetting.EditorBeatmapHitsounds, true);
 
-            SetDefault(OsuSetting.EditorCtrlClickCyclesCurveType, false);
+            SetDefault(OsuSetting.EditorStableSliderControls, true);
             SetDefault(OsuSetting.SwapRightAndMiddleMouse, false);
             SetDefault(OsuSetting.EditorSelectableAfterEndTime, 400.0, 0.0, 2000.0, 50.0);
-            SetDefault(OsuSetting.EditorArcOnAnchorAdd, true);
+            SetDefault(OsuSetting.EditorSliderAnchorType, SliderAnchorType.PerfectCurve);
+            SetDefault(OsuSetting.EditorAllowOutsidePlayArea, false);
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.01f);
@@ -816,10 +817,11 @@ namespace osu.Game.Configuration
         EditorGridDefaultType,
 
         /// <summary>
-        /// Whether ctrl+clicking a slider control point cycles its curve type.
+        /// Whether sliders are shaped the way stable shapes them: an anchor added with ctrl+click gives its part of
+        /// the path a shape without splitting it, and ctrl+clicking an anchor changes the shape leading up to it.
         /// While on, ctrl no longer adds control points to the selection.
         /// </summary>
-        EditorCtrlClickCyclesCurveType,
+        EditorStableSliderControls,
 
         /// <summary>
         /// Whether the right and middle mouse buttons are swapped while the editor is the active screen.
@@ -832,10 +834,9 @@ namespace osu.Game.Configuration
         EditorSelectableAfterEndTime,
 
         /// <summary>
-        /// Whether adding a slider anchor turns the segment it lands in into a perfect curve, where that segment
-        /// ends up with the three points a perfect curve needs.
+        /// The shape an anchor added with ctrl+click gives the part of the path it lands in.
         /// </summary>
-        EditorArcOnAnchorAdd,
+        EditorSliderAnchorType,
 
         /// <summary>
         /// Whether the summary timeline shows where the beatmap's difficulty sits over its length.
@@ -1162,6 +1163,24 @@ namespace osu.Game.Configuration
 
         /// <summary>Whether the top timeline marks where nightcore's cymbal falls.</summary>
         EditorTimelineShowNightcoreCymbals,
+
+        /// <summary>
+        /// What a stream of one stretch is told about snapping its spacing, which is the last thing the panel was
+        /// told rather than a setting of its own.
+        /// </summary>
+        EditorStreamSnapSpacingWhole,
+
+        /// <summary>
+        /// The same for the last stretch of a stream that turns a corner, which is remembered apart: a shape with
+        /// corners is being shaped by hand, and starts out following the hand rather than the ticks.
+        /// </summary>
+        EditorStreamSnapSpacingLastOfSeveral,
+
+        /// <summary>
+        /// Whether a selection may be moved and scaled past the edges of the play area, instead of being pushed back
+        /// inside after every drag.
+        /// </summary>
+        EditorAllowOutsidePlayArea,
 
     }
 }

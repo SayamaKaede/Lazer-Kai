@@ -51,15 +51,21 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 },
                 new SettingsCheckbox
                 {
-                    LabelText = EditorStrings.ArcOnAnchorAdd,
-                    TooltipText = EditorStrings.ArcOnAnchorAddDescription,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorArcOnAnchorAdd)
+                    LabelText = EditorStrings.StableSliderControls,
+                    TooltipText = EditorStrings.StableSliderControlsDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorStableSliderControls)
+                },
+                new SettingsEnumDropdown<SliderAnchorType>
+                {
+                    LabelText = EditorStrings.AnchorAddType,
+                    TooltipText = EditorStrings.AnchorAddTypeDescription,
+                    Current = config.GetBindable<SliderAnchorType>(OsuSetting.EditorSliderAnchorType)
                 },
                 new SettingsCheckbox
                 {
-                    LabelText = EditorStrings.CtrlClickCyclesCurveType,
-                    TooltipText = EditorStrings.CtrlClickCyclesCurveTypeDescription,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorCtrlClickCyclesCurveType)
+                    LabelText = EditorStrings.AllowOutsidePlayArea,
+                    TooltipText = EditorStrings.AllowOutsidePlayAreaDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorAllowOutsidePlayArea)
                 },
                 new SettingsCheckbox
                 {

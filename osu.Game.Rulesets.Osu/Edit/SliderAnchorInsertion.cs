@@ -17,19 +17,20 @@ namespace osu.Game.Rulesets.Osu.Edit
     public static class SliderAnchorInsertion
     {
         /// <summary>
-        /// Turns the three points around a newly inserted anchor into an arc, where doing so would not disturb a
-        /// curve the user shaped on purpose.
+        /// Gives the part of the path the new anchor landed in the shape that was asked for.
         /// </summary>
         /// <remarks>
-        /// An anchor is nearly always added to bend a path, but a new anchor carries no type of its own, so it
-        /// extends whatever the segment already was and a straight segment stays straight.
+        /// Nothing is split. In stable a slider is one shape and an added point is just another point in it, so the
+        /// only anchors that divide a path are the ones the user makes themselves; splitting a path here to fit a
+        /// three point arc in put anchors in the map that nobody asked for (2026-09-19).
         ///
-        /// Only straight segments are reshaped. A bezier or catmull segment holds a shape the user built, and
-        /// splitting it into pieces to fit an arc in would change the whole curve, not just the part being added to.
+        /// A perfect curve is exactly three points, so where the part being shaped holds more than that it becomes a
+        /// bezier instead — the same fall-back stable makes when a curve outgrows three points.
         /// </remarks>
         /// <param name="controlPoints">The path's control points, with the new anchor already inserted.</param>
         /// <param name="insertedIndex">Index of the newly inserted anchor.</param>
-        public static void MakeArcAroundInsertion(IList<PathControlPoint> controlPoints, int insertedIndex)
+        /// <param name="type">The shape asked for.</param>
+        public static void ShapeAroundInsertion(IList<PathControlPoint> controlPoints, int insertedIndex, PathType type)
         {
             // the new anchor always has a point on either side: it is placed between two existing ones.
             if (insertedIndex <= 0 || insertedIndex >= controlPoints.Count - 1)
@@ -37,7 +38,7 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             int segmentStart = 0;
 
-            // a typed point starts a segment, so walking back through untyped ones finds the type in effect here.
+            // a typed point starts a segment, so walking back through untyped ones finds the one this anchor is in.
             for (int i = insertedIndex - 1; i > 0; i--)
             {
                 if (controlPoints[i].Type != null)
@@ -47,18 +48,28 @@ namespace osu.Game.Rulesets.Osu.Edit
                 }
             }
 
-            if (controlPoints[segmentStart].Type != PathType.LINEAR)
-                return;
+            controlPoints[segmentStart].Type = FitToSegment(type, LengthOfSegment(controlPoints, segmentStart));
+        }
 
-            int before = insertedIndex - 1;
-            int after = insertedIndex + 1;
+        /// <summary>
+        /// The shape a segment of <paramref name="pointsInSegment"/> points can hold out of the one asked for.
+        /// </summary>
+        public static PathType FitToSegment(PathType type, int pointsInSegment) =>
+            type == PathType.PERFECT_CURVE && pointsInSegment > 3 ? PathType.BEZIER : type;
 
-            // an arc takes exactly three points, so the following point has to close the segment. Where it does not
-            // already, it starts a straight one instead, leaving the rest of the path as it was.
-            if (after < controlPoints.Count - 1 && controlPoints[after].Type == null)
-                controlPoints[after].Type = PathType.LINEAR;
+        /// <summary>
+        /// How many points the segment starting at <paramref name="segmentStart"/> holds, counting the point that
+        /// closes it — which is the next typed point, or the end of the path.
+        /// </summary>
+        public static int LengthOfSegment(IList<PathControlPoint> controlPoints, int segmentStart)
+        {
+            for (int i = segmentStart + 1; i < controlPoints.Count; i++)
+            {
+                if (controlPoints[i].Type != null)
+                    return i - segmentStart + 1;
+            }
 
-            controlPoints[before].Type = PathType.PERFECT_CURVE;
+            return controlPoints.Count - segmentStart;
         }
     }
 }

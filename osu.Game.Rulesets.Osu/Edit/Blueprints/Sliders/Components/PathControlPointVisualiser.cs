@@ -76,7 +76,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
         private void load(OsuConfigManager config)
         {
             limitedDistanceSnap = config.GetBindable<bool>(OsuSetting.EditorLimitedDistanceSnap);
-            config.BindWith(OsuSetting.EditorCtrlClickCyclesCurveType, ctrlClickCyclesCurveType);
+            config.BindWith(OsuSetting.EditorStableSliderControls, stableSliderControls);
         }
 
         protected override void LoadComplete()
@@ -219,7 +219,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
                             if (allowSelection)
                                 d.RequestSelection = selectionRequested;
 
-                            d.CtrlClickCyclesCurveType.BindTo(ctrlClickCyclesCurveType);
+                            d.CtrlClickCyclesCurveType.BindTo(stableSliderControls);
                             d.ControlPoint.Changed += controlPointChanged;
                             d.DragStarted = DragStarted;
                             d.DragInProgress = DragInProgress;
@@ -368,7 +368,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
             {
                 // the two uses of ctrl+click are mutually exclusive by design: cycling the curve type would otherwise
                 // fight with adding to the selection on the same input.
-                if (ctrlClickCyclesCurveType.Value)
+                if (stableSliderControls.Value)
                 {
                     SetSelectionTo(piece.ControlPoint);
                     CycleCurveType(piece);
@@ -390,8 +390,10 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
         /// </remarks>
         public void CycleCurveType(PathControlPointPiece<T> piece)
         {
-            int index = Array.IndexOf(path_types, piece.ControlPoint.Type);
-            int firstIndex = Pieces.IndexOf(piece);
+            var target = segmentArrivingAt(piece.ControlPoint);
+
+            int index = Array.IndexOf(path_types, target.Type);
+            bool isFirstPoint = ReferenceEquals(target, controlPoints[0]);
 
             PathType? next = null;
 
@@ -402,7 +404,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
                 var candidate = path_types[(index + i + path_types.Length) % path_types.Length];
 
                 // the first control point can never be inherit type.
-                if (firstIndex == 0 && candidate == null)
+                if (isFirstPoint && candidate == null)
                     continue;
 
                 next = candidate;
@@ -413,12 +415,45 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
 
             double originalDistance = hitObject.Path.Distance;
 
-            piece.ControlPoint.Type = next;
+            if (next?.Type == SplineType.PerfectCurve)
+            {
+                // an arc is three points. Where the segment holds more, the rest of it carries on as it was, the same
+                // way the curve type menu splits it.
+                var pointsInSegment = hitObject.Path.PointsInSegment(target);
+
+                if (pointsInSegment.Count > 3)
+                    pointsInSegment[2].Type = pointsInSegment[0].Type;
+            }
+
+            target.Type = next;
 
             EnsureValidPathTypes();
             hitObject.Path.ExpectedDistance.Value = originalDistance;
 
             changeHandler?.EndChange();
+        }
+
+        /// <summary>
+        /// The control point that starts the segment the path is travelling in when it arrives at <paramref name="point"/>.
+        /// </summary>
+        /// <remarks>
+        /// What a click on an anchor is about is the shape leading up to it, which is the segment it arrives in —
+        /// stable's feel, and the reason this is not the anchor's own type: an anchor's type is the segment that
+        /// leaves it, so changing it moves the path after the anchor rather than before it.
+        ///
+        /// The first anchor has nothing before it, so it answers for the segment it starts.
+        /// </remarks>
+        private PathControlPoint segmentArrivingAt(PathControlPoint point)
+        {
+            int index = hitObject.Path.ControlPoints.IndexOf(point);
+
+            for (int i = index - 1; i > 0; i--)
+            {
+                if (controlPoints[i].Type != null)
+                    return controlPoints[i];
+            }
+
+            return controlPoints[0];
         }
 
         /// <summary>
@@ -466,7 +501,10 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
         [Resolved(CanBeNull = true)]
         private IEditorChangeHandler changeHandler { get; set; }
 
-        private readonly Bindable<bool> ctrlClickCyclesCurveType = new Bindable<bool>();
+        [Resolved(CanBeNull = true)]
+        private StreamConversionPanel streamConversionPanel { get; set; }
+
+        private readonly Bindable<bool> stableSliderControls = new Bindable<bool>();
 
         #region Drag handling
 

@@ -18,141 +18,113 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
     /// The rule has to hold for every shape a path can already be in, which is tedious to confirm by dragging things
     /// around in the editor. Each case here states the path before, where the anchor lands, and the types expected
     /// after.
+    ///
+    /// Nothing is ever split: in stable a slider is one shape, and the only anchors dividing a path are the ones the
+    /// user makes. What an added anchor does is give the part of the path it lands in the shape asked for.
     /// </remarks>
     [TestFixture]
     public class SliderAnchorInsertionTest
     {
         /// <summary>
-        /// A straight two-point path. Adding an anchor between them should bend it.
+        /// A straight two point path, asked for an arc: three points is exactly what an arc holds.
         /// </summary>
         [Test]
-        public void TestStraightPathBends()
+        public void TestStraightPathBecomesAnArc()
         {
-            var points = pathOf((PathType.LINEAR, true), (null, false));
+            var points = pathOf(PathType.LINEAR, null);
 
-            insertAt(points, 1);
+            insertAt(points, 1, PathType.PERFECT_CURVE);
 
             Assert.That(typesOf(points), Is.EqualTo(new PathType?[] { PathType.PERFECT_CURVE, null, null }));
         }
 
         /// <summary>
-        /// A straight path carrying an inherited anchor, added to past that anchor.
+        /// The arc that came of that, added to again. A fourth point is more than an arc can hold, so the part becomes
+        /// a bezier rather than being split to keep an arc somewhere in it.
         /// </summary>
-        /// <remarks>
-        /// The type in effect sits further back than the anchor immediately before the insertion, so the arc has to
-        /// start at that nearer anchor while the earlier stretch stays straight.
-        /// </remarks>
         [Test]
-        public void TestStraightPathWithInheritedAnchorBends()
+        public void TestArcWithAFourthPointBecomesABezier()
         {
-            var points = pathOf((PathType.LINEAR, true), (null, false), (null, false));
+            var points = pathOf(PathType.PERFECT_CURVE, null, null);
 
-            insertAt(points, 2);
+            insertAt(points, 2, PathType.PERFECT_CURVE);
 
-            Assert.That(typesOf(points), Is.EqualTo(new PathType?[] { PathType.LINEAR, PathType.PERFECT_CURVE, null, null }));
+            Assert.That(typesOf(points), Is.EqualTo(new PathType?[] { PathType.BEZIER, null, null, null }));
         }
 
         /// <summary>
-        /// Adding into the middle of a straight path, with more of it following.
+        /// A bezier, which is what the fork used to leave alone and the user watched stay a bezier when they wanted a
+        /// curve out of it.
         /// </summary>
         [Test]
-        public void TestStraightPathKeepsItsRemainderStraight()
+        public void TestBezierBecomesAnArcWhereItFits()
         {
-            var points = pathOf((PathType.LINEAR, true), (null, false), (null, false), (null, false));
+            var points = pathOf(PathType.BEZIER, null);
 
-            insertAt(points, 1);
+            insertAt(points, 1, PathType.PERFECT_CURVE);
+
+            Assert.That(typesOf(points), Is.EqualTo(new PathType?[] { PathType.PERFECT_CURVE, null, null }));
+        }
+
+        /// <summary>
+        /// Whatever shape is asked for is what the part becomes, arcs aside.
+        /// </summary>
+        [Test]
+        public void TestTheShapeAskedForIsWhatItBecomes()
+        {
+            var straight = pathOf(PathType.BEZIER, null, null);
+            insertAt(straight, 1, PathType.LINEAR);
+            Assert.That(typesOf(straight), Is.EqualTo(new PathType?[] { PathType.LINEAR, null, null, null }));
+
+            var bezier = pathOf(PathType.LINEAR, null, null);
+            insertAt(bezier, 1, PathType.BEZIER);
+            Assert.That(typesOf(bezier), Is.EqualTo(new PathType?[] { PathType.BEZIER, null, null, null }));
+
+            var catmull = pathOf(PathType.LINEAR, null, null);
+            insertAt(catmull, 1, PathType.CATMULL);
+            Assert.That(typesOf(catmull), Is.EqualTo(new PathType?[] { PathType.CATMULL, null, null, null }));
+        }
+
+        /// <summary>
+        /// Only the part the anchor landed in is shaped. Whatever the user divided the path into stays divided the
+        /// same way, and the parts either side keep their own shapes.
+        /// </summary>
+        [Test]
+        public void TestTheOtherPartsOfThePathAreLeftAlone()
+        {
+            var points = pathOf(PathType.LINEAR, null, PathType.BEZIER, PathType.CATMULL, null);
+
+            insertAt(points, 3, PathType.PERFECT_CURVE);
 
             Assert.That(typesOf(points), Is.EqualTo(new PathType?[]
             {
-                PathType.PERFECT_CURVE, null, PathType.LINEAR, null, null
+                PathType.LINEAR, null, PathType.PERFECT_CURVE, null, PathType.CATMULL, null
             }));
         }
 
         /// <summary>
-        /// A bezier the user shaped on purpose is left alone.
+        /// Adding an anchor never divides the path: the anchor itself carries no type, and no other anchor gains one.
         /// </summary>
         [Test]
-        public void TestBezierIsUntouched()
+        public void TestNothingIsSplit()
         {
-            var points = pathOf((PathType.BEZIER, true), (null, false), (null, false), (null, false));
+            var points = pathOf(PathType.BEZIER, null, null, null);
 
-            insertAt(points, 2);
+            insertAt(points, 2, PathType.PERFECT_CURVE);
 
-            Assert.That(typesOf(points), Is.EqualTo(new PathType?[] { PathType.BEZIER, null, null, null, null }));
+            Assert.That(points[2].Type, Is.Null, "the anchor that was added");
+            Assert.That(points.Count(p => p.Type != null), Is.EqualTo(1), "anchors dividing the path");
         }
 
-        /// <summary>
-        /// An existing arc is left alone, and degrades to bezier through the usual validation instead.
-        /// </summary>
-        [Test]
-        public void TestArcIsUntouched()
-        {
-            var points = pathOf((PathType.PERFECT_CURVE, true), (null, false), (null, false));
+        private static List<PathControlPoint> pathOf(params PathType?[] types) =>
+            types.Select((type, i) => new PathControlPoint(new Vector2(i * 50, 0), type)).ToList();
 
-            insertAt(points, 2);
-
-            Assert.That(typesOf(points), Is.EqualTo(new PathType?[] { PathType.PERFECT_CURVE, null, null, null }));
-        }
-
-        /// <summary>
-        /// Only the segment being added to changes; a later segment keeps its own type.
-        /// </summary>
-        [Test]
-        public void TestLaterSegmentIsUntouched()
-        {
-            var points = pathOf((PathType.LINEAR, true), (null, false), (PathType.BEZIER, false), (null, false));
-
-            insertAt(points, 1);
-
-            // the arc takes the first three points; the anchor closing it resumes the straight run into the bezier,
-            // which still starts where it did.
-            Assert.That(typesOf(points), Is.EqualTo(new PathType?[]
-            {
-                PathType.PERFECT_CURVE, null, PathType.LINEAR, PathType.BEZIER, null
-            }));
-        }
-
-        /// <summary>
-        /// Every arc produced must have the three points an arc is allowed, or it silently becomes a bezier.
-        /// </summary>
-        [Test]
-        public void TestProducedArcsAreThreePointsLong()
-        {
-            var points = pathOf((PathType.LINEAR, true), (null, false), (null, false), (null, false));
-
-            insertAt(points, 2);
-
-            Assert.That(segmentLengthStartingAt(points, PathType.PERFECT_CURVE), Is.EqualTo(3));
-        }
-
-        private static List<PathControlPoint> pathOf(params (PathType? type, bool _)[] entries) =>
-            entries.Select((e, i) => new PathControlPoint(new Vector2(i * 50, 0), e.type)).ToList();
-
-        private static void insertAt(List<PathControlPoint> points, int index)
+        private static void insertAt(List<PathControlPoint> points, int index, PathType type)
         {
             points.Insert(index, new PathControlPoint(new Vector2(index * 50 - 25, 25)));
-            SliderAnchorInsertion.MakeArcAroundInsertion(points, index);
+            SliderAnchorInsertion.ShapeAroundInsertion(points, index, type);
         }
 
         private static PathType?[] typesOf(IEnumerable<PathControlPoint> points) => points.Select(p => p.Type).ToArray();
-
-        /// <summary>
-        /// Length of the segment beginning at the first point of the given type, counting the point that closes it.
-        /// </summary>
-        private static int segmentLengthStartingAt(List<PathControlPoint> points, PathType type)
-        {
-            int start = points.FindIndex(p => p.Type == type);
-
-            if (start < 0)
-                return 0;
-
-            for (int i = start + 1; i < points.Count; i++)
-            {
-                if (points[i].Type != null)
-                    return i - start + 1;
-            }
-
-            return points.Count - start;
-        }
     }
 }

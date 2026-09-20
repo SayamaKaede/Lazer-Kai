@@ -740,14 +740,61 @@ namespace osu.Game.Localisation
         public static LocalisableString LoopPlayback => new TranslatableString(getKey(@"loop_playback"), @"Loop playback");
 
         /// <summary>
-        /// "New slider anchors make a perfect curve"
+        /// "Shape sliders the way stable does"
         /// </summary>
-        public static LocalisableString ArcOnAnchorAdd => new TranslatableString(getKey(@"arc_on_anchor_add"), @"New slider anchors make a perfect curve");
+        public static LocalisableString StableSliderControls => new TranslatableString(getKey(@"stable_slider_controls"), @"Shape sliders the way stable does");
 
         /// <summary>
-        /// "Closer to how stable handles them."
+        /// "An anchor added with ctrl+click shapes the part of the path it lands in, without splitting it, and ctrl+clicking an anchor changes the shape leading up to it rather than the shape after it."
         /// </summary>
-        public static LocalisableString ArcOnAnchorAddDescription => new TranslatableString(getKey(@"arc_on_anchor_add_description"), @"Closer to how stable handles them.");
+        public static LocalisableString StableSliderControlsDescription => new TranslatableString(getKey(@"stable_slider_controls_description"),
+            @"An anchor added with ctrl+click shapes the part of the path it lands in, without splitting it, and ctrl+clicking an anchor changes the shape leading up to it rather than the shape after it.");
+
+        /// <summary>
+        /// "Shape a new anchor makes"
+        /// </summary>
+        public static LocalisableString AnchorAddType => new TranslatableString(getKey(@"anchor_add_type"), @"Shape a new anchor makes");
+
+        /// <summary>
+        /// "Ctrl+1 to ctrl+4 switch between these while editing."
+        /// </summary>
+        public static LocalisableString AnchorAddTypeDescription => new TranslatableString(getKey(@"anchor_add_type_description"), @"Ctrl+1 to ctrl+4 switch between these while editing.");
+
+        /// <summary>
+        /// "Straight"
+        /// </summary>
+        public static LocalisableString AnchorTypeLinear => new TranslatableString(getKey(@"anchor_type_linear"), @"Straight");
+
+        /// <summary>
+        /// "Bezier"
+        /// </summary>
+        public static LocalisableString AnchorTypeBezier => new TranslatableString(getKey(@"anchor_type_bezier"), @"Bezier");
+
+        /// <summary>
+        /// "Perfect curve"
+        /// </summary>
+        public static LocalisableString AnchorTypePerfectCurve => new TranslatableString(getKey(@"anchor_type_perfect_curve"), @"Perfect curve");
+
+        /// <summary>
+        /// "Catmull (old beatmaps)"
+        /// </summary>
+        public static LocalisableString AnchorTypeCatmull => new TranslatableString(getKey(@"anchor_type_catmull"), @"Catmull (old beatmaps)");
+
+        /// <summary>
+        /// "New anchors: {0}"
+        /// </summary>
+        public static LocalisableString AnchorAddTypeChanged(LocalisableString type) => new TranslatableString(getKey(@"anchor_add_type_changed"), @"New anchors: {0}", type);
+
+        /// <summary>
+        /// "Allow objects outside the play area"
+        /// </summary>
+        public static LocalisableString AllowOutsidePlayArea => new TranslatableString(getKey(@"allow_outside_play_area"), @"Allow objects outside the play area");
+
+        /// <summary>
+        /// "A selection can be moved and scaled past the edges. While off, it is pushed back inside after every drag, which leaves a selection that already reaches outside impossible to move."
+        /// </summary>
+        public static LocalisableString AllowOutsidePlayAreaDescription => new TranslatableString(getKey(@"allow_outside_play_area_description"),
+            @"A selection can be moved and scaled past the edges. While off, it is pushed back inside after every drag, which leaves a selection that already reaches outside impossible to move.");
 
         /// <summary>
         /// "Automatic backups"
@@ -783,11 +830,6 @@ namespace osu.Game.Localisation
         /// "How long an object stays selectable after it passes"
         /// </summary>
         public static LocalisableString SelectableAfterEndTime => new TranslatableString(getKey(@"selectable_after_end_time"), @"How long an object stays selectable after it passes");
-
-        /// <summary>
-        /// "Ctrl+click a slider anchor to cycle its curve type"
-        /// </summary>
-        public static LocalisableString CtrlClickCyclesCurveType => new TranslatableString(getKey(@"ctrl_click_cycles_curve_type"), @"Ctrl+click a slider anchor to cycle its curve type");
 
         /// <summary>
         /// "Swap right click and the wheel button"
@@ -1472,11 +1514,6 @@ namespace osu.Game.Localisation
         /// "Turn it off if placing a slider keeps drawing one by accident."
         /// </summary>
         public static LocalisableString FreehandSliderPlacementDescription => new TranslatableString(getKey(@"freehand_slider_placement_description"), @"Turn it off if placing a slider keeps drawing one by accident.");
-
-        /// <summary>
-        /// "Ctrl-clicking what stable calls a white anchor turns it red."
-        /// </summary>
-        public static LocalisableString CtrlClickCyclesCurveTypeDescription => new TranslatableString(getKey(@"ctrl_click_cycles_curve_type_description"), @"Ctrl-clicking what stable calls a white anchor turns it red.");
 
         /// <summary>
         /// "Show nightcore cymbals"

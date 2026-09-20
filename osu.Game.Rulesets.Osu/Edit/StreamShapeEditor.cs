@@ -42,7 +42,8 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         private readonly Bindable<Slider?> shape = new Bindable<Slider?>();
 
-        private readonly Bindable<bool> arcOnAnchorAdd = new Bindable<bool>();
+        private readonly Bindable<bool> stableSliderControls = new Bindable<bool>();
+        private readonly Bindable<SliderAnchorType> anchorType = new Bindable<SliderAnchorType>();
 
         private PathControlPointVisualiser<Slider>? visualiser;
 
@@ -56,7 +57,8 @@ namespace osu.Game.Rulesets.Osu.Edit
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
-            config.BindWith(OsuSetting.EditorArcOnAnchorAdd, arcOnAnchorAdd);
+            config.BindWith(OsuSetting.EditorStableSliderControls, stableSliderControls);
+            config.BindWith(OsuSetting.EditorSliderAnchorType, anchorType);
         }
 
         protected override void LoadComplete()
@@ -154,8 +156,8 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             controlPoints.Insert(insertionIndex, anchor);
 
-            if (arcOnAnchorAdd.Value)
-                SliderAnchorInsertion.MakeArcAroundInsertion(controlPoints, insertionIndex);
+            if (stableSliderControls.Value)
+                SliderAnchorInsertion.ShapeAroundInsertion(controlPoints, insertionIndex, anchorType.Value.ToPathType());
 
             visualiser?.EnsureValidPathTypes();
 

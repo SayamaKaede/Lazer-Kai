@@ -3,7 +3,9 @@
 
 using NUnit.Framework;
 using osu.Framework.Utils;
+using osu.Framework.Allocation;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
@@ -24,10 +26,17 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         private DrawableSlider drawableObject = null!;
         private TestSliderBlueprint blueprint = null!;
 
+        [Resolved]
+        private OsuConfigManager config { get; set; } = null!;
+
         [SetUp]
         public void Setup() => Schedule(() =>
         {
             Clear();
+
+            // ctrl+click adds to the selection here, which is what this test is about. The fork's stable shaping puts
+            // ctrl+click to another use, so it is turned off rather than left to whatever the default is.
+            config.SetValue(OsuSetting.EditorStableSliderControls, false);
 
             slider = new Slider
             {

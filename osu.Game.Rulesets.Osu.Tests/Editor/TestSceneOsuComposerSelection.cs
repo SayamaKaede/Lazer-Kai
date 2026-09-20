@@ -6,9 +6,11 @@ using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.UserInterface;
+using osu.Framework.Allocation;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Edit.Blueprints.HitCircles.Components;
@@ -26,6 +28,17 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
     public partial class TestSceneOsuComposerSelection : TestSceneOsuEditor
     {
         protected override IBeatmap CreateBeatmap(RulesetInfo ruleset) => new TestBeatmap(ruleset, false);
+
+        [Resolved]
+        private OsuConfigManager config { get; set; }
+
+        [SetUpSteps]
+        public void LeaveCtrlClickToTheSelection()
+        {
+            // ctrl+click adds to the selection here, which is what this test is about. The fork's stable shaping puts
+            // ctrl+click to another use, so it is turned off rather than left to whatever the default is.
+            AddStep("leave ctrl+click to the selection", () => config.SetValue(OsuSetting.EditorStableSliderControls, false));
+        }
 
         [Test]
         public void TestSelectAfterFadedOut()
