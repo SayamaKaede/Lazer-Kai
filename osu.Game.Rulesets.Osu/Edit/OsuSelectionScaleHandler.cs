@@ -275,12 +275,12 @@ namespace osu.Game.Rulesets.Osu.Edit
                 {
                     case Axes.X:
                         (sLowerBound, sUpperBound) = computeBounds(lowerBounds - b, upperBounds - b, a);
-                        s.X = Math.Clamp(s.X, sLowerBound, sUpperBound);
+                        s.X = clampWithin(s.X, sLowerBound, sUpperBound);
                         break;
 
                     case Axes.Y:
                         (sLowerBound, sUpperBound) = computeBounds(lowerBounds - a, upperBounds - a, b);
-                        s.Y = Math.Clamp(s.Y, sLowerBound, sUpperBound);
+                        s.Y = clampWithin(s.Y, sLowerBound, sUpperBound);
                         break;
 
                     case Axes.Both:
@@ -288,16 +288,25 @@ namespace osu.Game.Rulesets.Osu.Edit
                         // Therefore the ratio s.X / s.Y will be maintained
                         (sLowerBound, sUpperBound) = computeBounds(lowerBounds, upperBounds, a * s.X + b * s.Y);
                         s.X = s.X < 0
-                            ? Math.Clamp(s.X, s.X * sUpperBound, s.X * sLowerBound)
-                            : Math.Clamp(s.X, s.X * sLowerBound, s.X * sUpperBound);
+                            ? clampWithin(s.X, s.X * sUpperBound, s.X * sLowerBound)
+                            : clampWithin(s.X, s.X * sLowerBound, s.X * sUpperBound);
                         s.Y = s.Y < 0
-                            ? Math.Clamp(s.Y, s.Y * sUpperBound, s.Y * sLowerBound)
-                            : Math.Clamp(s.Y, s.Y * sLowerBound, s.Y * sUpperBound);
+                            ? clampWithin(s.Y, s.Y * sUpperBound, s.Y * sLowerBound)
+                            : clampWithin(s.Y, s.Y * sLowerBound, s.Y * sUpperBound);
                         break;
                 }
 
                 return s;
             }
+
+            // A selection's box takes in the slider anchors as well, so it reaches outside the play area as soon as an
+            // anchor does. With the point outside on one axis and the origin outside on the other, no scale brings the
+            // point back inside: the two axes ask for ranges with nothing in common, and the bounds come out the wrong
+            // way round. Nothing can be honoured there, so the scale is left as asked for -- the selection is moved
+            // back in bounds afterwards anyway -- rather than handing Math.Clamp bounds it throws on, which killed the
+            // editor on the first frame of the drag.
+            static float clampWithin(float value, float lowerBound, float upperBound) =>
+                lowerBound > upperBound ? value : Math.Clamp(value, lowerBound, upperBound);
 
             // Computes the bounds for the magnitude of the scaled point p with respect to the bounds lowerBounds and upperBounds
             (float, float) computeBounds(Vector2 lowerBounds, Vector2 upperBounds, Vector2 p)
