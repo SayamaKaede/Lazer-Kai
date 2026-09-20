@@ -85,6 +85,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:convert_to_stream"] = @"連打に変換",
             [$@"{editor_prefix}:stream_count"] = @"数",
             [$@"{editor_prefix}:stream_extended_limits"] = @"16個より多く置けるようにする",
+            [$@"{editor_prefix}:stream_snap_spacing"] = @"スペーシングをティックに合わせる",
+            [$@"{editor_prefix}:stream_snap_spacing_description"] = @"形の終わりを、ディスタンススナップの目盛りの整数倍に合わせます。譜面全体でスペーシングをそろえたいときに使います。オフにすると、終わりを自由に置けます。",
             [$@"{editor_prefix}:stream_new_combo_every"] = @"New Comboの間隔",
             [$@"{editor_prefix}:stream_new_combo_none"] = @"無し",
             [$@"{editor_prefix}:stream_acceleration"] = @"加速",

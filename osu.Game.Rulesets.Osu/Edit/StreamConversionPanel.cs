@@ -24,7 +24,9 @@ using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Input.Bindings;
 using osu.Game.Localisation;
 using osu.Game.Overlays;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Edit;
+using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Compose.Components;
@@ -100,6 +102,39 @@ namespace osu.Game.Rulesets.Osu.Edit
         /// </summary>
         public readonly BindableInt NewComboEvery = new BindableInt { MinValue = 0, MaxValue = 16, Precision = 1 };
 
+        /// <summary>
+        /// Whether the shape's own end is dragged to whole distance snap ticks.
+        /// </summary>
+        /// <remarks>
+        /// The last stretch's spacing is its share of the path divided by the circles in it, so where the shape's end
+        /// is put is what sets it. Snapping keeps that spacing the same as everywhere else in the beatmap; without it
+        /// the end goes where it is put, which is the only way to set a spacing between two ticks.
+        ///
+        /// It is only about that end, so it is shown while the last stretch is the one being looked at. The stretches
+        /// before it end on corners, which go where they are dragged either way.
+        /// </remarks>
+        public readonly BindableBool SnapSpacing = new BindableBool(true);
+
+        /// <summary>What each stretch has been told about that, in the same order as <see cref="stretches"/>.</summary>
+        private readonly List<bool> snapSpacingOfStretches = new List<bool>();
+
+        private FormCheckBox snapSpacingCheckBox = null!;
+
+        /// <summary>What a stream of one stretch was last told, which the next one starts out with.</summary>
+        private Bindable<bool> snapSpacingWhenWhole = null!;
+
+        /// <summary>
+        /// And what the last stretch of a shape with corners was last told, which is remembered apart from it.
+        /// </summary>
+        /// <remarks>
+        /// A shape being shaped into corners is being placed by hand, and a shape left as it was drawn is being laid
+        /// along the ticks. Sharing one memory between them meant every corner added undid the answer to the other.
+        /// </remarks>
+        private Bindable<bool> snapSpacingWhenLastOfSeveral = null!;
+
+        /// <summary>Which of the two the shape as it stands is remembered in.</summary>
+        private Bindable<bool> snapSpacingRemembered => stretches.Count > 1 ? snapSpacingWhenLastOfSeveral : snapSpacingWhenWhole;
+
         private readonly BindableFloat acceleration = new BindableFloat(1) { MinValue = 0.25f, MaxValue = 4, Precision = 0.05f };
         private readonly Bindable<StreamEasing> easing = new Bindable<StreamEasing>();
         private readonly BindableFloat zigzag = new BindableFloat { MinValue = 0, MaxValue = 60, Precision = 1 };
@@ -165,9 +200,14 @@ namespace osu.Game.Rulesets.Osu.Edit
         protected override bool StartHidden => true;
 
         [BackgroundDependencyLoader]
-        private void load(AudioManager audio)
+        private void load(AudioManager audio, OsuConfigManager config)
         {
             preview = new StreamPreview(editorBeatmap, composer);
+
+            // a new stretch starts out however the last one was left, which is remembered between runs and sessions.
+            snapSpacingWhenWhole = config.GetBindable<bool>(OsuSetting.EditorStreamSnapSpacingWhole);
+            snapSpacingWhenLastOfSeveral = config.GetBindable<bool>(OsuSetting.EditorStreamSnapSpacingLastOfSeveral);
+            SnapSpacing.Value = snapSpacingWhenWhole.Value;
 
             RelativeSizeAxes = Axes.Both;
 
@@ -255,6 +295,12 @@ namespace osu.Game.Rulesets.Osu.Edit
                                         Selector = new StreamStretchSelector(),
                                         new FormSliderBar<int> { Caption = EditorStrings.StreamCount, Current = NoteCount, TabbableContentContainer = this },
                                         new FormCheckBox { Caption = EditorStrings.StreamExtendedLimits, Current = ExtendedLimits },
+                                        snapSpacingCheckBox = new FormCheckBox
+                                        {
+                                            Caption = EditorStrings.StreamSnapSpacing,
+                                            HintText = EditorStrings.StreamSnapSpacingDescription,
+                                            Current = SnapSpacing,
+                                        },
                                         new FormSliderBar<int>
                                         {
                                             Caption = EditorStrings.StreamNewComboEvery,
@@ -313,6 +359,7 @@ namespace osu.Game.Rulesets.Osu.Edit
                 NoteCount.MaxValue = limit(NoteCount.Value);
             });
             NoteCount.BindValueChanged(_ => takeFromControls());
+            SnapSpacing.BindValueChanged(_ => takeFromControls());
             NewComboEvery.BindValueChanged(_ => Scheduler.AddOnce(rebuild));
             acceleration.BindValueChanged(_ => takeFromControls());
             easing.BindValueChanged(_ => takeFromControls());
@@ -427,6 +474,9 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             stretches.Clear();
             stretches.AddRange(sharesOfTheDivision().Select(share => new StreamConversion.Stretch(share)));
+
+            snapSpacingOfStretches.Clear();
+            snapSpacingOfStretches.AddRange(Enumerable.Repeat(snapSpacingRemembered.Value, stretches.Count));
 
             Selector.Count.Value = stretches.Count;
             Selector.Current.Value = Math.Min(Selector.Current.Value, stretches.Count - 1);
@@ -545,9 +595,13 @@ namespace osu.Game.Rulesets.Osu.Edit
                 return;
 
             int wanted = StreamConversion.CornersOf(source).Count + 1;
+            bool wasOfSeveral = stretches.Count > 1;
 
             while (stretches.Count > wanted)
+            {
                 stretches.RemoveAt(stretches.Count - 1);
+                snapSpacingOfStretches.RemoveAt(snapSpacingOfStretches.Count - 1);
+            }
 
             if (stretches.Count < wanted)
             {
@@ -556,11 +610,34 @@ namespace osu.Game.Rulesets.Osu.Edit
                 var shares = sharesOfTheDivision();
 
                 while (stretches.Count < wanted)
+                {
                     stretches.Add(new StreamConversion.Stretch(shares[stretches.Count]));
+                    snapSpacingOfStretches.Add(true);
+                }
+            }
+
+            // the first corner turns a whole shape into one with an end of its own to place, and taking it away turns
+            // it back. Either way the end takes the answer remembered for the shape it is now.
+            if (stretches.Count > 0 && wasOfSeveral != stretches.Count > 1)
+            {
+                snapSpacingOfStretches[^1] = snapSpacingRemembered.Value;
+                showStretch();
             }
 
             Selector.Count.Value = wanted;
         }
+
+        /// <summary>
+        /// Whether the shape's own end is dragged to whole distance snap ticks, which is what the last stretch has
+        /// been told: that end is where the last stretch stops.
+        /// </summary>
+        /// <param name="hitObject">The slider whose end is being dragged. Anything but the one being converted
+        /// snaps as it always has.</param>
+        public bool SnapsTheEndOf(HitObject hitObject) =>
+            !changing
+            || !ReferenceEquals(source, hitObject)
+            || snapSpacingOfStretches.Count == 0
+            || snapSpacingOfStretches[^1];
 
         /// <summary>
         /// The most circles a stretch may hold: what is asked for, but never fewer than the division itself fits.
@@ -580,6 +657,12 @@ namespace osu.Game.Rulesets.Osu.Edit
             // the top of the bar before what it holds, or the value would be clamped on the way in.
             NoteCount.MaxValue = limit(stretch.Count);
             NoteCount.Value = stretch.Count;
+            SnapSpacing.Value = snapSpacingOfStretches[Selector.Current.Value];
+
+            // only the last stretch ends on the shape's own end, which is the end this is about. A stretch before it
+            // ends on a corner, and a corner goes where it is dragged either way.
+            snapSpacingCheckBox.Alpha = Selector.Current.Value == stretches.Count - 1 ? 1 : 0;
+
             acceleration.Value = (float)stretch.Acceleration;
             easing.Value = stretch.Easing;
             zigzag.Value = stretch.Zigzag;
@@ -594,6 +677,13 @@ namespace osu.Game.Rulesets.Osu.Edit
         {
             if (showing || Selector.Current.Value >= stretches.Count)
                 return;
+
+            snapSpacingOfStretches[Selector.Current.Value] = SnapSpacing.Value;
+
+            // what the next shape of this kind starts out with. Only the last stretch's answer is worth remembering,
+            // since it is the only one the setting is about.
+            if (Selector.Current.Value == stretches.Count - 1)
+                snapSpacingRemembered.Value = SnapSpacing.Value;
 
             stretches[Selector.Current.Value] = new StreamConversion.Stretch(NoteCount.Value)
             {

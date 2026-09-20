@@ -9,6 +9,7 @@ using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
 using osu.Game.Rulesets;
@@ -237,6 +238,11 @@ namespace osu.Game.Tests.Visual.Editing
             AddStep("put a point down", () => editor().Points.Add(new Vector2(0.3f, 0.3f)));
 
             AddUntilStep("its handle is there", () => editor().ChildrenOfType<CircularContainer>().Any(), () => Is.True);
+
+            // the settings scroll, and the panel has grown enough that the curve is below the fold in a window this
+            // size. A handle that is scrolled out of sight is not one the pointer can reach.
+            AddStep("scroll the curve into view", () => panel().ChildrenOfType<OsuScrollContainer>().First().ScrollIntoView(editor()));
+            AddWaitStep("let the scroll finish", 10);
 
             AddStep("take hold of it", () =>
             {

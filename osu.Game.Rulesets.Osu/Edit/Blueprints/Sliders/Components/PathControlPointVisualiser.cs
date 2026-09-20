@@ -586,7 +586,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
             }
 
             // Snap the path to the current beat divisor before checking length validity.
-            hitObject.SnapTo(distanceSnapProvider);
+            snapLength();
 
             if (!hitObject.Path.HasValidLengthForPlacement)
             {
@@ -596,7 +596,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
                 hitObject.Position = oldPosition;
                 hitObject.StartTime = oldStartTime;
                 // Snap the path length again to undo the invalid length.
-                hitObject.SnapTo(distanceSnapProvider);
+                snapLength();
                 return;
             }
 
@@ -605,6 +605,28 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
                 hitObject.Path.ControlPoints[i].Type = dragPathTypes[i];
 
             EnsureValidPathTypes();
+        }
+
+        /// <summary>
+        /// Puts the path's length back on the beat divisor, unless the shape being dragged is a stream whose last
+        /// stretch takes its spacing from where its end is put. See StreamConversionPanel's snap setting.
+        /// </summary>
+        /// <remarks>
+        /// Called for whatever changes the shape rather than only for a drag: the length is worked out from the path,
+        /// so taking an anchor out of it leaves the old length behind.
+        /// </remarks>
+        public void RestoreLength() => snapLength();
+
+        private void snapLength()
+        {
+            if (streamConversionPanel?.SnapsTheEndOf(hitObject) == false)
+            {
+                // as long as it is drawn, so that dragging the last anchor sets the spacing rather than stepping it.
+                hitObject.Path.ExpectedDistance.Value = hitObject.Path.CalculatedDistance;
+                return;
+            }
+
+            hitObject.SnapTo(distanceSnapProvider);
         }
 
         public void DragEnded()

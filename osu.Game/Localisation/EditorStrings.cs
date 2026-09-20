@@ -586,6 +586,17 @@ namespace osu.Game.Localisation
         public static LocalisableString StreamExtendedLimits => new TranslatableString(getKey(@"stream_extended_limits"), @"Allow more than 16");
 
         /// <summary>
+        /// "Snap spacing to ticks"
+        /// </summary>
+        public static LocalisableString StreamSnapSpacing => new TranslatableString(getKey(@"stream_snap_spacing"), @"Snap spacing to ticks");
+
+        /// <summary>
+        /// "The end of the shape goes to a whole number of distance snap ticks, which keeps spacing the same across the beatmap. Turn it off to place the end freely."
+        /// </summary>
+        public static LocalisableString StreamSnapSpacingDescription => new TranslatableString(getKey(@"stream_snap_spacing_description"),
+            @"The end of the shape goes to a whole number of distance snap ticks, which keeps spacing the same across the beatmap. Turn it off to place the end freely.");
+
+        /// <summary>
         /// "New combo every"
         /// </summary>
         public static LocalisableString StreamNewComboEvery => new TranslatableString(getKey(@"stream_new_combo_every"), @"New combo every");

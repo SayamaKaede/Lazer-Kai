@@ -353,6 +353,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSliderEndDragMarkerColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerScale, 1f, 0.5f, 2f, 0.01f);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerOpacity, 1f, 0.1f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorStreamSnapSpacingWhole, true);
+            SetDefault(OsuSetting.EditorStreamSnapSpacingLastOfSeveral, false);
             SetDefault(OsuSetting.EditorAutoGenerateBreaks, true);
             SetDefault(OsuSetting.EditorAutoNewCombo, false);
             SetDefault(OsuSetting.EditorAutoNewComboInterval, AutoNewComboInterval.OneBar);
