@@ -148,6 +148,9 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             result ??= composer?.TrySnapToDistanceGrid(screenSpacePosition, limitedDistanceSnap.Value && editorClock != null ? editorClock.CurrentTime : null);
             if (composer?.TrySnapToPositionGrid(result?.ScreenSpacePosition ?? screenSpacePosition, result?.Time ?? fallbackTime) is SnapResult gridSnapResult)
                 result = gridSnapResult;
+
+            bool snapped = result != null;
+
             result ??= new SnapResult(screenSpacePosition, fallbackTime);
 
             base.UpdateTimeAndPosition(result.ScreenSpacePosition, result.Time ?? fallbackTime);
@@ -158,7 +161,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
                     BeginPlacement();
 
                     HitObject.SliderVelocityMultiplier = sliderVelocityToolbox?.SliderVelocity.Value ?? 1;
-                    HitObject.Position = ToLocalSpace(result.ScreenSpacePosition);
+                    HitObject.Position = roundIfAsked(ToLocalSpace(result.ScreenSpacePosition), snapped);
 
                     // Replacing the DifficultyControlPoint above doesn't trigger any kind of invalidation.
                     // Without re-applying defaults, velocity won't be updated.
@@ -444,8 +447,16 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
 
             result ??= composer?.TrySnapToPositionGrid(mousePosition);
 
-            return ToLocalSpace(result?.ScreenSpacePosition ?? inputManager.CurrentState.Mouse.Position) - HitObject.Position;
+            return roundIfAsked(ToLocalSpace(result?.ScreenSpacePosition ?? inputManager.CurrentState.Mouse.Position), snapped: result != null) - HitObject.Position;
         }
+
+        /// <summary>
+        /// The point as the beatmap should hold it. Rounded before the head is taken off it, so that both the head
+        /// and the anchors past it land on whole coordinates -- unless a snap decided the point, which is already
+        /// the one asked for.
+        /// </summary>
+        private Vector2 roundIfAsked(Vector2 position, bool snapped) =>
+            snapped ? position : composer?.RoundPositionIfAsked(position) ?? position;
 
         /// <summary>
         /// Whether a new control point can be placed at the current mouse position.

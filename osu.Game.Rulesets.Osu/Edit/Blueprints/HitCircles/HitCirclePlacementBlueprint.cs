@@ -70,10 +70,16 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.HitCircles
             result ??= composer?.TrySnapToDistanceGrid(screenSpacePosition, limitedDistanceSnap.Value && editorClock != null ? editorClock.CurrentTime : null);
             if (composer?.TrySnapToPositionGrid(result?.ScreenSpacePosition ?? screenSpacePosition, result?.Time ?? fallbackTime) is SnapResult gridSnapResult)
                 result = gridSnapResult;
+
+            // a position a snap decided is already the one asked for, and is not rounded off it afterwards.
+            bool snapped = result != null;
+
             result ??= new SnapResult(screenSpacePosition, fallbackTime);
 
             base.UpdateTimeAndPosition(result.ScreenSpacePosition, result.Time ?? fallbackTime);
-            HitObject.Position = ToLocalSpace(result.ScreenSpacePosition);
+
+            Vector2 position = ToLocalSpace(result.ScreenSpacePosition);
+            HitObject.Position = snapped ? position : composer?.RoundPositionIfAsked(position) ?? position;
             return result;
         }
     }

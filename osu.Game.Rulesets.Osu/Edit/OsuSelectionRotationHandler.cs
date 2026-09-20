@@ -22,6 +22,9 @@ namespace osu.Game.Rulesets.Osu.Edit
         [Resolved]
         private IEditorChangeHandler? changeHandler { get; set; }
 
+        [Resolved(CanBeNull = true)]
+        private OsuHitObjectComposer? composer { get; set; }
+
         private BindableList<HitObject> selectedItems { get; } = new BindableList<HitObject>();
 
         [BackgroundDependencyLoader]
@@ -96,6 +99,14 @@ namespace osu.Game.Rulesets.Osu.Edit
         {
             if (!OperationInProgress.Value)
                 throw new InvalidOperationException($"Cannot {nameof(Commit)} a rotate operation without calling {nameof(Begin)} first!");
+
+            // once the turn is settled rather than while it is being dragged, so the objects do not step between
+            // whole coordinates on the way round.
+            if (composer != null && objectsInRotation != null)
+            {
+                foreach (var h in objectsInRotation)
+                    h.Position = composer.RoundPositionIfAsked(h.Position);
+            }
 
             changeHandler?.EndChange();
 

@@ -45,6 +45,9 @@ namespace osu.Game.Rulesets.Osu.Edit
         [Resolved(CanBeNull = true)]
         private IDistanceSnapProvider? snapProvider { get; set; }
 
+        [Resolved(CanBeNull = true)]
+        private OsuHitObjectComposer? composer { get; set; }
+
         private BindableList<HitObject> selectedItems { get; } = new BindableList<HitObject>();
 
         private readonly Bindable<bool> allowOutsidePlayArea = new Bindable<bool>();
@@ -142,6 +145,14 @@ namespace osu.Game.Rulesets.Osu.Edit
         {
             if (!OperationInProgress.Value)
                 throw new InvalidOperationException($"Cannot {nameof(Commit)} a rotate operation without calling {nameof(Begin)} first!");
+
+            // once the scale is settled rather than while it is being dragged, so the objects do not step between
+            // whole coordinates on the way.
+            if (composer != null && objectsInScale != null)
+            {
+                foreach (var (h, _) in objectsInScale)
+                    h.Position = composer.RoundPositionIfAsked(h.Position);
+            }
 
             changeHandler?.EndChange();
 

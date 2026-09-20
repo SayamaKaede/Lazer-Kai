@@ -3,8 +3,10 @@
 
 using System.Linq;
 using NUnit.Framework;
+using osu.Framework.Allocation;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Tests.Beatmaps;
@@ -21,6 +23,23 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         protected override IBeatmap CreateBeatmap(RulesetInfo ruleset) => new TestBeatmap(ruleset);
 
         private Vector2[] positionsBefore = null!;
+
+        [Resolved]
+        private OsuConfigManager config { get; set; } = null!;
+
+        [SetUpSteps]
+        public void LetPositionsCarryAFraction()
+        {
+            // a notch turns the selection by a degree, which moves a nearby object by a fraction of a pixel. Objects
+            // held to whole coordinates cannot hold a turn that small, so the angles below would come out lumpy.
+            AddStep("let positions carry a fraction", () => config.SetValue(OsuSetting.EditorIntegerPositions, false));
+        }
+
+        [TearDownSteps]
+        public void PutTheSettingBack()
+        {
+            AddStep("back to whole coordinates", () => config.SetValue(OsuSetting.EditorIntegerPositions, true));
+        }
 
         [Test]
         public void TestSelectionTurnsOneStepPerNotch()

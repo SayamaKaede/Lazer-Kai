@@ -134,12 +134,37 @@ namespace osu.Game.Rulesets.Osu.Edit
             result ??= Composer.TrySnapToDistanceGrid(movePosition, limitedDistanceSnap.Value ? referenceBlueprint.Item.StartTime : null);
             if (Composer.TrySnapToPositionGrid(result?.ScreenSpacePosition ?? movePosition, result?.Time) is SnapResult gridSnapResult)
                 result = gridSnapResult;
+
+            // a position a snap decided is already the one asked for, and is not rounded afterwards.
+            snapped = result != null;
             result ??= new SnapResult(movePosition, null);
 
             bool moved = SelectionHandler.HandleMovement(new MoveSelectionEvent<HitObject>(referenceBlueprint, result.ScreenSpacePosition - referenceBlueprint.ScreenSpaceSelectionPoint));
             if (moved)
                 ApplySnapResultTime(result, referenceBlueprint.Item.StartTime);
             return moved;
+        }
+
+        protected override void DragOperationCompleted()
+        {
+            base.DragOperationCompleted();
+
+            // while the change this drag made is still open, so undo takes it with the rest of the drag.
+            if (SelectionHandler is OsuSelectionHandler osuSelectionHandler)
+                osuSelectionHandler.RoundPositionsIfAsked();
+        }
+
+        /// <summary>
+        /// Tells the selection handler whether a snap decided where the movement it is about to handle lands, so that
+        /// a position asked for by a snap is not rounded off it afterwards.
+        /// </summary>
+        private bool snapped
+        {
+            set
+            {
+                if (SelectionHandler is OsuSelectionHandler osuSelectionHandler)
+                    osuSelectionHandler.MovementCameFromSnap = value;
+            }
         }
 
         /// <summary>
@@ -163,6 +188,8 @@ namespace osu.Game.Rulesets.Osu.Edit
                 if (positionalResult == null || positionalResult.ScreenSpacePosition == testPosition) continue;
 
                 var delta = positionalResult.ScreenSpacePosition - currentPositions[i];
+
+                snapped = true;
 
                 // attempt to move the objects, and apply any time based snapping if we can.
                 if (SelectionHandler.HandleMovement(new MoveSelectionEvent<HitObject>(blueprint, delta)))

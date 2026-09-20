@@ -32,6 +32,45 @@ namespace osu.Game.Rulesets.Osu.Edit
         [Resolved]
         private OsuGridToolboxGroup gridToolbox { get; set; } = null!;
 
+        [Resolved(CanBeNull = true)]
+        private OsuHitObjectComposer? composer { get; set; }
+
+        /// <summary>
+        /// Whether a snap decided where the last movement landed, in which case the position is already the one
+        /// asked for and nothing is rounded off it.
+        /// </summary>
+        internal bool MovementCameFromSnap { get; set; }
+
+        /// <summary>
+        /// Puts the selection on whole coordinates once a drag is over, as one piece.
+        /// </summary>
+        /// <remarks>
+        /// Not while the drag is happening: a position rounded every frame is pulled off whatever the snap had just
+        /// put it on, the snap takes hold again on the next frame, and a circle held on a slider's end shakes
+        /// between the two. Rounding each object on its own also pulls a pattern apart, since each moves by its own
+        /// fraction, so the whole selection is moved by what the first object needs.
+        /// </remarks>
+        internal void RoundPositionsIfAsked()
+        {
+            if (MovementCameFromSnap || composer == null)
+                return;
+
+            var hitObjects = selectedMovableObjects;
+
+            if (hitObjects.Length == 0)
+                return;
+
+            Vector2 delta = composer.RoundPositionIfAsked(hitObjects[0].Position) - hitObjects[0].Position;
+
+            if (delta == Vector2.Zero)
+                return;
+
+            foreach (var h in hitObjects)
+                h.Position += delta;
+
+            Scheduler.AddOnce(OsuBeatmapProcessor.ApplyStacking, EditorBeatmap);
+        }
+
         private readonly Bindable<bool> allowOutsidePlayArea = new Bindable<bool>();
 
         [BackgroundDependencyLoader]
@@ -163,7 +202,11 @@ namespace osu.Game.Rulesets.Osu.Edit
             if (SelectedItems.Count == 0)
                 return false;
 
+            // a nudge is the user's own whole number of pixels, with no snap involved.
+            MovementCameFromSnap = false;
+
             moveObjects(selectedMovableObjects, delta);
+            RoundPositionsIfAsked();
             return true;
         }
 
@@ -260,6 +303,9 @@ namespace osu.Game.Rulesets.Osu.Edit
                     foreach (var cp in slider.Path.ControlPoints)
                         cp.Position = GeometryUtils.GetFlippedPosition(flipAxis, controlPointFlipQuad, cp.Position);
                 }
+
+                if (composer != null)
+                    h.Position = composer.RoundPositionIfAsked(h.Position);
             }
 
             return didFlip;

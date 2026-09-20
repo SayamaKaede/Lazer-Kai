@@ -139,6 +139,23 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         protected override Drawable CreateHitObjectInspector() => new OsuHitObjectInspector(DistanceSnapProvider);
 
+        /// <summary>
+        /// A position as the beatmap should hold it: on whole coordinates while the setting asks for that.
+        /// </summary>
+        /// <remarks>
+        /// The game keeps a fraction of a pixel and writes it out, but stable and the website read a whole number,
+        /// so a position half a pixel off lands somewhere else the moment the beatmap leaves the editor -- onto a
+        /// stack it was never meant to be on, or off one it was.
+        /// </remarks>
+        public Vector2 RoundPositionIfAsked(Vector2 position) =>
+            integerPositions.Value ? new Vector2(MathF.Round(position.X), MathF.Round(position.Y)) : position;
+
+        private readonly Bindable<bool> integerPositions = new Bindable<bool>();
+
+
+        public override EditorInspector CreateCompactInspector(float textSize) =>
+            new OsuHitObjectInspector(DistanceSnapProvider) { Compact = true, TextSize = textSize };
+
         protected override IEnumerable<Drawable> CreateTernaryButtons()
             => base.CreateTernaryButtons()
                    .Append(new DrawableTernaryButton<OsuAction>
@@ -188,6 +205,7 @@ namespace osu.Game.Rulesets.Osu.Edit
             config.BindWith(OsuSetting.EditorStableSliderControls, stableSliderControls);
             config.BindWith(OsuSetting.EditorSliderAnchorType, anchorType);
             config.BindWith(OsuSetting.EditorAllowOutsidePlayArea, allowOutsidePlayArea);
+            config.BindWith(OsuSetting.EditorIntegerPositions, integerPositions);
             hideGridFromPointsTool.BindValueChanged(hidden => SetToolVisibility(gridFromPointsTool, !hidden.NewValue), true);
 
             AddInternal(DistanceSnapProvider);
@@ -457,9 +475,11 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             var playfield = PlayfieldAtScreenSpacePosition(screenSpacePosition);
 
-            float snapRadius =
-                playfield.GamefieldToScreenSpace(new Vector2(OsuHitObject.OBJECT_RADIUS * 0.10f)).X -
+            float inScreenSpace(float gamefieldPixels) =>
+                playfield.GamefieldToScreenSpace(new Vector2(gamefieldPixels)).X -
                 playfield.GamefieldToScreenSpace(Vector2.Zero).X;
+
+            float snapRadius = inScreenSpace(OsuHitObject.OBJECT_RADIUS * 0.10f);
 
             foreach (var b in blueprints)
             {
@@ -475,14 +495,16 @@ namespace osu.Game.Rulesets.Osu.Edit
 
                 if (Vector2.Distance(closestSnapPosition, screenSpacePosition) < snapRadius)
                 {
+                    var snapPosition = closestSnapPosition;
+
                     // if the snap target is a stacked object, snap to its unstacked position rather than its stacked position.
                     // this is intended to make working with stacks easier (because thanks to this, you can drag an object to any
                     // of the items on the stack to add an object to it, rather than having to drag to the position of the *first* object on it at all times).
                     if (b.Item is OsuHitObject osuObject && osuObject.StackOffset != Vector2.Zero)
-                        closestSnapPosition = b.ToScreenSpace(b.ToLocalSpace(closestSnapPosition) - osuObject.StackOffset);
+                        snapPosition = b.ToScreenSpace(b.ToLocalSpace(snapPosition) - osuObject.StackOffset);
 
                     // only return distance portion, since time is not really valid
-                    snapResult = new SnapResult(closestSnapPosition, null, playfield);
+                    snapResult = new SnapResult(snapPosition, null, playfield);
                     return true;
                 }
             }

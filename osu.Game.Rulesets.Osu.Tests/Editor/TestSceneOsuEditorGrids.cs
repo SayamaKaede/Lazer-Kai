@@ -4,8 +4,10 @@
 using System;
 using System.Linq;
 using NUnit.Framework;
+using osu.Framework.Allocation;
 using osu.Framework.Testing;
 using osu.Framework.Utils;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Edit.Blueprints.HitCircles;
@@ -22,6 +24,17 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
     public partial class TestSceneOsuEditorGrids : EditorTestScene
     {
         protected override Ruleset CreateEditorRuleset() => new OsuRuleset();
+
+        [Resolved]
+        private OsuConfigManager config { get; set; } = null!;
+
+        [SetUpSteps]
+        public void KeepWholeCoordinates()
+        {
+            // a grid at an angle lands on fractions of a pixel, and what a snap lands on is left exactly there, so
+            // the grid holds with whole coordinates on -- which is how anyone who has not turned them off edits.
+            AddStep("keep whole coordinates", () => config.SetValue(OsuSetting.EditorIntegerPositions, true));
+        }
 
         [Test]
         public void TestGridToggles()
