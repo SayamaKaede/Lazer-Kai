@@ -115,6 +115,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:difficulty_graph_colour"] = @"難易度グラフの色",
             [$@"{editor_prefix}:show_volume_graph"] = @"音量のグラフを表示",
             [$@"{editor_prefix}:show_volume_graph_description"] = @"曲全体の音量の移り変わりを下部タイムラインに線で表示します",
+            [$@"{editor_prefix}:volume_graph_ignore_five_percent"] = @"5%は無視する",
+            [$@"{editor_prefix}:volume_graph_ignore_five_percent_description"] = @"音量5%の箇所を、音量の設定が無いものとして扱います。線は直前の音量のまま続きます",
             [$@"{editor_prefix}:volume_graph_colour"] = @"音量グラフの色",
             [$@"{editor_prefix}:volume_graph_thickness"] = @"音量グラフの太さ",
             [$@"{editor_prefix}:volume_graph_opacity"] = @"音量グラフの不透明度",

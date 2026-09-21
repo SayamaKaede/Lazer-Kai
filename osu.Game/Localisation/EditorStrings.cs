@@ -700,6 +700,17 @@ namespace osu.Game.Localisation
             @"Draws how loud the beatmap is over its length across the bottom timeline.");
 
         /// <summary>
+        /// "Ignore 5%"
+        /// </summary>
+        public static LocalisableString VolumeGraphIgnoreFivePercent => new TranslatableString(getKey(@"volume_graph_ignore_five_percent"), @"Ignore 5%");
+
+        /// <summary>
+        /// "Treats a volume of 5% as if none were set there. The line carries on at the volume before it."
+        /// </summary>
+        public static LocalisableString VolumeGraphIgnoreFivePercentDescription => new TranslatableString(getKey(@"volume_graph_ignore_five_percent_description"),
+            @"Treats a volume of 5% as if none were set there. The line carries on at the volume before it.");
+
+        /// <summary>
         /// "Volume graph colour"
         /// </summary>
         public static LocalisableString VolumeGraphColour => new TranslatableString(getKey(@"volume_graph_colour"), @"Volume graph colour");

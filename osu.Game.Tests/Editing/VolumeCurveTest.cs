@@ -89,6 +89,63 @@ namespace osu.Game.Tests.Editing
             Assert.That(points[1].Time, Is.EqualTo(slider.EndTime).Within(0.01));
         }
 
+        /// <summary>
+        /// Told to ignore 5%, the curve reads a 5% moment as one with no volume set: the volume before it carries on
+        /// through, rather than the curve dropping or leaving a gap.
+        /// </summary>
+        [Test]
+        public void TestFivePercentIsReadAsNothingSet()
+        {
+            var points = VolumeCurve.Read(beatmapWith(circleAt(0, 80), circleAt(1000, 5), circleAt(2000, 80), circleAt(3000, 40)), ignoreFivePercent: true);
+
+            Assert.That(points.Select(p => (p.Time, p.Volume)), Is.EqualTo(new[] { (0d, 80), (3000d, 40) }));
+        }
+
+        /// <remarks>
+        /// The case it is for: a slider whose end is silenced at 5%, which would otherwise pull the curve down to the
+        /// bottom and back up at every slider.
+        /// </remarks>
+        [Test]
+        public void TestASliderEndAtFivePercentIsPassedOver()
+        {
+            var slider = new Slider
+            {
+                StartTime = 0,
+                Path = new SliderPath(PathType.LINEAR, new[] { Vector2.Zero, new Vector2(100, 0) }),
+                Samples = new List<HitSampleInfo> { new HitSampleInfo(HitSampleInfo.HIT_NORMAL, volume: 70) },
+                NodeSamples = new List<IList<HitSampleInfo>>
+                {
+                    new List<HitSampleInfo> { new HitSampleInfo(HitSampleInfo.HIT_NORMAL, volume: 70) },
+                    new List<HitSampleInfo> { new HitSampleInfo(HitSampleInfo.HIT_NORMAL, volume: 5) },
+                },
+            };
+
+            var beatmap = beatmapWith(slider, circleAt(5000, 70));
+
+            slider.ApplyDefaults(beatmap.ControlPointInfo, beatmap.Difficulty);
+
+            Assert.That(VolumeCurve.Read(beatmap, ignoreFivePercent: true).Select(p => (p.Time, p.Volume)), Is.EqualTo(new[] { (0d, 70) }));
+        }
+
+        /// <remarks>
+        /// With nothing set before it, there is nothing to carry on: the curve starts at the first volume that is not 5%.
+        /// </remarks>
+        [Test]
+        public void TestFivePercentBeforeAnythingElseIsLeftEmpty()
+        {
+            var points = VolumeCurve.Read(beatmapWith(circleAt(0, 5), circleAt(1000, 5), circleAt(2000, 60)), ignoreFivePercent: true);
+
+            Assert.That(points.Select(p => (p.Time, p.Volume)), Is.EqualTo(new[] { (2000d, 60) }));
+        }
+
+        [Test]
+        public void TestFivePercentIsReadAsItIsUnlessAsked()
+        {
+            var points = VolumeCurve.Read(beatmapWith(circleAt(0, 80), circleAt(1000, 5), circleAt(2000, 80)));
+
+            Assert.That(points.Select(p => (p.Time, p.Volume)), Is.EqualTo(new[] { (0d, 80), (1000d, 5), (2000d, 80) }));
+        }
+
         [Test]
         public void TestAnEmptyBeatmapHasNothingToDraw()
         {

@@ -32,6 +32,7 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
         private readonly Bindable<EditorSelectionColour> colour = new Bindable<EditorSelectionColour>();
         private readonly Bindable<float> thickness = new Bindable<float>(2);
         private readonly Bindable<float> opacity = new Bindable<float>(1);
+        private readonly Bindable<bool> ignoreFivePercent = new Bindable<bool>();
 
         private SmoothPath path = null!;
 
@@ -64,6 +65,7 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
             config.BindWith(OsuSetting.EditorVolumeGraphColour, colour);
             config.BindWith(OsuSetting.EditorVolumeGraphThickness, thickness);
             config.BindWith(OsuSetting.EditorVolumeGraphOpacity, opacity);
+            config.BindWith(OsuSetting.EditorVolumeGraphIgnoreFivePercent, ignoreFivePercent);
         }
 
         protected override void LoadComplete()
@@ -77,6 +79,8 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
             // the radius is half the thickness, and the shape has to be laid out again around the new one.
             thickness.BindValueChanged(_ => reread());
 
+            ignoreFivePercent.BindValueChanged(_ => reread());
+
             editorBeatmap.BeatmapReprocessed += reread;
 
             // the curve is laid out against the length of the song, so it has to be laid out again once that is
@@ -89,7 +93,7 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
 
         private void reread()
         {
-            points = VolumeCurve.Read(editorBeatmap);
+            points = VolumeCurve.Read(editorBeatmap, ignoreFivePercent.Value);
             lastObjectEnds = editorBeatmap.HitObjects.Count > 0 ? editorBeatmap.HitObjects[^1].GetEndTime() : 0;
 
             redraw();

@@ -321,6 +321,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSliderAnchorTypeForPlacement, SliderPlacementAnchorType.Automatic);
             SetDefault(OsuSetting.EditorTimelineInspector, false);
             SetDefault(OsuSetting.EditorIntegerPositions, true);
+            SetDefault(OsuSetting.EditorVolumeGraphIgnoreFivePercent, false);
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.01f);
@@ -1203,6 +1204,12 @@ namespace osu.Game.Configuration
         /// Whether objects are put on whole coordinates, since a fraction of a pixel survives here and nowhere else.
         /// </summary>
         EditorIntegerPositions,
+
+        /// <summary>
+        /// Whether the volume graph passes over a volume of 5% as if none were set there, carrying on at the volume
+        /// before it.
+        /// </summary>
+        EditorVolumeGraphIgnoreFivePercent,
 
     }
 }

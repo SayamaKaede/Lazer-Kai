@@ -49,6 +49,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     TooltipText = EditorStrings.ShowVolumeGraphDescription,
                     Current = config.GetBindable<bool>(OsuSetting.EditorShowVolumeGraph)
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = EditorStrings.VolumeGraphIgnoreFivePercent,
+                    TooltipText = EditorStrings.VolumeGraphIgnoreFivePercentDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorVolumeGraphIgnoreFivePercent)
+                },
                 new SettingsEnumDropdown<EditorSelectionColour>
                 {
                     LabelText = EditorStrings.VolumeGraphColour,

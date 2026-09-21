@@ -27,6 +27,9 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
         /// <summary>The room left above and below the curve, as a fraction of the height it is drawn in.</summary>
         public const float VERTICAL_PADDING = 0.12f;
 
+        /// <summary>The volume <see cref="Read"/> can be told to pass over.</summary>
+        private const int ignorable_volume = 5;
+
         /// <summary>
         /// Lays the curve out as a line, in the space it is drawn in.
         /// </summary>
@@ -86,7 +89,13 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
         /// volume already in effect are dropped: they draw nothing and the beatmaps that set a volume on every
         /// object would otherwise fill the curve with thousands of them.
         /// </remarks>
-        public static IReadOnlyList<Point> Read(IBeatmap beatmap)
+        /// <param name="beatmap">The beatmap to read.</param>
+        /// <param name="ignoreFivePercent">
+        /// Whether to read a volume of 5% as no volume set at all, so the one before it carries on through. 5% is the
+        /// quietest stable allows and is how a slider's end or a tick gets silenced, which is not the volume of the
+        /// song changing -- read as it is, it drags the curve to the bottom and back at every one of them.
+        /// </param>
+        public static IReadOnlyList<Point> Read(IBeatmap beatmap, bool ignoreFivePercent = false)
         {
             var points = new List<Point>();
             int last = -1;
@@ -95,6 +104,9 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary.Parts
             {
                 foreach ((double time, int volume) in momentsOf(hitObject))
                 {
+                    if (ignoreFivePercent && volume == ignorable_volume)
+                        continue;
+
                     if (volume == last)
                         continue;
 
