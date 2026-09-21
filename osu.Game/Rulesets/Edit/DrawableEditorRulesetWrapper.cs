@@ -90,8 +90,43 @@ namespace osu.Game.Rulesets.Edit
             // - Large seeks turn off frame stability as they would also provoke a clock catch-up,
             //   which will result in long frame times and many hitsounds playing at once.
             bool inLargeSeek = Math.Abs(drawableRuleset.FrameStableClock.CurrentTime - editorClock.CurrentTime) > 1000;
-            drawableRuleset.FrameStablePlayback = editorClock.IsRunning && autoplayRegenerated.IsValid && !inLargeSeek;
+            bool frameStable = editorClock.IsRunning && autoplayRegenerated.IsValid && !inLargeSeek;
+            drawableRuleset.FrameStablePlayback = frameStable;
             autoplayRegenerated.Validate();
+
+            // while the clock plays, autoplay hits everything on its way through, hit sounds and all. Otherwise the clock
+            // jumps, and what it jumps past is judged as if it had played over it -- as each object is updated, before
+            // it can be missed, and here for the ones that are not updated.
+            Playfield.JudgesPassedObjectsAsPlayedOver = !frameStable;
+
+            if (!frameStable)
+                judgeObjectsPassedWithoutPlaying();
+        }
+
+        /// <summary>
+        /// Judges the objects the clock went past without playing over them, and that nothing else will judge, as if it
+        /// had played over them.
+        /// </summary>
+        /// <remarks>
+        /// Autoplay only hits what the clock plays over. The objects updated as the clock jumps are judged as they are
+        /// updated (<see cref="Rulesets.UI.Playfield.JudgesPassedObjectsAsPlayedOver"/>), but two kinds are not:
+        /// <list type="bullet">
+        /// <item>one the timeline keeps on the playfield past its own lifetime (an osu! object's ends once it can no
+        /// longer be missed) is never updated at all -- straight after opening, scrolling back over it drew it with no
+        /// fade and no approach circle;</item>
+        /// <item>one the clock comes back past is not judged while going backwards.</item>
+        /// </list>
+        /// Once judged, going back before it takes the judgement back as usual.
+        /// </remarks>
+        private void judgeObjectsPassedWithoutPlaying()
+        {
+            foreach (var drawable in Playfield.AllHitObjects)
+            {
+                // Ready rather than loaded: an object that has never been updated has never finished loading either,
+                // and those are among the ones this is for.
+                if (drawable.LoadState >= LoadState.Ready && !drawable.Judged && drawable.Time.Current > drawable.HitObject.GetEndTime())
+                    drawable.JudgeAsPlayedOver();
+            }
         }
 
         private void regenerateAutoplay()

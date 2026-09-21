@@ -751,6 +751,41 @@ namespace osu.Game.Rulesets.Objects.Drawables
         }
 
         /// <summary>
+        /// Asked once the clock is past this object unjudged: whether to <see cref="JudgeAsPlayedOver"/> rather than leave
+        /// it to be missed. The playfield it came from answers, from
+        /// <see cref="osu.Game.Rulesets.UI.Playfield.JudgesPassedObjectsAsPlayedOver"/>.
+        /// </summary>
+        internal Func<bool> JudgesPassedAsPlayedOver;
+
+        /// <summary>
+        /// Judges this object, and every object nested in it, the way the editor's autoplay would have had the clock
+        /// played over them: the best result, at each object's own time.
+        /// </summary>
+        /// <remarks>
+        /// For an object the clock went past without playing over it -- the editor opening past it, or the playhead
+        /// jumping past it. Left alone, it was either missed at the moment of the jump, and with the clock standing
+        /// there its miss never faded, or it was past its lifetime and never updated at all, and whenever the clock
+        /// came back over it, it was drawn as if still to come: no fade, no approach circle.
+        /// </remarks>
+        internal void JudgeAsPlayedOver()
+        {
+            foreach (var nested in NestedHitObjects)
+                nested.JudgeAsPlayedOver();
+
+            if (Result == null || Result.HasResult)
+                return;
+
+            Result.Type = Result.Judgement.MaxResult;
+            Result.RawTime = HitObject.GetEndTime();
+            Result.GameplayRate = Clock.Rate;
+
+            // forced, which keeps the hit sounds quiet: nothing was played.
+            UpdateState(Result.IsHit ? ArmedState.Hit : ArmedState.Miss, force: true);
+
+            OnNewResult?.Invoke(this, Result);
+        }
+
+        /// <summary>
         /// Processes this <see cref="DrawableHitObject"/>, checking if a scoring result has occurred.
         /// </summary>
         /// <param name="userTriggered">Whether the user triggered this process.</param>
@@ -763,6 +798,12 @@ namespace osu.Game.Rulesets.Objects.Drawables
 
             if (Judged)
                 return false;
+
+            if (!userTriggered && Time.Current > HitObject.GetEndTime() && JudgesPassedAsPlayedOver?.Invoke() == true)
+            {
+                JudgeAsPlayedOver();
+                return Judged;
+            }
 
             CheckForResult(userTriggered, Time.Current - HitObject.GetEndTime());
 

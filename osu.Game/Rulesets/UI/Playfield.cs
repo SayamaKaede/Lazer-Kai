@@ -150,6 +150,7 @@ namespace osu.Game.Rulesets.UI
         private void onNewDrawableHitObject(DrawableHitObject d)
         {
             d.OnNestedDrawableCreated += onNewDrawableHitObject;
+            d.JudgesPassedAsPlayedOver = () => JudgesPassedObjectsAsPlayedOver;
 
             OnNewDrawableHitObject(d);
 
@@ -243,6 +244,8 @@ namespace osu.Game.Rulesets.UI
             otherPlayfield.RevertResult += r => RevertResult?.Invoke(r);
             otherPlayfield.HitObjectUsageBegan += h => HitObjectUsageBegan?.Invoke(h);
             otherPlayfield.HitObjectUsageFinished += h => HitObjectUsageFinished?.Invoke(h);
+
+            otherPlayfield.JudgesPassedObjectsAsPlayedOver = JudgesPassedObjectsAsPlayedOver;
 
             nestedPlayfields.Add(otherPlayfield);
         }
@@ -481,9 +484,36 @@ namespace osu.Game.Rulesets.UI
         private void onNewResult(DrawableHitObject drawable, JudgementResult result)
         {
             Debug.Assert(result != null && drawable.Entry?.Result == result && result.RawTime != null);
-            judgedEntries.Push(drawable.Entry.AsNonNull());
+            pushInTimeOrder(drawable.Entry.AsNonNull());
 
             NewResult?.Invoke(drawable, result);
+        }
+
+        /// <summary>
+        /// Judgements are taken back from the top as the clock goes back, stopping at the first one still behind it, so
+        /// the stack has to stay in the order they happened. Play only ever adds the latest; the editor can judge an
+        /// object the playhead went past without playing over it, at the time it would have been judged, which is
+        /// earlier than judgements already made.
+        /// </summary>
+        private void pushInTimeOrder(HitObjectLifetimeEntry entry)
+        {
+            double time = entry.Result.RawTime.Value;
+
+            if (judgedEntries.Count == 0 || judgedEntries.Peek().Result?.RawTime <= time)
+            {
+                judgedEntries.Push(entry);
+                return;
+            }
+
+            var later = new Stack<HitObjectLifetimeEntry>();
+
+            while (judgedEntries.Count > 0 && judgedEntries.Peek().Result?.RawTime > time)
+                later.Push(judgedEntries.Pop());
+
+            judgedEntries.Push(entry);
+
+            while (later.Count > 0)
+                judgedEntries.Push(later.Pop());
         }
 
         private void revertResult(HitObjectLifetimeEntry entry)
@@ -571,6 +601,29 @@ namespace osu.Game.Rulesets.UI
 
                 foreach (var nested in nestedPlayfields)
                     nested.FutureLifetimeExtension = value;
+            }
+        }
+
+        private bool judgesPassedObjectsAsPlayedOver;
+
+        /// <summary>
+        /// Whether an object the clock goes past unjudged is judged the way autoplay would have had the clock played
+        /// over it, rather than missed.
+        /// </summary>
+        /// <remarks>
+        /// For the editor while its clock jumps rather than plays. Autoplay only hits what the clock plays over, and an
+        /// object missed at the moment of a jump fades from that moment -- which, with the clock standing there, never
+        /// comes, so it stays drawn whole.
+        /// </remarks>
+        internal bool JudgesPassedObjectsAsPlayedOver
+        {
+            get => judgesPassedObjectsAsPlayedOver;
+            set
+            {
+                judgesPassedObjectsAsPlayedOver = value;
+
+                foreach (var nested in nestedPlayfields)
+                    nested.JudgesPassedObjectsAsPlayedOver = value;
             }
         }
 
