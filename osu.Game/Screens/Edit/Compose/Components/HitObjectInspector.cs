@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Specialized;
+using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.ObjectExtensions;
 using System.Linq;
@@ -60,6 +61,8 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 objects = EditorBeatmap.SelectedHitObjects.ToArray();
             else if (EditorBeatmap.PlacementObject.Value != null)
                 objects = new[] { EditorBeatmap.PlacementObject.Value };
+            else if (Compact && (objectAtPlayhead = findObjectAtPlayhead()) != null)
+                objects = new[] { objectAtPlayhead };
             else
                 objects = Array.Empty<HitObject>();
 
@@ -69,6 +72,65 @@ namespace osu.Game.Screens.Edit.Compose.Components
             // This is a good middle-ground for the time being.
             if (objects.Length > 0)
                 rollingTextUpdate ??= Scheduler.AddDelayed(updateInspectorText, 250);
+        }
+
+        [Resolved(CanBeNull = true)]
+        private EditorClock? editorClock { get; set; }
+
+        /// <summary>
+        /// The object a strip is showing for lack of a selection: the last one to have started at the playhead.
+        /// </summary>
+        /// <remarks>
+        /// It stays until the next one starts. Between two objects there is nothing at the playhead, and a strip
+        /// that went blank there flickered the whole way through a play.
+        /// </remarks>
+        private HitObject? objectAtPlayhead;
+
+        protected override void Update()
+        {
+            base.Update();
+
+            // only a strip follows the playhead; the panel says what is selected and nothing else. Checked every frame
+            // rather than on the rolling refresh below, so the strip moves on as the next object starts rather than up
+            // to a quarter of a second later.
+            if (!Compact || EditorBeatmap.SelectedHitObjects.Count > 0 || EditorBeatmap.PlacementObject.Value != null)
+                return;
+
+            if (findObjectAtPlayhead() != objectAtPlayhead)
+                updateInspectorText();
+        }
+
+        /// <summary>
+        /// The last object to have started at the playhead, or null before the first.
+        /// </summary>
+        private HitObject? findObjectAtPlayhead()
+        {
+            if (editorClock == null)
+                return null;
+
+            var hitObjects = EditorBeatmap.HitObjects;
+            double time = editorClock.CurrentTime;
+
+            // the objects are in time order, so a binary search finds the last one to have started without walking a
+            // beatmap's worth of them every frame.
+            int low = 0;
+            int high = hitObjects.Count - 1;
+            HitObject? found = null;
+
+            while (low <= high)
+            {
+                int middle = (low + high) / 2;
+
+                if (hitObjects[middle].StartTime <= time)
+                {
+                    found = hitObjects[middle];
+                    low = middle + 1;
+                }
+                else
+                    high = middle - 1;
+            }
+
+            return found;
         }
 
         /// <summary>
