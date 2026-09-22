@@ -239,8 +239,12 @@ namespace osu.Game.Rulesets.Osu.Edit
             {
                 spacingSlider.ContractedLabelText = $"S: {spacing.NewValue:#,0.##}";
                 SpacingVector.Value = new Vector2(spacing.NewValue);
-                editorBeatmap.GridSize = (int)spacing.NewValue;
             }, true);
+
+            // only a spacing the mapper changes to is the beatmap's. The grid opens on the mapper's own default, and
+            // writing that in as well changed every beatmap that was merely opened -- which stops a stable beatmap
+            // from being saved as it was read.
+            GridLineSpacing.BindValueChanged(spacing => editorBeatmap.GridSize = (int)spacing.NewValue);
 
             GridLinesRotation.BindValueChanged(rotation =>
             {
