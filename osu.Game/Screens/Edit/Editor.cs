@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -199,6 +200,16 @@ namespace osu.Game.Screens.Edit
         /// </summary>
         [CanBeNull]
         private StableFileKeeper stableFileKeeper;
+
+        /// <summary>
+        /// The format version the next save keeps the beatmap in, while it is kept in stable's; null while the save
+        /// is in lazer's.
+        /// </summary>
+        public IBindable<int?> KeptStableVersion => keptStableVersion;
+
+        private readonly Bindable<int?> keptStableVersion = new Bindable<int?>();
+
+        private readonly SavedTimingLines savedTimingLines = new SavedTimingLines();
 
         /// <summary>
         /// Tracks ongoing mutually-exclusive operations related to changing the beatmap
@@ -448,8 +459,19 @@ namespace osu.Game.Screens.Edit
 
             updateLastSavedHash();
 
-            if (canSave && config.Get<bool>(OsuSetting.StableCompatibility))
-                stableFileKeeper = createStableFileKeeper(loadableBeatmap);
+            byte[] savedFile = readSavedFile(loadableBeatmap);
+
+            AddInternal(savedTimingLines);
+            dependencies.Cache(savedTimingLines);
+
+            if (savedFile != null)
+                savedTimingLines.Update(savedFile);
+
+            if (canSave && savedFile != null && config.Get<bool>(OsuSetting.StableCompatibility) && StableFileKeeper.IsStableFile(savedFile))
+            {
+                stableFileKeeper = new StableFileKeeper(savedFile, StableFileKeeper.Encode(editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard));
+                keptStableVersion.Value = stableFileKeeper.Version;
+            }
 
             Schedule(() =>
             {
@@ -1032,10 +1054,7 @@ namespace osu.Game.Screens.Edit
                 if (stableFileKeeper != null)
                     saveKeepingStableFile();
                 else
-                {
-                    // save the loaded beatmap's data stream.
-                    beatmapManager.Save(editorBeatmap.BeatmapInfo, editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard);
-                }
+                    saveInLazerFormat();
             }
             catch (Exception ex)
             {
@@ -1058,28 +1077,19 @@ namespace osu.Game.Screens.Edit
             return true;
         }
 
+        /// <summary>
+        /// The beatmap's file as it is saved, or null for a beatmap that has none yet.
+        /// </summary>
         [CanBeNull]
-        private StableFileKeeper createStableFileKeeper(WorkingBeatmap working)
+        private static byte[] readSavedFile(WorkingBeatmap working)
         {
             string path = working.BeatmapInfo.Path == null ? null : working.BeatmapSetInfo?.GetPathForFile(working.BeatmapInfo.Path);
 
             if (path == null)
                 return null;
 
-            byte[] file;
-
             using (var stream = working.GetStream(path))
-            {
-                if (stream == null)
-                    return null;
-
-                file = stream.ReadAllRemainingBytesToArray();
-            }
-
-            if (!StableFileKeeper.IsStableFile(file))
-                return null;
-
-            return new StableFileKeeper(file, StableFileKeeper.Encode(editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard));
+                return stream?.ReadAllRemainingBytesToArray();
         }
 
         private void saveKeepingStableFile()
@@ -1091,14 +1101,25 @@ namespace osu.Game.Screens.Edit
             {
                 beatmapManager.SaveFile(editorBeatmap.BeatmapInfo, editorBeatmap.PlayableBeatmap, file);
                 stableFileKeeper.Saved(file, current);
+                savedTimingLines.Update(file);
                 return;
             }
 
             beatmapManager.Save(editorBeatmap.BeatmapInfo, editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard);
+            savedTimingLines.Update(Encoding.UTF8.GetBytes(current));
 
             // the file is lazer's from here on, so there is nothing left to keep.
             stableFileKeeper = null;
+            keptStableVersion.Value = null;
             notifications?.Post(new SimpleNotification { Text = LazerKaiStableCompatibilityStrings.SavedInLazerFormat });
+        }
+
+        private void saveInLazerFormat()
+        {
+            beatmapManager.Save(editorBeatmap.BeatmapInfo, editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard);
+
+            // what was just written, encoded again the same way, since the manager does not hand the file back.
+            savedTimingLines.Update(Encoding.UTF8.GetBytes(StableFileKeeper.Encode(editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard)));
         }
 
         protected override void Update()

@@ -1087,6 +1087,17 @@ namespace osu.Game.Localisation
         public static LocalisableString StatusShowDrainTime => new TranslatableString(getKey(@"status_show_drain_time"), @"Drain time");
 
         /// <summary>
+        /// "Save format"
+        /// </summary>
+        public static LocalisableString StatusShowSaveFormat => new TranslatableString(getKey(@"status_show_save_format"), @"Save format");
+
+        /// <summary>
+        /// "Shown while "Improve compatibility with stable" is on."
+        /// </summary>
+        public static LocalisableString StatusShowSaveFormatDescription => new TranslatableString(getKey(@"status_show_save_format_description"),
+            @"Shown while ""Improve compatibility with stable"" is on.");
+
+        /// <summary>
         /// "Difficulty settings (AR, CS, OD, HP)"
         /// </summary>
         public static LocalisableString StatusShowDifficultySettings => new TranslatableString(getKey(@"status_show_difficulty_settings"), @"Difficulty settings (AR, CS, OD, HP)");

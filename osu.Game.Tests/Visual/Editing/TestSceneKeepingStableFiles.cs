@@ -9,8 +9,11 @@ using osu.Framework.Extensions;
 using osu.Framework.Platform;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
+using osu.Framework.Testing;
 using osu.Game.Database;
+using osu.Game.Graphics.Sprites;
 using osu.Game.Models;
+using osu.Game.Screens.Edit.Compose.Components;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Tests.Resources;
@@ -109,6 +112,28 @@ namespace osu.Game.Tests.Visual.Editing
             }
 
             public Stream Read(BeatmapSetInfo set, RealmNamedFileUsage file) => GetFileContents(set, file)!;
+        }
+
+        [Test]
+        public void TestTheStatusSaysWhichFormatTheSaveWrites()
+        {
+            AddUntilStep("status says stable's", () => shownSaveFormat(), () => Is.EqualTo("Stable v14"));
+
+            AddStep("delete the first object", () => EditorBeatmap.RemoveAt(0));
+            SaveEditor();
+
+            AddUntilStep("status says lazer's", () => shownSaveFormat(), () => Is.EqualTo("Lazer"));
+        }
+
+        private string? shownSaveFormat()
+        {
+            var status = Editor.ChildrenOfType<ComposeStatusDisplay>().FirstOrDefault();
+            var row = status?.ChildrenOfType<OsuSpriteText>().FirstOrDefault(t => t.Text.ToString() == "Format")?.Parent;
+
+            if (row == null || !row.IsPresent)
+                return null;
+
+            return row.ChildrenOfType<OsuSpriteText>().Last().Text.ToString();
         }
     }
 }

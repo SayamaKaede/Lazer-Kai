@@ -323,6 +323,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorIntegerPositions, true);
             SetDefault(OsuSetting.EditorVolumeGraphIgnoreFivePercent, false);
             SetDefault(OsuSetting.StableCompatibility, false);
+            SetDefault(OsuSetting.EditorTimelineShowSavedLines, false);
+            SetDefault(OsuSetting.EditorStatusShowSaveFormat, true);
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.01f);
@@ -1217,6 +1219,16 @@ namespace osu.Game.Configuration
         /// was read, and exported for stable as it is. Experimental.
         /// </summary>
         StableCompatibility,
+
+        /// <summary>
+        /// Whether the timeline shows the red and green lines of the beatmap's saved file, the way stable's has them.
+        /// </summary>
+        EditorTimelineShowSavedLines,
+
+        /// <summary>
+        /// Whether the STATUS panel says which format the next save writes, while stable compatibility is on.
+        /// </summary>
+        EditorStatusShowSaveFormat,
 
     }
 }

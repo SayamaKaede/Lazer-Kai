@@ -157,6 +157,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:status_show_combo"] = @"コンボ（現在の再生位置でのコンボ数）",
             [$@"{editor_prefix}:status_show_object_count"] = @"オブジェクト数",
             [$@"{editor_prefix}:status_show_drain_time"] = @"ドレインタイム",
+            [$@"{editor_prefix}:status_show_save_format"] = @"保存形式",
+            [$@"{editor_prefix}:status_show_save_format_description"] = @"「Stableとの互換性を強化する」がオンのときだけ表示されます",
             [$@"{editor_prefix}:status_show_difficulty_settings"] = @"譜面ステータス（AR・CS・OD・HP）",
 
             // reference difficulty
@@ -221,6 +223,13 @@ namespace osu.Game.Localisation
             [$@"{stable_compatibility_prefix}:improve_compatibility"] = @"Stableとの互換性を強化する（試験的）",
             [$@"{stable_compatibility_prefix}:improve_compatibility_description"] = @"Stable形式（v14以前）の譜面を、編集していない行は元のまま保存し、Stable向けにはそのまま書き出します",
             [$@"{stable_compatibility_prefix}:saved_in_lazer_format"] = @"この編集はまだStable形式のまま保存できないため、Lazer形式で保存しました",
+
+            // the saved file's red and green lines on the timeline
+            [$@"{saved_lines_prefix}:show_stable_green_lines"] = @"Stableの緑線を表示",
+            [$@"{saved_lines_prefix}:show_stable_green_lines_description"] = @"上部タイムラインが、StableかLazer-Kaiモードの場合にのみ適用されます",
+            [$@"{saved_lines_prefix}:red_line"] = @"赤線 {0}・BPM {1}・{2}/4・{3} #{4}・音量{5}%",
+            [$@"{saved_lines_prefix}:green_line"] = @"緑線 {0}・SV x{1}・{2} #{3}・音量{4}%",
+            [$@"{saved_lines_prefix}:kiai"] = @"・Kiai",
 
             // 曲選択画面
             [$@"{song_select_prefix}:check_for_update"] = @"更新を確認",
@@ -473,6 +482,7 @@ namespace osu.Game.Localisation
         private const string collab_prefix = @"osu.Game.Resources.Localisation.Collab";
         private const string export_prefix = @"osu.Game.Resources.Localisation.BeatmapExport";
         private const string stable_compatibility_prefix = @"osu.Game.Resources.Localisation.LazerKaiStableCompatibility";
+        private const string saved_lines_prefix = @"osu.Game.Resources.Localisation.LazerKaiSavedLines";
         private const string song_select_prefix = @"osu.Game.Resources.Localisation.LazerKaiSongSelect";
         private const string preset_prefix = @"osu.Game.Resources.Localisation.PlacementPreset";
         private const string combo_colour_preset_prefix = @"osu.Game.Resources.Localisation.LazerKaiComboColourPreset";

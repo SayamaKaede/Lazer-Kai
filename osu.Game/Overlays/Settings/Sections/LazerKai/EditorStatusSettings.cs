@@ -85,6 +85,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 },
                 new SettingsCheckbox
                 {
+                    LabelText = EditorStrings.StatusShowSaveFormat,
+                    TooltipText = EditorStrings.StatusShowSaveFormatDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorStatusShowSaveFormat)
+                },
+                new SettingsCheckbox
+                {
                     LabelText = EditorStrings.StatusShowDifficultySettings,
                     Current = config.GetBindable<bool>(OsuSetting.EditorStatusShowDifficultySettings)
                 },

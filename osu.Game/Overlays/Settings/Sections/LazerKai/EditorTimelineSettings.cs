@@ -28,6 +28,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 }),
                 new SettingsCheckbox
                 {
+                    LabelText = LazerKaiSavedLinesStrings.ShowStableGreenLines,
+                    TooltipText = LazerKaiSavedLinesStrings.ShowStableGreenLinesDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorTimelineShowSavedLines)
+                },
+                new SettingsCheckbox
+                {
                     LabelText = EditorStrings.TimelineInspector,
                     TooltipText = EditorStrings.TimelineInspectorDescription,
                     Current = config.GetBindable<bool>(OsuSetting.EditorTimelineInspector)

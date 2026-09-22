@@ -174,6 +174,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                         tickProxy = ticks.CreateProxy(),
                         // above the ticks, which otherwise run over the mark.
                         nightcoreCymbals = new TimelineNightcoreCymbalDisplay { RelativeSizeAxes = Axes.Both },
+                        // under the objects, which take the clicks first.
+                        new TimelineSavedLineDisplay { RelativeSizeAxes = Axes.Both },
                         userContent,
                     }
                 },

@@ -107,8 +107,33 @@ namespace osu.Game.Screens.Edit.Compose.Components
                     shownWhen(config, OsuSetting.EditorStatusShowDrainTime, createRow(@"Drain", out drainTime, colours.Green1)),
                     shownWhen(config, OsuSetting.EditorStatusShowDifficultySettings, createDifficultyRow(colours)),
                     createModRow(),
+                    saveFormatRow = createRow(@"Format", out saveFormat, colours.Lime1),
                 }
             };
+
+            config.BindWith(OsuSetting.EditorStatusShowSaveFormat, showSaveFormatRow);
+            config.BindWith(OsuSetting.StableCompatibility, stableCompatibility);
+        }
+
+        private Drawable saveFormatRow = null!;
+        private OsuSpriteText saveFormat = null!;
+
+        private readonly Bindable<bool> showSaveFormatRow = new Bindable<bool>();
+        private readonly Bindable<bool> stableCompatibility = new Bindable<bool>();
+        private readonly Bindable<int?> keptStableVersion = new Bindable<int?>();
+
+        /// <summary>
+        /// Says whether the next save keeps the beatmap in stable's format or writes it in lazer's.
+        /// </summary>
+        /// <remarks>
+        /// Only while stable compatibility is on: with it off every save is lazer's, and the row would say so forever.
+        /// </remarks>
+        private void updateSaveFormatRow()
+        {
+            saveFormatRow.Alpha = showSaveFormatRow.Value && stableCompatibility.Value ? 1 : 0;
+
+            int? version = keptStableVersion.Value;
+            saveFormat.Text = version == null ? @"Lazer" : $@"Stable v{version}";
         }
 
         /// <summary>
@@ -370,6 +395,13 @@ namespace osu.Game.Screens.Edit.Compose.Components
             }
 
             showModsRow.BindValueChanged(_ => updateModsRow(), true);
+
+            if (editor != null)
+                ((IBindable<int?>)keptStableVersion).BindTo(editor.KeptStableVersion);
+
+            showSaveFormatRow.BindValueChanged(_ => updateSaveFormatRow());
+            stableCompatibility.BindValueChanged(_ => updateSaveFormatRow());
+            keptStableVersion.BindValueChanged(_ => updateSaveFormatRow(), true);
 
             if (difficultyTracker == null)
             {

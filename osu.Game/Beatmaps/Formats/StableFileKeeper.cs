@@ -56,6 +56,11 @@ namespace osu.Game.Beatmaps.Formats
         }
 
         /// <summary>
+        /// The format version the kept file states.
+        /// </summary>
+        public int Version => FormatVersion(file) ?? LegacyBeatmapEncoder.STABLE_VERSION;
+
+        /// <summary>
         /// Takes note of a save made from <see cref="Write"/>, so that the next one is compared against it.
         /// </summary>
         public void Saved(byte[] written, string current)
@@ -69,7 +74,7 @@ namespace osu.Game.Beatmaps.Formats
         /// </summary>
         public static bool IsStableFile(byte[] file)
         {
-            int? version = formatVersion(file);
+            int? version = FormatVersion(file);
             return version != null && version <= LegacyBeatmapEncoder.STABLE_VERSION;
         }
 
@@ -86,7 +91,10 @@ namespace osu.Game.Beatmaps.Formats
             return builder.ToString();
         }
 
-        private static int? formatVersion(byte[] file)
+        /// <summary>
+        /// The format version a file states on its first line, if it states one.
+        /// </summary>
+        public static int? FormatVersion(byte[] file)
         {
             using (var reader = new StreamReader(new MemoryStream(file), Encoding.UTF8, true))
             {
