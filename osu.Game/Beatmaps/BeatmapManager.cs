@@ -400,8 +400,18 @@ namespace osu.Game.Beatmaps
         /// For a beatmap kept in stable's format (see <see cref="StableFileKeeper"/>). Everything else a save does —
         /// the metadata, the hashes, the local modification — still comes from <paramref name="beatmapContent"/>.
         /// </remarks>
-        public virtual void SaveFile(BeatmapInfo beatmapInfo, IBeatmap beatmapContent, byte[] file) =>
+        public virtual void SaveFile(BeatmapInfo beatmapInfo, IBeatmap beatmapContent, byte[] file)
+        {
+            // the very file already stored: there is nothing to save, and saving it anyway would mark a beatmap that
+            // still matches its online version byte for byte as locally modified.
+            using (var stream = new MemoryStream(file))
+            {
+                if (stream.ComputeMD5Hash() == beatmapInfo.MD5Hash)
+                    return;
+            }
+
             save(beatmapInfo, beatmapContent, null, null, transferCollections: true, file);
+        }
 
         public void DeleteAllVideos()
         {

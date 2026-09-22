@@ -74,6 +74,21 @@ namespace osu.Game.Tests.Visual.Editing
         }
 
         [Test]
+        public void TestSavingWithoutEditingLeavesTheBeatmapAsItWasOnline()
+        {
+            BeatmapOnlineStatus statusBefore = default;
+
+            AddStep("note the status", () => statusBefore = EditorBeatmap.BeatmapInfo.Status);
+            AddAssert("not local to begin with", () => statusBefore, () => Is.Not.EqualTo(BeatmapOnlineStatus.LocallyModified));
+
+            SaveEditor();
+            AddUntilStep("saved", () => EditorBeatmap.BeatmapInfo.MD5Hash, () => Is.EqualTo(new MemoryStream(originalFile()).ComputeMD5Hash()));
+
+            AddAssert("status as it was", () => EditorBeatmap.BeatmapInfo.Status, () => Is.EqualTo(statusBefore));
+            AddAssert("set not marked local either", () => EditorBeatmap.BeatmapInfo.BeatmapSet!.Status, () => Is.Not.EqualTo(BeatmapOnlineStatus.LocallyModified));
+        }
+
+        [Test]
         public void TestExportingForStableWithoutEditingGivesTheFileAsItWas()
         {
             AddAssert("exported file is the original, byte for byte", () => exportedFile(), () => Is.EqualTo(originalFile()));
