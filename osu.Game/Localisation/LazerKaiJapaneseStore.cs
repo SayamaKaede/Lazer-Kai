@@ -217,6 +217,11 @@ namespace osu.Game.Localisation
             [$@"{export_prefix}:export_difficulty"] = @"この難易度を出力",
             [$@"{export_prefix}:export_set"] = @"このセットを出力",
 
+            // keeping stable's own files
+            [$@"{stable_compatibility_prefix}:improve_compatibility"] = @"Stableとの互換性を強化する（試験的）",
+            [$@"{stable_compatibility_prefix}:improve_compatibility_description"] = @"Stable形式（v14以前）の譜面を、編集していない行は元のまま保存し、Stable向けにはそのまま書き出します",
+            [$@"{stable_compatibility_prefix}:saved_in_lazer_format"] = @"この編集はまだStable形式のまま保存できないため、Lazer形式で保存しました",
+
             // 曲選択画面
             [$@"{song_select_prefix}:check_for_update"] = @"更新を確認",
             [$@"{song_select_prefix}:checking"] = @"「{0}」の更新を確認しています...",
@@ -467,6 +472,7 @@ namespace osu.Game.Localisation
         private const string profile_prefix = @"osu.Game.Resources.Localisation.LazerKaiProfile";
         private const string collab_prefix = @"osu.Game.Resources.Localisation.Collab";
         private const string export_prefix = @"osu.Game.Resources.Localisation.BeatmapExport";
+        private const string stable_compatibility_prefix = @"osu.Game.Resources.Localisation.LazerKaiStableCompatibility";
         private const string song_select_prefix = @"osu.Game.Resources.Localisation.LazerKaiSongSelect";
         private const string preset_prefix = @"osu.Game.Resources.Localisation.PlacementPreset";
         private const string combo_colour_preset_prefix = @"osu.Game.Resources.Localisation.LazerKaiComboColourPreset";

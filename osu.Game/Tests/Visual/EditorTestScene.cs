@@ -183,6 +183,11 @@ namespace osu.Game.Tests.Visual
             {
                 // don't actually care about saving for this context.
             }
+
+            public override void SaveFile(BeatmapInfo beatmapInfo, IBeatmap beatmapContent, byte[] file)
+            {
+                // don't actually care about saving for this context.
+            }
         }
     }
 }

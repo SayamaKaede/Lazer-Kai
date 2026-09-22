@@ -7,6 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using osu.Framework.Bindables;
+using osu.Framework.Extensions;
 using osu.Framework.Platform;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Formats;
@@ -29,6 +31,11 @@ namespace osu.Game.Database
     /// </summary>
     public class LegacyBeatmapExporter : BeatmapSetExporter
     {
+        /// <summary>
+        /// Whether a beatmap already in stable's format is exported as it is, rather than converted again.
+        /// </summary>
+        public readonly BindableBool KeepStableFiles = new BindableBool();
+
         public LegacyBeatmapExporter(Storage storage)
             : base(storage)
         {
@@ -46,6 +53,18 @@ namespace osu.Game.Database
 
             if (contentStream == null)
                 return null;
+
+            if (KeepStableFiles.Value)
+            {
+                byte[] content = contentStream.ReadAllRemainingBytesToArray();
+
+                // stable wrote this, or it was saved here in stable's own format: it needs nothing done to it, and
+                // anything done to it would only rewrite what stable already understands.
+                if (StableFileKeeper.IsStableFile(content))
+                    return new MemoryStream(content);
+
+                contentStream.Seek(0, SeekOrigin.Begin);
+            }
 
             using var contentStreamReader = new LineBufferedReader(contentStream);
 

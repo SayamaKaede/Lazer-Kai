@@ -322,6 +322,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorTimelineInspector, false);
             SetDefault(OsuSetting.EditorIntegerPositions, true);
             SetDefault(OsuSetting.EditorVolumeGraphIgnoreFivePercent, false);
+            SetDefault(OsuSetting.StableCompatibility, false);
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.01f);
@@ -1210,6 +1211,12 @@ namespace osu.Game.Configuration
         /// before it.
         /// </summary>
         EditorVolumeGraphIgnoreFivePercent,
+
+        /// <summary>
+        /// Whether a beatmap in stable's format is kept in it: saved with every line that was not edited exactly as it
+        /// was read, and exported for stable as it is. Experimental.
+        /// </summary>
+        StableCompatibility,
 
     }
 }

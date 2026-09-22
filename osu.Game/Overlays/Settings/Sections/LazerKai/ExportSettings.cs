@@ -24,6 +24,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     LabelText = BeatmapExportStrings.Format,
                     Current = config.GetBindable<BeatmapExportFormat>(OsuSetting.BeatmapExportFormat)
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = LazerKaiStableCompatibilityStrings.ImproveCompatibility,
+                    TooltipText = LazerKaiStableCompatibilityStrings.ImproveCompatibilityDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.StableCompatibility)
+                },
             };
         }
     }

@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using osu.Framework.Audio;
 using osu.Framework.Audio.Track;
+using osu.Framework.Bindables;
 using osu.Framework.Extensions;
 using osu.Framework.IO.Stores;
 using osu.Framework.Platform;
@@ -48,6 +49,11 @@ namespace osu.Game.Beatmaps
         private readonly BeatmapExporter beatmapExporter;
 
         private readonly LegacyBeatmapExporter legacyBeatmapExporter;
+
+        /// <summary>
+        /// Whether a beatmap in stable's format is exported for stable as it is.
+        /// </summary>
+        public BindableBool KeepStableFiles => legacyBeatmapExporter.KeepStableFiles;
 
         public ProcessBeatmapDelegate? ProcessBeatmap { private get; set; }
 
@@ -386,6 +392,17 @@ namespace osu.Game.Beatmaps
         public virtual void Save(BeatmapInfo beatmapInfo, IBeatmap beatmapContent, ISkin? beatmapSkin = null, Storyboard? storyboard = null) =>
             save(beatmapInfo, beatmapContent, beatmapSkin, storyboard, transferCollections: true);
 
+        /// <summary>
+        /// Saves a beatmap as <see cref="Save"/> does, but with the file's contents given rather than encoded from
+        /// <paramref name="beatmapContent"/>.
+        /// </summary>
+        /// <remarks>
+        /// For a beatmap kept in stable's format (see <see cref="StableFileKeeper"/>). Everything else a save does —
+        /// the metadata, the hashes, the local modification — still comes from <paramref name="beatmapContent"/>.
+        /// </remarks>
+        public virtual void SaveFile(BeatmapInfo beatmapInfo, IBeatmap beatmapContent, byte[] file) =>
+            save(beatmapInfo, beatmapContent, null, null, transferCollections: true, file);
+
         public void DeleteAllVideos()
         {
             Realm.Write(r =>
@@ -571,7 +588,7 @@ namespace osu.Game.Beatmaps
             setInfo.Status = BeatmapOnlineStatus.LocallyModified;
         }
 
-        private void save(BeatmapInfo beatmapInfo, IBeatmap beatmapContent, ISkin? beatmapSkin, Storyboard? storyboard, bool transferCollections)
+        private void save(BeatmapInfo beatmapInfo, IBeatmap beatmapContent, ISkin? beatmapSkin, Storyboard? storyboard, bool transferCollections, byte[]? file = null)
         {
             var setInfo = beatmapInfo.BeatmapSet;
             Debug.Assert(setInfo != null);
@@ -594,8 +611,14 @@ namespace osu.Game.Beatmaps
             Realm.Write(r =>
             {
                 using var stream = new MemoryStream();
-                using (var sw = new StreamWriter(stream, Encoding.UTF8, 1024, true))
-                    new LegacyBeatmapEncoder(beatmapContent, beatmapSkin, storyboard).Encode(sw);
+
+                if (file != null)
+                    stream.Write(file);
+                else
+                {
+                    using (var sw = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                        new LegacyBeatmapEncoder(beatmapContent, beatmapSkin, storyboard).Encode(sw);
+                }
 
                 stream.Seek(0, SeekOrigin.Begin);
 
