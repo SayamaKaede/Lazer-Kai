@@ -2,6 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using osu.Framework.Allocation;
@@ -9,6 +11,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
+using osu.Framework.Platform;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Formats;
 using osu.Game.Graphics.UserInterfaceV2;
@@ -30,15 +33,18 @@ namespace osu.Game.Screens.Edit.Setup
         private IBindable<WorkingBeatmap> working { get; set; } = null!;
 
         [BackgroundDependencyLoader]
-        private void load(SetupScreen? setupScreen)
+        private void load(SetupScreen? setupScreen, Storage storage)
         {
+            comboColours = new FormColourPalette
+            {
+                PaletteHeaderText = EditorSetupStrings.AccentColoursInBeatmapBackground,
+                Caption = EditorSetupStrings.HitCircleSliderCombos,
+            };
+            comboColours.TrailingButton = new ComboColourPresetButton(comboColours.Colours, new ComboColourPresetStore(storage), applyPreset);
+
             Children = new Drawable[]
             {
-                comboColours = new FormColourPalette
-                {
-                    PaletteHeaderText = EditorSetupStrings.AccentColoursInBeatmapBackground,
-                    Caption = EditorSetupStrings.HitCircleSliderCombos,
-                },
+                comboColours,
             };
 
             if (setupScreen != null)
@@ -99,6 +105,18 @@ namespace osu.Game.Screens.Edit.Setup
             updateAddButtonVisibility();
 
             void updateAddButtonVisibility() => comboColours.CanAdd.Value = comboColours.Colours.Count < LegacyBeatmapDecoder.MAX_COMBO_COLOUR_COUNT;
+        }
+
+        private void applyPreset(IEnumerable<Colour4> colours)
+        {
+            // one change rather than a clear and an add, as far as saving the beatmap's state goes.
+            Beatmap.BeginChange();
+
+            comboColours.Colours.Clear();
+            // the presets file can be edited by hand, so it is held to what a beatmap can carry here as well.
+            comboColours.Colours.AddRange(colours.Take(LegacyBeatmapDecoder.MAX_COMBO_COLOUR_COUNT));
+
+            Beatmap.EndChange();
         }
 
         private void refreshSuggestions()

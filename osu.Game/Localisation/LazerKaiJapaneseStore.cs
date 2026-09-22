@@ -443,6 +443,15 @@ namespace osu.Game.Localisation
             [$@"{preset_prefix}:assign_a_key"] = @"数字キーを割り当てる",
             [$@"{preset_prefix}:remove"] = @"削除",
             [$@"{binding_prefix}:editor_toggle_placement_presets"] = @"配置プリセットを開く",
+
+            // combo colour presets, beside the combo colours on the setup screen
+            [$@"{combo_colour_preset_prefix}:presets"] = @"プリセット",
+            [$@"{combo_colour_preset_prefix}:choose_a_preset"] = @"プリセットから選択",
+            [$@"{combo_colour_preset_prefix}:save_as_a_preset"] = @"プリセットに登録",
+            [$@"{combo_colour_preset_prefix}:no_presets_yet"] = @"登録したプリセットはありません",
+            [$@"{combo_colour_preset_prefix}:preset_name"] = @"プリセットの名前",
+            [$@"{combo_colour_preset_prefix}:save"] = @"登録",
+            [$@"{combo_colour_preset_prefix}:overwrite"] = @"上書き",
             [$@"{binding_prefix}:editor_toggle_auto_cursor"] = @"Autoのカーソルの表示を切り替え",
 
             // the volume row on its own
@@ -460,6 +469,7 @@ namespace osu.Game.Localisation
         private const string export_prefix = @"osu.Game.Resources.Localisation.BeatmapExport";
         private const string song_select_prefix = @"osu.Game.Resources.Localisation.LazerKaiSongSelect";
         private const string preset_prefix = @"osu.Game.Resources.Localisation.PlacementPreset";
+        private const string combo_colour_preset_prefix = @"osu.Game.Resources.Localisation.LazerKaiComboColourPreset";
         private const string mapping_prefix = @"osu.Game.Resources.Localisation.MappingSummary";
 
         public LazerKaiJapaneseStore(ILocalisationStore fallback)

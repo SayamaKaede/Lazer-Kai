@@ -40,6 +40,12 @@ namespace osu.Game.Graphics.UserInterfaceV2
 
         public BindableBool CanAdd { get; } = new BindableBool(true);
 
+        /// <summary>
+        /// Placed after the add button, for whatever a particular palette offers beyond adding colours one at a time.
+        /// Has to be given before the palette is loaded.
+        /// </summary>
+        public Drawable? TrailingButton { get; set; }
+
         private FormControlBackground background = null!;
         private FormFieldCaption caption = null!;
         private FillFlowContainer flow = null!;
@@ -89,6 +95,13 @@ namespace osu.Game.Graphics.UserInterfaceV2
             };
 
             flow.SetLayoutPosition(addButton, float.MaxValue);
+
+            if (TrailingButton != null)
+            {
+                // the same position as the add button, and added after it, which is what puts it after it.
+                flow.Add(TrailingButton);
+                flow.SetLayoutPosition(TrailingButton, float.MaxValue);
+            }
         }
 
         protected override void LoadComplete()
