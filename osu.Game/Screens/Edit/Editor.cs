@@ -631,6 +631,9 @@ namespace osu.Game.Screens.Edit
                                             {
                                                 Items = placementAnchorTypeMenuItems()
                                             },
+                                            new OsuMenuItemSpacer(),
+                                            removeUnneededGreenLinesMenuItem = new EditorMenuItem(LazerKaiGreenLineStrings.RemoveUnneeded, MenuItemType.Destructive,
+                                                ConfirmRemoveUnneededGreenLines),
                                         }
                                     },
                                     new MenuItem(CommonStrings.MenuBarView)
@@ -840,6 +843,10 @@ namespace osu.Game.Screens.Edit
             placementPresetsMenuItem.Action.Disabled = true;
 
             changeHandler?.CanUndo.BindValueChanged(v => undoMenuItem.Action.Disabled = !v.NewValue, true);
+
+            // only where the lines are the file's to keep: in lazer's format they are made up again on every save.
+            keptStableVersion.BindValueChanged(v =>
+                removeUnneededGreenLinesMenuItem.Action.Disabled = v.NewValue == null || editorBeatmap.BeatmapInfo.Ruleset.OnlineID != 0, true);
             changeHandler?.CanRedo.BindValueChanged(v => redoMenuItem.Action.Disabled = !v.NewValue, true);
         }
 
@@ -1771,6 +1778,24 @@ namespace osu.Game.Screens.Edit
                 }
 
                 SaveAndReload(withDialog: false);
+            }));
+        }
+
+        private EditorMenuItem removeUnneededGreenLinesMenuItem;
+
+        /// <summary>
+        /// Asks whether to take out the green lines that change nothing, and does, saying how many went.
+        /// </summary>
+        internal void ConfirmRemoveUnneededGreenLines()
+        {
+            dialogOverlay.Push(new RemoveUnneededGreenLinesDialog(() =>
+            {
+                int removed = GreenLineCleanup.Remove(editorBeatmap, savedTimingLines);
+
+                notifications?.Post(new SimpleNotification
+                {
+                    Text = removed > 0 ? LazerKaiGreenLineStrings.Removed(removed) : LazerKaiGreenLineStrings.NoneRemoved,
+                });
             }));
         }
 
