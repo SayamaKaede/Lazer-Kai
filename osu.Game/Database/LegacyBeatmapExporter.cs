@@ -118,7 +118,17 @@ namespace osu.Game.Database
             return stream;
         }
 
-        protected virtual void MutateBeatmap(BeatmapSetInfo beatmapSet, IBeatmap playableBeatmap)
+        protected virtual void MutateBeatmap(BeatmapSetInfo beatmapSet, IBeatmap playableBeatmap) => ConvertForStable(playableBeatmap);
+
+        /// <summary>
+        /// Brings a beatmap in line with what stable can read: whole times and positions, one curve type per slider,
+        /// and a grid size stable knows.
+        /// </summary>
+        /// <remarks>
+        /// Also what an edited object is written as when a beatmap is kept in stable's format
+        /// (see <see cref="StableFileKeeper"/>), so that it reads there the way an exported one does.
+        /// </remarks>
+        public static void ConvertForStable(IBeatmap playableBeatmap)
         {
             // Limit grid sizes to those which stable knows about.
             if (playableBeatmap.GridSize >= 24)

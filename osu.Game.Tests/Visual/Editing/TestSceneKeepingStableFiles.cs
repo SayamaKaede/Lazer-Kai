@@ -8,6 +8,7 @@ using NUnit.Framework;
 using osu.Framework.Extensions;
 using osu.Framework.Platform;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Configuration;
 using osu.Framework.Testing;
 using osu.Game.Database;
@@ -134,7 +135,8 @@ namespace osu.Game.Tests.Visual.Editing
         {
             AddUntilStep("status says stable's", () => shownSaveFormat(), () => Is.EqualTo("Stable v14"));
 
-            AddStep("delete the first object", () => EditorBeatmap.RemoveAt(0));
+            // an edit to the timing is not written into a stable file yet, so the save goes to lazer's format.
+            AddStep("add a red line", () => EditorBeatmap.ControlPointInfo.Add(15000, new TimingControlPoint { BeatLength = 400 }));
             SaveEditor();
 
             AddUntilStep("status says lazer's", () => shownSaveFormat(), () => Is.EqualTo("Lazer"));

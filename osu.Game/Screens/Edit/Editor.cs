@@ -469,7 +469,7 @@ namespace osu.Game.Screens.Edit
 
             if (canSave && savedFile != null && config.Get<bool>(OsuSetting.StableCompatibility) && StableFileKeeper.IsStableFile(savedFile))
             {
-                stableFileKeeper = new StableFileKeeper(savedFile, StableFileKeeper.Encode(editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard));
+                stableFileKeeper = new StableFileKeeper(savedFile, editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard);
                 keptStableVersion.Value = stableFileKeeper.Version;
             }
 
@@ -1094,16 +1094,17 @@ namespace osu.Game.Screens.Edit
 
         private void saveKeepingStableFile()
         {
-            string current = StableFileKeeper.Encode(editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard);
-            byte[] file = stableFileKeeper.Write(current);
+            byte[] file = stableFileKeeper.Write(editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard, out string current);
 
             if (file != null)
             {
                 beatmapManager.SaveFile(editorBeatmap.BeatmapInfo, editorBeatmap.PlayableBeatmap, file);
-                stableFileKeeper.Saved(file, current);
+                stableFileKeeper.Saved(file, current, editorBeatmap.PlayableBeatmap);
                 savedTimingLines.Update(file);
                 return;
             }
+
+            Logger.Log($@"{editorBeatmap.BeatmapInfo.GetDisplayTitle()} could not be kept in stable's format: {stableFileKeeper.LastFailure ?? @"no reason given"}");
 
             beatmapManager.Save(editorBeatmap.BeatmapInfo, editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard);
             savedTimingLines.Update(Encoding.UTF8.GetBytes(current));

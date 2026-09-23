@@ -2,7 +2,9 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using osu.Game.Skinning;
 using osu.Game.Storyboards;
@@ -36,23 +38,62 @@ namespace osu.Game.Beatmaps.Formats
         /// </summary>
         private string baseline;
 
-        public StableFileKeeper(byte[] file, string baseline)
+        /// <summary>
+        /// The red lines and kiai as they stood then. Edits to these are not written into the file yet.
+        /// </summary>
+        private IReadOnlyList<string> timing;
+
+        public StableFileKeeper(byte[] file, IBeatmap beatmap, ISkin? skin, Storyboard? storyboard)
         {
             this.file = file;
-            this.baseline = baseline;
+            baseline = Encode(beatmap, skin, storyboard);
+            timing = timingOf(beatmap);
         }
 
         /// <summary>
         /// Works out what to save.
         /// </summary>
-        /// <param name="current">What this game's encoder makes of the beatmap now.</param>
+        /// <param name="beatmap">The beatmap being saved.</param>
+        /// <param name="skin">Its skin, as a save encodes it.</param>
+        /// <param name="storyboard">Its storyboard, as a save encodes it.</param>
+        /// <param name="current">What this game's encoder makes of the beatmap now, for <see cref="Saved"/>.</param>
         /// <returns>The file to save, or null if the beatmap has changed in a way that cannot be kept in stable's format.</returns>
-        public byte[]? Write(string current)
+        public byte[]? Write(IBeatmap beatmap, ISkin? skin, Storyboard? storyboard, out string current)
         {
+            current = Encode(beatmap, skin, storyboard);
+            LastFailure = null;
+
             if (current == baseline)
                 return file;
 
-            return null;
+            if (!timingOf(beatmap).SequenceEqual(timing))
+            {
+                LastFailure = @"the red lines or kiai were changed";
+                return null;
+            }
+
+            var merger = new StableFileMerger(file, baseline, current, beatmap);
+            byte[]? merged = merger.Merge();
+
+            LastFailure = merger.Failure;
+            return merged;
+        }
+
+        /// <summary>
+        /// Why the last <see cref="Write"/> could not keep the beatmap in stable's format, if it could not.
+        /// </summary>
+        public string? LastFailure { get; private set; }
+
+        /// <summary>
+        /// The red lines and kiai of a beatmap, one entry each, in a form that compares as text.
+        /// </summary>
+        private static IReadOnlyList<string> timingOf(IBeatmap beatmap)
+        {
+            var info = beatmap.ControlPointInfo;
+
+            return info.TimingPoints.Select(t => FormattableString.Invariant($"T {t.Time} {t.BeatLength} {t.TimeSignature.Numerator} {t.OmitFirstBarLine}"))
+                       .Concat(info.EffectPoints.Select(e => FormattableString.Invariant($"E {e.Time} {e.KiaiMode} {e.ScrollSpeed}")))
+                       .ToList();
         }
 
         /// <summary>
@@ -63,10 +104,11 @@ namespace osu.Game.Beatmaps.Formats
         /// <summary>
         /// Takes note of a save made from <see cref="Write"/>, so that the next one is compared against it.
         /// </summary>
-        public void Saved(byte[] written, string current)
+        public void Saved(byte[] written, string current, IBeatmap beatmap)
         {
             file = written;
             baseline = current;
+            timing = timingOf(beatmap);
         }
 
         /// <summary>
