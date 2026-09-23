@@ -1107,9 +1107,9 @@ namespace osu.Game
                 { FrameworkSetting.WindowMode, RuntimeInfo.OS == RuntimeInfo.Platform.macOS ? WindowMode.Borderless : WindowMode.Fullscreen },
                 // quieter than stock: this build opens straight into editing work, where a sudden full-volume
                 // start on a fresh install is unwelcome.
-                { FrameworkSetting.VolumeUniversal, 0.2 },
-                { FrameworkSetting.VolumeMusic, 0.6 },
-                { FrameworkSetting.VolumeEffect, 0.6 },
+                { FrameworkSetting.VolumeUniversal, 0.05 },
+                { FrameworkSetting.VolumeMusic, 0.2 },
+                { FrameworkSetting.VolumeEffect, 0.2 },
                 { FrameworkSetting.AudioUseExperimentalWasapi, true },
             };
         }
