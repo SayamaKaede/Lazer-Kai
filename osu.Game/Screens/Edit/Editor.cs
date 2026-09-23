@@ -65,6 +65,7 @@ using osu.Game.Screens.Edit.Design;
 using osu.Game.Screens.Edit.GameplayTest;
 using osu.Game.Screens.Edit.Setup;
 using osu.Game.Screens.Edit.Submission;
+using osu.Game.Screens.Edit.GreenLines;
 using osu.Game.Screens.Edit.Timing;
 using osu.Game.Screens.Edit.Verify;
 using osu.Game.Screens.OnlinePlay;
@@ -282,6 +283,22 @@ namespace osu.Game.Screens.Edit
 
         private DifficultyGraphDetailOverlay difficultyGraphDetail;
 
+        private GreenLinePanel greenLinePanel;
+
+        [Resolved]
+        private OsuConfigManager osuConfig { get; set; }
+
+        /// <summary>
+        /// The time and volume of every red and green line as the editor has them, for test play.
+        /// </summary>
+        internal IEnumerable<(double time, int volume)> LineVolumes => savedTimingLines.Lines.Select(l => (l.Time, l.Volume)).ToArray();
+
+        /// <summary>
+        /// Opens or closes the green line panel. The key that shows what is playing everywhere else does this here,
+        /// the way it opens the timing panel in stable's editor.
+        /// </summary>
+        public void ToggleGreenLinePanel() => greenLinePanel?.ToggleVisibility();
+
         [CanBeNull] // Should be non-null once it can support custom rulesets.
         private EditorChangeHandler changeHandler;
 
@@ -448,9 +465,19 @@ namespace osu.Game.Screens.Edit
 
             canSave = editorBeatmap.BeatmapInfo.Ruleset.CreateInstance() is ILegacyRuleset;
 
+            byte[] savedFile = readSavedFile(loadableBeatmap);
+
+            AddInternal(savedTimingLines);
+            dependencies.Cache(savedTimingLines);
+            dependencies.CacheAs<ILineVolumes>(savedTimingLines);
+
+            // before the first state is taken, which the lines are a part of.
+            if (savedFile != null)
+                savedTimingLines.Update(savedFile);
+
             if (canSave)
             {
-                changeHandler = new BeatmapEditorChangeHandler(editorBeatmap);
+                changeHandler = new BeatmapEditorChangeHandler(editorBeatmap, savedTimingLines);
                 dependencies.CacheAs<IEditorChangeHandler>(changeHandler);
             }
 
@@ -458,14 +485,6 @@ namespace osu.Game.Screens.Edit
             beatDivisor.BindValueChanged(divisor => editorBeatmap.BeatmapInfo.BeatDivisor = divisor.NewValue);
 
             updateLastSavedHash();
-
-            byte[] savedFile = readSavedFile(loadableBeatmap);
-
-            AddInternal(savedTimingLines);
-            dependencies.Cache(savedTimingLines);
-
-            if (savedFile != null)
-                savedTimingLines.Update(savedFile);
 
             if (canSave && savedFile != null && config.Get<bool>(OsuSetting.StableCompatibility) && StableFileKeeper.IsStableFile(savedFile))
             {
@@ -809,6 +828,8 @@ namespace osu.Game.Screens.Edit
                     placementPresets = new PlacementPresetOverlay { State = { Value = Visibility.Hidden } },
                     // modal, unlike the studio above it: this one is opened, read, and closed.
                     difficultyGraphDetail = new DifficultyGraphDetailOverlay { State = { Value = Visibility.Hidden } },
+                    // above the screens, so the lines can be edited from whichever one is open, as in stable.
+                    greenLinePanel = new GreenLinePanel { State = { Value = Visibility.Hidden } },
                     MutationTracker,
                     autoBackup = new EditorAutoBackup(),
                     new EditorPlaybackLoop(),
@@ -1094,7 +1115,8 @@ namespace osu.Game.Screens.Edit
 
         private void saveKeepingStableFile()
         {
-            byte[] file = stableFileKeeper.Write(editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard, out string current);
+            var lines = savedTimingLines.Edited ? savedTimingLines.Lines.Select(l => l.Raw).ToArray() : null;
+            byte[] file = stableFileKeeper.Write(editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard, lines, out string current);
 
             if (file != null)
             {
@@ -1730,15 +1752,16 @@ namespace osu.Game.Screens.Edit
                     try
                     {
                         var targetWorking = beatmapManager.GetWorkingBeatmap(beatmapInfo);
-                        var playable = targetWorking.GetPlayableBeatmap(beatmapInfo.Ruleset);
 
-                        if (syncBookmarks)
-                            playable.Bookmarks = sourceBookmarks;
+                        // a difficulty still in stable's format stays in it, with only the lines that change written.
+                        StableFileSaving.Save(beatmapManager, targetWorking, osuConfig.Get<bool>(OsuSetting.StableCompatibility), playable =>
+                        {
+                            if (syncBookmarks)
+                                playable.Bookmarks = sourceBookmarks;
 
-                        if (syncPreviewPoint)
-                            beatmapInfo.Metadata.PreviewTime = sourcePreviewTime;
-
-                        beatmapManager.Save(beatmapInfo, playable, targetWorking.GetSkin(), targetWorking.Storyboard);
+                            if (syncPreviewPoint)
+                                beatmapInfo.Metadata.PreviewTime = sourcePreviewTime;
+                        });
                     }
                     catch (Exception e)
                     {

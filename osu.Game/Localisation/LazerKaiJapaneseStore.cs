@@ -231,6 +231,31 @@ namespace osu.Game.Localisation
             [$@"{saved_lines_prefix}:green_line"] = @"緑線 {0}・SV x{1}・{2} #{3}・音量{4}%",
             [$@"{saved_lines_prefix}:kiai"] = @"・Kiai",
 
+            // the green line panel
+            [$@"{green_line_prefix}:title"] = @"緑線",
+            [$@"{green_line_prefix}:green_line"] = @"緑線",
+            [$@"{green_line_prefix}:red_line"] = @"赤線",
+            [$@"{green_line_prefix}:add"] = @"追加",
+            [$@"{green_line_prefix}:remove"] = @"削除",
+            [$@"{green_line_prefix}:cancel"] = @"キャンセル",
+            [$@"{green_line_prefix}:confirm"] = @"確定",
+            [$@"{green_line_prefix}:time"] = @"時刻",
+            [$@"{green_line_prefix}:use_current_time"] = @"現在の時刻を使う",
+            [$@"{green_line_prefix}:remove_unneeded"] = @"不要な緑線を削除",
+            [$@"{green_line_prefix}:remove_unneeded_header"] = @"不要な緑線を削除しますか？",
+            [$@"{green_line_prefix}:remove_unneeded_body"] = @"何も変えていない緑線を削除します（手前の線と同じ値の線、同じ時刻の別の線に上書きされている線）。Undoで元に戻せます。",
+            [$@"{green_line_prefix}:removed"] = @"不要な緑線を{0}本削除しました",
+            [$@"{green_line_prefix}:none_removed"] = @"不要な緑線はありませんでした",
+            [$@"{green_line_prefix}:sound_lines_inside_objects"] = @"エディターでスライダー・スピナーの途中の緑線を鳴らす",
+            [$@"{green_line_prefix}:sound_lines_inside_objects_description"] = @"スライダーのティックと滑る音、スピナーの回転音を、その時点の緑線の音量で鳴らします（Stableと同じ）",
+            [$@"{green_line_prefix}:sound_lines_inside_objects_in_gameplay"] = @"通常プレイとテストプレイでも鳴らす",
+            [$@"{green_line_prefix}:sound_lines_inside_objects_in_gameplay_description"] = @"エディターの設定とは別に設定します。オンにすると、プレイ中の音がLazer本来の鳴り方から変わります",
+            [$@"{green_line_prefix}:slider_velocity"] = @"SV",
+            [$@"{green_line_prefix}:sample_set"] = @"サンプルセット",
+            [$@"{green_line_prefix}:custom_index"] = @"カスタム番号",
+            [$@"{green_line_prefix}:volume"] = @"音量",
+            [$@"{green_line_prefix}:not_editable"] = @"「Stableとの互換性を強化する」がオンのとき、Stable形式（v14以前）のosu!の譜面で緑線を編集できます",
+
             // 曲選択画面
             [$@"{song_select_prefix}:check_for_update"] = @"更新を確認",
             [$@"{song_select_prefix}:checking"] = @"「{0}」の更新を確認しています...",
@@ -483,6 +508,7 @@ namespace osu.Game.Localisation
         private const string export_prefix = @"osu.Game.Resources.Localisation.BeatmapExport";
         private const string stable_compatibility_prefix = @"osu.Game.Resources.Localisation.LazerKaiStableCompatibility";
         private const string saved_lines_prefix = @"osu.Game.Resources.Localisation.LazerKaiSavedLines";
+        private const string green_line_prefix = @"osu.Game.Resources.Localisation.LazerKaiGreenLine";
         private const string song_select_prefix = @"osu.Game.Resources.Localisation.LazerKaiSongSelect";
         private const string preset_prefix = @"osu.Game.Resources.Localisation.PlacementPreset";
         private const string combo_colour_preset_prefix = @"osu.Game.Resources.Localisation.LazerKaiComboColourPreset";

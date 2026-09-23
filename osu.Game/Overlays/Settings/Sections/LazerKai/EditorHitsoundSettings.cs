@@ -25,6 +25,18 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     TooltipText = EditorStrings.DefaultAdditionBankDescription,
                     Current = config.GetBindable<EditorAdditionBank>(OsuSetting.EditorDefaultAdditionBank)
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = LazerKaiGreenLineStrings.SoundLinesInsideObjects,
+                    TooltipText = LazerKaiGreenLineStrings.SoundLinesInsideObjectsDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorSoundLinesInsideObjects)
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = LazerKaiGreenLineStrings.SoundLinesInsideObjectsInGameplay,
+                    TooltipText = LazerKaiGreenLineStrings.SoundLinesInsideObjectsInGameplayDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.GameplaySoundLinesInsideObjects)
+                },
             };
         }
     }

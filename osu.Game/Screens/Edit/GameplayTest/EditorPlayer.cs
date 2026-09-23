@@ -44,6 +44,9 @@ namespace osu.Game.Screens.Edit.GameplayTest
             editorState = editor.GetState();
         }
 
+        // the editor's, edits and all: the beatmap handed over keeps only the lines no object could carry.
+        protected override IEnumerable<(double time, int volume)> GetLineVolumes(IBeatmap playableBeatmap) => editor.LineVolumes;
+
         protected override GameplayClockContainer CreateGameplayClockContainer(WorkingBeatmap beatmap, double gameplayStart)
         {
             var masterGameplayClockContainer = new MasterGameplayClockContainer(beatmap, gameplayStart);

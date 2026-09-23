@@ -4,6 +4,7 @@
 #nullable disable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -20,6 +21,7 @@ using osu.Framework.Screens;
 using osu.Framework.Threading;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Legacy;
 using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Extensions;
@@ -223,6 +225,15 @@ namespace osu.Game.Screens.Play
             DrawableRuleset.SetRecordTarget(Score);
         }
 
+        /// <summary>
+        /// The time and volume of every green line, in time order: the ones the file says, which the beatmap keeps as its
+        /// sound points when it was read from one.
+        /// </summary>
+        protected virtual IEnumerable<(double time, int volume)> GetLineVolumes(IBeatmap playableBeatmap) =>
+            playableBeatmap.ControlPointInfo is LegacyControlPointInfo legacy
+                ? legacy.SamplePoints.Select(p => (p.Time, p.SampleVolume))
+                : Enumerable.Empty<(double, int)>();
+
         [BackgroundDependencyLoader(true)]
         private void load(OsuConfigManager config, OsuGameBase game, CancellationToken cancellationToken)
         {
@@ -253,6 +264,10 @@ namespace osu.Game.Screens.Play
 
             DrawableRuleset = ruleset.CreateDrawableRulesetWith(playableBeatmap, gameplayMods);
             dependencies.CacheAs(DrawableRuleset);
+
+            // the green lines' volumes, for the sounds that follow them as they play where that is turned on.
+            var soundLinesInsideObjects = config.GetBindable<bool>(OsuSetting.GameplaySoundLinesInsideObjects);
+            dependencies.CacheAs<ILineVolumes>(new LineVolumes(() => soundLinesInsideObjects.Value, GetLineVolumes(playableBeatmap)));
 
             if (DrawableRuleset is IDrawableScrollingRuleset scrollingRuleset)
                 dependencies.CacheAs(scrollingRuleset.ScrollingInfo);

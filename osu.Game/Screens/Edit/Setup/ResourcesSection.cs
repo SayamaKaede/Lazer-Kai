@@ -11,6 +11,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Localisation;
 using osu.Game.Models;
 using osu.Game.Overlays;
@@ -45,6 +46,9 @@ namespace osu.Game.Screens.Edit.Setup
 
         [Resolved]
         private SetupScreen setupScreen { get; set; } = null!;
+
+        [Resolved]
+        private OsuConfigManager config { get; set; } = null!;
 
         private SetupScreenBackgroundPreview backgroundPreview = null!;
         private SetupScreenVideoPreview videoPreview = null!;
@@ -279,8 +283,9 @@ namespace osu.Game.Screens.Edit.Setup
                     // note that this triggers a full save flow, including triggering a difficulty calculation.
                     // this is not a cheap operation and should be reconsidered in the future.
                     var beatmapWorking = beatmaps.GetWorkingBeatmap(b);
-                    writeNewFilenameTo(beatmapWorking, newFilename);
-                    beatmaps.Save(b, beatmapWorking.GetPlayableBeatmap(b.Ruleset), beatmapWorking.GetSkin(), beatmapWorking.Storyboard);
+
+                    // a difficulty still in stable's format stays in it, with only the line naming the file changed.
+                    StableFileSaving.Save(beatmaps, beatmapWorking, config.Get<bool>(OsuSetting.StableCompatibility), _ => writeNewFilenameTo(beatmapWorking, newFilename));
                 }
             }
 

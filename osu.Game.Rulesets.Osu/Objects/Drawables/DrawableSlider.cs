@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using osu.Framework.Allocation;
+using osu.Framework.Audio;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -127,6 +128,8 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
                 }
             });
 
+            slidingSample.AddAdjustment(AdjustableProperty.Volume, lineVolume);
+
             PositionBindable.BindValueChanged(_ => Position = HitObject.StackedPosition);
             StackHeightBindable.BindValueChanged(_ => Position = HitObject.StackedPosition);
             ScaleBindable.BindValueChanged(scale => Ball.Scale = new Vector2(scale.NewValue));
@@ -165,8 +168,21 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
             // Note: base.LoadSamples() isn't called since the slider plays the tail's hitsounds for the time being.
 
             Samples.Samples = HitObject.TailSamples.Cast<ISampleInfo>().ToArray();
-            slidingSample.Samples = HitObject.CreateSlidingSamples().Cast<ISampleInfo>().ToArray();
+
+            // stable plays the slide at whatever the green line in effect says as it goes, not at the slider's own volume.
+            followingLines = lineVolumes?.Enabled == true;
+            slidingSample.Samples = HitObject.CreateSlidingSamples().Select(s => followingLines ? s.With(newVolume: 100) : s).Cast<ISampleInfo>().ToArray();
         }
+
+        [Resolved(CanBeNull = true)]
+        private ILineVolumes lineVolumes { get; set; }
+
+        private readonly BindableDouble lineVolume = new BindableDouble(1);
+
+        /// <summary>
+        /// Whether the slide's sounds were loaded to follow the lines: at full volume, turned down by the line in effect.
+        /// </summary>
+        private bool followingLines;
 
         public override void StopAllSamples()
         {
@@ -251,6 +267,11 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
                 }
                 else if (slidingSample.IsPlaying || slidingSample.RequestedPlaying)
                     slidingSample.Stop();
+
+                if ((lineVolumes?.Enabled == true) != followingLines)
+                    LoadSamples();
+
+                lineVolume.Value = followingLines ? lineVolumes!.VolumeAt(Time.Current) / 100.0 : 1;
             }
         }
 

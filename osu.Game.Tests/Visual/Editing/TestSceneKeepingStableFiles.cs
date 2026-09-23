@@ -135,8 +135,11 @@ namespace osu.Game.Tests.Visual.Editing
         {
             AddUntilStep("status says stable's", () => shownSaveFormat(), () => Is.EqualTo("Stable v14"));
 
-            // an edit to the timing is not written into a stable file yet, so the save goes to lazer's format.
-            AddStep("add a red line", () => EditorBeatmap.ControlPointInfo.Add(15000, new TimingControlPoint { BeatLength = 400 }));
+            // a storyboard is not written into a stable file, so the save goes to lazer's format. Nothing in the editor
+            // changes one; it stands in for whatever edit cannot be written. (This was a red line, then a background,
+            // until those were written, on 2026-09-23.)
+            AddStep("add to the storyboard", () =>
+                EditorBeatmap.Storyboard.GetLayer(@"Background").Add(new osu.Game.Storyboards.StoryboardSprite(osu.Game.Storyboards.StoryboardElementSource.Beatmap, @"sprite.png", osu.Framework.Graphics.Anchor.Centre, osuTK.Vector2.Zero)));
             SaveEditor();
 
             AddUntilStep("status says lazer's", () => shownSaveFormat(), () => Is.EqualTo("Lazer"));

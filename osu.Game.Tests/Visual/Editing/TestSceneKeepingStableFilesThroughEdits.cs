@@ -12,6 +12,7 @@ using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Beatmaps.Formats;
+using osu.Game.Beatmaps.Timing;
 using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Extensions;
@@ -21,6 +22,8 @@ using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Framework.Testing;
+using osu.Game.Screens.Edit;
 using osu.Game.Tests.Resources;
 using osuTK;
 
@@ -225,14 +228,138 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("its line is there, in order", () => section(savedText(), "HitObjects").SkipWhile(l => !l.Contains(",1285,")).Take(2).Last(), () => Does.StartWith("300,200,1367,1,"));
         }
 
+        /// <remarks>
+        /// Until 2026-09-23 this was saved in lazer's format, which is what this test used to check. The new red line
+        /// takes its sounds from the line before it, which is what stable does with one put in.
+        /// </remarks>
         [Test]
-        public void TestChangingTheTimingIsSavedInLazersFormat()
+        public void TestAddingARedLineWritesIt()
         {
             AddStep("add a red line", () => EditorBeatmap.ControlPointInfo.Add(15000, new TimingControlPoint { BeatLength = 400 }));
             saveAndWait();
 
-            AddAssert("file is lazer's", () => savedText().Split("\r\n")[0].TrimStart('﻿'), () => Is.Not.EqualTo("osu file format v14"));
+            AddAssert("file is still stable's", () => savedText().Split("\r\n")[0].TrimStart('﻿'), () => Is.EqualTo("osu file format v14"));
+            AddAssert("the red line is added and nothing else", () => removedAndAddedTimingLines(), () => Is.EqualTo((System.Array.Empty<string>(), new[] { "15000,400,4,2,0,60,1,0" })));
         }
+
+        [Test]
+        public void TestChangingARedLineRewritesOnlyThatLine()
+        {
+            AddStep("make the red line at 956 three beats to a bar", () => EditorBeatmap.ControlPointInfo.TimingPointAt(956).TimeSignature = new TimeSignature(3));
+            saveAndWait();
+
+            AddAssert("file is still stable's", () => savedText().Split("\r\n")[0].TrimStart('﻿'), () => Is.EqualTo("osu file format v14"));
+            AddAssert("only that line changed", () => removedAndAddedTimingLines(),
+                () => Is.EqualTo((new[] { "956,329.67032967033,4,2,0,60,1,0" }, new[] { "956,329.67032967033,3,2,0,60,1,0" })));
+        }
+
+        /// <remarks>
+        /// Stable says kiai on each line, so where the timing screen turns it on or off and no line stands, a green line
+        /// goes in there, saying what the line before it did.
+        /// </remarks>
+        [Test]
+        public void TestKiaiFromTheTimingScreenGoesOnLines()
+        {
+            AddStep("kiai from 30000 to 35000", () =>
+            {
+                EditorBeatmap.ControlPointInfo.Add(30000, new EffectControlPoint { KiaiMode = true });
+                EditorBeatmap.ControlPointInfo.Add(35000, new EffectControlPoint { KiaiMode = false });
+            });
+            saveAndWait();
+
+            AddAssert("file is still stable's", () => savedText().Split("\r\n")[0].TrimStart('﻿'), () => Is.EqualTo("osu file format v14"));
+            AddAssert("a line turning it on and one turning it off", () => removedAndAddedTimingLines(),
+                () => Is.EqualTo((System.Array.Empty<string>(), new[] { "30000,-100,4,2,0,70,0,1", "35000,-100,4,2,0,70,0,0" })));
+        }
+
+        /// <remarks>
+        /// The line says what the red line at 956 already does, so no object sounds any different and the save has no
+        /// reason to touch it.
+        /// </remarks>
+        [Test]
+        public void TestALineAddedInTheEditorIsWritten()
+        {
+            addLine("2400,-100,4,2,0,60,0,0");
+            saveAndWait();
+
+            AddAssert("it is in the file", () => addedTimingLines(), () => Is.EqualTo(new[] { "2400,-100,4,2,0,60,0,0" }));
+            AddAssert("in time order", () => section(savedText(), "TimingPoints").SkipWhile(l => !l.StartsWith("956,", System.StringComparison.Ordinal)).Skip(1).First(),
+                () => Is.EqualTo("2400,-100,4,2,0,60,0,0"));
+        }
+
+        [Test]
+        public void TestUndoTakesAnAddedLineOutAgain()
+        {
+            addLine("2400,-100,4,2,0,60,0,0");
+            AddStep("undo", () => ((EditorChangeHandler)Editor.Dependencies.Get(typeof(IEditorChangeHandler))).RestoreState(-1));
+
+            AddAssert("the lines are the file's again", () => editorLines(), () => Is.EqualTo(section(originalText(), "TimingPoints")));
+
+            AddStep("redo", () => ((EditorChangeHandler)Editor.Dependencies.Get(typeof(IEditorChangeHandler))).RestoreState(1));
+
+            AddAssert("and back", () => editorLines(), () => Does.Contain("2400,-100,4,2,0,60,0,0"));
+        }
+
+        /// <summary>
+        /// The lines a save puts in become the editor's, so that what is drawn after a save is what was written.
+        /// </summary>
+        [Test]
+        public void TestTheLinesASavePutsInAreTheEditorsAfterwards()
+        {
+            AddStep("turn the circle at 1285 down to 30", () =>
+            {
+                var circle = circleAt(1285);
+                circle.Samples = circle.Samples.Select(s => s.With(newVolume: 30)).ToList();
+                EditorBeatmap.Update(circle);
+            });
+            saveAndWait();
+
+            AddAssert("the editor has them", () => editorLines(), () => Is.EqualTo(section(savedText(), "TimingPoints")));
+            AddAssert("which are the new ones", () => editorLines(), () => Does.Contain("1285,-100,4,2,0,30,0,0").And.Contain("1450,-100,4,2,0,60,0,0"));
+        }
+
+        [Test]
+        public void TestChangingTheBackgroundRewritesItsLine()
+        {
+            AddStep("change the background", () => EditorBeatmap.BeatmapInfo.Metadata.BackgroundFile = @"another.jpg");
+            saveAndWait();
+
+            AddAssert("only its line changed", () => differingLines(), () => Is.EqualTo(new[] { ("0,0,\"machinetop_background.jpg\",0,0", "0,0,\"another.jpg\",0,0") }));
+        }
+
+        /// <remarks>
+        /// What copying bookmarks to every difficulty, or giving every difficulty a background, does to the others.
+        /// </remarks>
+        [TestCase(@"Soleily - Renatus (Gamu) [Insane].osu")]
+        [TestCase(@"Soleily - Renatus (ExPew) [Normal].osu")]
+        public void TestAnotherDifficultyKeepsItsFormatWhenChangedFromHere(string otherFile)
+        {
+            AddStep("copy bookmarks to it", () =>
+            {
+                var other = Game.BeatmapManager.GetWorkingBeatmap(imported.BeatmapSet!.Beatmaps.Single(b => b.Path == otherFile));
+                StableFileSaving.Save(Game.BeatmapManager, other, true, playable => playable.Bookmarks = new[] { 1000, 2000 });
+            });
+
+            AddAssert("only its bookmarks changed", () =>
+            {
+                string[] original = originalText(otherFile).Split("\r\n");
+                string[] saved = savedText(otherFile).Split("\r\n");
+                return original.Length == saved.Length ? original.Zip(saved).Where(p => p.First != p.Second).ToArray() : new[] { ("line counts", $"{original.Length} and {saved.Length}") };
+            }, () => Has.Length.EqualTo(1).And.All.Matches<(string, string)>(p => p.Item2 == "Bookmarks: 1000,2000"));
+        }
+
+        private SavedTimingLines timingLines => Editor.ChildrenOfType<SavedTimingLines>().Single();
+
+        private string[] editorLines() => timingLines.Lines.Select(l => l.Raw).ToArray();
+
+        private void addLine(string raw) => AddStep($"add {raw}", () =>
+        {
+            var line = SavedTimingLines.Parse(raw)!.Value;
+
+            EditorBeatmap.BeginChange();
+            timingLines.Lines.Insert(timingLines.Lines.Count(l => l.Time <= line.Time), line);
+            EditorBeatmap.EndChange();
+        });
 
         private void saveAndWait()
         {
@@ -290,21 +417,22 @@ namespace osu.Game.Tests.Visual.Editing
             return lines.Skip(start + 1).TakeWhile(l => !l.StartsWith('[')).Where(l => l.Length > 0).ToArray();
         }
 
-        private string savedText() => Encoding.UTF8.GetString(savedFile());
+        private string savedText(string? difficulty = null) => Encoding.UTF8.GetString(savedFile(difficulty));
 
-        private byte[] savedFile() => Game.Realm.Run(r =>
+        private byte[] savedFile(string? difficulty = null) => Game.Realm.Run(r =>
         {
-            var beatmap = r.Find<BeatmapInfo>(imported.ID)!;
-            var file = beatmap.BeatmapSet!.Files.Single(f => f.File.Hash == beatmap.Hash);
+            var set = r.Find<BeatmapInfo>(imported.ID)!.BeatmapSet!;
+            var beatmap = set.Beatmaps.Single(b => b.Path == (difficulty ?? difficulty_file));
+            var file = set.Files.Single(f => f.File.Hash == beatmap.Hash);
 
             using (var stream = Game.Storage.GetStorageForDirectory(@"files").GetStream(file.File.GetStoragePath()))
                 return stream.ReadAllRemainingBytesToArray();
         });
 
-        private static string originalText()
+        private static string originalText(string? difficulty = null)
         {
             using (var archive = new ZipArchive(TestResources.GetTestBeatmapStream()))
-            using (var stream = archive.GetEntry(difficulty_file)!.Open())
+            using (var stream = archive.GetEntry(difficulty ?? difficulty_file)!.Open())
                 return Encoding.UTF8.GetString(stream.ReadAllRemainingBytesToArray());
         }
     }

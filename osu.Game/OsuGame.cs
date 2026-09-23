@@ -1713,6 +1713,12 @@ namespace osu.Game
                     fpsCounter.ToggleVisibility();
                     return true;
 
+                // in the editor this is stable's key for its timing panel, which here is the green line panel. Taken
+                // here, ahead of the toolbar's button that would otherwise show what is playing.
+                case GlobalAction.ToggleNowPlaying when ScreenStack.CurrentScreen is Editor editor:
+                    editor.ToggleGreenLinePanel();
+                    return true;
+
                 case GlobalAction.ToggleSkinEditor:
                     skinEditor.ToggleVisibility();
                     return true;

@@ -122,6 +122,12 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary
                     Origin = Anchor.Centre,
                     RelativeSizeAxes = Axes.Both,
                 },
+                new GreenLineRangePart
+                {
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    RelativeSizeAxes = Axes.Both,
+                },
                 new MarkerPart { RelativeSizeAxes = Axes.Both },
             };
         }

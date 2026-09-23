@@ -48,15 +48,25 @@ namespace osu.Game.Beatmaps.Formats
         private readonly string baseline;
         private readonly string current;
         private readonly IBeatmap beatmap;
+        private readonly IReadOnlyList<string>? timingLines;
+        private readonly bool reconcileTiming;
 
         private readonly string newLine;
 
-        public StableFileMerger(byte[] file, string baseline, string current, IBeatmap beatmap)
+        /// <param name="file">The file as it was opened, or last saved.</param>
+        /// <param name="baseline">What this game's encoder made of the beatmap then.</param>
+        /// <param name="current">What it makes of the beatmap now.</param>
+        /// <param name="beatmap">The beatmap being saved.</param>
+        /// <param name="timingLines">The red and green lines as they were edited, to start from in place of the file's; null if they were not.</param>
+        /// <param name="reconcileTiming">Whether the red lines or kiai were changed in the timing screen, and are to be written into the lines.</param>
+        public StableFileMerger(byte[] file, string baseline, string current, IBeatmap beatmap, IReadOnlyList<string>? timingLines = null, bool reconcileTiming = false)
         {
             this.file = file;
             this.baseline = baseline;
             this.current = current;
             this.beatmap = beatmap;
+            this.timingLines = timingLines;
+            this.reconcileTiming = reconcileTiming;
 
             newLine = latin1(file).Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
         }
@@ -79,14 +89,22 @@ namespace osu.Game.Beatmaps.Formats
 
         public byte[]? Merge()
         {
-            // the object model and the sounds are only checked the way an osu! beatmap reads them.
-            if (beatmap.BeatmapInfo.Ruleset.OnlineID != 0)
-                return fail(@"edits are only written into osu! beatmaps");
-
             var sections = SourceFile.Read(file);
 
             var before = canonicalSections(baseline);
             var after = canonicalSections(current);
+
+            bool sameSection(string name) =>
+                (before.GetValueOrDefault(name) ?? new List<string>()).SequenceEqual(after.GetValueOrDefault(name) ?? new List<string>());
+
+            // the encoder writes the objects' volumes and velocities as lines of its own, so a change to them shows in
+            // its timing points even where the objects' own lines are the same.
+            bool objectsOrSoundsChanged = !sameSection(@"HitObjects") || !sameSection(@"TimingPoints") || timingLines != null || reconcileTiming;
+
+            // the object model and the sounds are only checked the way an osu! beatmap reads them. A change to anything
+            // else is written the same way in any beatmap.
+            if (objectsOrSoundsChanged && beatmap.BeatmapInfo.Ruleset.OnlineID != 0)
+                return fail(@"edits to objects and timing are only written into osu! beatmaps");
 
             foreach (string name in before.Keys.Union(after.Keys))
             {
@@ -130,6 +148,10 @@ namespace osu.Game.Beatmaps.Formats
                     return fail($@"[{name}] changed in a way that cannot be written: {describeDifference(b, a)}");
             }
 
+            // bookmarks, a background, the metadata: nothing an object sounds or moves by, so nothing to read back.
+            if (!objectsOrSoundsChanged)
+                return sections.Write();
+
             if (!mergeHitObjects(sections, before.GetValueOrDefault(@"HitObjects"), after.GetValueOrDefault(@"HitObjects")))
                 return fail(Failure ?? @"the objects could not be lined up with the file's");
 
@@ -138,7 +160,11 @@ namespace osu.Game.Beatmaps.Formats
             if (timing == null)
                 return fail(@"the file has no timing points");
 
-            var lines = TimingLine.ReadAll(timing);
+            // the editor's, where they were edited: those are what the mapper wants, and the rest is fitted around them.
+            var lines = timingLines != null ? TimingLine.ReadAll(timingLines) : TimingLine.ReadAll(timing);
+
+            if (reconcileTiming)
+                reconcile(lines);
 
             for (int round = 0; round < max_rounds; round++)
             {
@@ -158,8 +184,13 @@ namespace osu.Game.Beatmaps.Formats
                 // and lines placed for those times stay behind once the objects have moved away.
                 bool velocitiesOnly = moments.Any(m => !m.VelocityAgrees);
 
-                if (!putRight(lines, moments, velocitiesOnly))
+                var carried = new HashSet<int>();
+
+                if (!putRight(lines, moments, velocitiesOnly, carried))
                     return fail(Failure ?? @"a green line could not be placed");
+
+                if (!putRightCarried(sections, moments, carried))
+                    return fail(Failure ?? @"an object's own volume or index could not be changed");
             }
 
             var left = readMoments(sections.Write())?.FirstOrDefault(m => !m.Agrees);
@@ -170,6 +201,67 @@ namespace osu.Game.Beatmaps.Formats
                                                                   .Select(m => FormattableString.Invariant($@"{m.At:0.#} wants {m.WantVolume} has {m.HaveVolume}")));
 
             return fail($@"the sounds did not settle after {max_rounds} rounds (first left: {left}; lines before it: {around}; moments before it: {momentsAround})");
+        }
+
+        /// <summary>
+        /// Makes the red lines and kiai say what the timing screen now does, changing as few lines as that takes.
+        /// </summary>
+        /// <remarks>
+        /// A red line the timing screen still has at its time keeps its line, with only the beat length, bar length and
+        /// first bar line written anew if they changed; its sounds are left alone. One the timing screen has no longer
+        /// goes, and one it has that the file does not is put in, with its sounds from the line before it, as stable
+        /// does with a red line put in.
+        ///
+        /// Kiai is said by every line in stable, and turns on or off where one does. Each line is made to say what the
+        /// timing screen has at its time; where kiai turns on or off with no line there, a green line goes in, saying
+        /// what the line before it did.
+        ///
+        /// The sounds and velocities that red lines put in or take out change are left for the rest of the save to put
+        /// right, as it does any other change.
+        /// </remarks>
+        private void reconcile(List<TimingLine> lines)
+        {
+            var info = beatmap.ControlPointInfo;
+
+            lines.RemoveAll(l => l.IsRed && !info.TimingPoints.Any(t => Math.Abs(t.Time - l.Time) < 0.5));
+
+            foreach (var timingPoint in info.TimingPoints)
+            {
+                int standing = lines.FindIndex(l => l.IsRed && Math.Abs(l.Time - timingPoint.Time) < 0.5);
+
+                if (standing >= 0)
+                {
+                    lines[standing] = lines[standing].WithTiming(timingPoint.BeatLength, timingPoint.TimeSignature.Numerator, timingPoint.OmitFirstBarLine);
+                    continue;
+                }
+
+                var before = TimingLine.ActiveAt(lines, timingPoint.Time);
+                int index = lines.FindIndex(l => l.Time >= timingPoint.Time);
+
+                lines.Insert(index < 0 ? lines.Count : index,
+                    TimingLine.Red(timingPoint.Time, timingPoint.BeatLength, timingPoint.TimeSignature.Numerator, timingPoint.OmitFirstBarLine, before));
+            }
+
+            bool kiai = false;
+
+            foreach (var effectPoint in info.EffectPoints)
+            {
+                if (effectPoint.KiaiMode == kiai)
+                    continue;
+
+                kiai = effectPoint.KiaiMode;
+
+                if (lines.Any(l => Math.Abs(l.Time - effectPoint.Time) < 0.5))
+                    continue;
+
+                var before = TimingLine.ActiveAt(lines, effectPoint.Time);
+
+                if (before != null)
+                    TimingLine.InsertAfterAll(lines, before.Inherited(Math.Floor(effectPoint.Time), null, null, null));
+            }
+
+            for (int i = 0; i < lines.Count; i++)
+                lines[i] = lines[i].WithKiai(info.EffectPointAt(lines[i].Time + 0.5).KiaiMode);
         }
 
         private static string describeDifference(List<string> before, List<string> after)
@@ -244,15 +336,25 @@ namespace osu.Game.Beatmaps.Formats
 
         private bool mergeEvents(SourceFile sections, List<string> before, List<string> after)
         {
-            // anything but the breaks is the background, a video or a storyboard, none of which the editor changes
-            // in a way this knows how to write.
-            if (!before.Where(l => !isBreak(l)).SequenceEqual(after.Where(l => !isBreak(l))))
+            // anything but the breaks, the background and the video is a storyboard, which the editor does not change.
+            if (!before.Where(l => !isBreak(l) && !isBackground(l) && !isVideo(l)).SequenceEqual(after.Where(l => !isBreak(l) && !isBackground(l) && !isVideo(l))))
                 return false;
 
             var section = sections.Find(@"Events");
 
             if (section == null)
                 return false;
+
+            // the file's own line keeps its offsets and its way of writing the event, and only takes the new file (and
+            // the video's new start); one there was not goes where stable puts it.
+            if (!before.Where(isBackground).SequenceEqual(after.Where(isBackground)))
+                section.ReplaceEvent(isBackground, after.FirstOrDefault(isBackground), false, newLine);
+
+            if (!before.Where(isVideo).SequenceEqual(after.Where(isVideo)))
+                section.ReplaceEvent(isVideo, after.FirstOrDefault(isVideo), true, newLine);
+
+            if (before.Where(isBreak).SequenceEqual(after.Where(isBreak)))
+                return true;
 
             var breaks = new List<string>();
 
@@ -273,6 +375,10 @@ namespace osu.Game.Beatmaps.Formats
 
             static bool isBreak(string line) => line.StartsWith(@"2,", StringComparison.Ordinal) || line.StartsWith(@"Break,", StringComparison.Ordinal);
         }
+
+        private static bool isBackground(string line) => line.StartsWith(@"0,", StringComparison.Ordinal) || line.StartsWith(@"Background,", StringComparison.Ordinal);
+
+        private static bool isVideo(string line) => line.StartsWith(@"1,", StringComparison.Ordinal) || line.StartsWith(@"Video,", StringComparison.Ordinal);
 
         private static string stableGridSize(string value)
         {
@@ -407,6 +513,11 @@ namespace osu.Game.Beatmaps.Formats
         #region Sounds and velocity
 
         /// <summary>
+        /// Which object's moments are being read, so that each can say whose it is.
+        /// </summary>
+        private int readingObject;
+
+        /// <summary>
         /// One moment of one object: what the beatmap wants there, and what the file being written reads back as.
         /// </summary>
         /// <param name="At">The moment itself: a head, a repeat, a tail, or the end of an object without repeats.</param>
@@ -417,7 +528,8 @@ namespace osu.Game.Beatmaps.Formats
         /// <param name="HaveIndex">The custom sample index the file reads back as.</param>
         /// <param name="WantVelocity">For a slider's head, the velocity the beatmap gives it.</param>
         /// <param name="HaveVelocity">For a slider's head, the velocity the file reads back as.</param>
-        private record Moment(double At, double LookupTime, int WantVolume, int WantIndex, int HaveVolume, int HaveIndex, double? WantVelocity, double? HaveVelocity)
+        /// <param name="ObjectIndex">Which object this is a moment of, counting from the first in the file.</param>
+        private record Moment(double At, double LookupTime, int WantVolume, int WantIndex, int HaveVolume, int HaveIndex, double? WantVelocity, double? HaveVelocity, int ObjectIndex = -1)
         {
             public bool Agrees => WantVolume == HaveVolume && WantIndex == HaveIndex && VelocityAgrees;
 
@@ -458,6 +570,8 @@ namespace osu.Game.Beatmaps.Formats
             {
                 var want = wanted[i];
                 var have = got[i];
+
+                readingObject = i;
 
                 // the file holds whole milliseconds; an object that moved further than that was not written where it is.
                 if (Math.Abs(Math.Floor(want.StartTime) - have.StartTime) > 1)
@@ -528,7 +642,7 @@ namespace osu.Game.Beatmaps.Formats
             if (wantFirst == null || haveFirst == null)
                 return true;
 
-            moments.Add(new Moment(at, lookupTime, wantFirst.Volume, customIndex(wantFirst), haveFirst.Volume, customIndex(haveFirst), wantVelocity, haveVelocity));
+            moments.Add(new Moment(at, lookupTime, wantFirst.Volume, customIndex(wantFirst), haveFirst.Volume, customIndex(haveFirst), wantVelocity, haveVelocity, readingObject));
             return true;
         }
 
@@ -558,7 +672,65 @@ namespace osu.Game.Beatmaps.Formats
         /// that differs from its line there is one the object carries itself, and no line changes it.
         /// </remarks>
         /// <returns>Whether every difference could be given a line.</returns>
-        private bool putRight(List<TimingLine> lines, List<Moment> moments, bool velocitiesOnly)
+        /// <summary>
+        /// Changes what objects say for themselves, in the last field of their lines, where that is what differs.
+        /// </summary>
+        /// <remarks>
+        /// An object's own volume and index are one for all of it. Where all of its moments want the same, that goes
+        /// into its line. Where they do not — a slider's head set apart from the rest — the object gives up its own and
+        /// leaves them to the green lines, which the next round puts right as it does any other object's.
+        /// </remarks>
+        private bool putRightCarried(SourceFile sections, List<Moment> moments, HashSet<int> carried)
+        {
+            if (carried.Count == 0)
+                return true;
+
+            var section = sections.Find(@"HitObjects");
+
+            if (section == null)
+                return failed(@"there are no objects to change");
+
+            var objectLines = section.DataLines().ToList();
+
+            foreach (int index in carried)
+            {
+                if (index < 0 || index >= objectLines.Count)
+                    return failed($@"object {index} is not in the file");
+
+                var sounds = moments.Where(m => m.ObjectIndex == index && m.WantVolume >= 0).ToList();
+                bool oneVolume = sounds.Select(m => m.WantVolume).Distinct().Count() == 1;
+                bool oneIndex = sounds.Select(m => m.WantIndex).Distinct().Count() == 1;
+
+                string[] fields = objectLines[index].Split(',');
+                string[] extras = fields[^1].Split(':');
+
+                if (extras.Length < 4)
+                    return failed($@"the object at {sounds.FirstOrDefault()?.At} says no volume of its own to change");
+
+                if (oneVolume && oneIndex)
+                {
+                    extras[2] = sounds[0].WantIndex.ToString(CultureInfo.InvariantCulture);
+                    extras[3] = sounds[0].WantVolume.ToString(CultureInfo.InvariantCulture);
+                }
+                else
+                {
+                    extras[2] = @"0";
+                    extras[3] = @"0";
+                }
+
+                fields[^1] = string.Join(':', extras);
+                objectLines[index] = string.Join(',', fields);
+            }
+
+            section.SetData(objectLines);
+            return true;
+        }
+
+        /// <param name="lines">The lines to put right.</param>
+        /// <param name="moments">Every moment, as the lines were read back with.</param>
+        /// <param name="velocitiesOnly">Whether only velocities are put right this time.</param>
+        /// <param name="carried">Takes the objects whose own volume or index is what needs changing.</param>
+        private bool putRight(List<TimingLine> lines, List<Moment> moments, bool velocitiesOnly, HashSet<int> carried)
         {
             var readBackWith = lines.ToList();
 
@@ -610,10 +782,11 @@ namespace osu.Game.Beatmaps.Formats
                 if (wantVolume == null && wantIndex == null && wantVelocity == null)
                     continue;
 
+                // no line changes what an object says for itself: that goes into its own line instead.
                 if ((wantVolume != null && !volumeFollows) || (wantIndex != null && !indexFollows))
                 {
-                    Failure = FormattableString.Invariant($@"the object at {moment.At} carries its own volume or index, which a line cannot change");
-                    return false;
+                    carried.Add(moment.ObjectIndex);
+                    continue;
                 }
 
                 // at the object, unless something just before is looked up at or after that; then straight after it.
@@ -825,6 +998,46 @@ namespace osu.Game.Beatmaps.Formats
                 Lines.InsertRange(first, replacement.Select(r => fromUtf8(r) + newLine));
             }
 
+            /// <summary>
+            /// Puts a background or video event in the place of the file's, taking only its file (and, for a video,
+            /// its start) into the file's own line; puts it in where stable does if the file has none, and takes the
+            /// file's out if there is none to put in.
+            /// </summary>
+            public void ReplaceEvent(Func<string, bool> isEvent, string? replacement, bool takeStart, string newLine)
+            {
+                int standing = Lines.FindIndex(l => isEvent(content(l)));
+
+                if (replacement == null)
+                {
+                    if (standing >= 0)
+                        Lines.RemoveAt(standing);
+
+                    return;
+                }
+
+                if (standing < 0)
+                {
+                    int comment = Lines.FindIndex(l => content(l).Replace(" ", string.Empty, StringComparison.Ordinal) == @"//BackgroundandVideoevents");
+                    Lines.Insert(comment >= 0 ? comment + 1 : 1, replacement + newLine);
+                    return;
+                }
+
+                string line = content(Lines[standing]);
+                var quoted = new System.Text.RegularExpressions.Regex("\"[^\"]*\"");
+
+                string file = quoted.Match(replacement).Value;
+                string rewritten = quoted.Replace(line, file.Replace("$", "$$", StringComparison.Ordinal), 1);
+
+                if (takeStart)
+                {
+                    string[] fields = rewritten.Split(',');
+                    fields[1] = replacement.Split(',')[1];
+                    rewritten = string.Join(',', fields);
+                }
+
+                Lines[standing] = rewritten + newLine;
+            }
+
             public void ReplaceBreaks(List<string> breaks, Func<string, bool> isBreak, string newLine)
             {
                 int first = Lines.FindIndex(l => isBreak(content(l)));
@@ -892,6 +1105,74 @@ namespace osu.Game.Beatmaps.Formats
 
             private string field(int index, string fallback) => fields.Length > index ? fields[index].Trim() : fallback;
 
+            public bool IsRed => uninherited;
+
+            private int effects => int.TryParse(field(7, @"0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) ? value : 0;
+
+            /// <summary>
+            /// Every field, the ones an old file leaves out filled in with what stable reads them as.
+            /// </summary>
+            private string[] allFields()
+            {
+                var all = fields.ToList();
+                string[] missing = { string.Empty, @"-100", @"4", @"0", @"0", @"100", uninherited ? @"1" : @"0", @"0" };
+
+                while (all.Count < missing.Length)
+                    all.Add(missing[all.Count]);
+
+                return all.ToArray();
+            }
+
+            /// <summary>
+            /// This line saying kiai is on or off, and unchanged if it says so already.
+            /// </summary>
+            public TimingLine WithKiai(bool kiai)
+            {
+                if (((effects & 1) != 0) == kiai)
+                    return this;
+
+                string[] changed = allFields();
+                changed[7] = (kiai ? effects | 1 : effects & ~1).ToString(CultureInfo.InvariantCulture);
+                return new TimingLine(string.Join(',', changed));
+            }
+
+            /// <summary>
+            /// This red line with the given timing, and unchanged if it has that already.
+            /// </summary>
+            public TimingLine WithTiming(double beatLength, int meter, bool omitFirstBarLine)
+            {
+                bool sameBeat = double.TryParse(field(1, @"0"), NumberStyles.Float, CultureInfo.InvariantCulture, out double written) && Math.Abs(written - beatLength) < 1e-9;
+                bool sameMeter = field(2, @"4") == meter.ToString(CultureInfo.InvariantCulture);
+                bool sameOmit = ((effects & 8) != 0) == omitFirstBarLine;
+
+                if (sameBeat && sameMeter && sameOmit)
+                    return this;
+
+                string[] changed = allFields();
+
+                if (!sameBeat)
+                    changed[1] = beatLength.ToString(@"R", CultureInfo.InvariantCulture);
+                if (!sameMeter)
+                    changed[2] = meter.ToString(CultureInfo.InvariantCulture);
+                if (!sameOmit)
+                    changed[7] = (omitFirstBarLine ? effects | 8 : effects & ~8).ToString(CultureInfo.InvariantCulture);
+
+                return new TimingLine(string.Join(',', changed));
+            }
+
+            /// <summary>
+            /// A red line, taking its sounds from the line in effect where it goes, if there is one.
+            /// </summary>
+            public static TimingLine Red(double time, double beatLength, int meter, bool omitFirstBarLine, TimingLine? soundsFrom)
+            {
+                string sampleSet = soundsFrom?.field(3, @"0") ?? @"0";
+                string index = soundsFrom?.field(4, @"0") ?? @"0";
+                string volume = soundsFrom?.field(5, @"100") ?? @"100";
+
+                return new TimingLine(string.Join(',', time.ToString(CultureInfo.InvariantCulture), beatLength.ToString(@"R", CultureInfo.InvariantCulture),
+                    meter.ToString(CultureInfo.InvariantCulture), sampleSet, index, volume, @"1", omitFirstBarLine ? @"8" : @"0"));
+            }
+
             /// <summary>
             /// This line with the given things changed and everything else as written.
             /// </summary>
@@ -937,7 +1218,9 @@ namespace osu.Game.Beatmaps.Formats
                 return true;
             }
 
-            public static List<TimingLine> ReadAll(Section section) => section.DataLines().Select(l => new TimingLine(l)).ToList();
+            public static List<TimingLine> ReadAll(Section section) => ReadAll(section.DataLines());
+
+            public static List<TimingLine> ReadAll(IEnumerable<string> lines) => lines.Select(l => new TimingLine(l)).ToList();
 
             /// <summary>
             /// The line in effect at a time: the last one at or before it.
@@ -966,7 +1249,7 @@ namespace osu.Game.Beatmaps.Formats
             /// <summary>
             /// Puts a line after every line at or before its time, so that it is the one in effect there.
             /// </summary>
-            private static void InsertAfterAll(List<TimingLine> lines, TimingLine line)
+            public static void InsertAfterAll(List<TimingLine> lines, TimingLine line)
             {
                 int index = lines.FindIndex(l => l.Time > line.Time);
                 lines.Insert(index < 0 ? lines.Count : index, line);

@@ -39,7 +39,7 @@ namespace osu.Game.Beatmaps.Formats
         private string baseline;
 
         /// <summary>
-        /// The red lines and kiai as they stood then. Edits to these are not written into the file yet.
+        /// The red lines and kiai as they stood then, so that the save knows to write edits to them into the lines.
         /// </summary>
         private IReadOnlyList<string> timing;
 
@@ -56,23 +56,20 @@ namespace osu.Game.Beatmaps.Formats
         /// <param name="beatmap">The beatmap being saved.</param>
         /// <param name="skin">Its skin, as a save encodes it.</param>
         /// <param name="storyboard">Its storyboard, as a save encodes it.</param>
+        /// <param name="timingLines">The file's red and green lines as they were edited, one line of text each; null if they were not.</param>
         /// <param name="current">What this game's encoder makes of the beatmap now, for <see cref="Saved"/>.</param>
         /// <returns>The file to save, or null if the beatmap has changed in a way that cannot be kept in stable's format.</returns>
-        public byte[]? Write(IBeatmap beatmap, ISkin? skin, Storyboard? storyboard, out string current)
+        public byte[]? Write(IBeatmap beatmap, ISkin? skin, Storyboard? storyboard, IReadOnlyList<string>? timingLines, out string current)
         {
             current = Encode(beatmap, skin, storyboard);
             LastFailure = null;
 
-            if (current == baseline)
+            bool timingChanged = !timingOf(beatmap).SequenceEqual(timing);
+
+            if (current == baseline && timingLines == null && !timingChanged)
                 return file;
 
-            if (!timingOf(beatmap).SequenceEqual(timing))
-            {
-                LastFailure = @"the red lines or kiai were changed";
-                return null;
-            }
-
-            var merger = new StableFileMerger(file, baseline, current, beatmap);
+            var merger = new StableFileMerger(file, baseline, current, beatmap, timingLines, timingChanged);
             byte[]? merged = merger.Merge();
 
             LastFailure = merger.Failure;

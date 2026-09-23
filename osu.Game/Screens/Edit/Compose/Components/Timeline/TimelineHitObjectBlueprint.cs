@@ -103,6 +103,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private readonly Container colouredComponents;
         private readonly Container sampleComponents;
+
+        private readonly LineVolumeTicks? lineVolumeTicks;
         private readonly OsuSpriteText comboIndexText;
         private readonly SamplePointPiece samplePointPiece;
         private readonly DifficultyPointPiece? difficultyPointPiece;
@@ -195,6 +197,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             if (item is IHasDuration)
             {
+                // the volume part way through, which is only the green lines' to say.
+                AddInternal(lineVolumeTicks = new LineVolumeTicks(item, () => IsSelected));
+
                 colouredComponents.Add(dragArea = new DragArea(item)
                 {
                     OnDragHandled = e => OnDragHandled?.Invoke(e),
@@ -323,6 +328,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             samplePointPiece.Anchor = above ? Anchor.TopLeft : Anchor.BottomLeft;
             samplePointPiece.Origin = above ? Anchor.BottomCentre : Anchor.TopCentre;
 
+            if (lineVolumeTicks != null)
+                lineVolumeTicks.Above = above;
+
             foreach (var node in sampleComponents.Children.OfType<NodeSamplePointPiece>())
             {
                 node.Anchor = above ? Anchor.TopLeft : Anchor.BottomLeft;
@@ -396,6 +404,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             samplePointPiece.Alpha = volumeAlpha;
             sampleComponents.Alpha = volumeAlpha;
+
+            if (lineVolumeTicks != null)
+                lineVolumeTicks.Alpha = volumeAlpha;
 
             if (difficultyPointPiece != null)
                 difficultyPointPiece.Alpha = pointAlpha;

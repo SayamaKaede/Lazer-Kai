@@ -131,7 +131,25 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
 
             isSpinning = RotationTracker.IsSpinning.GetBoundCopy();
             isSpinning.BindValueChanged(updateSpinningSample);
+
+            // on top of the fading in and out the spin's own volume is for.
+            spinningSample.AddAdjustment(AdjustableProperty.Volume, lineVolume);
         }
+
+        [Resolved(CanBeNull = true)]
+        private ILineVolumes lineVolumes { get; set; }
+
+        private readonly BindableDouble lineVolume = new BindableDouble(1);
+
+        /// <summary>
+        /// How far the green line in effect turns the spin down, where the spin follows the lines.
+        /// </summary>
+        public double LineVolume => lineVolume.Value;
+
+        /// <summary>
+        /// Whether the spin's sounds were loaded to follow the lines: at full volume, turned down by the line in effect.
+        /// </summary>
+        private bool followingLines;
 
         protected override void OnFree()
         {
@@ -145,7 +163,9 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         {
             base.LoadSamples();
 
-            spinningSample.Samples = HitObject.CreateSpinningSamples().Cast<ISampleInfo>().ToArray();
+            // stable plays the spin at whatever the green line in effect says as it goes, not at the spinner's own volume.
+            followingLines = lineVolumes?.Enabled == true;
+            spinningSample.Samples = HitObject.CreateSpinningSamples().Select(s => followingLines ? s.With(newVolume: 100) : s).Cast<ISampleInfo>().ToArray();
             spinningSample.Frequency.Value = spinning_sample_modulated_base_frequency;
 
             maxBonusSample.Samples = new ISampleInfo[] { new SpinnerBonusMaxSampleInfo(HitObject.CreateHitSampleInfo()) };
@@ -288,6 +308,11 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
                 spinningSample.Frequency.Value = spinnerFrequencyModulate
                     ? Math.Min(spinning_sample_modulated_max_frequency, spinning_sample_modulated_base_frequency + progressUnclamped * spinning_sample_modulaton_ratio)
                     : 1;
+
+                if ((lineVolumes?.Enabled == true) != followingLines)
+                    LoadSamples();
+
+                lineVolume.Value = followingLines ? lineVolumes!.VolumeAt(Time.Current) / 100.0 : 1;
             }
 
             // Ticks can theoretically be judged at any point in the spinner's duration.

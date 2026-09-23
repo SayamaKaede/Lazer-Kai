@@ -3,8 +3,13 @@
 
 #nullable disable
 
+using System.Collections.Generic;
+using System.Linq;
 using osu.Framework.Allocation;
+using osu.Framework.Audio;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Game.Audio;
 using osu.Game.Rulesets.Objects.Drawables;
 using osuTK;
 using osuTK.Graphics;
@@ -60,6 +65,35 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
             });
 
             ScaleBindable.BindValueChanged(scale => scaleContainer.Scale = new Vector2(scale.NewValue));
+
+            Samples?.AddAdjustment(AdjustableProperty.Volume, lineVolume);
+        }
+
+        [Resolved(CanBeNull = true)]
+        private ILineVolumes lineVolumes { get; set; }
+
+        private readonly BindableDouble lineVolume = new BindableDouble(1);
+
+        /// <summary>
+        /// Whether the tick's sounds were loaded to follow the lines: at full volume, turned down by the line in effect.
+        /// </summary>
+        private bool followingLines;
+
+        // stable plays a tick at whatever the green line in effect where it is says, not at the slider's own volume.
+        public override IEnumerable<HitSampleInfo> GetSamples()
+        {
+            followingLines = lineVolumes?.Enabled == true;
+            return followingLines ? base.GetSamples().Select(s => s.With(newVolume: 100)) : base.GetSamples();
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+
+            if ((lineVolumes?.Enabled == true) != followingLines)
+                LoadSamples();
+
+            lineVolume.Value = followingLines ? lineVolumes!.VolumeAt(HitObject.StartTime) / 100.0 : 1;
         }
 
         protected override void OnApply()

@@ -325,6 +325,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.StableCompatibility, false);
             SetDefault(OsuSetting.EditorTimelineShowSavedLines, false);
             SetDefault(OsuSetting.EditorStatusShowSaveFormat, true);
+            SetDefault(OsuSetting.EditorSoundLinesInsideObjects, true);
+            SetDefault(OsuSetting.GameplaySoundLinesInsideObjects, false);
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.01f);
@@ -1230,5 +1232,15 @@ namespace osu.Game.Configuration
         /// </summary>
         EditorStatusShowSaveFormat,
 
+        /// <summary>
+        /// Whether the editor plays a slider's ticks and slide, and a spinner's spin, at the volume of the green line in
+        /// effect as they sound, as stable does, rather than at the volume the object itself carries.
+        /// </summary>
+        EditorSoundLinesInsideObjects,
+
+        /// <summary>
+        /// The same in gameplay and test play.
+        /// </summary>
+        GameplaySoundLinesInsideObjects,
     }
 }

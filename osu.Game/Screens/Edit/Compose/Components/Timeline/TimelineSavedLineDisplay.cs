@@ -41,6 +41,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private const float line_opacity = 0.6f;
 
+        private const float selected_line_width = 3;
+
         [Resolved]
         private Timeline timeline { get; set; } = null!;
 
@@ -65,8 +67,13 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             config.BindWith(OsuSetting.EditorTimelineStyle, style);
 
             if (savedTimingLines != null)
+            {
                 lines.BindTo(savedTimingLines.Lines);
+                selected.BindTo(savedTimingLines.Selected);
+            }
         }
+
+        private readonly Bindable<SavedTimingLine?> selected = new Bindable<SavedTimingLine?>();
 
         protected override void LoadComplete()
         {
@@ -76,6 +83,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             style.BindValueChanged(_ => updateVisibility(), true);
 
             lines.BindCollectionChanged((_, _) => piecesCache.Invalidate());
+            selected.BindValueChanged(_ => piecesCache.Invalidate());
         }
 
         private void updateVisibility()
@@ -120,13 +128,19 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 if (line.Time < visibleRange.min || line.Time > visibleRange.max)
                     continue;
 
-                Add(new LinePiece(line) { X = (float)line.Time });
+                Add(new LinePiece(line) { X = (float)line.Time, IsSelected = line == selected.Value });
             }
         }
 
         public partial class LinePiece : CompositeDrawable, IHasTooltip
         {
             public readonly SavedTimingLine Line;
+
+            /// <summary>
+            /// Whether this is the line the green line panel is editing, drawn thicker and fully opaque so that a line
+            /// far from the playhead can be seen to be the one changing.
+            /// </summary>
+            public bool IsSelected { get; init; }
 
             public LinePiece(SavedTimingLine line)
             {
@@ -146,8 +160,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                     Anchor = Anchor.TopCentre,
                     Origin = Anchor.TopCentre,
                     RelativeSizeAxes = Axes.Y,
-                    Width = line_width,
-                    Alpha = line_opacity,
+                    Width = IsSelected ? selected_line_width : line_width,
+                    Alpha = IsSelected ? 1 : line_opacity,
                     Colour = Line.Uninherited ? colours.Red1 : colours.Green1,
                 };
             }
