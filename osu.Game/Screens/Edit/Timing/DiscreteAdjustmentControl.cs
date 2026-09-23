@@ -26,7 +26,13 @@ namespace osu.Game.Screens.Edit.Timing
 
         private readonly T baseIncrement;
 
-        private const int max_multiplier = 10;
+        /// <summary>
+        /// How many increments each level out from the middle steps by, innermost first.
+        /// </summary>
+        private readonly int[] multipliers;
+
+        private int maxMultiplier => multipliers[^1];
+
         private const int adjust_levels = 4;
 
         private readonly Box background;
@@ -41,9 +47,16 @@ namespace osu.Game.Screens.Edit.Timing
         [Resolved]
         private EditorBeatmap editorBeatmap { get; set; } = null!;
 
-        public DiscreteAdjustmentControl(T baseIncrement)
+        /// <param name="baseIncrement">The smallest step.</param>
+        /// <param name="multipliers">How many of those each of the four levels out from the middle steps by, innermost
+        /// first; 1, 2, 5 and 10 if not given.</param>
+        public DiscreteAdjustmentControl(T baseIncrement, int[]? multipliers = null)
         {
             this.baseIncrement = baseIncrement;
+            this.multipliers = multipliers ?? new[] { 1, 2, 5, 10 };
+
+            if (this.multipliers.Length != adjust_levels)
+                throw new ArgumentException($"There are {adjust_levels} levels to give a multiplier each.", nameof(multipliers));
 
             CornerRadius = 5;
             Masking = true;
@@ -79,8 +92,8 @@ namespace osu.Game.Screens.Edit.Timing
 
             for (int i = 1; i <= adjust_levels; i++)
             {
-                AddInternal(new IncrementBox(i, baseIncrement));
-                AddInternal(new IncrementBox(-i, baseIncrement));
+                AddInternal(new IncrementBox(i, baseIncrement, multipliers[i - 1]));
+                AddInternal(new IncrementBox(-i, baseIncrement, multipliers[i - 1]));
             }
 
             AddInternal(incrementText = new OsuSpriteText
@@ -138,7 +151,7 @@ namespace osu.Game.Screens.Edit.Timing
 
                 incrementText.FadeTo(1).FadeTo(0.8f, 1400, Easing.OutQuint);
 
-                repeatBehaviour.SampleFrequencyModifier = ((double)b.Multiplier / max_multiplier) * 0.2;
+                repeatBehaviour.SampleFrequencyModifier = ((double)b.Multiplier / maxMultiplier) * 0.2;
                 return true;
             }
 
@@ -156,11 +169,11 @@ namespace osu.Game.Screens.Edit.Timing
             [Resolved]
             private OverlayColourProvider colourProvider { get; set; } = null!;
 
-            public IncrementBox(int index, T amount)
+            public IncrementBox(int index, T amount, int multiplier)
             {
                 Index = index;
                 Amount = amount;
-                Multiplier = Math.Sign(index) * convertMultiplier(index);
+                Multiplier = Math.Sign(index) * multiplier;
 
                 float ratio = (float)index / adjust_levels;
 
@@ -192,21 +205,6 @@ namespace osu.Game.Screens.Edit.Timing
 
                 box.Colour = colourProvider.Background1;
                 box.Alpha = 0.1f;
-            }
-
-            private int convertMultiplier(int m)
-            {
-                switch (Math.Abs(m))
-                {
-                    default: return 1;
-
-                    case 2: return 2;
-
-                    case 3: return 5;
-
-                    case 4:
-                        return max_multiplier;
-                }
             }
 
             protected override bool OnHover(HoverEvent e)

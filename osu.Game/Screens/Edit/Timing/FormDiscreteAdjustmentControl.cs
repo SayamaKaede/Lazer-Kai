@@ -100,11 +100,14 @@ namespace osu.Game.Screens.Edit.Timing
 
         private readonly Bindable<Language> currentLanguage = new Bindable<Language>();
 
-        public FormDiscreteAdjustmentControl(T baseIncrement)
+        /// <param name="baseIncrement">The smallest step.</param>
+        /// <param name="multipliers">How many of those each level out from the middle steps by, innermost first; see
+        /// <see cref="DiscreteAdjustmentControl{T}"/>.</param>
+        public FormDiscreteAdjustmentControl(T baseIncrement, int[]? multipliers = null)
         {
             labelFormat ??= DefaultLabelFormat;
 
-            adjustmentControl = new DiscreteAdjustmentControl<T>(baseIncrement);
+            adjustmentControl = new DiscreteAdjustmentControl<T>(baseIncrement, multipliers);
 
             current.ValueChanged += _ =>
             {
