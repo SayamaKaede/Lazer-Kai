@@ -18,6 +18,7 @@ using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Framework.Utils;
 using osu.Game.Audio;
+using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.UserInterface;
@@ -60,7 +61,26 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         protected override Color4 GetRepresentingColour(OsuColour colours) => AlternativeColor ? colours.Pink2 : colours.Pink1;
 
-        protected virtual double GetTime() => HitObject is IHasRepeats r ? HitObject.StartTime + r.Duration / r.SpanCount() / 2 : HitObject.StartTime;
+        /// <summary>
+        /// Whether the object's sound is heard where it ends, which is set for a spinner.
+        /// </summary>
+        public bool AtTheEnd { get; set; }
+
+        protected virtual double GetTime() => HitObject is IHasRepeats r ? HitObject.StartTime + r.Duration / r.SpanCount() / 2
+            : AtTheEnd ? HitObject.GetEndTime()
+            : HitObject.StartTime;
+
+        /// <summary>
+        /// Whether an object's sound is heard where it ends rather than where it starts, which is a spinner's: it plays
+        /// once the spinning is over, and stable reads the green line for it there too.
+        /// </summary>
+        public static bool SoundsAtItsEnd(HitObject hitObject, IBeatmap beatmap)
+            => beatmap.BeatmapInfo.Ruleset.OnlineID == 0 && hitObject is IHasDuration && hitObject is not IHasPath;
+
+        /// <summary>
+        /// Whether this piece has a volume of its own. A slider's body doesn't: it takes the head's.
+        /// </summary>
+        protected virtual bool HasVolume => HitObject is not IHasRepeats;
 
         [BackgroundDependencyLoader]
         private void load()
@@ -134,7 +154,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private void updateText()
         {
-            Label.Text = $"{AbbreviateBank(GetBankValue(GetSamples()))}{GetSuffix(GetSamples())} {GetVolumeValue(GetSamples())}";
+            string sound = $"{AbbreviateBank(GetBankValue(GetSamples()))}{GetSuffix(GetSamples())}";
+            Label.Text = HasVolume ? $"{sound} {GetVolumeValue(GetSamples())}" : sound;
 
             if (!contracted.Value)
                 LabelContainer.ResizeWidthTo(Label.Width, 200, Easing.OutQuint);
@@ -205,7 +226,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             private FormDropdown<string> additionBank = null!;
             private FillFlowContainer<SampleSetTernaryButton>? sampleSetsFlow;
             private FormDropdown<EditorBeatmapSkin.SampleSet>? sampleSetDropdown;
-            private VolumeControl volume = null!;
+            private VolumeControl? volume;
             private SkinnableSound demoSample = null!;
 
             private FillFlowContainer togglesCollection = null!;
@@ -284,15 +305,6 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                                 Items = HitSampleInfo.ALL_BANKS,
                             },
                             createSampleSetContent(),
-                            volume = new VolumeControl
-                            {
-                                Caption = EditorStrings.SampleVolume,
-                                Current = new BindableInt(100)
-                                {
-                                    MinValue = DrawableHitObject.MINIMUM_SAMPLE_VOLUME,
-                                    MaxValue = 100,
-                                }
-                            }
                         }
                     },
                     new EditorSkinProvidingContainer(beatmap)
@@ -301,17 +313,35 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                     }
                 };
 
-                volume.TabbableContentContainer = flow;
-
                 // if the piece belongs to a currently selected object, assume that the user wants to change all selected objects.
                 // if the piece belongs to an unselected object, operate on that object alone, independently of the selection.
                 relevantObjects = (beatmap.SelectedHitObjects.Contains(hitObject) ? beatmap.SelectedHitObjects : hitObject.Yield()).ToArray();
                 allRelevantSamples = GetRelevantSamples(relevantObjects).ToArray();
 
-                // even if there are multiple objects selected, we can still display sample volume or bank if they all have the same value.
-                int? commonVolume = getCommonVolume();
-                volume.Current.Value = commonVolume ?? 100;
-                volume.IsMultipleValues = commonVolume == null;
+                if (HasVolume(relevantObjects))
+                {
+                    flow.Add(volume = new VolumeControl
+                    {
+                        Caption = EditorStrings.SampleVolume,
+                        Current = new BindableInt(100)
+                        {
+                            MinValue = DrawableHitObject.MINIMUM_SAMPLE_VOLUME,
+                            MaxValue = 100,
+                        }
+                    });
+
+                    volume.TabbableContentContainer = flow;
+
+                    // even if there are multiple objects selected, we can still display sample volume or bank if they all have the same value.
+                    int? commonVolume = getCommonVolume();
+                    volume.Current.Value = commonVolume ?? 100;
+                    volume.IsMultipleValues = commonVolume == null;
+
+                    volume.Current.BindValueChanged(val =>
+                    {
+                        setVolume(val.NewValue);
+                    });
+                }
 
                 updatePrimaryBankState();
                 bank.Current.BindValueChanged(val =>
@@ -335,11 +365,6 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
                 updateSampleSetState();
 
-                volume.Current.BindValueChanged(val =>
-                {
-                    setVolume(val.NewValue);
-                });
-
                 createStateBindables();
                 updateTernaryStates();
                 togglesCollection.AddRange(createTernaryButtons());
@@ -349,8 +374,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             {
                 base.LoadComplete();
 
-                ScheduleAfterChildren(() => volume.TakeFocus());
+                ScheduleAfterChildren(() => volume?.TakeFocus());
             }
+
+            /// <summary>
+            /// Whether the popover sets a volume. One slider's body doesn't have one of its own: it takes the head's,
+            /// which is set on the head. A selection of several sets everything they have, the body with the rest.
+            /// </summary>
+            protected virtual bool HasVolume(HitObject[] hitObjects) => hitObjects.Length > 1 || hitObjects[0] is not IHasRepeats;
 
             private Drawable createSampleSetContent()
             {
@@ -548,14 +579,22 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             private void setVolume(int newVolume)
             {
-                updateAllRelevantSamples((_, relevantSamples) =>
+                updateAllRelevantSamples((relevantHitObject, relevantSamples) =>
                 {
-                    for (int i = 0; i < relevantSamples.Count; i++)
-                    {
-                        relevantSamples[i] = relevantSamples[i].With(newVolume: newVolume);
-                    }
+                    setVolumeOf(relevantSamples);
+
+                    // a slider's body has no volume of its own to set: it goes with the head.
+                    if (relevantHitObject is IHasRepeats repeats && repeats.NodeSamples.Count > 0 && ReferenceEquals(relevantSamples, repeats.NodeSamples[0]))
+                        setVolumeOf(relevantHitObject.Samples);
                 });
-                volume.IsMultipleValues = false;
+
+                volume!.IsMultipleValues = false;
+
+                void setVolumeOf(IList<HitSampleInfo> samples)
+                {
+                    for (int i = 0; i < samples.Count; i++)
+                        samples[i] = samples[i].With(newVolume: newVolume);
+                }
             }
 
             #region hitsound toggles

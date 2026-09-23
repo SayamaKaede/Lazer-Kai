@@ -2098,16 +2098,21 @@ namespace osu.Game.Screens.Edit
             {
                 if (direction < 1)
                 {
-                    current = editorBeatmap.HitObjects.LastOrDefault(p => p.StartTime < currentTime);
+                    current = editorBeatmap.HitObjects.LastOrDefault(p => lastSoundOf(p) < currentTime);
                     if (current != null)
-                        clock.SeekSmoothlyTo(current is IHasRepeats r ? r.EndTime : current.StartTime);
+                        clock.SeekSmoothlyTo(lastSoundOf(current));
                 }
                 else
                 {
-                    current = editorBeatmap.HitObjects.FirstOrDefault(p => p.StartTime > currentTime);
+                    current = editorBeatmap.HitObjects.FirstOrDefault(p => soundOf(p) > currentTime);
                     if (current != null)
-                        clock.SeekSmoothlyTo(current.StartTime);
+                        clock.SeekSmoothlyTo(soundOf(current));
                 }
+
+                // a spinner's sound is at its end, where the timeline puts it.
+                double soundOf(HitObject h) => SamplePointPiece.SoundsAtItsEnd(h, editorBeatmap) ? h.GetEndTime() : h.StartTime;
+
+                double lastSoundOf(HitObject h) => h is IHasRepeats r ? r.EndTime : soundOf(h);
             }
 
             // Show the sample edit popover at the current time

@@ -268,6 +268,13 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             useSkin.BindValueChanged(_ => updateSkinPieces());
 
+            // a spinner sounds once the spinning is over, so its sound is edited at its end.
+            if (SamplePointPiece.SoundsAtItsEnd(Item, editorBeatmap))
+            {
+                samplePointPiece.AtTheEnd = true;
+                samplePointPiece.X = 1;
+            }
+
             updateSkinPieces();
             updateSizing();
         }

@@ -28,6 +28,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             return HitObject.StartTime + hasRepeats.Duration * NodeIndex / hasRepeats.SpanCount();
         }
 
+        protected override bool HasVolume => true;
+
         protected override IList<HitSampleInfo> GetSamples()
         {
             var hasRepeats = (IHasRepeats)HitObject;
@@ -47,6 +49,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
                 return [(hitObjects[0], nodeIndex < hasRepeats.NodeSamples.Count ? hasRepeats.NodeSamples[nodeIndex] : hitObjects[0].Samples)];
             }
+
+            protected override bool HasVolume(HitObject[] hitObjects) => true;
 
             public NodeSampleEditPopover(HitObject hitObject, int nodeIndex)
                 : base(hitObject)
