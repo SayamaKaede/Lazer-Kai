@@ -64,5 +64,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         {
             return colours.Yellow;
         }
+
+        /// <summary>
+        /// Outlines the label, for a point that a change made through another will also go to.
+        /// </summary>
+        protected void SetHighlighted(bool highlighted)
+        {
+            LabelContainer.BorderColour = Color4.White;
+            LabelContainer.BorderThickness = highlighted ? 2 : 0;
+        }
     }
 }

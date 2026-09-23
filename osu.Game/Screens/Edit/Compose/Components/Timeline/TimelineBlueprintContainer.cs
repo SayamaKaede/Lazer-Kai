@@ -71,6 +71,11 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         private readonly BindableBool dragToSeek = new BindableBool();
 
+        /// <summary>
+        /// Which sound points are selected, which a drag box can make part of an object.
+        /// </summary>
+        [Cached]
+        public readonly SamplePointSelection SamplePoints = new SamplePointSelection();
 
         [Resolved(CanBeNull = true)]
         private EditorReferenceDifficulty referenceDifficulty { get; set; }
@@ -90,6 +95,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             timelineStyle.BindValueChanged(_ => updateLayout());
 
             SelectableAreaBackground background;
+
+            AddInternal(SamplePoints);
 
             AddInternal(background = new SelectableAreaBackground
             {
@@ -361,10 +368,25 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             double minTime = dragBox.MinTime;
             double maxTime = dragBox.MaxTime;
 
-            SelectedItems.RemoveAll(hitObject => !shouldBeSelected(hitObject));
+            // the sound points in the box are selected as well, which can be part of an object: a change made through
+            // one of them goes to those, and not to the rest of the object.
+            var points = Beatmap.HitObjects
+                                .Where(h => h.StartTime <= maxTime && h.GetEndTime() >= minTime)
+                                .SelectMany(SamplePointSelection.PointsOf)
+                                .Where(p =>
+                                {
+                                    double time = SamplePointSelection.TimeOf(p.hitObject, p.point, Beatmap);
+                                    return minTime <= time && time <= maxTime;
+                                })
+                                .Concat(selectionBeforeDrag.SelectMany(SamplePointSelection.PointsOf));
 
-            foreach (var hitObject in Beatmap.HitObjects.Except(SelectedItems).Where(shouldBeSelected))
-                SelectedItems.Add(hitObject);
+            SamplePoints.SelectFromBox(points, () =>
+            {
+                SelectedItems.RemoveAll(hitObject => !shouldBeSelected(hitObject));
+
+                foreach (var hitObject in Beatmap.HitObjects.Except(SelectedItems).Where(shouldBeSelected))
+                    SelectedItems.Add(hitObject);
+            });
 
             bool shouldBeSelected(HitObject hitObject)
             {

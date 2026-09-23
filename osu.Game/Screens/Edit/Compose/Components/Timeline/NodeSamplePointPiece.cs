@@ -30,13 +30,15 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         protected override bool HasVolume => true;
 
+        protected override int Point => NodeIndex;
+
         protected override IList<HitSampleInfo> GetSamples()
         {
             var hasRepeats = (IHasRepeats)HitObject;
             return NodeIndex < hasRepeats.NodeSamples.Count ? hasRepeats.NodeSamples[NodeIndex] : HitObject.Samples;
         }
 
-        public override Popover GetPopover() => new NodeSampleEditPopover(HitObject, NodeIndex);
+        public override Popover GetPopover() => new NodeSampleEditPopover(HitObject, NodeIndex, PointsToChange());
 
         public partial class NodeSampleEditPopover : SampleEditPopover
         {
@@ -52,8 +54,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             protected override bool HasVolume(HitObject[] hitObjects) => true;
 
-            public NodeSampleEditPopover(HitObject hitObject, int nodeIndex)
-                : base(hitObject)
+            public NodeSampleEditPopover(HitObject hitObject, int nodeIndex, IReadOnlyList<(HitObject hitObject, int point)>? points = null)
+                : base(hitObject, points)
             {
                 this.nodeIndex = nodeIndex;
             }

@@ -51,6 +51,19 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         [Resolved]
         private TimelineBlueprintContainer? timelineBlueprintContainer { get; set; }
 
+        [Resolved]
+        private SamplePointSelection? selection { get; set; }
+
+        /// <summary>
+        /// Which of the object's points this is, in <see cref="SamplePointSelection"/>'s terms.
+        /// </summary>
+        protected virtual int Point => SamplePointSelection.Body;
+
+        /// <summary>
+        /// Whether this point is selected, so that a change made through any selected point goes to it too.
+        /// </summary>
+        public bool IsSelected => selection?.Contains(HitObject, Point) == true;
+
         public SamplePointPiece(HitObject hitObject)
         {
             HitObject = hitObject;
@@ -120,8 +133,15 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 }
             }, true);
 
+            if (selection != null)
+                selection.Changed += updateSelected;
+
+            updateSelected();
+
             FinishTransforms();
         }
+
+        private void updateSelected() => SetHighlighted(IsSelected);
 
         private void onDefaultsApplied(HitObject hitObject)
         {
@@ -135,7 +155,22 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             if (editor != null)
                 editor.ShowSampleEditPopoverRequested -= onShowSampleEditPopoverRequested;
 
+            if (selection != null)
+                selection.Changed -= updateSelected;
+
             HitObject.DefaultsApplied -= onDefaultsApplied;
+        }
+
+        /// <summary>
+        /// The points a change made through this one goes to: every selected point if this is one of them, and otherwise
+        /// this one alone. Null where there is no timeline to select points on, which leaves it to the popover.
+        /// </summary>
+        protected IReadOnlyList<(HitObject hitObject, int point)>? PointsToChange()
+        {
+            if (selection == null)
+                return null;
+
+            return IsSelected ? selection.All.ToList() : new[] { (HitObject, Point) };
         }
 
         private void onShowSampleEditPopoverRequested(double time)
@@ -216,7 +251,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         /// <returns>The samples to be edited.</returns>
         protected virtual IList<HitSampleInfo> GetSamples() => HitObject.Samples;
 
-        public virtual Popover GetPopover() => new SampleEditPopover(HitObject);
+        public virtual Popover GetPopover() => new SampleEditPopover(HitObject, PointsToChange());
 
         public partial class SampleEditPopover : OsuPopover
         {
@@ -267,10 +302,33 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             [Resolved(canBeNull: true)]
             private EditorBeatmap beatmap { get; set; } = null!;
 
-            public SampleEditPopover(HitObject hitObject)
+            [Resolved]
+            private Editor? editor { get; set; }
+
+            /// <summary>
+            /// Whether the beatmap's green lines can be edited, which is while it is kept in stable's format.
+            /// </summary>
+            private bool greenLinesEditable => editor?.KeptStableVersion.Value != null;
+
+            /// <summary>
+            /// The points to change, where the timeline says which: every selected one, or the one this was opened from.
+            /// </summary>
+            private readonly IReadOnlyList<(HitObject hitObject, int point)>? points;
+
+            /// <param name="hitObject">The object whose point this was opened from.</param>
+            /// <param name="points">The points to change, where the timeline's selection of them decides; null to go by
+            /// the selected objects.</param>
+            public SampleEditPopover(HitObject hitObject, IReadOnlyList<(HitObject hitObject, int point)>? points = null)
             {
                 this.hitObject = hitObject;
+                this.points = points;
             }
+
+            /// <summary>
+            /// The samples each change goes to.
+            /// </summary>
+            private IEnumerable<(HitObject hitObject, IList<HitSampleInfo> samples)> relevantSamples() =>
+                points?.Select(p => (p.hitObject, SamplePointSelection.SamplesOf(p.hitObject, p.point))) ?? GetRelevantSamples(relevantObjects);
 
             [BackgroundDependencyLoader]
             private void load()
@@ -315,8 +373,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
                 // if the piece belongs to a currently selected object, assume that the user wants to change all selected objects.
                 // if the piece belongs to an unselected object, operate on that object alone, independently of the selection.
-                relevantObjects = (beatmap.SelectedHitObjects.Contains(hitObject) ? beatmap.SelectedHitObjects : hitObject.Yield()).ToArray();
-                allRelevantSamples = GetRelevantSamples(relevantObjects).ToArray();
+                relevantObjects = points?.Select(p => p.hitObject).Distinct().ToArray()
+                                  ?? (beatmap.SelectedHitObjects.Contains(hitObject) ? beatmap.SelectedHitObjects : hitObject.Yield()).ToArray();
+                allRelevantSamples = relevantSamples().ToArray();
 
                 if (HasVolume(relevantObjects))
                 {
@@ -381,7 +440,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             /// Whether the popover sets a volume. One slider's body doesn't have one of its own: it takes the head's,
             /// which is set on the head. A selection of several sets everything they have, the body with the rest.
             /// </summary>
-            protected virtual bool HasVolume(HitObject[] hitObjects) => hitObjects.Length > 1 || hitObjects[0] is not IHasRepeats;
+            protected virtual bool HasVolume(HitObject[] hitObjects) =>
+                !(allRelevantSamples.Length == 1 && allRelevantSamples[0].hitObject is IHasRepeats && ReferenceEquals(allRelevantSamples[0].samples, allRelevantSamples[0].hitObject.Samples));
 
             private Drawable createSampleSetContent()
             {
@@ -510,9 +570,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             {
                 beatmap.BeginChange();
 
-                foreach (var (relevantHitObject, relevantSamples) in GetRelevantSamples(relevantObjects))
+                foreach (var (relevantHitObject, samples) in relevantSamples())
                 {
-                    updateAction(relevantHitObject, relevantSamples);
+                    updateAction(relevantHitObject, samples);
                     beatmap.Update(relevantHitObject);
                 }
 
@@ -583,8 +643,10 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 {
                     setVolumeOf(relevantSamples);
 
-                    // a slider's body has no volume of its own to set: it goes with the head.
-                    if (relevantHitObject is IHasRepeats repeats && repeats.NodeSamples.Count > 0 && ReferenceEquals(relevantSamples, repeats.NodeSamples[0]))
+                    // a slider's body has no volume of its own to set: it goes with the head, unless the green lines can
+                    // be edited, in which case it is theirs to say.
+                    if (!greenLinesEditable && relevantHitObject is IHasRepeats repeats && repeats.NodeSamples.Count > 0
+                        && ReferenceEquals(relevantSamples, repeats.NodeSamples[0]))
                         setVolumeOf(relevantHitObject.Samples);
                 });
 
@@ -638,7 +700,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             {
                 foreach ((string sampleName, var bindable) in selectionSampleStates)
                 {
-                    bindable.Value = GetRelevantSamples(relevantObjects).GetTernaryState(h => h.samples.Any(s => s.Name == sampleName));
+                    bindable.Value = relevantSamples().GetTernaryState(h => h.samples.Any(s => s.Name == sampleName));
                 }
             }
 
