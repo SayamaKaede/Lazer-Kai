@@ -18,13 +18,14 @@ using osu.Game.Tests.Resources;
 namespace osu.Game.Tests.Visual.Editing
 {
     /// <summary>
-    /// Removing the green lines that change nothing: ones saying what the line before them does, and ones another line
-    /// at the same time replaces.
+    /// Removing the green lines that change nothing: ones saying what the line before them does, and ones saying what
+    /// the line after them at the same time does.
     /// </summary>
     /// <remarks>
     /// Renatus [Hard]: the red line at 956 says 60 on the soft set, and nothing changes that until 20736. No object is
     /// between 122274 and 140735, around the break. The line at 140735 says 50 on the soft set up to 151285. The line at
-    /// 74719 turns kiai off with no object before the next line.
+    /// 74719 turns kiai off with no object before the next line. The red line at 119637 says 80 on the soft set, and the
+    /// one at 161834 says 65.
     /// </remarks>
     public partial class TestSceneGreenLineCleanup : EditorSavingTestScene
     {
@@ -59,17 +60,59 @@ namespace osu.Game.Tests.Visual.Editing
         }
 
         [Test]
-        public void TestALineReplacedAtTheSameTimeGoes()
+        public void TestALineSayingWhatTheOneAfterItAtTheSameTimeDoesGoes()
         {
-            AddStep("put a line in just before the one at 20736", () =>
-            {
-                var lines = timingLines.Lines;
-                lines.Insert(lines.IndexOf(lines.Single(l => l.Time == 20736)), SavedTimingLines.Parse("20736,-100,4,2,0,30,0,0")!.Value);
-            });
+            addLineJustBefore("20736,-100,4,2,0,65,0,0");
             cleanUp();
 
-            AddAssert("it is gone", () => editorLines(), () => Has.None.EqualTo("20736,-100,4,2,0,30,0,0"));
-            AddAssert("the one after it stays", () => editorLines(), () => Does.Contain("20736,-100,4,2,0,65,0,0"));
+            AddAssert("one of the two is left", () => editorLines().Count(l => l == "20736,-100,4,2,0,65,0,0"), () => Is.EqualTo(1));
+        }
+
+        /// <remarks>
+        /// Two lines at the same time that say different things leave it unclear which one the mapper meant, so both
+        /// stay for the mapper to sort out.
+        /// </remarks>
+        [Test]
+        public void TestLinesAtTheSameTimeSayingDifferentThingsStay()
+        {
+            addLineJustBefore("20736,-100,4,2,0,30,0,0");
+            cleanUp();
+
+            AddAssert("both stay", () => editorLines(), () => Does.Contain("20736,-100,4,2,0,30,0,0").And.Contain("20736,-100,4,2,0,65,0,0"));
+        }
+
+        /// <remarks>
+        /// Under a red line with no green line, sliders go at 1x.
+        /// </remarks>
+        [Test]
+        public void TestALineSayingWhatTheRedLineAfterItAtTheSameTimeDoesGoes()
+        {
+            addLineJustBefore("119637,-100,4,2,0,80,0,0");
+            cleanUp();
+
+            AddAssert("it is gone", () => editorLines(), () => Has.None.StartsWith("119637,-100,"));
+        }
+
+        /// <remarks>
+        /// The line before, at 119307, says 70 too, so this one says what the line before it does: it stays all the same,
+        /// as the red line at the same time says something else.
+        /// </remarks>
+        [Test]
+        public void TestALineSayingOtherThanTheRedLineAfterItAtTheSameTimeStays()
+        {
+            addLineJustBefore("119637,-100,4,2,0,70,0,0");
+            cleanUp();
+
+            AddAssert("it stays", () => editorLines(), () => Does.Contain("119637,-100,4,2,0,70,0,0"));
+        }
+
+        [Test]
+        public void TestALineGivingAnotherVelocityThanTheRedLineAfterItAtTheSameTimeStays()
+        {
+            addLineJustBefore("161834,-80,4,2,0,65,0,0");
+            cleanUp();
+
+            AddAssert("it stays", () => editorLines(), () => Does.Contain("161834,-80,4,2,0,65,0,0"));
         }
 
         /// <remarks>
@@ -129,6 +172,18 @@ namespace osu.Game.Tests.Visual.Editing
 
             EditorBeatmap.BeginChange();
             timingLines.Lines.Insert(timingLines.Lines.Count(l => l.Time <= line.Time), line);
+            EditorBeatmap.EndChange();
+        });
+
+        /// <summary>
+        /// Puts a line in ahead of the lines already at its time.
+        /// </summary>
+        private void addLineJustBefore(string raw) => AddStep($"add {raw} just before", () =>
+        {
+            var line = SavedTimingLines.Parse(raw)!.Value;
+
+            EditorBeatmap.BeginChange();
+            timingLines.Lines.Insert(timingLines.Lines.Count(l => l.Time < line.Time), line);
             EditorBeatmap.EndChange();
         });
 

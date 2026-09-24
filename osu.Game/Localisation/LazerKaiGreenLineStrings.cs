@@ -114,10 +114,10 @@ namespace osu.Game.Localisation
         public static LocalisableString RemoveUnneededHeader => new TranslatableString(getKey(@"remove_unneeded_header"), @"Remove the unneeded green lines?");
 
         /// <summary>
-        /// "Green lines that change nothing are removed: ones saying what the line before them does, and ones another line at the same time replaces. It can be undone."
+        /// "Green lines that change nothing are removed: ones saying what the line before them does, and ones saying what another line at the same time does. Lines at the same time that say different things stay. It can be undone."
         /// </summary>
         public static LocalisableString RemoveUnneededBody => new TranslatableString(getKey(@"remove_unneeded_body"),
-            @"Green lines that change nothing are removed: ones saying what the line before them does, and ones another line at the same time replaces. It can be undone.");
+            @"Green lines that change nothing are removed: ones saying what the line before them does, and ones saying what another line at the same time does. Lines at the same time that say different things stay. It can be undone.");
 
         /// <summary>
         /// "Removed {0} unneeded green lines."

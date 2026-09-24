@@ -11,8 +11,9 @@ namespace osu.Game.Screens.Edit.GreenLines
     /// Finds and takes out the green lines that change nothing stable plays or shows.
     /// </summary>
     /// <remarks>
-    /// A green line changes nothing when it says what the line before it does, or when another line at the same time
-    /// replaces it. Red lines are never taken out: they are the timing.
+    /// A green line changes nothing when it says what the line before it does, or what the line after it at the same
+    /// time does. Two lines at the same time that say different things both stay. Red lines are never taken out: they
+    /// are the timing.
     ///
     /// A line nothing reads yet stays, as it does in stable's own clean-up: the next object put under it reads it, and
     /// mappers leave such lines in on purpose to set the index back between notes.
@@ -73,20 +74,27 @@ namespace osu.Game.Screens.Edit.GreenLines
         {
             var line = lines[index];
 
-            // another line at the same time is read in its place, for everything.
+            // another line at the same time is read in its place. when it says something else, which of the two the
+            // mapper meant is theirs to sort out, so the line stays even if it says what the line before it does.
             if (index + 1 < lines.Count && lines[index + 1].Time == line.Time)
-                return true;
+                return saysWhat(lines[index + 1], line);
 
             if (index == 0)
                 return false;
 
-            var before = lines[index - 1];
+            return saysWhat(lines[index - 1], line);
+        }
 
-            // what a slider under the line before gets: always 1 under a red line.
-            double velocityBefore = before.Uninherited ? 1 : before.ClampedSliderVelocity;
+        /// <summary>
+        /// Whether a green line says what another line does.
+        /// </summary>
+        private static bool saysWhat(SavedTimingLine other, SavedTimingLine line)
+        {
+            // what a slider under the other line gets: always 1 under a red line.
+            double velocity = other.Uninherited ? 1 : other.ClampedSliderVelocity;
 
-            return line.SampleSet == before.SampleSet && line.SampleIndex == before.SampleIndex && line.Volume == before.Volume
-                   && line.Kiai == before.Kiai && line.ClampedSliderVelocity == velocityBefore;
+            return line.SampleSet == other.SampleSet && line.SampleIndex == other.SampleIndex && line.Volume == other.Volume
+                   && line.Kiai == other.Kiai && line.ClampedSliderVelocity == velocity;
         }
     }
 }

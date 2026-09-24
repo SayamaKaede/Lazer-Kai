@@ -243,7 +243,7 @@ namespace osu.Game.Localisation
             [$@"{green_line_prefix}:use_current_time"] = @"現在の時刻を使う",
             [$@"{green_line_prefix}:remove_unneeded"] = @"不要な緑線を削除",
             [$@"{green_line_prefix}:remove_unneeded_header"] = @"不要な緑線を削除しますか？",
-            [$@"{green_line_prefix}:remove_unneeded_body"] = @"何も変えていない緑線を削除します（手前の線と同じ値の線、同じ時刻の別の線に上書きされている線）。Undoで元に戻せます。",
+            [$@"{green_line_prefix}:remove_unneeded_body"] = @"何も変えていない緑線を削除します（手前の線と同じ値の線、同じ時刻の別の線と同じ値の線）。同じ時刻に値の違う線が重なっている箇所は残します。Undoで元に戻せます。",
             [$@"{green_line_prefix}:removed"] = @"不要な緑線を{0}本削除しました",
             [$@"{green_line_prefix}:none_removed"] = @"不要な緑線はありませんでした",
             [$@"{green_line_prefix}:sound_lines_inside_objects"] = @"エディターでスライダー・スピナーの途中の緑線を鳴らす",
