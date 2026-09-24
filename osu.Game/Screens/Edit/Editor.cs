@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -847,6 +848,12 @@ namespace osu.Game.Screens.Edit
             // only where the lines are the file's to keep: in lazer's format they are made up again on every save.
             keptStableVersion.BindValueChanged(v =>
                 removeUnneededGreenLinesMenuItem.Action.Disabled = v.NewValue == null || editorBeatmap.BeatmapInfo.Ruleset.OnlineID != 0, true);
+
+            stableCompatibility = config.GetBindable<bool>(OsuSetting.StableCompatibility);
+            stableCompatibility.BindValueChanged(_ => updateConvertToStableFormat());
+            keptStableVersion.BindValueChanged(_ => updateConvertToStableFormat());
+            MutationTracker.InProgress.BindValueChanged(_ => updateConvertToStableFormat(), true);
+
             changeHandler?.CanRedo.BindValueChanged(v => redoMenuItem.Action.Disabled = !v.NewValue, true);
         }
 
@@ -1799,6 +1806,50 @@ namespace osu.Game.Screens.Edit
             }));
         }
 
+        internal EditorMenuItem ConvertToStableFormatMenuItem { get; private set; }
+
+        private Bindable<bool> stableCompatibility;
+
+        /// <summary>
+        /// Offered for an osu! beatmap in lazer's format, while stable compatibility is on: with it off, the next save
+        /// would write lazer's format again.
+        /// </summary>
+        private void updateConvertToStableFormat() =>
+            ConvertToStableFormatMenuItem.Action.Disabled = !canSave || !stableCompatibility.Value || keptStableVersion.Value != null
+                                                            || editorBeatmap.BeatmapInfo.Ruleset.OnlineID != 0 || MutationTracker.InProgress.Value;
+
+        /// <summary>
+        /// Asks whether to convert the difficulty to stable's format, and does: it is saved the way exporting for stable
+        /// writes it, and opened again, to be kept in stable's format from then on.
+        /// </summary>
+        internal void ConfirmConvertToStableFormat()
+        {
+            dialogOverlay.Push(new ConvertToStableFormatDialog(() => attemptMutationOperation(() =>
+            {
+                // saved first as it always is, so that a beatmap never saved has a file, and unsaved changes are in it.
+                if (!Save())
+                    return false;
+
+                var info = beatmapManager.QueryBeatmap(b => b.ID == editorBeatmap.BeatmapInfo.ID);
+                byte[] saved = info == null ? null : readSavedFile(beatmapManager.GetWorkingBeatmap(info, true));
+
+                if (saved == null)
+                    return false;
+
+                using (var converted = LegacyBeatmapExporter.EncodeForStable(() => new MemoryStream(saved), info, LegacyBeatmapExporter.ConvertForStable))
+                {
+                    if (converted == null)
+                        return false;
+
+                    beatmapManager.SaveFile(editorBeatmap.BeatmapInfo, editorBeatmap.PlayableBeatmap, converted.ToArray());
+                }
+
+                // opened again, the file is read as one from stable is, and what the conversion changed shows.
+                SwitchToDifficulty(editorBeatmap.BeatmapInfo);
+                return true;
+            })));
+        }
+
         private void confirmSnapAllHitObjectsToCurrentDivisor()
         {
             dialogOverlay.Push(new SnapAllNotesConfirmationDialog(SnapAllHitObjectsToCurrentDivisor));
@@ -2227,6 +2278,15 @@ namespace osu.Game.Screens.Edit
             var export = createExportMenu();
             saveRelatedMenuItems.AddRange(export.Items);
             yield return export;
+
+            yield return new EditorMenuItem(LazerKaiStableCompatibilityStrings.Convert)
+            {
+                Items = new MenuItem[]
+                {
+                    ConvertToStableFormatMenuItem = new EditorMenuItem(LazerKaiStableCompatibilityStrings.ConvertToStableFormat, MenuItemType.Destructive,
+                        ConfirmConvertToStableFormat)
+                }
+            };
 
             yield return new MenuItem(EditorStrings.AutoBackup)
             {

@@ -223,6 +223,10 @@ namespace osu.Game.Localisation
             [$@"{stable_compatibility_prefix}:improve_compatibility"] = @"Stableとの互換性を強化する（試験的）",
             [$@"{stable_compatibility_prefix}:improve_compatibility_description"] = @"Stable形式（v14以前）の譜面を、編集していない行は元のまま保存し、Stable向けにはそのまま書き出します",
             [$@"{stable_compatibility_prefix}:saved_in_lazer_format"] = @"この編集はまだStable形式のまま保存できないため、Lazer形式で保存しました",
+            [$@"{stable_compatibility_prefix}:convert"] = @"変換",
+            [$@"{stable_compatibility_prefix}:convert_to_stable_format"] = @"v14形式に変換",
+            [$@"{stable_compatibility_prefix}:convert_to_stable_format_header"] = @"この難易度をv14形式に変換しますか？",
+            [$@"{stable_compatibility_prefix}:convert_to_stable_format_body"] = @"未保存の変更も含めて、Stable向けの出力と同じ形に変換して保存し、以後はStable形式として扱います（時刻と座標は整数に、複数の区間があるスライダーはベジエ曲線になります）。元に戻せません。",
 
             // the saved file's red and green lines on the timeline
             [$@"{saved_lines_prefix}:show_stable_green_lines"] = @"Stableの緑線を表示",

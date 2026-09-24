@@ -48,23 +48,38 @@ namespace osu.Game.Database
             if (beatmapInfo == null)
                 return base.GetFileContents(model, file);
 
-            // Read the beatmap contents and skin
-            using var contentStream = base.GetFileContents(model, file);
-
-            if (contentStream == null)
-                return null;
-
             if (KeepStableFiles.Value)
             {
+                using var contentStream = base.GetFileContents(model, file);
+
+                if (contentStream == null)
+                    return null;
+
                 byte[] content = contentStream.ReadAllRemainingBytesToArray();
 
                 // stable wrote this, or it was saved here in stable's own format: it needs nothing done to it, and
                 // anything done to it would only rewrite what stable already understands.
                 if (StableFileKeeper.IsStableFile(content))
                     return new MemoryStream(content);
-
-                contentStream.Seek(0, SeekOrigin.Begin);
             }
+
+            return EncodeForStable(() => base.GetFileContents(model, file), beatmapInfo, playable => MutateBeatmap(model, playable));
+        }
+
+        /// <summary>
+        /// What exporting for stable writes for a beatmap's file.
+        /// </summary>
+        /// <param name="openFile">Opens the beatmap's file. Called once for each thing read from it.</param>
+        /// <param name="beatmapInfo">The beatmap.</param>
+        /// <param name="mutateBeatmap">Brings the beatmap in line with what stable reads, before it is written.</param>
+        /// <returns>The file for stable, or null if the beatmap's file could not be opened.</returns>
+        public static MemoryStream? EncodeForStable(Func<Stream?> openFile, BeatmapInfo beatmapInfo, Action<IBeatmap> mutateBeatmap)
+        {
+            // Read the beatmap contents and skin
+            using var contentStream = openFile();
+
+            if (contentStream == null)
+                return null;
 
             using var contentStreamReader = new LineBufferedReader(contentStream);
 
@@ -75,7 +90,7 @@ namespace osu.Game.Database
             var workingBeatmap = new FlatWorkingBeatmap(beatmapContent);
             var playableBeatmap = workingBeatmap.GetPlayableBeatmap(beatmapInfo.Ruleset);
 
-            using var skinStream = base.GetFileContents(model, file);
+            using var skinStream = openFile();
 
             if (skinStream == null)
                 return null;
@@ -86,7 +101,7 @@ namespace osu.Game.Database
                 Configuration = new LegacySkinDecoder().Decode(skinStreamReader)
             };
 
-            using var storyboardStream = base.GetFileContents(model, file);
+            using var storyboardStream = openFile();
 
             if (storyboardStream == null)
                 return null;
@@ -96,7 +111,7 @@ namespace osu.Game.Database
             beatmapStoryboard.Beatmap = beatmapContent;
             beatmapStoryboard.BeatmapInfo = beatmapInfo;
 
-            MutateBeatmap(model, playableBeatmap);
+            mutateBeatmap(playableBeatmap);
 
             // Encode to legacy format
             var stream = new MemoryStream();
@@ -107,7 +122,7 @@ namespace osu.Game.Database
                 // If we don't do that, uploads to BSS may show changes where there are none.
                 sw.NewLine = "\r\n";
 
-                // `MutateBeatmap` above has already brought the content in line with what stable understands, so the
+                // `mutateBeatmap` above has already brought the content in line with what stable understands, so the
                 // file is stamped accordingly. Leaving it claiming a lazer version made tools trust float coordinates
                 // and multi-segment paths that are no longer present.
                 new LegacyBeatmapEncoder(playableBeatmap, beatmapSkin, beatmapStoryboard, LegacyBeatmapEncoder.STABLE_VERSION).Encode(sw);
