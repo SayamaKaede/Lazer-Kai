@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -13,6 +14,8 @@ using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Extensions;
+using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Objects;
@@ -327,15 +330,117 @@ namespace osu.Game.Tests.Visual.Editing
                                                           .Select(b => ((double)b.X, (double)(b.X + b.Width)))
                                                           .ToArray();
 
+        /// <summary>
+        /// Stable's "use current time" on a red line: it goes to the playhead's millisecond, not onto the beat divisor
+        /// (it is what the beats are counted from), and the objects stay where they are.
+        /// </summary>
         [Test]
-        public void TestARedLineIsNotMovedHere()
+        public void TestUsingTheCurrentTimeMovesARedLine()
         {
-            openAt(1000);
-            AddStep("go on", () => clock.Seek(2109));
+            double[] objectTimes = null!;
+
+            openAt(119637);
+            AddAssert("the red line is selected", () => panel.Selected?.Raw, () => Is.EqualTo("119637,659.340659340659,4,2,0,80,1,0"));
+            AddAssert("the button can be used", () => useCurrentTimeButton.Enabled.Value, () => Is.True);
+
+            AddStep("note where the objects are", () => objectTimes = EditorBeatmap.HitObjects.Select(h => h.StartTime).ToArray());
+            AddStep("go to 119700.6", () => clock.Seek(119700.6));
             AddStep("use the current time", () => panel.UseCurrentTime());
 
-            AddAssert("the red line is where it was", () => editorLines().First(), () => Is.EqualTo("956,329.67032967033,4,2,0,60,1,0"));
+            AddAssert("the line is at the playhead's millisecond", () => editorLines(), () => Does.Contain("119700,659.340659340659,4,2,0,80,1,0"));
+            AddAssert("and not where it was", () => editorLines(), () => Has.None.StartsWith("119637,"));
+            AddAssert("and still selected", () => panel.Selected?.Time, () => Is.EqualTo(119700));
+            AddAssert("the timing screen's timing point moved with it", () => EditorBeatmap.ControlPointInfo.TimingPoints.Select(t => t.Time),
+                () => Does.Contain(119700d).And.Not.Contains(119637d));
+            AddAssert("the objects are where they were", () => EditorBeatmap.HitObjects.Select(h => h.StartTime), () => Is.EqualTo(objectTimes));
         }
+
+        [Test]
+        public void TestAMovedRedLineIsSavedWhereItWasMoved()
+        {
+            openAt(119637);
+            AddStep("go to 119700", () => clock.Seek(119700));
+            AddStep("use the current time", () => panel.UseCurrentTime());
+            AddStep("confirm", () => panel.Confirm());
+            saveAndWait();
+
+            AddAssert("the file has just that line moved", () => removedAndAddedTimingLines(),
+                () => Is.EqualTo((new[] { "119637,659.340659340659,4,2,0,80,1,0" }, new[] { "119700,659.340659340659,4,2,0,80,1,0" })));
+        }
+
+        /// <summary>
+        /// A green line standing at the red line's time stays there, as in stable: only the selected line moves.
+        /// </summary>
+        [Test]
+        public void TestAGreenLineBesideAMovedRedLineStays()
+        {
+            openAt(119637);
+            AddStep("add a green line beside the red one", () => panel.AddLine());
+            AddStep("turn it down to 30", () => panel.Volume.Value = 30);
+            AddStep("select the red line", () => panel.ChildrenOfType<GreenLinePanel.LineRow>().Single(r => r.Line.Uninherited && r.Line.Time == 119637).TriggerClick());
+            AddUntilStep("it is selected", () => panel.Selected?.Uninherited, () => Is.True);
+
+            AddStep("go to 119700", () => clock.Seek(119700));
+            AddStep("use the current time", () => panel.UseCurrentTime());
+
+            AddAssert("the red line moved", () => editorLines(), () => Does.Contain("119700,659.340659340659,4,2,0,80,1,0"));
+            AddAssert("the green line stayed", () => editorLines(), () => Does.Contain("119637,-100,4,2,0,30,0,0"));
+        }
+
+        /// <summary>
+        /// A red line put where a green line stands goes before it, where stable has one: the green line after it at the
+        /// same time is still read.
+        /// </summary>
+        [Test]
+        public void TestARedLineMovedOntoAGreenLineGoesBeforeIt()
+        {
+            openAt(119637);
+            AddStep("go to the green line at 119966", () => clock.Seek(119966));
+            AddStep("use the current time", () => panel.UseCurrentTime());
+
+            AddAssert("the red line, then the green one", () => editorLines().SkipWhile(l => !l.StartsWith("119966,", StringComparison.Ordinal)).Take(2),
+                () => Is.EqualTo(new[] { "119966,659.340659340659,4,2,0,80,1,0", "119966,-100,4,2,0,70,0,0" }));
+        }
+
+        [Test]
+        public void TestARedLineIsNotMovedOntoAnother()
+        {
+            openAt(119637);
+            AddStep("go to the red line at 161834", () => clock.Seek(161834));
+            AddStep("use the current time", () => panel.UseCurrentTime());
+
+            AddAssert("both are where they were", () => editorLines(), () => Does.Contain("119637,659.340659340659,4,2,0,80,1,0").And.Contain("161834,329.67032967033,4,2,0,65,1,0"));
+        }
+
+        [Test]
+        public void TestCancellingPutsAMovedRedLineBack()
+        {
+            openAt(119637);
+            AddStep("go to 119700", () => clock.Seek(119700));
+            AddStep("use the current time", () => panel.UseCurrentTime());
+            AddStep("cancel", () => panel.Cancel());
+
+            AddAssert("the lines are the file's", () => editorLines(), () => Is.EqualTo(section(originalText(), "TimingPoints")));
+            AddAssert("the timing point is back", () => EditorBeatmap.ControlPointInfo.TimingPoints.Select(t => t.Time),
+                () => Does.Contain(119637d).And.Not.Contains(119700d));
+        }
+
+        [Test]
+        public void TestUndoingPutsAMovedRedLineBack()
+        {
+            openAt(119637);
+            AddStep("go to 119700", () => clock.Seek(119700));
+            AddStep("use the current time", () => panel.UseCurrentTime());
+            AddStep("confirm", () => panel.Confirm());
+
+            AddStep("undo once", () => ((EditorChangeHandler)Editor.Dependencies.Get(typeof(IEditorChangeHandler))).RestoreState(-1));
+
+            AddAssert("the lines are the file's", () => editorLines(), () => Is.EqualTo(section(originalText(), "TimingPoints")));
+            AddAssert("the timing point is back", () => EditorBeatmap.ControlPointInfo.TimingPoints.Select(t => t.Time),
+                () => Does.Contain(119637d).And.Not.Contains(119700d));
+        }
+
+        private RoundedButton useCurrentTimeButton => panel.ChildrenOfType<RoundedButton>().Single(b => b.Text == LazerKaiGreenLineStrings.UseCurrentTime);
 
         [Test]
         public void TestTheSelectedLineIsScrolledToWhenOpened()

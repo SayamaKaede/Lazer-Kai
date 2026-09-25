@@ -62,6 +62,11 @@ namespace osu.Game.Screens.Edit.GreenLines
         private List<(double time, bool kiai)> confirmedKiai = new List<(double, bool)>();
 
         /// <summary>
+        /// The timing screen's timing points, and where each was, when the pending changes began.
+        /// </summary>
+        private List<(TimingControlPoint point, double time)> confirmedTiming = new List<(TimingControlPoint, double)>();
+
+        /// <summary>
         /// Every object's sounds and velocity as they were when the pending changes began.
         /// </summary>
         private readonly Dictionary<HitObject, (HitSampleInfo[] samples, HitSampleInfo[][] nodes, double? velocity)> confirmedObjects =
@@ -78,6 +83,7 @@ namespace osu.Game.Screens.Edit.GreenLines
 
             confirmedLines = lines.Lines.ToList();
             confirmedKiai = beatmap.ControlPointInfo.EffectPoints.Select(e => (e.Time, e.KiaiMode)).ToList();
+            confirmedTiming = beatmap.ControlPointInfo.TimingPoints.Select(t => (t, t.Time)).ToList();
             confirmedObjects.Clear();
 
             foreach (var hitObject in beatmap.HitObjects)
@@ -120,6 +126,20 @@ namespace osu.Game.Screens.Edit.GreenLines
 
             if (!beatmap.ControlPointInfo.EffectPoints.Select(e => (e.Time, e.KiaiMode)).SequenceEqual(confirmedKiai))
                 setKiai(confirmedKiai);
+
+            bool timingMoved = false;
+
+            foreach (var (point, time) in confirmedTiming)
+            {
+                if (point.Time == time)
+                    continue;
+
+                moveTimingPoint(point, time);
+                timingMoved = true;
+            }
+
+            if (timingMoved)
+                beatmap.UpdateAllHitObjects();
 
             foreach (var hitObject in beatmap.HitObjects)
             {
@@ -234,8 +254,58 @@ namespace osu.Game.Screens.Edit.GreenLines
                 }
 
                 lines.Lines.RemoveAt(index);
-                lines.Lines.Insert(lines.Lines.Count(l => l.Time <= changed.Time), changed);
+                lines.Lines.Insert(placeFor(changed), changed);
             });
+        }
+
+        /// <summary>
+        /// Moves a red line, and the timing screen's timing point with it: the beats from there on are counted from its
+        /// new time. The objects stay where they are, as in stable, and so does anything else at its old time.
+        /// </summary>
+        /// <returns>The line where it now is, or null if it could not be moved.</returns>
+        public SavedTimingLine? MoveRedLine(SavedTimingLine line, double time)
+        {
+            if (!line.Uninherited || line.Time == time || !lines.Lines.Contains(line) || lines.Lines.Any(l => l.Uninherited && l.Time == time))
+                return null;
+
+            var point = beatmap.ControlPointInfo.TimingPoints.FirstOrDefault(t => Math.Abs(t.Time - line.Time) < 1);
+
+            if (point == null)
+                return null;
+
+            var moved = line.WithTime(time);
+
+            change(() =>
+            {
+                moveTimingPoint(point, time);
+
+                lines.Lines.Remove(line);
+                lines.Lines.Insert(placeFor(moved), moved);
+
+                // a slider's length in time is its beat length's, which is now another stretch's.
+                beatmap.UpdateAllHitObjects();
+            });
+
+            return moved;
+        }
+
+        /// <summary>
+        /// Where a line goes among the others: after those before it, and at its own time, a red line before the green
+        /// ones, which is where stable has it, so the green lines are still read.
+        /// </summary>
+        private int placeFor(SavedTimingLine line) => lines.Lines.Count(l => l.Time < line.Time || (l.Time == line.Time && (l.Uninherited || !line.Uninherited)));
+
+        private void moveTimingPoint(TimingControlPoint point, double time)
+        {
+            var info = beatmap.ControlPointInfo;
+            var group = info.GroupAt(point.Time);
+
+            group.Remove(point);
+
+            if (group.ControlPoints.Count == 0)
+                info.RemoveGroup(group);
+
+            info.Add(time, point);
         }
 
         /// <summary>

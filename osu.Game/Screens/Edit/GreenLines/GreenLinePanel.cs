@@ -475,10 +475,24 @@ namespace osu.Game.Screens.Edit.GreenLines
         /// objects follow what is in effect where they are afterwards. Where a green line stands there already, nothing
         /// is moved, rather than leave two on one time.
         /// </summary>
+        /// <remarks>
+        /// A red line goes to the playhead's millisecond rather than onto the beat divisor, since the beats are counted
+        /// from it, and the objects stay where they are, as in stable. Where a red line stands already, nothing is moved.
+        /// </remarks>
         public void UseCurrentTime()
         {
-            if (!Editable || Selected is not SavedTimingLine line || line.Uninherited)
+            if (!Editable || Selected is not SavedTimingLine line)
                 return;
+
+            if (line.Uninherited)
+            {
+                var movedRed = editing.MoveRedLine(line, Math.Floor(editorClock.CurrentTime));
+
+                if (movedRed != null)
+                    select(movedRed);
+
+                return;
+            }
 
             double time = Math.Floor(editorBeatmap.SnapTime(editorClock.CurrentTime, null));
 
@@ -554,8 +568,7 @@ namespace osu.Game.Screens.Edit.GreenLines
             velocityContainer.Alpha = line?.Uninherited == true ? 0.5f : 1;
             removeButton.Enabled.Value = green;
 
-            // a red line's place is the timing screen's to change.
-            useCurrentTimeButton.Enabled.Value = green;
+            useCurrentTimeButton.Enabled.Value = line != null;
 
             if (line == null)
                 lineText.Text = default;
