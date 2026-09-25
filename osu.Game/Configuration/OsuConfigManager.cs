@@ -327,6 +327,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorStatusShowSaveFormat, true);
             SetDefault(OsuSetting.EditorSoundLinesInsideObjects, true);
             SetDefault(OsuSetting.GameplaySoundLinesInsideObjects, false);
+            SetDefault(OsuSetting.ErrorReporting, true);
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.01f);
@@ -395,6 +396,8 @@ namespace osu.Game.Configuration
             switch (lookup)
             {
                 case OsuSetting.Token:
+                // the configuration goes out with every error report, and the account name is who sent it.
+                case OsuSetting.Username:
                     return true;
             }
 
@@ -1242,5 +1245,10 @@ namespace osu.Game.Configuration
         /// The same in gameplay and test play.
         /// </summary>
         GameplaySoundLinesInsideObjects,
+
+        /// <summary>
+        /// Whether errors, and saves that could not stay in stable's format, are sent to Lazer-Kai's error reports.
+        /// </summary>
+        ErrorReporting,
     }
 }

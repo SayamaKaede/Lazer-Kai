@@ -66,6 +66,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 reveal,
                 path,
                 export,
+                new SettingsCheckbox
+                {
+                    LabelText = LazerKaiSettingsStrings.ErrorReporting,
+                    TooltipText = LazerKaiSettingsStrings.ErrorReportingDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.ErrorReporting),
+                },
             };
 
             // out of sight until it is asked for. A path very often carries the account name of whoever is at

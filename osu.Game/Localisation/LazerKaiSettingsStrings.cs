@@ -192,6 +192,17 @@ namespace osu.Game.Localisation
         public static LocalisableString ExportLogsFailed => new TranslatableString(getKey(@"export_logs_failed"), @"The logs could not be exported.");
 
         /// <summary>
+        /// "Send error reports automatically"
+        /// </summary>
+        public static LocalisableString ErrorReporting => new TranslatableString(getKey(@"error_reporting"), @"Send error reports automatically");
+
+        /// <summary>
+        /// "Sends errors, and saves that could not stay in stable's format, to Lazer-Kai's developer. Your osu! account, your Windows account name and your computer's name are left out."
+        /// </summary>
+        public static LocalisableString ErrorReportingDescription => new TranslatableString(getKey(@"error_reporting_description"),
+            @"Sends errors, and saves that could not stay in stable's format, to Lazer-Kai's developer. Your osu! account, your Windows account name and your computer's name are left out.");
+
+        /// <summary>
         /// "Show the Mapping Tools path"
         /// </summary>
         public static LocalisableString ShowMappingToolsPath => new TranslatableString(getKey(@"show_mapping_tools_path"), @"Show the Mapping Tools path");

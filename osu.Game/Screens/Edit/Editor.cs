@@ -71,6 +71,7 @@ using osu.Game.Screens.Edit.Timing;
 using osu.Game.Screens.Edit.Verify;
 using osu.Game.Screens.OnlinePlay;
 using osu.Game.Users;
+using osu.Game.Utils;
 using WebCommonStrings = osu.Game.Resources.Localisation.Web.CommonStrings;
 
 namespace osu.Game.Screens.Edit
@@ -1153,7 +1154,10 @@ namespace osu.Game.Screens.Edit
                 return true;
             }
 
-            Logger.Log($@"{editorBeatmap.BeatmapInfo.GetDisplayTitle()} could not be kept in stable's format: {stableFileKeeper.LastFailure ?? @"no reason given"}");
+            // reported as well as logged: what cannot be written yet is what stable compatibility has left to do. The
+            // reason is the report's message and the beatmap only its description, so the reports gather by reason.
+            Logger.Error(new SentryOnlyDiagnosticsException(stableFileKeeper.LastFailure ?? @"no reason given"),
+                $@"{editorBeatmap.BeatmapInfo.GetDisplayTitle()} could not be kept in stable's format");
 
             // the file does not come back from lazer's format, so that is asked for first.
             if (!savingInLazerFormatAllowed)

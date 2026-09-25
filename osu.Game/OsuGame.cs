@@ -190,12 +190,6 @@ namespace osu.Game
 
         private SentryLogger sentryLogger;
 
-        /// <summary>
-        /// Whether unhandled errors are sent to the osu! team. Lazer-Kai is a personal build with nowhere to report to,
-        /// so the reporter is never started — which is also what keeps the error notification from claiming otherwise.
-        /// </summary>
-        private readonly bool errorReportingEnabled = false;
-
         public virtual StableStorage GetStorageForStableInstall() => null;
 
         private float toolbarOffset => (Toolbar?.Position.Y ?? 0) + (Toolbar?.DrawHeight ?? 0);
@@ -384,8 +378,8 @@ namespace osu.Game
         {
             base.SetupLogging(gameStorage, cacheStorage);
 
-            if (errorReportingEnabled)
-                sentryLogger = new SentryLogger(this, cacheStorage);
+            // to Lazer-Kai's own reports, not the osu! team's; nothing is sent until the options have been read.
+            sentryLogger = new SentryLogger(this, cacheStorage);
         }
 
         public override void SetHost(GameHost host)
@@ -450,7 +444,7 @@ namespace osu.Game
         [BackgroundDependencyLoader]
         private void load()
         {
-            sentryLogger?.AttachUser(API.LocalUser);
+            sentryLogger?.Attach(LocalConfig, API.LocalUser);
 
             if (SeasonalUIConfig.ENABLED)
                 dependencies.CacheAs(osuLogo = new OsuLogoChristmas { Alpha = 0 });
@@ -1505,12 +1499,12 @@ namespace osu.Game
             {
                 LocalisableString message;
 
-                if (entry.Exception != null && sentryLogger != null)
+                if (entry.Exception != null && sentryLogger?.Reporting == true)
                     message = LocalisableString.Interpolate($"{entry.Message.Truncate(256)}\n\n{NotificationsStrings.ErrorAutomaticallyReported}");
                 else
-                    // nothing is reported anywhere from this build, so the only way anybody finds out what went
-                    // wrong is if the person it happened to sends the logs. Say so on the notification itself:
-                    // by the time they think to go looking in the options, the run it happened in has ended.
+                    // nothing is reported from this build, or not from this person, so the only way anybody finds out
+                    // what went wrong is if they send the logs. Say so on the notification itself: by the time they
+                    // think to go looking in the options, the run it happened in has ended.
                     message = LocalisableString.Interpolate($"{entry.Message.Truncate(256)}\n\n{EditorStrings.ClickToExportLogs}");
 
                 Schedule(() => Notifications.Post(new SimpleErrorNotification

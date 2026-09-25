@@ -375,6 +375,8 @@ namespace osu.Game.Localisation
             [$@"{settings_prefix}:export_logs_description"] = @"直近のログを、Windowsのアカウント名を伏せた状態でコピーし、その場所を開きます",
             [$@"{settings_prefix}:exported_logs"] = @"ログを{0}件書き出しました。クリックすると場所を開きます",
             [$@"{settings_prefix}:export_logs_failed"] = @"ログを書き出せませんでした。",
+            [$@"{settings_prefix}:error_reporting"] = @"エラーを自動で送信する",
+            [$@"{settings_prefix}:error_reporting_description"] = @"エラーと、Stable形式のまま保存できなかった件を、Lazer-Kaiの開発者に送信します。osu!のアカウント、Windowsのアカウント名、PCの名前は送信しません",
             [$@"{settings_prefix}:show_mapping_tools_path"] = @"Mapping Tools のパスを表示",
             [$@"{settings_prefix}:hide_mapping_tools_path"] = @"Mapping Tools のパスを隠す",
             [$@"{settings_prefix}:takes_effect_on_reopen"] = @"次にエディターを開いたときに反映されます",

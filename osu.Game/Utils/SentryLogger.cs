@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -9,6 +10,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using osu.Framework;
 using osu.Framework.Allocation;
@@ -35,9 +38,29 @@ namespace osu.Game.Utils
     /// <summary>
     /// Report errors to sentry.
     /// </summary>
+    /// <remarks>
+    /// Lazer-Kai's own project, not the osu! team's: they have no use for a fork's errors. Nothing that says who sent a
+    /// report goes with it — no account, no machine name, and the Windows account name and the osu! username are taken
+    /// out of everything else (<see cref="Scrub"/>). Somebody who would rather not send anything turns it off in the
+    /// options, and nothing is sent until those have been read.
+    /// </remarks>
     public class SentryLogger : IDisposable
     {
+        /// <summary>
+        /// Where reports go. It is in every copy of the game anyway, and it can only be sent to, not read from.
+        /// </summary>
+        private const string dsn = @"https://b600614892ac193b68d09c2543137ee4@o4512145916297216.ingest.us.sentry.io/4512145926914048";
+
+        /// <summary>
+        /// The address a report says it came from, in place of the one it did.
+        /// </summary>
+        internal const string NO_ADDRESS = @"0.0.0.0";
+
         private IBindable<APIUser>? localUser;
+
+        private readonly Bindable<bool> reporting = new Bindable<bool>();
+
+        private readonly SentryReportLimit limit = new SentryReportLimit();
 
         private readonly IDisposable? sentrySession;
 
@@ -53,21 +76,135 @@ namespace osu.Game.Utils
             if (DebugUtils.IsNUnitRunning)
                 return;
 
-            if (!game.IsDeployedBuild || !game.CreateEndpoints().WebsiteUrl.EndsWith(@".ppy.sh", StringComparison.Ordinal))
+            // a build from the working tree is the one being worked on: its errors are seen as they happen.
+            if (!game.IsDeployedBuild)
                 return;
 
             sentrySession = SentrySdk.Init(options =>
             {
-                options.Dsn = string.Empty;
-                options.AutoSessionTracking = true;
-                options.IsEnvironmentUser = false;
+                Configure(options, dsn, game.Version, () => localUser?.Value.Username);
                 options.IsGlobalModeEnabled = true;
                 options.CacheDirectoryPath = storage?.GetFullPath(string.Empty);
-                // The reported release needs to match version as reported to Sentry in .github/workflows/sentry-release.yml
-                options.Release = $"osu@{game.Version.Split('-').First()}";
             });
 
             Logger.NewEntry += processLogEntry;
+        }
+
+        /// <summary>
+        /// Whether errors are being sent: there is somewhere to send them, and the options say to.
+        /// </summary>
+        public bool Reporting => sentrySession != null && reporting.Value;
+
+        /// <summary>
+        /// Everything about a report that is not particular to this game's instance, so that what is sent can be tested.
+        /// </summary>
+        /// <param name="options">The options to set.</param>
+        /// <param name="dsn">Where to send to.</param>
+        /// <param name="version">The game's version, as the release a report came from.</param>
+        /// <param name="osuUsername">The osu! account signed in, if any, to take out of what is sent.</param>
+        internal static void Configure(SentryOptions options, string dsn, string version, Func<string?> osuUsername)
+        {
+            options.Dsn = dsn;
+            options.Release = $"lazer-kai@{version}";
+
+            // who is playing, and on what: none of it is sent. These are the defaults, set here so that they stay so.
+            options.SendDefaultPii = false;
+            options.IsEnvironmentUser = false;
+
+            // a session is a record of the game being opened and closed, which is not an error.
+            options.AutoSessionTracking = false;
+
+            options.SetBeforeSend((e, _) => Scrub(e, osuUsername()));
+        }
+
+        /// <summary>
+        /// The same report, with the Windows account name, the machine's name and the osu! username taken out of every
+        /// text in it: the exception's message, the paths in its stack trace, the log lines that led up to it.
+        /// </summary>
+        /// <returns>The report to send, or null to send nothing when it could not be gone through.</returns>
+        internal static SentryEvent? Scrub(SentryEvent report, string? osuUsername)
+        {
+            try
+            {
+                var names = new List<string> { Environment.MachineName };
+
+                if (!string.IsNullOrWhiteSpace(osuUsername))
+                    names.Add(osuUsername);
+
+                var original = new ArrayBufferWriter<byte>();
+
+                using (var writer = new Utf8JsonWriter(original))
+                    report.WriteTo(writer, null);
+
+                var scrubbed = new ArrayBufferWriter<byte>();
+
+                using (var document = JsonDocument.Parse(original.WrittenMemory))
+                using (var writer = new Utf8JsonWriter(scrubbed))
+                    writeScrubbed(document.RootElement, writer, names);
+
+                SentryEvent result;
+
+                using (var document = JsonDocument.Parse(scrubbed.WrittenMemory))
+                    result = SentryEvent.FromJson(document.RootElement);
+
+                // a report that gives no address of its own is put down to the one it arrived from, and placed from
+                // that down to the town (2026-09-25, with the project told not to store addresses). This one gives one
+                // that places it nowhere.
+                result.User.IpAddress = NO_ADDRESS;
+                return result;
+            }
+            catch
+            {
+                // a report that might still name somebody is not sent.
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Copies a report's JSON through, masking the strings in it. Only values: a name matching part of a key would
+        /// otherwise rename what the report's fields are.
+        /// </summary>
+        private static void writeScrubbed(JsonElement element, Utf8JsonWriter writer, IReadOnlyList<string> names)
+        {
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.Object:
+                    writer.WriteStartObject();
+
+                    foreach (var property in element.EnumerateObject())
+                    {
+                        writer.WritePropertyName(property.Name);
+                        writeScrubbed(property.Value, writer, names);
+                    }
+
+                    writer.WriteEndObject();
+                    break;
+
+                case JsonValueKind.Array:
+                    writer.WriteStartArray();
+
+                    foreach (var item in element.EnumerateArray())
+                        writeScrubbed(item, writer, names);
+
+                    writer.WriteEndArray();
+                    break;
+
+                case JsonValueKind.String:
+                    string text = PathDisplay.MaskIn(element.GetString()!);
+
+                    // whole words only, and not a part of a dotted name: "osu" or "Game" taken out of every frame of a
+                    // stack trace ("osu.Game.Screens.Edit") would leave nothing to read it by. A name that ends a
+                    // sentence is still a whole word.
+                    foreach (string name in names)
+                        text = Regex.Replace(text, $@"(?<![\p{{L}}\p{{N}}_]\.?){Regex.Escape(name)}(?!\.?[\p{{L}}\p{{N}}_])", PathDisplay.MASK, RegexOptions.IgnoreCase);
+
+                    writer.WriteStringValue(text);
+                    break;
+
+                default:
+                    element.WriteTo(writer);
+                    break;
+            }
         }
 
         ~SentryLogger()
@@ -75,7 +212,14 @@ namespace osu.Game.Utils
             Dispose(false);
         }
 
-        public void AttachUser(IBindable<APIUser> user)
+        /// <summary>
+        /// Starts sending, if the options say to, and learns the osu! account to keep out of what is sent.
+        /// </summary>
+        /// <remarks>
+        /// The osu! team's reports carry the account, so that they can find a player again. These do not: the account is
+        /// only here to be taken out.
+        /// </remarks>
+        public void Attach(OsuConfigManager config, IBindable<APIUser> user)
         {
             if (sentrySession == null)
                 return;
@@ -83,25 +227,22 @@ namespace osu.Game.Utils
             Debug.Assert(localUser == null);
 
             localUser = user.GetBoundCopy();
-            localUser.BindValueChanged(u =>
-            {
-                SentrySdk.ConfigureScope(scope => scope.User = new SentryUser
-                {
-                    Username = u.NewValue.Username,
-                    Id = u.NewValue.Id.ToString(),
-                });
-            }, true);
+            config.BindWith(OsuSetting.ErrorReporting, reporting);
         }
 
         private void processLogEntry(LogEntry entry)
         {
             if (entry.Level < LogLevel.Verbose) return;
 
+            if (!reporting.Value) return;
+
             var exception = entry.Exception;
 
             if (exception != null)
             {
                 if (!shouldSubmitException(exception)) return;
+
+                if (!limit.Allows(exception)) return;
 
                 // framework does some weird exception redirection which means sentry does not see unhandled exceptions using its automatic methods.
                 // but all unhandled exceptions still arrive via this pathway. we just need to mark them as unhandled for tagging purposes.
