@@ -21,6 +21,33 @@ namespace osu.Game.Localisation
             @"Beatmaps in stable's format (v14 and earlier) are saved with every line that was not edited kept as it was, and exported for stable as they are.");
 
         /// <summary>
+        /// "About improving compatibility with stable"
+        /// </summary>
+        public static LocalisableString NoticeHeader => new TranslatableString(getKey(@"notice_header"), @"About improving compatibility with stable");
+
+        /// <summary>
+        /// "- Only osu! (standard) beatmaps are supported for now."
+        /// </summary>
+        public static LocalisableString NoticeSupportedModes => new TranslatableString(getKey(@"notice_supported_modes"), @"- Only osu! (standard) beatmaps are supported for now.");
+
+        /// <summary>
+        /// "- While this is on, a backup is taken whenever a beatmap in stable's format is opened. Keeping more backups is recommended, in the Backups options under Other (for example, every 15 minutes, 100 kept)."
+        /// </summary>
+        public static LocalisableString NoticeBackups => new TranslatableString(getKey(@"notice_backups"),
+            @"- While this is on, a backup is taken whenever a beatmap in stable's format is opened. Keeping more backups is recommended, in the Backups options under Other (for example, every 15 minutes, 100 kept).");
+
+        /// <summary>
+        /// "- If a save cannot stay in stable's format, a warning is shown. The error is reported automatically; please wait for a fix."
+        /// </summary>
+        public static LocalisableString NoticeWarning => new TranslatableString(getKey(@"notice_warning"),
+            @"- If a save cannot stay in stable's format, a warning is shown. The error is reported automatically; please wait for a fix.");
+
+        /// <summary>
+        /// "OK"
+        /// </summary>
+        public static LocalisableString NoticeOk => new TranslatableString(getKey(@"notice_ok"), @"OK");
+
+        /// <summary>
         /// "This edit cannot be kept in stable's format yet, so the beatmap was saved in lazer's."
         /// </summary>
         public static LocalisableString SavedInLazerFormat => new TranslatableString(getKey(@"saved_in_lazer_format"),

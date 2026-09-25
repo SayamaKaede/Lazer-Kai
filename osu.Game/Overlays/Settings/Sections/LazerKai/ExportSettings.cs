@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
@@ -14,9 +15,20 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
     {
         protected override LocalisableString Header => LazerKaiSettingsStrings.ExportHeader;
 
+        [Resolved]
+        private SessionStatics sessionStatics { get; set; } = null!;
+
+        [Resolved]
+        private IDialogOverlay? dialogOverlay { get; set; }
+
+        private Bindable<bool> stableCompatibility = null!;
+        private Bindable<bool> noticeShown = null!;
+
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
+            stableCompatibility = config.GetBindable<bool>(OsuSetting.StableCompatibility);
+
             Children = new Drawable[]
             {
                 new SettingsEnumDropdown<BeatmapExportFormat>
@@ -28,9 +40,26 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 {
                     LabelText = LazerKaiStableCompatibilityStrings.ImproveCompatibility,
                     TooltipText = LazerKaiStableCompatibilityStrings.ImproveCompatibilityDescription,
-                    Current = config.GetBindable<bool>(OsuSetting.StableCompatibility)
+                    Current = stableCompatibility
                 },
             };
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            noticeShown = sessionStatics.GetBindable<bool>(Static.StableCompatibilityNoticeShown);
+
+            // turned on, not found on: somebody who had it on already has been using it.
+            stableCompatibility.BindValueChanged(on =>
+            {
+                if (!on.NewValue || noticeShown.Value)
+                    return;
+
+                noticeShown.Value = true;
+                dialogOverlay?.Push(new StableCompatibilityNoticeDialog());
+            });
         }
     }
 }

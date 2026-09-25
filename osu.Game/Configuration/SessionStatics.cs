@@ -34,6 +34,7 @@ namespace osu.Game.Configuration
             SetDefault<ScoreInfo?>(Static.LastAppliedOffsetScore, null);
             SetDefault<UserActivity?>(Static.UserOnlineActivity, null);
             SetDefault<APITag[]?>(Static.AllBeatmapTags, null);
+            SetDefault(Static.StableCompatibilityNoticeShown, false);
         }
 
         /// <summary>
@@ -109,5 +110,11 @@ namespace osu.Game.Configuration
         UserOnlineActivity,
 
         AllBeatmapTags,
+
+        /// <summary>
+        /// Whether the notes on stable compatibility have been shown since the game started. They are shown once a run,
+        /// when the option is turned on: again every time would be in the way of somebody trying it out.
+        /// </summary>
+        StableCompatibilityNoticeShown,
     }
 }

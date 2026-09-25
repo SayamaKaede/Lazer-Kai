@@ -222,6 +222,11 @@ namespace osu.Game.Localisation
             // keeping stable's own files
             [$@"{stable_compatibility_prefix}:improve_compatibility"] = @"Stableとの互換性を強化する（試験的）",
             [$@"{stable_compatibility_prefix}:improve_compatibility_description"] = @"Stable形式（v14以前）の譜面を、編集していない行は元のまま保存し、Stable向けにはそのまま書き出します",
+            [$@"{stable_compatibility_prefix}:notice_header"] = @"Stableとの互換性の強化について",
+            [$@"{stable_compatibility_prefix}:notice_supported_modes"] = @"・現在はstandardモードのみしか対応していません",
+            [$@"{stable_compatibility_prefix}:notice_backups"] = @"・このオプションが有効の時、Stable形式の譜面を開いたときに自動でバックアップが取られます。オプション > その他 > バックアップから、保持する個数を増やすことをおすすめします (例: 間隔15分 個数100個)",
+            [$@"{stable_compatibility_prefix}:notice_warning"] = @"・もしStable形式で保存に失敗した場合は警告が出ます。エラーは自動で送信されるので、不具合の修正をお待ちください。",
+            [$@"{stable_compatibility_prefix}:notice_ok"] = @"OK",
             [$@"{stable_compatibility_prefix}:saved_in_lazer_format"] = @"この編集はまだStable形式のまま保存できないため、Lazer形式で保存しました",
             [$@"{stable_compatibility_prefix}:cannot_stay_stable_header"] = @"この編集はまだStable形式のまま保存できません",
             [$@"{stable_compatibility_prefix}:cannot_stay_stable_body"] = @"保存すると、この難易度はLazer形式になり、以後もLazer形式で扱われます。保存する前に、今のファイルを控えとしてバックアップのフォルダに残します。原因はログに記録しました。",
