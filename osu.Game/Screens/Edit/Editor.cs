@@ -515,6 +515,11 @@ namespace osu.Game.Screens.Edit
             {
                 stableFileKeeper = new StableFileKeeper(savedFile, editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard);
                 keptStableVersion.Value = stableFileKeeper.Version;
+
+                // the lines a save puts in for the velocities, shown as they come about. Only an osu! beatmap's objects
+                // are written into the file.
+                if (editorBeatmap.BeatmapInfo.Ruleset.OnlineID == 0)
+                    savedTimingLines.ShowVelocityLinesOf(editorBeatmap);
             }
 
             Schedule(() =>
@@ -1199,6 +1204,7 @@ namespace osu.Game.Screens.Edit
 
             // the file is lazer's from here on, so there is nothing left to keep.
             stableFileKeeper = null;
+            savedTimingLines.StopShowingVelocityLines();
             keptStableVersion.Value = null;
             notifications?.Post(new SimpleNotification { Text = LazerKaiStableCompatibilityStrings.SavedInLazerFormat });
             return true;

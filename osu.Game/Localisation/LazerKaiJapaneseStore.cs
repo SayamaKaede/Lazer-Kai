@@ -243,6 +243,7 @@ namespace osu.Game.Localisation
             [$@"{saved_lines_prefix}:red_line"] = @"赤線 {0}・BPM {1}・{2}/4・{3} #{4}・音量{5}%",
             [$@"{saved_lines_prefix}:green_line"] = @"緑線 {0}・SV x{1}・{2} #{3}・音量{4}%",
             [$@"{saved_lines_prefix}:kiai"] = @"・Kiai",
+            [$@"{saved_lines_prefix}:put_in_on_save"] = @"（保存時に追加されます）",
 
             // the green line panel
             [$@"{green_line_prefix}:title"] = @"緑線",
@@ -254,6 +255,8 @@ namespace osu.Game.Localisation
             [$@"{green_line_prefix}:confirm"] = @"確定",
             [$@"{green_line_prefix}:time"] = @"時刻",
             [$@"{green_line_prefix}:use_current_time"] = @"現在の時刻を使う",
+            [$@"{green_line_prefix}:use_green_line_velocity"] = @"緑線のSVを使う（{0}x）",
+            [$@"{green_line_prefix}:using_green_line_velocity"] = @"緑線のSVを使用中",
             [$@"{green_line_prefix}:remove_unneeded"] = @"不要な緑線を削除",
             [$@"{green_line_prefix}:remove_unneeded_header"] = @"不要な緑線を削除しますか？",
             [$@"{green_line_prefix}:remove_unneeded_body"] = @"何も変えていない緑線を削除します（手前の線と同じ値の線、同じ時刻の別の線と同じ値の線）。同じ時刻に値の違う線が重なっている箇所は残します。Undoで元に戻せます。",

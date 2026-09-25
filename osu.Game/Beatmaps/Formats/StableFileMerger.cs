@@ -88,6 +88,38 @@ namespace osu.Game.Beatmaps.Formats
             return null;
         }
 
+        /// <summary>
+        /// The lines as a save would leave them for the sliders' velocities alone: a line at the head of every slider
+        /// whose velocity the lines in effect there do not give, as <see cref="Merge"/> puts them in.
+        /// </summary>
+        /// <remarks>
+        /// For the editor to show them as they come about, rather than once saved (2026-09-25). A save reads the whole
+        /// file back, which takes most of half a second on a long beatmap; this goes through the sliders once. The
+        /// lines for sounds are left to the save, which is the only thing that can tell what reads them.
+        /// </remarks>
+        public static List<string> WithVelocityLines(IEnumerable<string> lines, IBeatmap beatmap)
+        {
+            var timing = TimingLine.ReadAll(lines);
+
+            foreach (var hitObject in beatmap.HitObjects.Where(h => h is IHasRepeats).OrderBy(h => h.StartTime))
+            {
+                if (hitObject is not IHasSliderVelocity withVelocity)
+                    continue;
+
+                double at = Math.Floor(hitObject.StartTime);
+                var inEffect = TimingLine.ActiveAt(timing, at);
+
+                if (inEffect == null)
+                    continue;
+
+                // compared as a save compares it, the velocity being read back from the line at the head.
+                if (Math.Abs(inEffect.SliderVelocity - withVelocity.SliderVelocityMultiplier) > 0.0005)
+                    TimingLine.Set(timing, at, withVelocity.SliderVelocityMultiplier, null, null);
+            }
+
+            return timing.Select(l => l.Raw).ToList();
+        }
+
         public byte[]? Merge()
         {
             var sections = SourceFile.Read(file);

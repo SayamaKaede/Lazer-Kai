@@ -74,7 +74,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             if (savedTimingLines != null)
             {
-                lines.BindTo(savedTimingLines.Lines);
+                // with the lines a save will put in, from the moment they are needed.
+                lines.BindTo(savedTimingLines.Shown);
                 selected.BindTo(savedTimingLines.Selected);
             }
         }
@@ -135,7 +136,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 if (line.Time < visibleRange.min || line.Time > visibleRange.max)
                     continue;
 
-                Add(new LinePiece(line) { X = (float)line.Time, IsSelected = line == selected.Value });
+                Add(new LinePiece(line)
+                {
+                    X = (float)line.Time,
+                    IsSelected = line == selected.Value,
+                    IsPending = savedTimingLines?.Lines.Contains(line) == false,
+                });
             }
         }
 
@@ -148,6 +154,11 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             /// far from the playhead can be seen to be the one changing.
             /// </summary>
             public bool IsSelected { get; init; }
+
+            /// <summary>
+            /// Whether this is a line a save will put in, not yet in the file: drawn fainter, and said so on hover.
+            /// </summary>
+            public bool IsPending { get; init; }
 
             public LinePiece(SavedTimingLine line)
             {
@@ -168,7 +179,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                     Origin = Anchor.TopCentre,
                     RelativeSizeAxes = Axes.Y,
                     Width = IsSelected ? selected_line_width : line_width,
-                    Alpha = IsSelected ? 1 : line_opacity,
+                    Alpha = IsSelected ? 1 : IsPending ? line_opacity / 2 : line_opacity,
                     Colour = Line.Uninherited ? colours.Red1 : colours.Green1,
                 };
             }
@@ -184,7 +195,10 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                         ? LazerKaiSavedLinesStrings.RedLine(time, Line.BeatsPerMinute.ToString(@"0.##", CultureInfo.InvariantCulture), Line.Meter, sampleSet, Line.SampleIndex, Line.Volume)
                         : LazerKaiSavedLinesStrings.GreenLine(time, Line.SliderVelocity.ToString(@"0.##", CultureInfo.InvariantCulture), sampleSet, Line.SampleIndex, Line.Volume);
 
-                    return Line.Kiai ? LocalisableString.Interpolate($"{text}{LazerKaiSavedLinesStrings.Kiai}") : text;
+                    if (Line.Kiai)
+                        text = LocalisableString.Interpolate($"{text}{LazerKaiSavedLinesStrings.Kiai}");
+
+                    return IsPending ? LocalisableString.Interpolate($"{text}{LazerKaiSavedLinesStrings.PutInOnSave}") : text;
                 }
             }
 

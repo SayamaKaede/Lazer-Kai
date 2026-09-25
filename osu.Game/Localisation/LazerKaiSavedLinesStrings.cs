@@ -37,6 +37,11 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString Kiai => new TranslatableString(getKey(@"kiai"), @" · Kiai");
 
+        /// <summary>
+        /// " (put in on saving)"
+        /// </summary>
+        public static LocalisableString PutInOnSave => new TranslatableString(getKey(@"put_in_on_save"), @" (put in on saving)");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

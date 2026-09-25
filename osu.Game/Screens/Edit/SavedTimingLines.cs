@@ -10,6 +10,8 @@ using System.Text;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Game.Audio;
+using osu.Game.Beatmaps.Formats;
+using osu.Game.Rulesets.Objects;
 
 namespace osu.Game.Screens.Edit
 {
@@ -48,6 +50,88 @@ namespace osu.Game.Screens.Edit
         }
 
         public readonly BindableList<SavedTimingLine> Lines = new BindableList<SavedTimingLine>();
+
+        /// <summary>
+        /// The lines as the timeline shows them: <see cref="Lines"/>, and while a beatmap kept in stable's format is
+        /// edited, the lines a save will put in for the sliders' velocities as well, from the moment a slider needs one
+        /// rather than from the save (2026-09-25).
+        /// </summary>
+        public readonly BindableList<SavedTimingLine> Shown = new BindableList<SavedTimingLine>();
+
+        private EditorBeatmap? velocitiesOf;
+
+        /// <summary>
+        /// Whether <see cref="Shown"/> has the lines a save will put in for the velocities.
+        /// </summary>
+        public bool ShowsVelocityLines => velocitiesOf != null;
+
+        /// <summary>
+        /// Shows the lines a save will put in for the velocities of a beatmap's sliders.
+        /// </summary>
+        public void ShowVelocityLinesOf(EditorBeatmap beatmap)
+        {
+            if (velocitiesOf != null)
+                return;
+
+            velocitiesOf = beatmap;
+            velocitiesOf.HitObjectAdded += refreshShownLater;
+            velocitiesOf.HitObjectUpdated += refreshShownLater;
+            velocitiesOf.HitObjectRemoved += refreshShownLater;
+
+            refreshShown();
+        }
+
+        /// <summary>
+        /// Stops showing them, once the beatmap is no longer saved in stable's format.
+        /// </summary>
+        public void StopShowingVelocityLines()
+        {
+            if (velocitiesOf == null)
+                return;
+
+            velocitiesOf.HitObjectAdded -= refreshShownLater;
+            velocitiesOf.HitObjectUpdated -= refreshShownLater;
+            velocitiesOf.HitObjectRemoved -= refreshShownLater;
+            velocitiesOf = null;
+
+            refreshShown();
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+            Lines.BindCollectionChanged((_, _) => refreshShownLater(null), true);
+        }
+
+        // once a frame at most: a drag updates its objects every frame.
+        private void refreshShownLater(HitObject? _) => Scheduler.AddOnce(refreshShown);
+
+        private void refreshShown()
+        {
+            IEnumerable<SavedTimingLine> shown = Lines;
+
+            if (velocitiesOf != null)
+            {
+                shown = StableFileMerger.WithVelocityLines(Lines.Select(l => l.Raw), velocitiesOf)
+                                        .Select(Parse)
+                                        .Where(l => l != null)
+                                        .Select(l => l!.Value);
+            }
+
+            var list = shown.ToList();
+
+            if (list.SequenceEqual(Shown))
+                return;
+
+            Shown.Clear();
+            Shown.AddRange(list);
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            StopShowingVelocityLines();
+            base.Dispose(isDisposing);
+        }
 
         /// <summary>
         /// The line the green line panel is editing, which the timeline marks so that it can be seen which one it is.

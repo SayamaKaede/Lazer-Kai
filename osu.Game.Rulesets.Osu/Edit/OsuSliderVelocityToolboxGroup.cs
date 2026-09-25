@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Globalization;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -12,6 +13,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Localisation;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Localisation;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu.Objects;
@@ -38,6 +40,16 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         [Resolved]
         private EditorClock editorClock { get; set; } = null!;
+
+        [Resolved(CanBeNull = true)]
+        private SavedTimingLines? savedTimingLines { get; set; }
+
+        private readonly BindableList<SavedTimingLine> shownLines = new BindableList<SavedTimingLine>();
+
+        /// <summary>
+        /// The green line whose velocity was last taken up, so that one chosen by hand stands until another is in effect.
+        /// </summary>
+        private SavedTimingLine? lineFollowed;
 
         private double lastClockPosition = double.NegativeInfinity;
 
@@ -128,6 +140,12 @@ namespace osu.Game.Rulesets.Osu.Edit
             editorBeatmap.HitObjectRemoved += invalidateSliderVelocitySourceObject;
             selectedHitObjects.BindTo(editorBeatmap.SelectedHitObjects);
             selectedHitObjects.BindCollectionChanged((_, _) => sliderVelocitySource.Invalidate());
+
+            if (savedTimingLines != null)
+            {
+                shownLines.BindTo(savedTimingLines.Shown);
+                shownLines.BindCollectionChanged((_, _) => sliderVelocitySource.Invalidate());
+            }
         }
 
         private void updateContractedText()
@@ -171,6 +189,31 @@ namespace osu.Game.Rulesets.Osu.Edit
 
                     sliderControl.ObjectsToAdjust.Clear();
                     sliderControl.ObjectsToAdjust.AddRange(selectedHitObjects.OfType<Slider>());
+                }
+                else if (savedTimingLines?.ShowsVelocityLines == true
+                         && savedTimingLines.Shown.Where(l => l.Time <= editorClock.CurrentTime).Cast<SavedTimingLine?>().LastOrDefault() is SavedTimingLine line)
+                {
+                    sliderControl.ObjectsToAdjust.Clear();
+
+                    // a beatmap kept in stable's format: the velocity is the green line's in effect at the playhead, as
+                    // stable has it, the lines a save will put in included. One chosen here stands until the line in
+                    // effect changes, which placing a slider with it does, to a line saying the same (2026-09-25).
+                    if (line != lineFollowed)
+                    {
+                        overridingSliderVelocitySource = false;
+                        lineFollowed = line;
+                    }
+
+                    string velocity = line.SliderVelocity.ToString("N2", CultureInfo.InvariantCulture);
+
+                    useLastSliderButton.Enabled.Value = useLastSliderButton.Expanded.Value && overridingSliderVelocitySource;
+                    useLastSliderButton.ExpandedLabelText = overridingSliderVelocitySource
+                        ? LazerKaiGreenLineStrings.UseGreenLineVelocity(velocity)
+                        : LazerKaiGreenLineStrings.UsingGreenLineVelocity;
+                    useLastSliderButton.ContractedLabelText = $@"current {velocity}x";
+
+                    if (!overridingSliderVelocitySource)
+                        sliderControl.Current.Value = line.SliderVelocity;
                 }
                 else
                 {

@@ -81,6 +81,16 @@ namespace osu.Game.Localisation
             @"Green lines can be edited on osu! beatmaps in stable's format (v14 and earlier), with ""Improve compatibility with stable"" on.");
 
         /// <summary>
+        /// "Use the green line's velocity ({0}x)"
+        /// </summary>
+        public static LocalisableString UseGreenLineVelocity(string velocity) => new TranslatableString(getKey(@"use_green_line_velocity"), @"Use the green line's velocity ({0}x)", velocity);
+
+        /// <summary>
+        /// "Using the green line's velocity"
+        /// </summary>
+        public static LocalisableString UsingGreenLineVelocity => new TranslatableString(getKey(@"using_green_line_velocity"), @"Using the green line's velocity");
+
+        /// <summary>
         /// "Remove unneeded green lines"
         /// </summary>
         public static LocalisableString RemoveUnneeded => new TranslatableString(getKey(@"remove_unneeded"), @"Remove unneeded green lines");
