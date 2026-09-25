@@ -293,6 +293,10 @@ namespace osu.Game.Beatmaps.Formats
                 if (oldValue == value)
                     continue;
 
+                // lazer's own line, which stable has never had: the presets are kept beside the file instead.
+                if (name == @"Editor" && key == @"VelocityPresets")
+                    continue;
+
                 if (key == @"GridSize")
                     value = stableGridSize(value);
 

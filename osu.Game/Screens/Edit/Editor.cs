@@ -379,6 +379,8 @@ namespace osu.Game.Screens.Edit
         [Resolved]
         private osu.Framework.Platform.Storage storage { get; set; }
 
+        private SliderVelocityPresetStore sliderVelocityPresetStore => new SliderVelocityPresetStore(storage);
+
         /// <summary>
         /// This controls the opacity of components like the timelines, sidebars, etc.
         /// In "composer focus" mode the opacity of the aforementioned components is reduced so that the user can focus on the composer better.
@@ -477,6 +479,27 @@ namespace osu.Game.Screens.Edit
             if (savedFile != null)
                 savedTimingLines.Update(savedFile);
 
+            bool keepingStableFile = canSave && savedFile != null && config.Get<bool>(OsuSetting.StableCompatibility) && StableFileKeeper.IsStableFile(savedFile);
+
+            // the presets kept beside the file, where they are newer than the file's own: always, for a file kept in
+            // stable's format, which has no line for them. Put back before the first state is taken, so that having them
+            // is not an edit.
+            if (canSave && sliderVelocityPresetStore.Load(editorBeatmap.BeatmapInfo) is double[] keptPresets
+                        && (keepingStableFile || editorBeatmap.BeatmapInfo.LastLocalUpdate == null
+                                              || sliderVelocityPresetStore.LastWritten(editorBeatmap.BeatmapInfo) > editorBeatmap.BeatmapInfo.LastLocalUpdate))
+            {
+                editorBeatmap.SliderVelocityPresets.Clear();
+                editorBeatmap.SliderVelocityPresets.AddRange(keptPresets);
+            }
+
+            // kept as they change rather than on saving: they are how the mapper places sliders, as much as a part of the
+            // beatmap.
+            if (canSave)
+            {
+                editorBeatmap.SliderVelocityPresets.BindCollectionChanged((_, _) =>
+                    sliderVelocityPresetStore.Save(editorBeatmap.BeatmapInfo, editorBeatmap.SliderVelocityPresets.ToArray()));
+            }
+
             if (canSave)
             {
                 changeHandler = new BeatmapEditorChangeHandler(editorBeatmap, savedTimingLines);
@@ -488,7 +511,7 @@ namespace osu.Game.Screens.Edit
 
             updateLastSavedHash();
 
-            if (canSave && savedFile != null && config.Get<bool>(OsuSetting.StableCompatibility) && StableFileKeeper.IsStableFile(savedFile))
+            if (keepingStableFile)
             {
                 stableFileKeeper = new StableFileKeeper(savedFile, editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard);
                 keptStableVersion.Value = stableFileKeeper.Version;
