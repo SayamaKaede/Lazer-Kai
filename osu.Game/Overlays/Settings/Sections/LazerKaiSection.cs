@@ -56,6 +56,8 @@ namespace osu.Game.Overlays.Settings.Sections
 
             groups.AddRange(new Drawable[]
             {
+                // first, for somebody opening these for the first time: the recommended settings are one click away.
+                new SettingsPresetSettings(),
                 new AppearanceSettings(),
                 new RulesetSkinSettings(),
                 new EditorDisplaySettings(),

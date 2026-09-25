@@ -197,10 +197,98 @@ namespace osu.Game.Localisation
         public static LocalisableString ErrorReporting => new TranslatableString(getKey(@"error_reporting"), @"Send error reports automatically");
 
         /// <summary>
-        /// "Sends errors, and saves that could not stay in stable's format, to Lazer-Kai's developer. Your osu! account, your Windows account name and your computer's name are left out."
+        /// "Sends errors to Lazer-Kai's developer. Your osu! account, your Windows account name and your computer's name are left out."
         /// </summary>
         public static LocalisableString ErrorReportingDescription => new TranslatableString(getKey(@"error_reporting_description"),
-            @"Sends errors, and saves that could not stay in stable's format, to Lazer-Kai's developer. Your osu! account, your Windows account name and your computer's name are left out.");
+            @"Sends errors to Lazer-Kai's developer. Your osu! account, your Windows account name and your computer's name are left out.");
+
+        /// <summary>
+        /// "Settings presets"
+        /// </summary>
+        public static LocalisableString SettingsPresetHeader => new TranslatableString(getKey(@"settings_preset_header"), @"Settings presets");
+
+        /// <summary>
+        /// "Preset"
+        /// </summary>
+        public static LocalisableString SettingsPreset => new TranslatableString(getKey(@"settings_preset"), @"Preset");
+
+        /// <summary>
+        /// "Only Lazer-Kai's settings. Stable compatibility, sending error reports and the Mapping Tools path are left as they are, and the recommended settings leave the colours and the skin as well."
+        /// </summary>
+        public static LocalisableString SettingsPresetDescription => new TranslatableString(getKey(@"settings_preset_description"),
+            @"Only Lazer-Kai's settings. Stable compatibility, sending error reports and the Mapping Tools path are left as they are, and the recommended settings leave the colours and the skin as well.");
+
+        /// <summary>
+        /// "Recommended settings"
+        /// </summary>
+        public static LocalisableString RecommendedSettings => new TranslatableString(getKey(@"recommended_settings"), @"Recommended settings");
+
+        /// <summary>
+        /// "Settings before applying a preset"
+        /// </summary>
+        public static LocalisableString SettingsBeforeApplying => new TranslatableString(getKey(@"settings_before_applying"), @"Settings before applying a preset");
+
+        /// <summary>
+        /// "Apply this preset"
+        /// </summary>
+        public static LocalisableString ApplySettingsPreset => new TranslatableString(getKey(@"apply_settings_preset"), @"Apply this preset");
+
+        /// <summary>
+        /// "Apply {0}?"
+        /// </summary>
+        public static LocalisableString ApplySettingsPresetHeader(LocalisableString name) => new TranslatableString(getKey(@"apply_settings_preset_header"), @"Apply {0}?", name);
+
+        /// <summary>
+        /// "Lazer-Kai's settings are overwritten. The colours, the skin, stable compatibility, sending error reports and the Mapping Tools path are left as they are. The settings as they are now are kept as the settings before applying a preset."
+        /// </summary>
+        public static LocalisableString ApplySettingsPresetBody => new TranslatableString(getKey(@"apply_settings_preset_body"),
+            @"Lazer-Kai's settings are overwritten. The colours, the skin, stable compatibility, sending error reports and the Mapping Tools path are left as they are. The settings as they are now are kept as the settings before applying a preset.");
+
+        /// <summary>
+        /// "Lazer-Kai's settings are overwritten, the colours and the skin included. Stable compatibility, sending error reports and the Mapping Tools path are left as they are. The settings as they are now are kept as the settings before applying a preset."
+        /// </summary>
+        public static LocalisableString ApplySavedSettingsPresetBody => new TranslatableString(getKey(@"apply_saved_settings_preset_body"),
+            @"Lazer-Kai's settings are overwritten, the colours and the skin included. Stable compatibility, sending error reports and the Mapping Tools path are left as they are. The settings as they are now are kept as the settings before applying a preset.");
+
+        /// <summary>
+        /// "Apply"
+        /// </summary>
+        public static LocalisableString ApplySettingsPresetConfirm => new TranslatableString(getKey(@"apply_settings_preset_confirm"), @"Apply");
+
+        /// <summary>
+        /// "Applied {0}."
+        /// </summary>
+        public static LocalisableString AppliedSettingsPreset(LocalisableString name) => new TranslatableString(getKey(@"applied_settings_preset"), @"Applied {0}.", name);
+
+        /// <summary>
+        /// "Name"
+        /// </summary>
+        public static LocalisableString SettingsPresetName => new TranslatableString(getKey(@"settings_preset_name"), @"Name");
+
+        /// <summary>
+        /// "Save the current settings under this name"
+        /// </summary>
+        public static LocalisableString SaveSettingsPreset => new TranslatableString(getKey(@"save_settings_preset"), @"Save the current settings under this name");
+
+        /// <summary>
+        /// "Saved as {0}."
+        /// </summary>
+        public static LocalisableString SavedSettingsPreset(string name) => new TranslatableString(getKey(@"saved_settings_preset"), @"Saved as {0}.", name);
+
+        /// <summary>
+        /// "Delete this preset"
+        /// </summary>
+        public static LocalisableString DeleteSettingsPreset => new TranslatableString(getKey(@"delete_settings_preset"), @"Delete this preset");
+
+        /// <summary>
+        /// "Delete {0}?"
+        /// </summary>
+        public static LocalisableString DeleteSettingsPresetHeader(string name) => new TranslatableString(getKey(@"delete_settings_preset_header"), @"Delete {0}?", name);
+
+        /// <summary>
+        /// "Open the presets folder"
+        /// </summary>
+        public static LocalisableString OpenSettingsPresetFolder => new TranslatableString(getKey(@"open_settings_preset_folder"), @"Open the presets folder");
 
         /// <summary>
         /// "Show the Mapping Tools path"

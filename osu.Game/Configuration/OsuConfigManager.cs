@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Globalization;
 using osu.Framework;
 using osu.Framework.Bindables;
 using osu.Framework.Configuration;
@@ -387,6 +388,20 @@ namespace osu.Game.Configuration
             // the look the game wears, which is nothing to do with the editor and so is kept away from it.
             SetDefault(OsuSetting.UiTheme, UiPaletteValues.Default.Theme);
 
+        }
+
+        /// <summary>
+        /// A setting's value as the settings file writes it, for <see cref="LazerKaiSettingsPreset"/>.
+        /// </summary>
+        internal string GetText(OsuSetting lookup) => ConfigStore[lookup].ToString(CultureInfo.InvariantCulture);
+
+        /// <summary>
+        /// Sets a setting from its value as the settings file writes it.
+        /// </summary>
+        internal void SetText(OsuSetting lookup, string value)
+        {
+            if (ConfigStore[lookup] is IParseable parseable)
+                parseable.Parse(value, CultureInfo.InvariantCulture);
         }
 
         protected override bool CheckLookupContainsPrivateInformation(OsuSetting lookup)
