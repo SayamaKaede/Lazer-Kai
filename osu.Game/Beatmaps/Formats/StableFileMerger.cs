@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using DiffPlex;
 using osu.Game.Audio;
+using osu.Game.Beatmaps.Legacy;
 using osu.Game.Database;
 using osu.Game.IO;
 using osu.Game.Rulesets.Objects;
@@ -602,7 +603,10 @@ namespace osu.Game.Beatmaps.Formats
 
                     if (wantRepeats.NodeSamples.Count != haveRepeats.NodeSamples.Count)
                     {
-                        Failure = FormattableString.Invariant($@"the slider at {want.StartTime} reads back with {haveRepeats.NodeSamples.Count} nodes, not {wantRepeats.NodeSamples.Count}");
+                        // with what was wanted, what came back, the line written and the timing lines in effect: a report
+                        // of this was once all there was to go on, and it could not be made to happen again (2026-09-25).
+                        Failure = FormattableString.Invariant(
+                            $@"the slider at {want.StartTime} reads back with {haveRepeats.NodeSamples.Count} nodes, not {wantRepeats.NodeSamples.Count}; wanted {describeSlider(want)}; read back {describeSlider(have)}; written ""{writtenLineAt(candidate, have.StartTime)}""; lines in effect ""{string.Join(@" / ", timingLinesAt(written, have.StartTime))}""");
                         return null;
                     }
 
@@ -619,6 +623,49 @@ namespace osu.Game.Beatmaps.Formats
             }
 
             return moments.OrderBy(m => m.LookupTime).ToList();
+        }
+
+        private static string describeSlider(HitObject hitObject)
+        {
+            var repeats = hitObject as IHasRepeats;
+            var path = hitObject as IHasPath;
+            var velocity = hitObject as IHasSliderVelocity;
+
+            return FormattableString.Invariant(
+                $@"({repeats?.RepeatCount} repeats, {repeats?.Duration:0.###} ms, distance {path?.Path.ExpectedDistance.Value:0.###} of {path?.Path.Distance:0.###}, velocity {velocity?.SliderVelocityMultiplier:0.####})");
+        }
+
+        /// <summary>
+        /// The object line written at a time, for the log.
+        /// </summary>
+        private static string writtenLineAt(byte[] candidate, double time)
+        {
+            string at = FormattableString.Invariant($@",{Math.Floor(time)},");
+
+            return latin1(candidate).Split('\n')
+                                    .SkipWhile(l => l.Trim() != @"[HitObjects]")
+                                    .Select(l => l.Trim())
+                                    .FirstOrDefault(l => l.Contains(at, StringComparison.Ordinal)) ?? @"none";
+        }
+
+        /// <summary>
+        /// The red and green lines in effect at a time as the written file has them, and any within a few milliseconds
+        /// after, for the log.
+        /// </summary>
+        private static IEnumerable<string> timingLinesAt(Beatmap written, double time)
+        {
+            var lines = new List<string> { FormattableString.Invariant($@"beat {written.ControlPointInfo.TimingPointAt(time).BeatLength:0.###} ms") };
+
+            if (written.ControlPointInfo is LegacyControlPointInfo legacy)
+            {
+                var inEffect = legacy.DifficultyPointAt(time);
+
+                lines.Add(FormattableString.Invariant($@"velocity {inEffect.SliderVelocity:0.####} from {inEffect.Time}"));
+                lines.AddRange(legacy.DifficultyPoints.Where(p => p.Time > time && p.Time <= time + 5)
+                                     .Select(p => FormattableString.Invariant($@"velocity {p.SliderVelocity:0.####} at {p.Time}")));
+            }
+
+            return lines;
         }
 
         /// <summary>
