@@ -81,29 +81,6 @@ namespace osu.Game.Localisation
             @"Green lines can be edited on osu! beatmaps in stable's format (v14 and earlier), with ""Improve compatibility with stable"" on.");
 
         /// <summary>
-        /// "Sound the green lines inside sliders and spinners in the editor"
-        /// </summary>
-        public static LocalisableString SoundLinesInsideObjects => new TranslatableString(getKey(@"sound_lines_inside_objects"),
-            @"Sound the green lines inside sliders and spinners in the editor");
-
-        /// <summary>
-        /// "Slider ticks and slides, and spinner spins, play at the volume of the green line in effect as they sound, as in stable."
-        /// </summary>
-        public static LocalisableString SoundLinesInsideObjectsDescription => new TranslatableString(getKey(@"sound_lines_inside_objects_description"),
-            @"Slider ticks and slides, and spinner spins, play at the volume of the green line in effect as they sound, as in stable.");
-
-        /// <summary>
-        /// "Also in play and test play"
-        /// </summary>
-        public static LocalisableString SoundLinesInsideObjectsInGameplay => new TranslatableString(getKey(@"sound_lines_inside_objects_in_gameplay"), @"Also in play and test play");
-
-        /// <summary>
-        /// "Set apart from the editor's. Gameplay then sounds different from how lazer plays it."
-        /// </summary>
-        public static LocalisableString SoundLinesInsideObjectsInGameplayDescription => new TranslatableString(getKey(@"sound_lines_inside_objects_in_gameplay_description"),
-            @"Set apart from the editor's. Gameplay then sounds different from how lazer plays it.");
-
-        /// <summary>
         /// "Remove unneeded green lines"
         /// </summary>
         public static LocalisableString RemoveUnneeded => new TranslatableString(getKey(@"remove_unneeded"), @"Remove unneeded green lines");

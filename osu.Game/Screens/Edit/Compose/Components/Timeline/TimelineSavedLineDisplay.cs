@@ -50,9 +50,13 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private SavedTimingLines? savedTimingLines { get; set; }
 
         private readonly Bindable<bool> enabled = new Bindable<bool>();
+        private readonly Bindable<bool> stableCompatibility = new Bindable<bool>();
         private readonly Bindable<EditorTimelineStyle> style = new Bindable<EditorTimelineStyle>();
 
-        private bool visible => enabled.Value && style.Value != EditorTimelineStyle.Lazer;
+        /// <summary>
+        /// Always shown with stable compatibility on, which is what the lines are there for (2026-09-25).
+        /// </summary>
+        private bool visible => (enabled.Value || stableCompatibility.Value) && style.Value != EditorTimelineStyle.Lazer;
 
         private readonly BindableList<SavedTimingLine> lines = new BindableList<SavedTimingLine>();
 
@@ -64,6 +68,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private void load(OsuConfigManager config)
         {
             config.BindWith(OsuSetting.EditorTimelineShowSavedLines, enabled);
+            config.BindWith(OsuSetting.StableCompatibility, stableCompatibility);
             config.BindWith(OsuSetting.EditorTimelineStyle, style);
 
             if (savedTimingLines != null)
@@ -80,6 +85,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             base.LoadComplete();
 
             enabled.BindValueChanged(_ => updateVisibility());
+            stableCompatibility.BindValueChanged(_ => updateVisibility());
             style.BindValueChanged(_ => updateVisibility(), true);
 
             lines.BindCollectionChanged((_, _) => piecesCache.Invalidate());

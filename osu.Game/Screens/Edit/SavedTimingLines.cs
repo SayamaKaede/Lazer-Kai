@@ -7,11 +7,9 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Game.Audio;
-using osu.Game.Configuration;
 
 namespace osu.Game.Screens.Edit
 {
@@ -28,15 +26,11 @@ namespace osu.Game.Screens.Edit
     /// </remarks>
     public partial class SavedTimingLines : Component, ILineVolumes
     {
-        private readonly Bindable<bool> soundLinesInsideObjects = new Bindable<bool>();
-
-        [BackgroundDependencyLoader]
-        private void load(OsuConfigManager config)
-        {
-            config.BindWith(OsuSetting.EditorSoundLinesInsideObjects, soundLinesInsideObjects);
-        }
-
-        public bool Enabled => soundLinesInsideObjects.Value && Lines.Count > 0;
+        /// <remarks>
+        /// Always, in the editor: it was a setting of its own until 2026-09-25, and there was no reason to hear the
+        /// objects any other way while placing them.
+        /// </remarks>
+        public bool Enabled => Lines.Count > 0;
 
         public int VolumeAt(double time)
         {

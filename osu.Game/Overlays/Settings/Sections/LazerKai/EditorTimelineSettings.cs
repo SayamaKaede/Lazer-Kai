@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
@@ -15,9 +16,21 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
     {
         protected override LocalisableString Header => LazerKaiSettingsStrings.TimelineHeader;
 
+        private Bindable<bool> showSavedLines = null!;
+        private Bindable<bool> stableCompatibility = null!;
+
+        /// <summary>
+        /// What the checkbox shows: the setting, or on and not to be changed while stable compatibility is on, which
+        /// always shows the lines (2026-09-25). The setting itself is left as it was, for when compatibility is off.
+        /// </summary>
+        private readonly BindableBool shownSavedLines = new BindableBool();
+
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
+            showSavedLines = config.GetBindable<bool>(OsuSetting.EditorTimelineShowSavedLines);
+            stableCompatibility = config.GetBindable<bool>(OsuSetting.StableCompatibility);
+
             Children = new Drawable[]
             {
                 new SettingsItemV2(new FormEnumDropdown<EditorTimelineStyle>
@@ -30,7 +43,7 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 {
                     LabelText = LazerKaiSavedLinesStrings.ShowStableGreenLines,
                     TooltipText = LazerKaiSavedLinesStrings.ShowStableGreenLinesDescription,
-                    Current = config.GetBindable<bool>(OsuSetting.EditorTimelineShowSavedLines)
+                    Current = shownSavedLines
                 },
                 new SettingsCheckbox
                 {
@@ -83,6 +96,27 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     DisplayAsPercentage = true,
                 }),
             };
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            showSavedLines.BindValueChanged(_ => refreshSavedLines());
+            stableCompatibility.BindValueChanged(_ => refreshSavedLines(), true);
+
+            shownSavedLines.BindValueChanged(shown =>
+            {
+                if (!stableCompatibility.Value)
+                    showSavedLines.Value = shown.NewValue;
+            });
+        }
+
+        private void refreshSavedLines()
+        {
+            shownSavedLines.Disabled = false;
+            shownSavedLines.Value = showSavedLines.Value || stableCompatibility.Value;
+            shownSavedLines.Disabled = stableCompatibility.Value;
         }
     }
 }

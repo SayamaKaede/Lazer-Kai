@@ -3,11 +3,9 @@
 
 using System.Linq;
 using NUnit.Framework;
-using osu.Framework.Allocation;
 using osu.Framework.Testing;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
-using osu.Game.Configuration;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Objects;
@@ -34,9 +32,6 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
         protected override IBeatmap CreateBeatmap(RulesetInfo ruleset) => new TestBeatmap(ruleset, false);
 
-        [Resolved]
-        private OsuConfigManager config { get; set; } = null!;
-
         private Slider slider = null!;
         private Spinner spinner = null!;
 
@@ -46,8 +41,6 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         public override void SetUpSteps()
         {
             base.SetUpSteps();
-
-            AddStep("sounding the lines on", () => config.SetValue(OsuSetting.EditorSoundLinesInsideObjects, true));
 
             AddStep("add a slider and a spinner", () =>
             {
@@ -74,12 +67,6 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                     formatTime(spinnerMiddle) + ",-100,4,2,0,10,0,0",
                 }.Select(l => SavedTimingLines.Parse(l)!.Value));
             });
-        }
-
-        [TearDownSteps]
-        public void PutTheSettingBack()
-        {
-            AddStep("setting back", () => config.GetBindable<bool>(OsuSetting.EditorSoundLinesInsideObjects).SetDefault());
         }
 
         private static string formatTime(double time) => System.Math.Floor(time).ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -113,10 +100,14 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddUntilStep("the spin is at 10", () => drawableSpinner()?.LineVolume, () => Is.EqualTo(0.1).Within(0.001));
         }
 
+        /// <summary>
+        /// The editor always sounds the lines (it was a setting until 2026-09-25), so it is only a beatmap without any
+        /// that sounds the objects' own.
+        /// </summary>
         [Test]
-        public void TestNothingFollowsTheLinesWithTheSettingOff()
+        public void TestNothingFollowsWithoutLines()
         {
-            AddStep("sounding the lines off", () => config.SetValue(OsuSetting.EditorSoundLinesInsideObjects, false));
+            AddStep("no lines", () => Editor.ChildrenOfType<SavedTimingLines>().Single().Lines.Clear());
             AddStep("three quarters through the slider", () => EditorClock.Seek(slider.StartTime + slider.Duration * 3 / 4));
 
             AddUntilStep("the slide is at the slider's own volume", () => slideSound()?.AggregateVolume.Value, () => Is.EqualTo(1).Within(0.001));

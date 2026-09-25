@@ -265,8 +265,9 @@ namespace osu.Game.Screens.Play
             DrawableRuleset = ruleset.CreateDrawableRulesetWith(playableBeatmap, gameplayMods);
             dependencies.CacheAs(DrawableRuleset);
 
-            // the green lines' volumes, for the sounds that follow them as they play where that is turned on.
-            var soundLinesInsideObjects = config.GetBindable<bool>(OsuSetting.GameplaySoundLinesInsideObjects);
+            // the green lines' volumes, for the sounds that follow them as they play, as stable's do: with stable
+            // compatibility on, which this was a setting of its own beside until 2026-09-25.
+            var soundLinesInsideObjects = config.GetBindable<bool>(OsuSetting.StableCompatibility);
             dependencies.CacheAs<ILineVolumes>(new LineVolumes(() => soundLinesInsideObjects.Value, GetLineVolumes(playableBeatmap)));
 
             if (DrawableRuleset is IDrawableScrollingRuleset scrollingRuleset)

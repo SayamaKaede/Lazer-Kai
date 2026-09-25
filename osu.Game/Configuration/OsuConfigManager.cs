@@ -325,8 +325,6 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.StableCompatibility, false);
             SetDefault(OsuSetting.EditorTimelineShowSavedLines, false);
             SetDefault(OsuSetting.EditorStatusShowSaveFormat, true);
-            SetDefault(OsuSetting.EditorSoundLinesInsideObjects, true);
-            SetDefault(OsuSetting.GameplaySoundLinesInsideObjects, false);
             SetDefault(OsuSetting.ErrorReporting, true);
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
@@ -1234,17 +1232,6 @@ namespace osu.Game.Configuration
         /// Whether the STATUS panel says which format the next save writes, while stable compatibility is on.
         /// </summary>
         EditorStatusShowSaveFormat,
-
-        /// <summary>
-        /// Whether the editor plays a slider's ticks and slide, and a spinner's spin, at the volume of the green line in
-        /// effect as they sound, as stable does, rather than at the volume the object itself carries.
-        /// </summary>
-        EditorSoundLinesInsideObjects,
-
-        /// <summary>
-        /// The same in gameplay and test play.
-        /// </summary>
-        GameplaySoundLinesInsideObjects,
 
         /// <summary>
         /// Whether errors, and saves that could not stay in stable's format, are sent to Lazer-Kai's error reports.

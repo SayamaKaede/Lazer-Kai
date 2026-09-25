@@ -33,7 +33,26 @@ namespace osu.Game.Tests.Visual.Editing
         public void PutTheSettingsBack()
         {
             AddStep("lines hidden again", () => config.SetValue(OsuSetting.EditorTimelineShowSavedLines, false));
+            AddStep("compatibility off again", () => config.SetValue(OsuSetting.StableCompatibility, false));
             AddStep("lazer's timeline again", () => config.SetValue(OsuSetting.EditorTimelineStyle, EditorTimelineStyle.Lazer));
+        }
+
+        /// <summary>
+        /// Stable compatibility always shows them, whatever the setting says (2026-09-25).
+        /// </summary>
+        [Test]
+        public void TestAlwaysDrawnWithStableCompatibility()
+        {
+            AddStep("stable's timeline", () => config.SetValue(OsuSetting.EditorTimelineStyle, EditorTimelineStyle.Stable));
+            AddStep("lines hidden, compatibility on", () =>
+            {
+                config.SetValue(OsuSetting.EditorTimelineShowSavedLines, false);
+                config.SetValue(OsuSetting.StableCompatibility, true);
+            });
+            AddStep("a file with a red line", () => savedLines.Update(fileWith("1000,500,4,2,1,60,1,0")));
+            AddStep("look at it", () => EditorClock.Seek(1000));
+
+            AddUntilStep("drawn", () => pieces.Length, () => Is.EqualTo(1));
         }
 
         [Test]
