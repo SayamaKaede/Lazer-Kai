@@ -4,11 +4,14 @@
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Input;
 using osu.Framework.Testing;
 using osu.Game.Configuration;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Osu;
+using osu.Game.Rulesets.Osu.Objects;
+using osuTK.Input;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Compose.Components.Timeline;
 
@@ -95,6 +98,43 @@ namespace osu.Game.Tests.Visual.Editing
             AddWaitStep("give it time", 5);
 
             AddAssert(drawn ? "drawn" : "not drawn", () => pieces.Length, () => Is.EqualTo(drawn ? 1 : 0));
+        }
+
+        /// <summary>
+        /// Over the objects, as in stable (2026-09-25: under them, a line at an object was hidden by it); a click on an
+        /// object under a line still selects it.
+        /// </summary>
+        [Test]
+        public void TestDrawnOverTheObjectsWithoutTakingTheirClicks()
+        {
+            HitCircle circle = null!;
+
+            AddStep("stable's timeline", () => config.SetValue(OsuSetting.EditorTimelineStyle, EditorTimelineStyle.Stable));
+            AddStep("show the lines", () => config.SetValue(OsuSetting.EditorTimelineShowSavedLines, true));
+            AddStep("a circle at 1000", () =>
+            {
+                EditorBeatmap.Clear();
+                EditorBeatmap.Add(circle = new HitCircle { StartTime = 1000 });
+            });
+            AddStep("a green line at it", () => savedLines.Update(fileWith("0,500,4,2,1,60,1,0", "1000,-100,4,2,1,60,0,0")));
+            AddStep("look at it", () => EditorClock.Seek(1000));
+            AddUntilStep("the line is drawn", () => pieces.Any(p => !p.Line.Uninherited));
+
+            AddAssert("drawn after the objects", () =>
+            {
+                var display = Editor.ChildrenOfType<TimelineSavedLineDisplay>().Single();
+                var layer = (Container)display.Parent!;
+                var children = layer.Children.ToList();
+
+                return children.IndexOf(display) > children.FindIndex(c => c.ChildrenOfType<TimelineBlueprintContainer>().Any());
+            });
+
+            AddStep("click the circle", () =>
+            {
+                InputManager.MoveMouseTo(Editor.ChildrenOfType<TimelineHitObjectBlueprint>().Single(b => b.Item == circle).ScreenSpaceDrawQuad.Centre);
+                InputManager.Click(MouseButton.Left);
+            });
+            AddAssert("selected", () => EditorBeatmap.SelectedHitObjects, () => Is.EquivalentTo(new[] { circle }));
         }
 
         [Test]

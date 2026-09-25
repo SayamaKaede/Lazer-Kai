@@ -23,8 +23,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
     /// </summary>
     /// <remarks>
     /// These are the file's lines, not the editor's: whatever this game adds or moves on a save shows up here once it
-    /// is written, which is the point of having them. Drawn under the objects, so that a line never takes a click meant
-    /// for one.
+    /// is written, which is the point of having them. Drawn over the objects, as stable does, since under them a line
+    /// at an object is hidden by it (2026-09-25); they only show what they hold on hover, and a click goes through them
+    /// to the object.
     ///
     /// Only in the styles that keep the ticks down at the objects (<see cref="EditorTimelineStyle.Stable"/> and
     /// <see cref="EditorTimelineStyle.LazerKai"/>). In lazer's own the ticks run the full height too, and a red line
