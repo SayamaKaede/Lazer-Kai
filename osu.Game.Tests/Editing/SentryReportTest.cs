@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using osu.Framework.Extensions;
+using osu.Framework.Logging;
 using osu.Game.Utils;
 using Sentry;
 using Sentry.Extensibility;
@@ -60,6 +61,17 @@ namespace osu.Game.Tests.Editing
             Assert.That(sent, Does.Not.Contain(@"as Game."), "where it is a name");
             Assert.That(sent, Does.Not.Contain(@"Game opened"), "in the log lines too");
             Assert.That(sent, Does.Contain(@"osu.Game.Tests, Version"), "the stack trace's assembly");
+        }
+
+        /// <summary>
+        /// The network's lines are the addresses fetched, and an avatar's says whose account it is.
+        /// </summary>
+        [Test]
+        public void TestTheNetworksLinesDoNotGoWithAReport()
+        {
+            Assert.That(SentryLogger.IsBreadcrumb(new LogEntry { Target = LoggingTarget.Network, Message = @"Request to https://a.ppy.sh/3174184?1501073869.png successfully completed!" }),
+                Is.False);
+            Assert.That(SentryLogger.IsBreadcrumb(new LogEntry { Target = LoggingTarget.Runtime, Message = @"Game-wide working beatmap updated" }), Is.True);
         }
 
         [Test]

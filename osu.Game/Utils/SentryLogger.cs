@@ -328,9 +328,20 @@ namespace osu.Game.Utils
                     scope.SetTag(@"processor count", Environment.ProcessorCount.ToString());
                 });
             }
-            else
+            else if (IsBreadcrumb(entry))
                 SentrySdk.AddBreadcrumb(entry.Message, entry.Target.ToString(), "navigation", level: getBreadcrumbLevel(entry.Level));
         }
+
+        /// <summary>
+        /// Whether a log line goes with the next report, as one of the lines that led up to it.
+        /// </summary>
+        /// <remarks>
+        /// Not the network's. Its lines are the addresses fetched, and an avatar's address is the osu! account's number:
+        /// the player's own, fetched for the toolbar, says who sent the report, and the rest say whose profiles and
+        /// rankings they were looking at (2026-09-25, read off a report). They are also most of the lines, and have
+        /// never been what an error was hiding in; the log export leaves them out for the same reasons.
+        /// </remarks>
+        internal static bool IsBreadcrumb(LogEntry entry) => entry.Target != LoggingTarget.Network;
 
         private BreadcrumbLevel getBreadcrumbLevel(LogLevel entryLevel)
         {
