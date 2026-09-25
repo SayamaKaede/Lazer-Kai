@@ -835,7 +835,11 @@ namespace osu.Game.Screens.Edit
                     // above the screens, so the lines can be edited from whichever one is open, as in stable.
                     greenLinePanel = new GreenLinePanel { State = { Value = Visibility.Hidden } },
                     MutationTracker,
-                    autoBackup = new EditorAutoBackup(),
+                    autoBackup = new EditorAutoBackup
+                    {
+                        // whatever a save in stable's format does to the file, what came in can be put back exactly.
+                        OpenedFile = canSave && config.Get<bool>(OsuSetting.StableCompatibility) ? savedFile : null,
+                    },
                     new EditorPlaybackLoop(),
                 }
             });

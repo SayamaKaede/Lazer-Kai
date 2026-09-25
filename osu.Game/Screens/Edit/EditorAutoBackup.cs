@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
@@ -77,6 +78,58 @@ namespace osu.Game.Screens.Edit
 
             enabled.BindValueChanged(_ => reschedule());
             intervalMinutes.BindValueChanged(_ => reschedule(), true);
+
+            if (OpenedFile != null)
+                keep(OpenedFile, @"opened");
+        }
+
+        /// <summary>
+        /// Keeps the difficulty's file as it is just before a save in lazer's format replaces it.
+        /// </summary>
+        public void KeepBeforeLazerSave(byte[] file) => keep(file, @"before-lazer-save");
+
+        /// <summary>
+        /// Keeps a file byte for byte among the backups, unless the newest backup is the same.
+        /// </summary>
+        /// <remarks>
+        /// Unlike the backups written while editing, this is the file itself rather than an encoding of the beatmap: it
+        /// is kept so that whatever a save then does to the file, what was there can be put back exactly. It is named
+        /// and counted as any other backup.
+        /// </remarks>
+        /// <param name="file">The file.</param>
+        /// <param name="when">What it is kept at, for the log.</param>
+        private void keep(byte[] file, string when)
+        {
+            string directory = DirectoryFor(editorBeatmap.BeatmapInfo);
+            string filename = $"{DateTimeOffset.Now:yyyy-MM-dd_HH-mm-ss}.osu";
+
+            Task.Run(() =>
+            {
+                try
+                {
+                    string? newest = storage.ExistsDirectory(directory)
+                        ? storage.GetFiles(directory, "*.osu").OrderByDescending(f => f).FirstOrDefault()
+                        : null;
+
+                    if (newest != null)
+                    {
+                        using (var stream = storage.GetStream(newest))
+                        {
+                            if (stream != null && stream.ReadAllRemainingBytesToArray().AsSpan().SequenceEqual(file))
+                                return;
+                        }
+                    }
+
+                    using (var stream = storage.CreateFileSafely(Path.Combine(directory, filename)))
+                        stream.Write(file);
+
+                    prune(directory);
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, $"Could not keep the beatmap's file ({when})");
+                }
+            });
         }
 
         private void reschedule()
@@ -197,6 +250,12 @@ namespace osu.Game.Screens.Edit
         /// is always where the files actually went.
         /// </remarks>
         public static string DirectoryFor(BeatmapInfo info) => Path.Combine(BACKUP_DIRECTORY, folderNameFor(info));
+
+        /// <summary>
+        /// The difficulty's file as the editor opened it, to be kept among the backups as it is; null to keep nothing.
+        /// Set before this is loaded.
+        /// </summary>
+        public byte[]? OpenedFile { get; init; }
 
         /// <summary>
         /// A folder per difficulty, so restoring means picking the newest file in an obvious place.
