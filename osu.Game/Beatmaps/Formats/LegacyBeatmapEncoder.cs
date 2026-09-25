@@ -236,6 +236,7 @@ namespace osu.Game.Beatmaps.Formats
             extractSampleControlPoints(beatmap.HitObjects);
 
             restorePreservedControlPoints();
+            reassertDifficultyControlPoints();
 
             if (scrollSpeedEncodedAsSliderVelocity)
             {
@@ -399,6 +400,19 @@ namespace osu.Game.Beatmaps.Formats
 
                 // times are compared loosely because the editor rounds them as objects are moved around.
                 static bool almostEqual(double a, double b) => Math.Abs(a - b) < 1;
+            }
+
+            // an object's velocity is left out where the one before it said the same, and a line put back above can
+            // stand between the two: the second then reads that line's instead. Every object is looked at again with
+            // the lines as they now are, and given its own where it needs one. Sliders placed at one velocity across a
+            // line kept from the file came back at the line's on an undo, which reads the beatmap from this (2026-09-25).
+            void reassertDifficultyControlPoints()
+            {
+                foreach (var point in collectDifficultyControlPoints(beatmap.HitObjects).OrderBy(dp => dp.Time))
+                {
+                    if (!point.IsRedundant(legacyControlPoints.DifficultyPointAt(point.Time)))
+                        legacyControlPoints.Add(point.Time, point);
+                }
             }
 
             IEnumerable<SampleControlPoint> collectSampleControlPoints(IEnumerable<HitObject> hitObjects)
