@@ -106,6 +106,11 @@ namespace osu.Game.Screens.Edit
         // once a frame at most: a drag updates its objects every frame.
         private void refreshShownLater(HitObject? _) => Scheduler.AddOnce(refreshShown);
 
+        /// <summary>
+        /// Brings <see cref="Shown"/> up to date now, rather than on the next frame, for something about to act on it.
+        /// </summary>
+        public void RefreshShown() => refreshShown();
+
         private void refreshShown()
         {
             IEnumerable<SavedTimingLine> shown = Lines;

@@ -205,6 +205,32 @@ namespace osu.Game.Screens.Edit.GreenLines
         }
 
         /// <summary>
+        /// Makes the lines a save will put in for the sliders' velocities, as the timeline shows them, into lines like
+        /// any other, all of them at once, so that one of them can be changed.
+        /// </summary>
+        /// <remarks>
+        /// Nothing about the objects changes: each of those lines says what the slider at it already does. Taking one
+        /// alone would put it in effect over the sliders after it, whose own lines were still to come, and hand them its
+        /// velocity (2026-09-25).
+        /// </remarks>
+        public void TakeShownLines()
+        {
+            lines.RefreshShown();
+
+            var shown = lines.Shown.ToList();
+
+            if (shown.SequenceEqual(lines.Lines))
+                return;
+
+            begin();
+
+            beatmap.BeginChange();
+            lines.Lines.Clear();
+            lines.Lines.AddRange(shown);
+            beatmap.EndChange();
+        }
+
+        /// <summary>
         /// The line stable's timing panel picks when opened at a time: one standing there, else a green line within a
         /// few milliseconds either side, else the last one before it.
         /// </summary>

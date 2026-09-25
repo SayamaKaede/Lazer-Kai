@@ -250,6 +250,7 @@ namespace osu.Game.Screens.Edit.GreenLines
             Kiai.BindValueChanged(v => change(l => l.WithKiai(v.NewValue)));
 
             savedTimingLines.Lines.BindCollectionChanged((_, _) => listOutdated = true);
+            savedTimingLines.Shown.BindCollectionChanged((_, _) => listOutdated = true);
         }
 
         private Drawable createList() => new Container
@@ -433,8 +434,9 @@ namespace osu.Game.Screens.Edit.GreenLines
                 refresh = true;
             }
 
-            // a line that is gone — cancelled, or undone — leaves the panel on the one it would pick where it is.
-            if (Selected == null || !savedTimingLines.Lines.Contains(Selected.Value))
+            // a line that is gone — cancelled, or undone — leaves the panel on the one it would pick where it is. One a
+            // save will put in is still there while it is shown.
+            if (Selected == null || !(savedTimingLines.Lines.Contains(Selected.Value) || savedTimingLines.Shown.Contains(Selected.Value)))
                 select(editing.PickAt(editorClock.CurrentTime));
             else if (refresh)
                 show();
@@ -463,7 +465,7 @@ namespace osu.Game.Screens.Edit.GreenLines
         /// </summary>
         public void RemoveLine()
         {
-            if (!Editable || Selected is not SavedTimingLine line || line.Uninherited)
+            if (!Editable || Selected is not SavedTimingLine line || line.Uninherited || !takeIfShown(line))
                 return;
 
             editing.Remove(line);
@@ -481,7 +483,7 @@ namespace osu.Game.Screens.Edit.GreenLines
         /// </remarks>
         public void UseCurrentTime()
         {
-            if (!Editable || Selected is not SavedTimingLine line)
+            if (!Editable || Selected is not SavedTimingLine line || !takeIfShown(line))
                 return;
 
             if (line.Uninherited)
@@ -519,7 +521,7 @@ namespace osu.Game.Screens.Edit.GreenLines
         /// </summary>
         private void change(Func<SavedTimingLine, SavedTimingLine> changeLine, bool forVelocity = false)
         {
-            if (showing || !Editable || Selected is not SavedTimingLine line)
+            if (showing || !Editable || Selected is not SavedTimingLine line || !takeIfShown(line))
                 return;
 
             if (forVelocity && line.Uninherited)
@@ -536,6 +538,20 @@ namespace osu.Game.Screens.Edit.GreenLines
 
             editing.Replace(line, changed);
             select(changed);
+        }
+
+        /// <summary>
+        /// Readies a line to be changed: one a save will put in becomes a line like the others first, along with every
+        /// other such line (see <see cref="GreenLineEditing.TakeShownLines"/>).
+        /// </summary>
+        /// <returns>Whether the line is there to be changed.</returns>
+        private bool takeIfShown(SavedTimingLine line)
+        {
+            if (savedTimingLines.Lines.Contains(line))
+                return true;
+
+            editing.TakeShownLines();
+            return savedTimingLines.Lines.Contains(line);
         }
 
         private void select(SavedTimingLine? line)
@@ -581,10 +597,13 @@ namespace osu.Game.Screens.Edit.GreenLines
 
             var confirmed = editing.Confirmed.ToHashSet();
 
+            var inFile = savedTimingLines.Lines.ToHashSet();
+
             foreach (var row in list)
             {
                 row.Current = row.Line == line;
-                row.Unconfirmed = !confirmed.Contains(row.Line);
+                row.ToBePutIn = !inFile.Contains(row.Line);
+                row.Unconfirmed = !row.ToBePutIn && !confirmed.Contains(row.Line);
             }
 
             // once the rows are laid out: a list just built has them all at the top until then.
@@ -615,7 +634,9 @@ namespace osu.Game.Screens.Edit.GreenLines
         private void rebuildList()
         {
             list.Clear();
-            list.AddRange(savedTimingLines.Lines.Select(l => new LineRow(l)
+
+            // with the lines a save will put in, as the timeline shows them (2026-09-25).
+            list.AddRange(savedTimingLines.Shown.Select(l => new LineRow(l)
             {
                 Action = () =>
                 {
@@ -806,6 +827,23 @@ namespace osu.Game.Screens.Edit.GreenLines
                 }
             }
 
+            private bool toBePutIn;
+
+            /// <summary>
+            /// Whether this is a line a save will put in, not yet among the others: drawn fainter, as on the timeline.
+            /// </summary>
+            public bool ToBePutIn
+            {
+                get => toBePutIn;
+                set
+                {
+                    toBePutIn = value;
+
+                    if (IsLoaded)
+                        updateState();
+                }
+            }
+
             public LineRow(SavedTimingLine line)
             {
                 Line = line;
@@ -859,6 +897,7 @@ namespace osu.Game.Screens.Edit.GreenLines
                 background.Colour = current ? colourProvider.Highlight1.Opacity(0.3f) : colourProvider.Background3;
                 background.Alpha = current || IsHovered ? 1 : 0;
                 texts.Colour = unconfirmed ? colours.Yellow : Line.Uninherited ? colours.Red1 : colours.Lime1;
+                texts.Alpha = toBePutIn ? 0.5f : 1;
             }
 
             private static FillFlowContainer columns(params string[] values)
