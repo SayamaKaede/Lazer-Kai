@@ -1091,7 +1091,10 @@ namespace osu.Game.Screens.Edit
             try
             {
                 if (stableFileKeeper != null)
-                    saveKeepingStableFile();
+                {
+                    if (!saveKeepingStableFile())
+                        return false;
+                }
                 else
                     saveInLazerFormat();
             }
@@ -1131,7 +1134,13 @@ namespace osu.Game.Screens.Edit
                 return stream?.ReadAllRemainingBytesToArray();
         }
 
-        private void saveKeepingStableFile()
+        /// <summary>
+        /// Whether a save that cannot stay in stable's format goes ahead in lazer's, having been asked.
+        /// </summary>
+        private bool savingInLazerFormatAllowed;
+
+        /// <returns>Whether it saved: a save that cannot stay in stable's format asks first, and saves nothing yet.</returns>
+        private bool saveKeepingStableFile()
         {
             var lines = savedTimingLines.Edited ? savedTimingLines.Lines.Select(l => l.Raw).ToArray() : null;
             byte[] file = stableFileKeeper.Write(editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard, lines, out string current);
@@ -1141,10 +1150,22 @@ namespace osu.Game.Screens.Edit
                 beatmapManager.SaveFile(editorBeatmap.BeatmapInfo, editorBeatmap.PlayableBeatmap, file);
                 stableFileKeeper.Saved(file, current, editorBeatmap.PlayableBeatmap);
                 savedTimingLines.Update(file);
-                return;
+                return true;
             }
 
             Logger.Log($@"{editorBeatmap.BeatmapInfo.GetDisplayTitle()} could not be kept in stable's format: {stableFileKeeper.LastFailure ?? @"no reason given"}");
+
+            // the file does not come back from lazer's format, so that is asked for first.
+            if (!savingInLazerFormatAllowed)
+            {
+                dialogOverlay.Push(new CannotStayStableDialog(saveInLazerFormatAfterAll, () => (Game as OsuGame)?.ExportLogsForSending()));
+                return false;
+            }
+
+            byte[] stable = readStoredFile();
+
+            if (stable != null)
+                autoBackup.KeepBeforeLazerSave(stable);
 
             beatmapManager.Save(editorBeatmap.BeatmapInfo, editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard);
             savedTimingLines.Update(Encoding.UTF8.GetBytes(current));
@@ -1153,6 +1174,31 @@ namespace osu.Game.Screens.Edit
             stableFileKeeper = null;
             keptStableVersion.Value = null;
             notifications?.Post(new SimpleNotification { Text = LazerKaiStableCompatibilityStrings.SavedInLazerFormat });
+            return true;
+        }
+
+        private void saveInLazerFormatAfterAll()
+        {
+            savingInLazerFormatAllowed = true;
+
+            try
+            {
+                attemptMutationOperation(Save);
+            }
+            finally
+            {
+                savingInLazerFormatAllowed = false;
+            }
+        }
+
+        /// <summary>
+        /// The difficulty's file as it is stored now, or null if it has none.
+        /// </summary>
+        [CanBeNull]
+        private byte[] readStoredFile()
+        {
+            var info = beatmapManager.QueryBeatmap(b => b.ID == editorBeatmap.BeatmapInfo.ID);
+            return info == null ? null : readSavedFile(beatmapManager.GetWorkingBeatmap(info, true));
         }
 
         private void saveInLazerFormat()

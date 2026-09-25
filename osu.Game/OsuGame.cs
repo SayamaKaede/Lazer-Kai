@@ -1519,7 +1519,7 @@ namespace osu.Game
                     Text = message,
                     Activated = () =>
                     {
-                        exportLogsForSending();
+                        ExportLogsForSending();
                         return true;
                     }
                 }));
@@ -1550,9 +1550,10 @@ namespace osu.Game
         /// <remarks>
         /// The same thing the button in the options does. It is here as well because this is the moment somebody
         /// actually has something worth sending, and the folder being open is the difference between "send me
-        /// your logs" being a favour and being a chore.
+        /// your logs" being a favour and being a chore. The editor offers it too, when a save cannot stay in stable's
+        /// format.
         /// </remarks>
-        private void exportLogsForSending()
+        internal void ExportLogsForSending()
         {
             try
             {

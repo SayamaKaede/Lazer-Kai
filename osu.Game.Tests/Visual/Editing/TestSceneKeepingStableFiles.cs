@@ -14,6 +14,9 @@ using osu.Framework.Testing;
 using osu.Game.Database;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Models;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Dialog;
+using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Compose.Components;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Osu;
@@ -135,14 +138,74 @@ namespace osu.Game.Tests.Visual.Editing
         {
             AddUntilStep("status says stable's", () => shownSaveFormat(), () => Is.EqualTo("Stable v14"));
 
-            // a storyboard is not written into a stable file, so the save goes to lazer's format. Nothing in the editor
-            // changes one; it stands in for whatever edit cannot be written. (This was a red line, then a background,
-            // until those were written, on 2026-09-23.)
-            AddStep("add to the storyboard", () =>
-                EditorBeatmap.Storyboard.GetLayer(@"Background").Add(new osu.Game.Storyboards.StoryboardSprite(osu.Game.Storyboards.StoryboardElementSource.Beatmap, @"sprite.png", osu.Framework.Graphics.Anchor.Centre, osuTK.Vector2.Zero)));
+            makeAnEditThatCannotStayStable();
             SaveEditor();
 
+            // since 2026-09-24 the save asks first; this test is about the status once it has gone ahead.
+            AddUntilStep("asked first", () => cannotStayStableDialog(), () => Is.Not.Null);
+            AddStep("save in lazer's format", () => cannotStayStableDialog()!.PerformAction<PopupDialogDangerousButton>());
+
             AddUntilStep("status says lazer's", () => shownSaveFormat(), () => Is.EqualTo("Lazer"));
+        }
+
+        [Test]
+        public void TestASaveThatCannotStayStableAsksFirst()
+        {
+            makeAnEditThatCannotStayStable();
+            SaveEditor();
+
+            AddUntilStep("asked first", () => cannotStayStableDialog(), () => Is.Not.Null);
+            AddAssert("nothing saved yet", () => EditorBeatmap.BeatmapInfo.MD5Hash, () => Is.EqualTo(new MemoryStream(originalFile()).ComputeMD5Hash()));
+            AddAssert("status still says stable's", () => shownSaveFormat(), () => Is.EqualTo("Stable v14"));
+        }
+
+        [Test]
+        public void TestNotSavingLeavesTheFileAsItWas()
+        {
+            makeAnEditThatCannotStayStable();
+            SaveEditor();
+
+            AddUntilStep("asked first", () => cannotStayStableDialog(), () => Is.Not.Null);
+            AddStep("do not save", () => cannotStayStableDialog()!.PerformAction<PopupDialogCancelButton>());
+
+            AddAssert("the file is as it was", () => EditorBeatmap.BeatmapInfo.MD5Hash, () => Is.EqualTo(new MemoryStream(originalFile()).ComputeMD5Hash()));
+            AddAssert("still stable's", () => shownSaveFormat(), () => Is.EqualTo("Stable v14"));
+            AddAssert("the edit is still there", () => EditorBeatmap.Storyboard.GetLayer(@"Background").Elements.Any(e => e.Path == @"sprite.png"), () => Is.True);
+        }
+
+        [Test]
+        public void TestSavingInLazersFormatKeepsTheStableFileFirst()
+        {
+            makeAnEditThatCannotStayStable();
+            SaveEditor();
+
+            AddUntilStep("asked first", () => cannotStayStableDialog(), () => Is.Not.Null);
+            AddStep("save in lazer's format", () => cannotStayStableDialog()!.PerformAction<PopupDialogDangerousButton>());
+
+            AddUntilStep("saved in lazer's format", () => shownSaveFormat(), () => Is.EqualTo("Lazer"));
+            AddUntilStep("the stable file is kept", () => keptFiles().Select(readStored), () => Has.Some.EqualTo(originalFile()));
+        }
+
+        /// <summary>
+        /// A storyboard is not written into a stable file, so a save goes to lazer's format. Nothing in the editor changes
+        /// one; it stands in for whatever edit cannot be written. (This was a red line, then a background, until those
+        /// were written, on 2026-09-23.)
+        /// </summary>
+        private void makeAnEditThatCannotStayStable() => AddStep("add to the storyboard", () =>
+            EditorBeatmap.Storyboard.GetLayer(@"Background").Add(new osu.Game.Storyboards.StoryboardSprite(osu.Game.Storyboards.StoryboardElementSource.Beatmap, @"sprite.png", osu.Framework.Graphics.Anchor.Centre, osuTK.Vector2.Zero)));
+
+        private CannotStayStableDialog? cannotStayStableDialog() => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog as CannotStayStableDialog;
+
+        private string[] keptFiles()
+        {
+            string directory = EditorAutoBackup.DirectoryFor(EditorBeatmap.BeatmapInfo);
+            return Game.Storage.ExistsDirectory(directory) ? Game.Storage.GetFiles(directory, "*.osu").ToArray() : System.Array.Empty<string>();
+        }
+
+        private byte[] readStored(string file)
+        {
+            using (var stream = Game.Storage.GetStream(file))
+                return stream.ReadAllBytesToArray();
         }
 
         private string? shownSaveFormat()

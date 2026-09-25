@@ -47,6 +47,27 @@ namespace osu.Game.Localisation
         public static LocalisableString ConvertToStableFormatBody => new TranslatableString(getKey(@"convert_to_stable_format_body"),
             @"It is saved, unsaved changes included, the way exporting for stable writes it, and kept in stable's format from then on: times and positions become whole numbers, and sliders of several segments become Bézier curves. It cannot be undone.");
 
+        /// <summary>
+        /// "This edit cannot be saved in stable's format yet"
+        /// </summary>
+        public static LocalisableString CannotStayStableHeader => new TranslatableString(getKey(@"cannot_stay_stable_header"), @"This edit cannot be saved in stable's format yet");
+
+        /// <summary>
+        /// "Saved, the difficulty goes to lazer's format and stays there. The file as it is now is kept in the backups' folder first. What stopped it is written in the logs."
+        /// </summary>
+        public static LocalisableString CannotStayStableBody => new TranslatableString(getKey(@"cannot_stay_stable_body"),
+            @"Saved, the difficulty goes to lazer's format and stays there. The file as it is now is kept in the backups' folder first. What stopped it is written in the logs.");
+
+        /// <summary>
+        /// "Save in lazer's format"
+        /// </summary>
+        public static LocalisableString SaveInLazerFormat => new TranslatableString(getKey(@"save_in_lazer_format"), @"Save in lazer's format");
+
+        /// <summary>
+        /// "Don't save"
+        /// </summary>
+        public static LocalisableString DoNotSave => new TranslatableString(getKey(@"do_not_save"), @"Don't save");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }
