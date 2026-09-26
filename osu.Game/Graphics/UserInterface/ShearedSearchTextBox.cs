@@ -70,20 +70,13 @@ namespace osu.Game.Graphics.UserInterface
                         new Drawable[]
                         {
                             TextBox = CreateInnerTextBox(),
-                            new SpriteIcon
-                            {
-                                Icon = FontAwesome.Solid.Search,
-                                Origin = Anchor.Centre,
-                                Anchor = Anchor.Centre,
-                                Size = new Vector2(16),
-                                Shear = -Shear
-                            }
+                            CreateTrailingContent(),
                         }
                     },
                     ColumnDimensions = new[]
                     {
                         new Dimension(),
-                        new Dimension(GridSizeMode.Absolute, 50),
+                        new Dimension(GridSizeMode.Absolute, TrailingContentWidth),
                     }
                 }
             };
@@ -98,6 +91,23 @@ namespace osu.Game.Graphics.UserInterface
         public override bool HandleNonPositionalInput => TextBox.HandleNonPositionalInput;
 
         protected virtual InnerSearchTextBox CreateInnerTextBox() => new InnerSearchTextBox();
+
+        /// <summary>
+        /// What sits to the right of the text. Called from the constructor.
+        /// </summary>
+        protected virtual Drawable CreateTrailingContent() => new SpriteIcon
+        {
+            Icon = FontAwesome.Solid.Search,
+            Origin = Anchor.Centre,
+            Anchor = Anchor.Centre,
+            Size = new Vector2(16),
+            Shear = -OsuGame.SHEAR
+        };
+
+        /// <summary>
+        /// How wide <see cref="CreateTrailingContent"/> is given. Read from the constructor.
+        /// </summary>
+        protected virtual float TrailingContentWidth => 50;
 
         protected partial class InnerSearchTextBox : SearchTextBox
         {

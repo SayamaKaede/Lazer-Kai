@@ -42,6 +42,41 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString DeleteDifficulty => new TranslatableString(getKey(@"delete_difficulty"), @"Delete this difficulty...");
 
+        /// <summary>
+        /// "Search presets"
+        /// </summary>
+        public static LocalisableString SearchPresets => new TranslatableString(getKey(@"search_presets"), @"Search presets");
+
+        /// <summary>
+        /// "No presets saved yet."
+        /// </summary>
+        public static LocalisableString NoSearchPresets => new TranslatableString(getKey(@"no_search_presets"), @"No presets saved yet.");
+
+        /// <summary>
+        /// "Name (the search itself if left empty)"
+        /// </summary>
+        public static LocalisableString SearchPresetName => new TranslatableString(getKey(@"search_preset_name"), @"Name (the search itself if left empty)");
+
+        /// <summary>
+        /// "Save the current search"
+        /// </summary>
+        public static LocalisableString SaveSearchPreset => new TranslatableString(getKey(@"save_search_preset"), @"Save the current search");
+
+        /// <summary>
+        /// "User tags"
+        /// </summary>
+        public static LocalisableString UserTags => new TranslatableString(getKey(@"user_tags"), @"User tags");
+
+        /// <summary>
+        /// "Each number is how many of the difficulties shown now have that tag."
+        /// </summary>
+        public static LocalisableString UserTagCounts => new TranslatableString(getKey(@"user_tag_counts"), @"Each number is how many of the difficulties shown now have that tag.");
+
+        /// <summary>
+        /// "None of the difficulties shown now have user tags."
+        /// </summary>
+        public static LocalisableString NoUserTags => new TranslatableString(getKey(@"no_user_tags"), @"None of the difficulties shown now have user tags.");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

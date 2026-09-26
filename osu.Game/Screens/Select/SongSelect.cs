@@ -907,6 +907,7 @@ namespace osu.Game.Screens.Select
             updateNoResultsPlaceholder();
 
             FilterControl.StatusText = SongSelectStrings.MatchesCount(carousel.MatchedBeatmapsCount);
+            FilterControl.SetMatchedBeatmaps(carouselItems.Select(i => i.Model).OfType<GroupedBeatmap>().Select(b => b.Beatmap));
 
             // If there's already a selection update in progress, let's not interrupt it.
             // Interrupting could cause the debounce interval to be reduced.

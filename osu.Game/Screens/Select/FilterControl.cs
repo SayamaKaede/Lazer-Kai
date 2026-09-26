@@ -5,11 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text.RegularExpressions;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
@@ -214,6 +216,9 @@ namespace osu.Game.Screens.Select
                 },
             };
 
+            searchTextBox.PresetsButton.CreatePopover = () => new SearchPresetPopover(this);
+            searchTextBox.UserTagsButton.CreatePopover = () => new UserTagPopover(this);
+
             localUser = api.LocalUser.GetBoundCopy();
             localUserFavouriteBeatmapSets.BindTo(api.LocalUserState.FavouriteBeatmapSets);
         }
@@ -361,6 +366,48 @@ namespace osu.Game.Screens.Select
             searchTextBox.Current.Value = string.Join(' ', existingQuery.Trim(), query);
         }
 
+        private readonly Bindable<IReadOnlyList<BeatmapInfo>> matchedBeatmaps = new Bindable<IReadOnlyList<BeatmapInfo>>(Array.Empty<BeatmapInfo>());
+
+        /// <summary>
+        /// The difficulties the search leaves shown, each once.
+        /// </summary>
+        public IBindable<IReadOnlyList<BeatmapInfo>> MatchedBeatmaps => matchedBeatmaps;
+
+        /// <summary>
+        /// Told by song select each time the search has been carried out.
+        /// </summary>
+        public void SetMatchedBeatmaps(IEnumerable<BeatmapInfo> beatmaps) => matchedBeatmaps.Value = beatmaps.DistinctBy(b => b.ID).ToArray();
+
+        public IBindable<string> SearchText => searchTextBox.Current;
+
+        /// <summary>
+        /// How a user tag is searched for: the same as clicking one on the beatmap's details.
+        /// </summary>
+        public static string UserTagTerm(string tag) => $@"tag=""{tag}""!";
+
+        private static readonly Regex user_tag_term = new Regex(@"tag=""(?<tag>[^""]+)""!", RegexOptions.Compiled);
+
+        /// <summary>
+        /// The user tags in the search, as <see cref="UserTagTerm"/> puts them there.
+        /// </summary>
+        public IEnumerable<string> SearchedUserTags() => user_tag_term.Matches(searchTextBox.Current.Value).Select(m => m.Groups["tag"].Value);
+
+        public bool IsUserTagSearched(string tag) => searchTextBox.Current.Value.Contains(UserTagTerm(tag), StringComparison.Ordinal);
+
+        /// <summary>
+        /// Adds a user tag to the search, or takes it out if it is in there already.
+        /// </summary>
+        public void ToggleUserTag(string tag)
+        {
+            string term = UserTagTerm(tag);
+            string query = searchTextBox.Current.Value;
+            int index = query.IndexOf(term, StringComparison.Ordinal);
+
+            searchTextBox.Current.Value = index < 0
+                ? string.Join(' ', query.Trim(), term).Trim()
+                : string.Join(' ', query[..index].TrimEnd(), query[(index + term.Length)..].TrimStart()).Trim();
+        }
+
         protected override void PopIn()
         {
             this.MoveToX(0, SongSelect.ENTER_DURATION, Easing.OutQuint)
@@ -376,6 +423,23 @@ namespace osu.Game.Screens.Select
         internal partial class SongSelectSearchTextBox : ShearedFilterTextBox
         {
             public IBindable<BeatmapSetInfo?> ScopedBeatmapSet { get; } = new Bindable<BeatmapSetInfo?>();
+
+            public SearchBoxButton PresetsButton { get; private set; } = null!;
+            public SearchBoxButton UserTagsButton { get; private set; } = null!;
+
+            // where the magnifying glass was, which did nothing.
+            protected override float TrailingContentWidth => SearchBoxButton.WIDTH * 2;
+
+            protected override Drawable CreateTrailingContent() => new FillFlowContainer
+            {
+                RelativeSizeAxes = Axes.Both,
+                Direction = FillDirection.Horizontal,
+                Children = new Drawable[]
+                {
+                    PresetsButton = new SearchBoxButton(FontAwesome.Solid.Bookmark, LazerKaiSongSelectStrings.SearchPresets),
+                    UserTagsButton = new SearchBoxButton(FontAwesome.Solid.Tags, LazerKaiSongSelectStrings.UserTags),
+                }
+            };
 
             protected override InnerSearchTextBox CreateInnerTextBox() => new InnerTextBox
             {
