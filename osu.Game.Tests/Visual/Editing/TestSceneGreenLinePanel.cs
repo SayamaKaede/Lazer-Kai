@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -9,6 +10,7 @@ using System.Text;
 using NUnit.Framework;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Input;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
@@ -484,7 +486,8 @@ namespace osu.Game.Tests.Visual.Editing
         /// </summary>
         private bool selectedRowInView()
         {
-            var scroll = panel.ChildrenOfType<osu.Game.Graphics.Containers.OsuScrollContainer>().Single();
+            // the list's, rather than the one in the tabs' dropdown.
+            var scroll = panel.ChildrenOfType<osu.Game.Graphics.Containers.OsuScrollContainer>().Single(s => s.ChildrenOfType<GreenLinePanel.LineRow>().Any());
             var row = panel.ChildrenOfType<GreenLinePanel.LineRow>().SingleOrDefault(r => r.Line == panel.Selected);
 
             if (row == null)
@@ -509,6 +512,163 @@ namespace osu.Game.Tests.Visual.Editing
             AddUntilStep("the editor is at it", () => clock.CurrentTime, () => Is.EqualTo(22054).Within(1));
             AddUntilStep("and it is the one being edited", () => panel.Selected?.Raw, () => Is.EqualTo("22054,-100,4,2,0,70,0,0"));
         }
+
+        [Test]
+        public void TestCtrlClickAddsALineToTheSelectionAndTakesItOut()
+        {
+            openAt(20736);
+            clickRow(22054, Key.ControlLeft);
+
+            AddAssert("both are selected", () => selectedTimes(), () => Is.EqualTo(new[] { 20736d, 22054 }));
+
+            clickRow(20736, Key.ControlLeft);
+
+            AddAssert("only the second is left", () => selectedTimes(), () => Is.EqualTo(new[] { 22054d }));
+            AddAssert("and it is the one shown", () => panel.Selected?.Time, () => Is.EqualTo(22054));
+        }
+
+        [Test]
+        public void TestShiftClickSelectsEveryLineBetween()
+        {
+            openAt(1000);
+            clickRow(22054, Key.ShiftLeft);
+
+            AddAssert("every line from the red one to it", () => selectedTimes(),
+                () => Is.EqualTo(rows().Select(r => r.Line.Time).Where(t => t >= 956 && t <= 22054).ToArray()));
+        }
+
+        /// <summary>
+        /// A change to several lines changes that one thing on each of them, and leaves the rest of each as it was.
+        /// </summary>
+        [Test]
+        public void TestAChangeToSeveralLinesChangesOnlyWhatWasChanged()
+        {
+            openAt(20736);
+            clickRow(22054, Key.ControlLeft);
+            AddStep("turn kiai on", () => panel.Kiai.Value = true);
+
+            AddAssert("both have kiai, and their own volumes", () => editorLines(),
+                () => Does.Contain("20736,-100,4,2,0,65,0,1").And.Contain("22054,-100,4,2,0,70,0,1"));
+            AddAssert("both are still selected", () => selectedTimes(), () => Is.EqualTo(new[] { 20736d, 22054 }));
+
+            AddStep("turn them down to 30", () => panel.Volume.Value = 30);
+
+            AddAssert("both are 30", () => editorLines(), () => Does.Contain("20736,-100,4,2,0,30,0,1").And.Contain("22054,-100,4,2,0,30,0,1"));
+            AddAssert("the slider under the second is 30", () => slider(22054).Samples.First().Volume, () => Is.EqualTo(30));
+        }
+
+        /// <summary>
+        /// A velocity cannot go on a red line, and with several selected none is put in beside one either.
+        /// </summary>
+        [Test]
+        public void TestAVelocityForSeveralLinesGoesOnTheGreenOnesAlone()
+        {
+            int count = 0;
+
+            openAt(1000);
+            clickRow(20736, Key.ControlLeft);
+            AddStep("note how many lines", () => count = editorLines().Length);
+            AddStep("double the velocity", () => panel.SliderVelocity.Value = 2);
+
+            AddAssert("the green line is doubled", () => editorLines(), () => Does.Contain("20736,-50,4,2,0,65,0,0"));
+            AddAssert("no line was put in", () => editorLines().Length, () => Is.EqualTo(count));
+        }
+
+        [Test]
+        public void TestUsingTheCurrentTimeIsForOneLineAtATime()
+        {
+            openAt(20736);
+            clickRow(22054, Key.ControlLeft);
+
+            AddAssert("the button cannot be used", () => useCurrentTimeButton.Enabled.Value, () => Is.False);
+        }
+
+        [Test]
+        public void TestSelectAllOverThePanelSelectsTheLines()
+        {
+            openAt(20736);
+            AddStep("move the mouse over the list", () => InputManager.MoveMouseTo(rows().First()));
+            AddStep("press Ctrl+A", () => InputManager.Keys(PlatformAction.SelectAll));
+
+            AddAssert("every line is selected", () => selectedTimes(), () => Is.EqualTo(rows().Select(r => r.Line.Time).ToArray()));
+            AddAssert("no object is", () => EditorBeatmap.SelectedHitObjects, () => Is.Empty);
+        }
+
+        [Test]
+        public void TestSelectAllElsewhereSelectsTheObjects()
+        {
+            openAt(20736);
+            // the left edge: the window opens over the middle of the playfield.
+            AddStep("move the mouse off the window", () =>
+            {
+                var composer = Editor.ChildrenOfType<osu.Game.Rulesets.Edit.HitObjectComposer>().Single().ScreenSpaceDrawQuad;
+                InputManager.MoveMouseTo(new osuTK.Vector2(composer.TopLeft.X + 20, composer.Centre.Y));
+            });
+            AddAssert("it is off the window", () => panel.ReceivePositionalInputAt(InputManager.CurrentState.Mouse.Position), () => Is.False);
+            AddStep("press Ctrl+A", () => InputManager.Keys(PlatformAction.SelectAll));
+
+            AddAssert("the objects are selected", () => EditorBeatmap.SelectedHitObjects.Count, () => Is.EqualTo(EditorBeatmap.HitObjects.Count));
+            AddAssert("the lines are not", () => selectedTimes(), () => Is.EqualTo(new[] { 20736d }));
+        }
+
+        [Test]
+        public void TestDeleteOverThePanelRemovesTheSelectedGreenLines()
+        {
+            int objects = 0;
+
+            openAt(1000);
+            clickRow(20736, Key.ControlLeft);
+            clickRow(22054, Key.ControlLeft);
+            AddStep("note how many objects", () => objects = EditorBeatmap.HitObjects.Count);
+            AddStep("press Delete", () => InputManager.Key(Key.Delete));
+
+            AddAssert("the green lines are gone", () => editorLines(), () => Has.None.StartsWith("20736,").And.None.StartsWith("22054,"));
+            AddAssert("the red line is not", () => editorLines().First(), () => Is.EqualTo("956,329.67032967033,4,2,0,60,1,0"));
+            AddAssert("no object was deleted", () => EditorBeatmap.HitObjects.Count, () => Is.EqualTo(objects));
+        }
+
+        [Test]
+        public void TestTheTabsShowTheRedOrGreenLinesAlone()
+        {
+            openAt(20736);
+
+            AddStep("red lines", () => panel.Filter.Value = GreenLineListFilter.RedLines);
+            AddAssert("only red lines", () => rows().Select(r => r.Line.Uninherited), () => Is.Not.Empty.And.All.True);
+            AddAssert("the green line left the selection for one shown", () => panel.Selected?.Uninherited, () => Is.True);
+
+            AddStep("green lines", () => panel.Filter.Value = GreenLineListFilter.GreenLines);
+            AddAssert("only green lines", () => rows().Select(r => r.Line.Uninherited), () => Is.Not.Empty.And.All.False);
+
+            AddStep("all", () => panel.Filter.Value = GreenLineListFilter.All);
+            AddAssert("every line", () => rows().Count(), () => Is.EqualTo(Editor.ChildrenOfType<SavedTimingLines>().Single().Shown.Count));
+        }
+
+        [Test]
+        public void TestSelectAllInATabSelectsWhatItShows()
+        {
+            openAt(20736);
+            AddStep("green lines", () => panel.Filter.Value = GreenLineListFilter.GreenLines);
+            AddStep("move the mouse over the list", () => InputManager.MoveMouseTo(rows().First()));
+            AddStep("press Ctrl+A", () => InputManager.Keys(PlatformAction.SelectAll));
+
+            AddAssert("every green line and no red one", () => panel.SelectedLines.Select(l => l.Uninherited), () => Is.Not.Empty.And.All.False);
+            AddAssert("all of them", () => panel.SelectedLines.Count, () => Is.EqualTo(rows().Count()));
+        }
+
+        private IEnumerable<GreenLinePanel.LineRow> rows() => panel.ChildrenOfType<GreenLinePanel.LineRow>();
+
+        private double[] selectedTimes() => panel.SelectedLines.Select(l => l.Time).ToArray();
+
+        /// <summary>
+        /// Clicks a line's row in the list, holding a key down while doing so.
+        /// </summary>
+        private void clickRow(double time, Key held) => AddStep($"{held}+click the line at {time}", () =>
+        {
+            InputManager.MoveMouseTo(rows().First(r => r.Line.Time == time));
+            InputManager.PressKey(held);
+            InputManager.Click(MouseButton.Left);
+            InputManager.ReleaseKey(held);
+        });
 
         [Test]
         public void TestARedLineIsNotRemovedHere()

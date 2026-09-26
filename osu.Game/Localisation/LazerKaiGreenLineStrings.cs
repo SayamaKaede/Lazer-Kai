@@ -116,6 +116,21 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString NoneRemoved => new TranslatableString(getKey(@"none_removed"), @"There were no unneeded green lines.");
 
+        /// <summary>
+        /// "All"
+        /// </summary>
+        public static LocalisableString FilterAll => new TranslatableString(getKey(@"filter_all"), @"All");
+
+        /// <summary>
+        /// "Red lines"
+        /// </summary>
+        public static LocalisableString FilterRedLines => new TranslatableString(getKey(@"filter_red_lines"), @"Red lines");
+
+        /// <summary>
+        /// "Green lines"
+        /// </summary>
+        public static LocalisableString FilterGreenLines => new TranslatableString(getKey(@"filter_green_lines"), @"Green lines");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

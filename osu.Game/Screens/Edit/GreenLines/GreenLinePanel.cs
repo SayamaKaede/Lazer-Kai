@@ -15,6 +15,8 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Graphics.UserInterface;
+using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
@@ -53,7 +55,7 @@ namespace osu.Game.Screens.Edit.GreenLines
     /// A window rather than a popover, like the stream panel. It opens under the timeline, where the lines it lists can
     /// be seen as they change, and is dragged by its title.
     /// </remarks>
-    public partial class GreenLinePanel : VisibilityContainer, IKeyBindingHandler<GlobalAction>
+    public partial class GreenLinePanel : VisibilityContainer, IKeyBindingHandler<GlobalAction>, IKeyBindingHandler<PlatformAction>
     {
         private const float list_width = 330;
         private const float controls_width = 320;
@@ -74,9 +76,30 @@ namespace osu.Game.Screens.Edit.GreenLines
         public readonly BindableBool Kiai = new BindableBool();
 
         /// <summary>
-        /// The line being edited, whose values are shown.
+        /// The line being edited, whose values are shown: the last one clicked among <see cref="SelectedLines"/>.
         /// </summary>
         public SavedTimingLine? Selected { get; private set; }
+
+        /// <summary>
+        /// Every line a change goes to, picked in the list the way files are in stable's timing panel: ctrl+click adds
+        /// or takes out one, shift+click takes every line between, and select all takes what the list shows.
+        /// </summary>
+        /// <remarks>
+        /// A change goes to each of them as that one thing changed, so the rest of what each line says stays its own.
+        /// </remarks>
+        public IReadOnlyList<SavedTimingLine> SelectedLines => selection;
+
+        private readonly List<SavedTimingLine> selection = new List<SavedTimingLine>();
+
+        /// <summary>
+        /// Where a shift+click takes the lines from: the line last clicked on its own or with ctrl.
+        /// </summary>
+        private SavedTimingLine? rangeStart;
+
+        /// <summary>
+        /// Which lines the list shows, as stable's timing panel's tabs do.
+        /// </summary>
+        public readonly Bindable<GreenLineListFilter> Filter = new Bindable<GreenLineListFilter>();
 
         /// <summary>
         /// Whether lines can be edited here, which needs a beatmap kept in stable's format.
@@ -251,11 +274,30 @@ namespace osu.Game.Screens.Edit.GreenLines
 
             savedTimingLines.Lines.BindCollectionChanged((_, _) => listOutdated = true);
             savedTimingLines.Shown.BindCollectionChanged((_, _) => listOutdated = true);
+            Filter.BindValueChanged(_ => listOutdated = true);
         }
 
-        private Drawable createList() => new Container
+        private Drawable createList() => new FillFlowContainer
         {
             Width = list_width,
+            AutoSizeAxes = Axes.Y,
+            Direction = FillDirection.Vertical,
+            Spacing = new Vector2(4),
+            Children = new Drawable[]
+            {
+                new OsuTabControl<GreenLineListFilter>
+                {
+                    RelativeSizeAxes = Axes.X,
+                    Height = 24,
+                    Current = Filter,
+                },
+                createRows(),
+            }
+        };
+
+        private Drawable createRows() => new Container
+        {
+            RelativeSizeAxes = Axes.X,
             Height = list_height,
             Masking = true,
             CornerRadius = 5,
@@ -396,9 +438,13 @@ namespace osu.Game.Screens.Edit.GreenLines
             Action = action,
         };
 
+        private InputManager inputManager = null!;
+
         protected override void LoadComplete()
         {
             base.LoadComplete();
+
+            inputManager = GetContainingInputManager()!;
 
             sampleIndexBox.OnCommit += (_, _) =>
             {
@@ -430,14 +476,15 @@ namespace osu.Game.Screens.Edit.GreenLines
             if (listOutdated)
             {
                 rebuildList();
+                keepSelectionToWhatIsListed();
                 listOutdated = false;
                 refresh = true;
             }
 
             // a line that is gone — cancelled, or undone — leaves the panel on the one it would pick where it is. One a
             // save will put in is still there while it is shown.
-            if (Selected == null || !(savedTimingLines.Lines.Contains(Selected.Value) || savedTimingLines.Shown.Contains(Selected.Value)))
-                select(editing.PickAt(editorClock.CurrentTime));
+            if (Selected is not SavedTimingLine selected || !isListed(selected) || !(savedTimingLines.Lines.Contains(selected) || savedTimingLines.Shown.Contains(selected)))
+                select(pickListedAt(editorClock.CurrentTime));
             else if (refresh)
                 show();
 
@@ -461,11 +508,25 @@ namespace osu.Game.Screens.Edit.GreenLines
         }
 
         /// <summary>
-        /// Takes out the selected line, if it is a green one, and selects the one in effect in its place.
+        /// Takes out the selected lines that are green ones, and selects the one in effect in their place.
         /// </summary>
         public void RemoveLine()
         {
-            if (!Editable || Selected is not SavedTimingLine line || line.Uninherited || !takeIfShown(line))
+            if (!Editable || Selected is not SavedTimingLine line)
+                return;
+
+            if (selection.Count > 1)
+            {
+                if (selection.All(l => l.Uninherited))
+                    return;
+
+                takeShownIfAny();
+                editing.RemoveAll(selection);
+                select(editing.InEffectAt(line.Time));
+                return;
+            }
+
+            if (line.Uninherited || !takeIfShown(line))
                 return;
 
             editing.Remove(line);
@@ -483,7 +544,8 @@ namespace osu.Game.Screens.Edit.GreenLines
         /// </remarks>
         public void UseCurrentTime()
         {
-            if (!Editable || Selected is not SavedTimingLine line || !takeIfShown(line))
+            // one line at a time: several lines have no one time to go to.
+            if (!Editable || selection.Count > 1 || Selected is not SavedTimingLine line || !takeIfShown(line))
                 return;
 
             if (line.Uninherited)
@@ -521,7 +583,16 @@ namespace osu.Game.Screens.Edit.GreenLines
         /// </summary>
         private void change(Func<SavedTimingLine, SavedTimingLine> changeLine, bool forVelocity = false)
         {
-            if (showing || !Editable || Selected is not SavedTimingLine line || !takeIfShown(line))
+            if (showing || !Editable || Selected is not SavedTimingLine line)
+                return;
+
+            if (selection.Count > 1)
+            {
+                changeSelected(changeLine, forVelocity);
+                return;
+            }
+
+            if (!takeIfShown(line))
                 return;
 
             if (forVelocity && line.Uninherited)
@@ -541,6 +612,47 @@ namespace osu.Game.Screens.Edit.GreenLines
         }
 
         /// <summary>
+        /// Changes every selected line, each by the one thing changed. A velocity goes on the green ones alone: with
+        /// several lines there is no one red line to put a green line in beside.
+        /// </summary>
+        private void changeSelected(Func<SavedTimingLine, SavedTimingLine> changeLine, bool forVelocity)
+        {
+            takeShownIfAny();
+
+            var replacements = selection.Where(l => savedTimingLines.Lines.Contains(l) && !(forVelocity && l.Uninherited))
+                                        .Select(l => (line: l, changed: changeLine(l)))
+                                        .ToList();
+
+            editing.ReplaceAll(replacements);
+
+            var changedTo = new Dictionary<SavedTimingLine, SavedTimingLine>();
+
+            foreach (var (line, changed) in replacements)
+                changedTo.TryAdd(line, changed);
+
+            for (int i = 0; i < selection.Count; i++)
+                selection[i] = changedTo.GetValueOrDefault(selection[i], selection[i]);
+
+            if (Selected is SavedTimingLine selected)
+                Selected = changedTo.GetValueOrDefault(selected, selected);
+
+            if (rangeStart is SavedTimingLine start)
+                rangeStart = changedTo.GetValueOrDefault(start, start);
+
+            savedTimingLines.Selected.Value = Selected;
+            show();
+        }
+
+        /// <summary>
+        /// Makes the lines a save will put in into lines like the others, if any of the selected lines is one of them.
+        /// </summary>
+        private void takeShownIfAny()
+        {
+            if (selection.Any(l => !savedTimingLines.Lines.Contains(l)))
+                editing.TakeShownLines();
+        }
+
+        /// <summary>
         /// Readies a line to be changed: one a save will put in becomes a line like the others first, along with every
         /// other such line (see <see cref="GreenLineEditing.TakeShownLines"/>).
         /// </summary>
@@ -554,11 +666,141 @@ namespace osu.Game.Screens.Edit.GreenLines
             return savedTimingLines.Lines.Contains(line);
         }
 
+        /// <summary>
+        /// Selects one line alone.
+        /// </summary>
         private void select(SavedTimingLine? line)
         {
             Selected = line;
+            rangeStart = line;
+
+            selection.Clear();
+
+            if (line is SavedTimingLine selected)
+                selection.Add(selected);
+
             savedTimingLines.Selected.Value = line;
             show();
+        }
+
+        /// <summary>
+        /// A click on a line in the list: alone, with ctrl to add or take out, or with shift for every line between.
+        /// </summary>
+        private void clicked(SavedTimingLine line)
+        {
+            var keyboard = inputManager.CurrentState.Keyboard;
+
+            if (keyboard.ControlPressed)
+            {
+                if (selection.Contains(line))
+                {
+                    // the last one stays: a change always has a line to go to.
+                    if (selection.Count == 1)
+                        return;
+
+                    selection.Remove(line);
+
+                    if (Selected == line)
+                        Selected = selection[^1];
+
+                    savedTimingLines.Selected.Value = Selected;
+                    show();
+                    return;
+                }
+
+                selection.Add(line);
+                Selected = rangeStart = line;
+            }
+            else if (keyboard.ShiftPressed && rangeStart is SavedTimingLine start)
+            {
+                var listed = list.Select(r => r.Line).ToList();
+                int from = listed.IndexOf(start);
+                int to = listed.IndexOf(line);
+
+                if (from < 0)
+                    from = to;
+
+                selection.Clear();
+                selection.AddRange(listed.GetRange(Math.Min(from, to), Math.Abs(to - from) + 1));
+                Selected = line;
+            }
+            else
+            {
+                select(line);
+                editorClock.Seek(line.Time);
+                return;
+            }
+
+            savedTimingLines.Selected.Value = Selected;
+            show();
+            editorClock.Seek(line.Time);
+        }
+
+        /// <summary>
+        /// Selects every line the list shows, the one being edited staying so where it is among them.
+        /// </summary>
+        private void selectAll()
+        {
+            var listed = list.Select(r => r.Line).ToList();
+
+            if (listed.Count == 0)
+                return;
+
+            selection.Clear();
+            selection.AddRange(listed);
+
+            if (Selected is not SavedTimingLine selected || !listed.Contains(selected))
+                Selected = listed[0];
+
+            rangeStart = Selected;
+            savedTimingLines.Selected.Value = Selected;
+            show();
+        }
+
+        private bool isListed(SavedTimingLine line)
+        {
+            switch (Filter.Value)
+            {
+                case GreenLineListFilter.RedLines:
+                    return line.Uninherited;
+
+                case GreenLineListFilter.GreenLines:
+                    return !line.Uninherited;
+
+                default:
+                    return true;
+            }
+        }
+
+        /// <summary>
+        /// The line to select at a time among those the list shows: the one stable's panel picks, if the list shows it,
+        /// else the last one listed before the time, else the first one listed.
+        /// </summary>
+        private SavedTimingLine? pickListedAt(double time)
+        {
+            if (editing.PickAt(time) is SavedTimingLine picked && isListed(picked))
+                return picked;
+
+            var listed = savedTimingLines.Shown.Where(isListed).ToList();
+
+            return listed.Where(l => l.Time <= time).Cast<SavedTimingLine?>().LastOrDefault()
+                   ?? listed.Cast<SavedTimingLine?>().FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Takes out of the selection what the list no longer shows: lines gone, or ones another tab lists.
+        /// </summary>
+        private void keepSelectionToWhatIsListed()
+        {
+            var listed = list.Select(r => r.Line).ToHashSet();
+
+            selection.RemoveAll(l => !listed.Contains(l));
+
+            if (Selected is SavedTimingLine selected && !selection.Contains(selected))
+                Selected = selection.Count > 0 ? selection[^1] : null;
+
+            if (rangeStart is SavedTimingLine start && !listed.Contains(start))
+                rangeStart = Selected;
         }
 
         private void show()
@@ -582,9 +824,9 @@ namespace osu.Game.Screens.Edit.GreenLines
 
             // a red line's velocity is always 1: a velocity set there goes on a green line put in beside it.
             velocityContainer.Alpha = line?.Uninherited == true ? 0.5f : 1;
-            removeButton.Enabled.Value = green;
+            removeButton.Enabled.Value = green || selection.Any(l => !l.Uninherited);
 
-            useCurrentTimeButton.Enabled.Value = line != null;
+            useCurrentTimeButton.Enabled.Value = line != null && selection.Count <= 1;
 
             if (line == null)
                 lineText.Text = default;
@@ -598,10 +840,11 @@ namespace osu.Game.Screens.Edit.GreenLines
             var confirmed = editing.Confirmed.ToHashSet();
 
             var inFile = savedTimingLines.Lines.ToHashSet();
+            var selected = selection.ToHashSet();
 
             foreach (var row in list)
             {
-                row.Current = row.Line == line;
+                row.Current = selected.Contains(row.Line);
                 row.ToBePutIn = !inFile.Contains(row.Line);
                 row.Unconfirmed = !row.ToBePutIn && !confirmed.Contains(row.Line);
             }
@@ -636,13 +879,9 @@ namespace osu.Game.Screens.Edit.GreenLines
             list.Clear();
 
             // with the lines a save will put in, as the timeline shows them (2026-09-25).
-            list.AddRange(savedTimingLines.Shown.Select(l => new LineRow(l)
+            list.AddRange(savedTimingLines.Shown.Where(isListed).Select(l => new LineRow(l)
             {
-                Action = () =>
-                {
-                    select(l);
-                    editorClock.Seek(l.Time);
-                }
+                Action = () => clicked(l),
             }));
 
             usedIndexButtons.Clear();
@@ -680,7 +919,7 @@ namespace osu.Game.Screens.Edit.GreenLines
                 placeUnderTimeline();
 
             listOutdated = true;
-            select(editing.PickAt(editorClock.CurrentTime));
+            select(pickListedAt(editorClock.CurrentTime));
             openSample?.Play();
             this.FadeIn(150, Easing.OutQuint);
         }
@@ -688,7 +927,8 @@ namespace osu.Game.Screens.Edit.GreenLines
         protected override void PopOut()
         {
             editing.Cancel();
-            Selected = null;
+            Selected = rangeStart = null;
+            selection.Clear();
             savedTimingLines.Selected.Value = null;
             this.FadeOut(150, Easing.OutQuint);
         }
@@ -731,6 +971,35 @@ namespace osu.Game.Screens.Edit.GreenLines
         }
 
         public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
+        {
+        }
+
+        /// <summary>
+        /// Select all and delete go to the lines while the mouse is over the window, and to the objects everywhere else,
+        /// as they did before, since the editor stays in use with the window open. Not while the index is being typed,
+        /// where they are the text box's.
+        /// </summary>
+        public bool OnPressed(KeyBindingPressEvent<PlatformAction> e)
+        {
+            if (State.Value != Visibility.Visible || !Editable || !ReceivePositionalInputAt(e.ScreenSpaceMousePosition)
+                || sampleIndexBox.ChildrenOfType<TextBox>().Any(t => t.HasFocus))
+                return false;
+
+            switch (e.Action)
+            {
+                case PlatformAction.SelectAll:
+                    selectAll();
+                    return true;
+
+                case PlatformAction.Delete:
+                    RemoveLine();
+                    return true;
+            }
+
+            return false;
+        }
+
+        public void OnReleased(KeyBindingReleaseEvent<PlatformAction> e)
         {
         }
 
@@ -798,7 +1067,7 @@ namespace osu.Game.Screens.Edit.GreenLines
             private bool current;
 
             /// <summary>
-            /// Whether this is the line at the playhead, which changes go to.
+            /// Whether this line is selected, so that changes go to it.
             /// </summary>
             public bool Current
             {
@@ -966,6 +1235,21 @@ namespace osu.Game.Screens.Edit.GreenLines
                 };
             }
         }
+    }
+
+    /// <summary>
+    /// Which lines the green line panel lists.
+    /// </summary>
+    public enum GreenLineListFilter
+    {
+        [LocalisableDescription(typeof(LazerKaiGreenLineStrings), nameof(LazerKaiGreenLineStrings.FilterAll))]
+        All,
+
+        [LocalisableDescription(typeof(LazerKaiGreenLineStrings), nameof(LazerKaiGreenLineStrings.FilterRedLines))]
+        RedLines,
+
+        [LocalisableDescription(typeof(LazerKaiGreenLineStrings), nameof(LazerKaiGreenLineStrings.FilterGreenLines))]
+        GreenLines,
     }
 
     /// <summary>

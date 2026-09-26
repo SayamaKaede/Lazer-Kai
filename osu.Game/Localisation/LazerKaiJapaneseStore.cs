@@ -266,6 +266,9 @@ namespace osu.Game.Localisation
             [$@"{green_line_prefix}:sample_set"] = @"サンプルセット",
             [$@"{green_line_prefix}:custom_index"] = @"カスタム番号",
             [$@"{green_line_prefix}:volume"] = @"音量",
+            [$@"{green_line_prefix}:filter_all"] = @"すべて",
+            [$@"{green_line_prefix}:filter_red_lines"] = @"赤線のみ",
+            [$@"{green_line_prefix}:filter_green_lines"] = @"緑線のみ",
             [$@"{green_line_prefix}:not_editable"] = @"「Stableとの互換性を強化する」がオンのとき、Stable形式（v14以前）のosu!の譜面で緑線を編集できます",
 
             // 曲選択画面

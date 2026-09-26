@@ -285,6 +285,64 @@ namespace osu.Game.Screens.Edit.GreenLines
         }
 
         /// <summary>
+        /// Puts several changed lines in the places of the ones they were made from, at once: the objects are gone over
+        /// once for all of them rather than once a line, which with every line of a beatmap selected is the difference
+        /// between a frame and seconds.
+        /// </summary>
+        /// <remarks>
+        /// For changes that leave each line at its time: several lines are never moved at once.
+        /// </remarks>
+        public void ReplaceAll(IReadOnlyList<(SavedTimingLine line, SavedTimingLine changed)> replacements)
+        {
+            if (replacements.Any(r => r.changed.Time != r.line.Time))
+                throw new ArgumentException(@"Several lines are changed at once only where they stand.", nameof(replacements));
+
+            var edited = lines.Lines.ToList();
+            bool any = false;
+
+            foreach (var (line, changed) in replacements)
+            {
+                int index = edited.IndexOf(line);
+
+                if (index < 0 || line == changed)
+                    continue;
+
+                edited[index] = changed;
+                any = true;
+            }
+
+            if (!any)
+                return;
+
+            change(() =>
+            {
+                lines.Lines.Clear();
+                lines.Lines.AddRange(edited);
+            });
+        }
+
+        /// <summary>
+        /// Takes out several green lines at once, going over the objects once for all of them. Red lines among them stay.
+        /// </summary>
+        public void RemoveAll(IEnumerable<SavedTimingLine> toRemove)
+        {
+            var edited = lines.Lines.ToList();
+            bool any = false;
+
+            foreach (var line in toRemove.Where(l => !l.Uninherited))
+                any |= edited.Remove(line);
+
+            if (!any)
+                return;
+
+            change(() =>
+            {
+                lines.Lines.Clear();
+                lines.Lines.AddRange(edited);
+            });
+        }
+
+        /// <summary>
         /// Moves a red line, and the timing screen's timing point with it: the beats from there on are counted from its
         /// new time. The objects stay where they are, as in stable, and so does anything else at its old time.
         /// </summary>
