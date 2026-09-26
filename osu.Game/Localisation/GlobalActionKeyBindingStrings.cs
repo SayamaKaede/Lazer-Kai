@@ -281,6 +281,12 @@ namespace osu.Game.Localisation
             new TranslatableString(getKey(@"editor_toggle_volume_graph"), @"Toggle the volume graph");
 
         /// <summary>
+        /// "Toggle the miss timeline"
+        /// </summary>
+        public static LocalisableString ToggleReplayMissTimeline =>
+            new TranslatableString(getKey(@"toggle_replay_miss_timeline"), @"Toggle the miss timeline");
+
+        /// <summary>
         /// "Toggle the play area border"
         /// </summary>
         public static LocalisableString EditorTogglePlayAreaBorder =>

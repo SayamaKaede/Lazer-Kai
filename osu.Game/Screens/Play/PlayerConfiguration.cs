@@ -44,5 +44,13 @@ namespace osu.Game.Screens.Play
         /// Whether to show the red failing overlay.
         /// </summary>
         public bool ShowFailingOverlay { get; set; } = true;
+
+        /// <summary>
+        /// Whether a replay should be judged all the way through as it is opened, to list what it missed.
+        /// </summary>
+        /// <remarks>
+        /// Only for a replay that was played: the judging is done through a second playfield in the player, unseen.
+        /// </remarks>
+        public bool JudgeReplayAhead { get; set; }
     }
 }

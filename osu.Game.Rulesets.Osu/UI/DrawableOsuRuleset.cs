@@ -41,9 +41,10 @@ namespace osu.Game.Rulesets.Osu.UI
         }
 
         [BackgroundDependencyLoader]
-        private void load(ReplayPlayer? replayPlayer)
+        private void load(ReplayPlayer? replayPlayer, ReplayJudgementSimulation? simulation)
         {
-            if (replayPlayer != null)
+            // the playfield a replay is judged ahead through sits inside the player too, and is never seen.
+            if (replayPlayer != null && simulation == null)
             {
                 ReplayAnalysisOverlay analysisOverlay;
                 PlayfieldAdjustmentContainer.Add(analysisOverlay = new ReplayAnalysisOverlay(replayPlayer.Score.Replay));

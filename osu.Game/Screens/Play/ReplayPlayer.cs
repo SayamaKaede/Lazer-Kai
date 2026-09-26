@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
@@ -49,6 +50,7 @@ namespace osu.Game.Screens.Play
 
         private ReplayFailIndicator? failIndicator;
         private PlaybackSettings? playbackSettings;
+        private Bindable<bool>? showMissTimeline;
 
         public ReplayOverlay ReplayOverlay { get; private set; } = null!;
 
@@ -107,6 +109,18 @@ namespace osu.Game.Screens.Play
                 playbackSettings.UserPlaybackRate.BindTo(master.UserPlaybackRate);
 
             ReplayOverlay.Settings.AddAtStart(playbackSettings);
+
+            // every judgement the replay earns, worked out as it is opened rather than as it plays, to list what it
+            // missed. Added through the schedule as the ruleset's own settings are, so that the list comes after them.
+            if (Configuration.JudgeReplayAhead)
+            {
+                var judgementSimulation = new ReplayJudgementSimulation(GameplayState.Ruleset, GameplayState.Beatmap, GameplayState.Mods, Score);
+                AddInternal(judgementSimulation);
+                AddSettings(new ReplayMissList(judgementSimulation) { GoTo = GoToMiss });
+
+                GameplayClockContainer.Add(new ReplayMissTimeline(judgementSimulation, GameplayState.Beatmap) { GoTo = GoToMiss });
+                showMissTimeline = config.GetBindable<bool>(OsuSetting.ReplayShowMissTimeline);
+            }
 
             OsuTextFlowContainer message = new OsuTextFlowContainer(cp => cp.Font = OsuFont.Style.Body) { AutoSizeAxes = Axes.Both };
             message.AddText("Watching ");
@@ -200,6 +214,12 @@ namespace osu.Game.Screens.Play
                     userPlaybackRateBeforeFastForward = playbackSettings!.UserPlaybackRate.Value;
                     playbackSettings!.UserPlaybackRate.Value *= 2;
                     return true;
+
+                case GlobalAction.ToggleReplayMissTimeline:
+                    if (e.Repeat || showMissTimeline == null) return false;
+
+                    showMissTimeline.Value = !showMissTimeline.Value;
+                    return true;
             }
 
             return false;
@@ -218,6 +238,20 @@ namespace osu.Game.Screens.Play
                 ? (frames.LastOrDefault(f => f.Time < GameplayClockContainer.CurrentTime) ?? frames.First()).Time
                 : (frames.FirstOrDefault(f => f.Time > GameplayClockContainer.CurrentTime) ?? frames.Last()).Time
             );
+        }
+
+        /// <summary>
+        /// How long before a miss it is gone to from the list, to see what led up to it.
+        /// </summary>
+        public const double MISS_LEAD_IN = 1000;
+
+        /// <summary>
+        /// Plays from a little before a miss.
+        /// </summary>
+        public void GoToMiss(ReplayMiss miss)
+        {
+            Seek(miss.Time - MISS_LEAD_IN);
+            GameplayClockContainer.Start();
         }
 
         public void SeekInDirection(float amount)

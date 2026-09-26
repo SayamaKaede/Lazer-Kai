@@ -327,6 +327,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorTimelineShowSavedLines, false);
             SetDefault(OsuSetting.EditorStatusShowSaveFormat, true);
             SetDefault(OsuSetting.ErrorReporting, true);
+            SetDefault(OsuSetting.ReplayShowMissTimeline, false);
             SetDefault(OsuSetting.EditorShowDifficultyGraph, true);
             SetDefault(OsuSetting.EditorDifficultyGraphColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorDifficultyGraphOpacity, 0.5f, 0.1f, 1f, 0.01f);
@@ -432,6 +433,12 @@ namespace osu.Game.Configuration
                     name: GlobalActionKeyBindingStrings.EditorToggleTimeline,
                     value: state ? CommonStrings.Enabled.ToLower() : CommonStrings.Disabled.ToLower(),
                     shortcut: LookupKeyBindings(GlobalAction.EditorToggleTimeline))
+                ),
+                new TrackedSetting<bool>(OsuSetting.ReplayShowMissTimeline, state => new SettingDescription(
+                    rawValue: state,
+                    name: GlobalActionKeyBindingStrings.ToggleReplayMissTimeline,
+                    value: state ? CommonStrings.Enabled.ToLower() : CommonStrings.Disabled.ToLower(),
+                    shortcut: LookupKeyBindings(GlobalAction.ToggleReplayMissTimeline))
                 ),
                 new TrackedSetting<bool>(OsuSetting.ShowFpsDisplay, state => new SettingDescription(
                     rawValue: state,
@@ -1252,5 +1259,10 @@ namespace osu.Game.Configuration
         /// Whether errors, and saves that could not stay in stable's format, are sent to Lazer-Kai's error reports.
         /// </summary>
         ErrorReporting,
+
+        /// <summary>
+        /// Whether a timeline of what a replay missed is shown along the bottom as it is watched.
+        /// </summary>
+        ReplayShowMissTimeline,
     }
 }

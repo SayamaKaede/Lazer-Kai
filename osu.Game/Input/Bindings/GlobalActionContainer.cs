@@ -266,6 +266,7 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(InputKey.Comma, GlobalAction.StepReplayBackward),
             new KeyBinding(InputKey.Period, GlobalAction.StepReplayForward),
             new KeyBinding(new[] { InputKey.Control, InputKey.H }, GlobalAction.ToggleReplaySettings),
+            new KeyBinding(InputKey.T, GlobalAction.ToggleReplayMissTimeline),
         };
 
         private static IEnumerable<KeyBinding> songSelectKeyBindings => new[]
@@ -741,6 +742,9 @@ namespace osu.Game.Input.Bindings
 
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleVolumeGraph))]
         EditorToggleVolumeGraph,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.ToggleReplayMissTimeline))]
+        ToggleReplayMissTimeline,
     }
 
     public enum GlobalActionCategory
