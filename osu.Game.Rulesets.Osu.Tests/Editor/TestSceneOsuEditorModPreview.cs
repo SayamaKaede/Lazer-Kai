@@ -2,16 +2,22 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.ObjectExtensions;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Screens.Edit.Components.Menus;
 using osu.Game.Screens.Edit.Compose.Components.Timeline;
+using osuTK;
 using osu.Game.Tests.Visual;
 using osu.Framework.Graphics.Primitives;
 
@@ -195,6 +201,101 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddStep("go past the hundredth object", () => EditorClock.Seek(1000 + 110 * 500));
             AddUntilStep("it has narrowed", () => flashlight().AsNonNull().GetSize(), () => Is.LessThan(sizeAtTheStart));
         }
+
+        /// <summary>
+        /// Without autoplay's cursor on screen there is nothing else to look at, so the lit area follows the mapper's own
+        /// pointer, as in play (2026-09-26: it followed autoplay's path whether or not the cursor was shown).
+        /// </summary>
+        [Test]
+        public void TestTheMouseLeadsTheFlashlightWithoutTheAutoCursor()
+        {
+            Vector2 mouse = default;
+
+            AddStep("auto cursor hidden", () => config.SetValue(OsuSetting.EditorShowAutoCursor, false));
+            previewFlashlightOverACircle();
+
+            AddStep("move the mouse away from the circle", () =>
+            {
+                var area = composer().ScreenSpaceDrawQuad;
+                mouse = area.TopLeft + new Vector2(area.Width * 0.8f, area.Height * 0.8f);
+                InputManager.MoveMouseTo(mouse);
+            });
+
+            AddUntilStep("the lit area is at the mouse", () => Vector2.Distance(litPosition(), mouse), () => Is.LessThan(5));
+
+            AddStep("setting back", () => config.GetBindable<bool>(OsuSetting.EditorShowAutoCursor).SetDefault());
+        }
+
+        /// <summary>
+        /// With autoplay's cursor shown, the lit area goes where it goes, whatever the mouse is doing.
+        /// </summary>
+        [Test]
+        public void TestTheAutoCursorLeadsTheFlashlightWhileShown()
+        {
+            Vector2 mouse = default;
+
+            AddStep("auto cursor shown", () => config.SetValue(OsuSetting.EditorShowAutoCursor, true));
+            previewFlashlightOverACircle();
+
+            AddStep("move the mouse away from the circle", () =>
+            {
+                var area = composer().ScreenSpaceDrawQuad;
+                mouse = area.TopLeft + new Vector2(area.Width * 0.8f, area.Height * 0.8f);
+                InputManager.MoveMouseTo(mouse);
+            });
+
+            AddUntilStep("the lit area is at the auto cursor", () => autoCursor().ScreenSpacePosition is Vector2 cursor && Vector2.Distance(litPosition(), cursor) < 5);
+            AddAssert("not at the mouse", () => Vector2.Distance(litPosition(), mouse), () => Is.GreaterThan(50));
+
+            AddStep("setting back", () => config.GetBindable<bool>(OsuSetting.EditorShowAutoCursor).SetDefault());
+        }
+
+        /// <summary>
+        /// The menus open down over the rest of the editor, and flashlight darkens everything below the menu bar: they
+        /// have to be drawn over it, or an open menu is hidden in the dark.
+        /// </summary>
+        [Test]
+        public void TestTheMenusAreDrawnOverTheFlashlight()
+        {
+            previewFlashlightOverACircle();
+
+            AddAssert("the menu bar is drawn after the flashlight", () =>
+            {
+                var layers = ((Container<Drawable>)Editor.ModOverlays.Parent!).Children.ToList();
+                Drawable menuBar = Editor.ChildrenOfType<EditorMenuBar>().Single();
+
+                while (menuBar.Parent != Editor.ModOverlays.Parent)
+                    menuBar = menuBar.Parent!;
+
+                return layers.IndexOf(menuBar) > layers.IndexOf(Editor.ModOverlays);
+            });
+        }
+
+        private void previewFlashlightOverACircle()
+        {
+            AddStep("add a circle near the corner", () => EditorBeatmap.Add(new HitCircle { StartTime = 1000, Position = new Vector2(50, 50) }));
+            AddStep("preview test play mods", () => config.SetValue(OsuSetting.EditorApplyTestPlayModsToComposer, true));
+            AddStep("pick flashlight", () => Editor.TestPlayMods.Mods.Value = new Mod[] { new OsuModFlashlight() });
+            waitForComposerReload();
+
+            AddUntilStep("the flashlight is up", () => flashlight() != null);
+            AddStep("go to the circle", () => EditorClock.Seek(1000));
+        }
+
+        /// <summary>
+        /// Where the lit area is, on screen.
+        /// </summary>
+        private Vector2 litPosition()
+        {
+            var lit = flashlight().AsNonNull();
+            var position = (Vector2)typeof(ModFlashlight<OsuHitObject>.Flashlight)
+                                    .GetProperty("FlashlightPosition", BindingFlags.NonPublic | BindingFlags.Instance)!
+                                    .GetValue(lit)!;
+
+            return lit.ToScreenSpace(position);
+        }
+
+        private AutoCursorDisplay autoCursor() => Editor.ChildrenOfType<AutoCursorDisplay>().Single();
 
         private HitObjectComposer composer() => Editor.ChildrenOfType<HitObjectComposer>().Single();
 

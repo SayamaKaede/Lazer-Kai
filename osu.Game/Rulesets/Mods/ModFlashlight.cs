@@ -170,12 +170,11 @@ namespace osu.Game.Rulesets.Mods
             protected abstract string FragmentShader { get; }
 
             /// <summary>
-            /// Where the lit area is being led from, in screen space, when the mouse is not the one leading it.
+            /// Where the lit area is being led from, in screen space, in place of the mouse's moves.
             /// Returns null while whatever is leading has nowhere to point.
             /// </summary>
             /// <remarks>
-            /// The editor's mod preview sets this to autoplay's cursor. A mapper's own pointer is off doing editing
-            /// work, so a flashlight that followed it would show a lit area nobody will ever play with.
+            /// The editor's mod preview sets this to autoplay's cursor while that is shown, and to the mouse otherwise.
             /// </remarks>
             public Func<Vector2?>? ScreenSpacePositionSource { get; set; }
 

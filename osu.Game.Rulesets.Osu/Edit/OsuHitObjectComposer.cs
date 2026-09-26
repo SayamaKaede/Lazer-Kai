@@ -268,26 +268,26 @@ namespace osu.Game.Rulesets.Osu.Edit
             base.LoadComplete();
 
             // the overlays have been handed to the editor by now, which is where the flashlight ends up.
-            leadFlashlightByAutoplay();
+            leadFlashlight();
         }
 
         /// <summary>
-        /// Points the previewed flashlight at autoplay's cursor instead of the mouse.
+        /// Points the previewed flashlight at autoplay's cursor while it is shown, and at the mouse otherwise.
         /// </summary>
         /// <remarks>
-        /// The mapper's pointer is off placing objects and dragging anchors, so a lit area that followed it would be
-        /// nothing like the one anyone will play through. Autoplay's path is the same one the cursor display draws,
-        /// so the two agree with each other whether or not the cursor is being shown.
+        /// Autoplay's cursor on screen is what the mapper is watching, so the lit area goes with it. Without it there is
+        /// nothing else to follow, and following autoplay's path anyway lit the objects wherever the mapper looked
+        /// (2026-09-26). The mouse is read every frame, rather than on its moves as in play, so that the lit area
+        /// catches up with a pointer that has stopped.
         /// </remarks>
-        private void leadFlashlightByAutoplay()
+        private void leadFlashlight()
         {
             var flashlight = ModOverlays.SelectMany(o => o.ChildrenOfType<ModFlashlight<OsuHitObject>.Flashlight>()).FirstOrDefault();
 
             if (flashlight == null)
                 return;
 
-            autoCursor.PathWanted.Value = true;
-            flashlight.ScreenSpacePositionSource = () => autoCursor.ScreenSpacePosition;
+            flashlight.ScreenSpacePositionSource = () => autoCursor.ScreenSpacePosition ?? GetContainingInputManager()?.CurrentState.Mouse.Position;
         }
 
         private void updatePositionSnapGrid(ValueChangedEvent<PositionSnapGridType> obj)

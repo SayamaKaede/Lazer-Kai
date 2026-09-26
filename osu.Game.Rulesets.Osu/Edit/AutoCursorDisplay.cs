@@ -49,16 +49,6 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         private readonly Bindable<bool> enabled = new Bindable<bool>();
 
-        /// <summary>
-        /// Whether something other than this display needs the path worked out.
-        /// </summary>
-        /// <remarks>
-        /// Flashlight follows autoplay rather than the mouse while it is being previewed, and it needs the path for
-        /// that whether or not the cursor itself is being drawn. Generating it is a whole-beatmap job, so it is only
-        /// done when somebody is actually reading it.
-        /// </remarks>
-        public Bindable<bool> PathWanted { get; } = new BindableBool();
-
         private EditorAutoCursor cursor = null!;
         private SkinnableDrawable trail = null!;
         private CursorRippleVisualiser ripples = null!;
@@ -111,7 +101,6 @@ namespace osu.Game.Rulesets.Osu.Edit
             base.LoadComplete();
 
             enabled.BindValueChanged(_ => regenerate(), true);
-            PathWanted.BindValueChanged(_ => regenerate());
             editorBeatmap.BeatmapReprocessed += onReprocessed;
 
             // the setting alone does not decide it: the trail also goes when the cursor does, below.
@@ -173,9 +162,9 @@ namespace osu.Game.Rulesets.Osu.Edit
         }
 
         /// <summary>
-        /// Where the cursor is on screen, or null while there is no path to read.
+        /// Where the cursor is on screen, or null while it is not being shown or there is no path to read.
         /// </summary>
-        public Vector2? ScreenSpacePosition => frames.Count == 0 ? null : cursor.ScreenSpaceDrawQuad.Centre;
+        public Vector2? ScreenSpacePosition => !enabled.Value || frames.Count == 0 ? null : cursor.ScreenSpaceDrawQuad.Centre;
 
         private void onReprocessed() => regenerate();
 
@@ -184,7 +173,7 @@ namespace osu.Game.Rulesets.Osu.Edit
             settling?.Cancel();
             generation?.Cancel();
 
-            if (!enabled.Value && !PathWanted.Value)
+            if (!enabled.Value)
             {
                 frames = Array.Empty<OsuReplayFrame>();
                 return;
@@ -258,8 +247,6 @@ namespace osu.Game.Rulesets.Osu.Edit
                 return;
             }
 
-            // kept moving even while hidden: flashlight reads the position off it, and the setting only governs
-            // whether the cursor itself is drawn.
             cursor.Alpha = enabled.Value ? 1 : 0;
             cursor.Position = PositionAt(frames, editorClock.CurrentTime);
 

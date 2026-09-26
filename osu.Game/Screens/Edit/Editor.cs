@@ -617,6 +617,17 @@ namespace osu.Game.Screens.Edit
                             RelativeSizeAxes = Axes.Both,
                         }
                     },
+                    bottomBar = new BottomBar(),
+                    // what the composer's preview mods draw over the playfield goes here, above the timeline and the
+                    // bottom bar so that flashlight reaches those too — they show the beatmap as plainly as the
+                    // playfield does. The menu bar is left out, so there is always somewhere to reach the menus, and
+                    // comes after it, so that a menu opened down over the rest is not hidden under it (2026-09-26).
+                    ModOverlays = new Container
+                    {
+                        Name = "Mod overlays",
+                        RelativeSizeAxes = Axes.Both,
+                        Padding = new MarginPadding { Top = 40 },
+                    },
                     new Container
                     {
                         Name = "Top bar",
@@ -839,16 +850,6 @@ namespace osu.Game.Screens.Edit
                                 Current = Mode,
                             },
                         },
-                    },
-                    bottomBar = new BottomBar(),
-                    // what the composer's preview mods draw over the playfield goes here, above the timeline and the
-                    // bottom bar so that flashlight reaches those too — they show the beatmap as plainly as the
-                    // playfield does. The menu bar is left out, so there is always somewhere to reach the menus.
-                    ModOverlays = new Container
-                    {
-                        Name = "Mod overlays",
-                        RelativeSizeAxes = Axes.Both,
-                        Padding = new MarginPadding { Top = 40 },
                     },
                     // sits above the screens so it stays readable, but takes no input away from them: the layout is
                     // built while listening to the song and watching the playfield.
