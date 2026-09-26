@@ -8,6 +8,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Input;
+using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Input.Handlers;
 using osu.Game.Replays;
@@ -54,6 +55,42 @@ namespace osu.Game.Rulesets.Osu.UI
                 // I have little faith in this working (other things touch cursor visibility) but haven't broken it yet.
                 // Let's wait for someone to report an issue before spending too much time on it.
                 cursorHideEnabled.BindValueChanged(enabled => Playfield.Cursor.FadeTo(enabled.NewValue ? 0 : 1), true);
+
+                hiddenEffectHidden = Config.GetBindable<bool>(OsuRulesetSetting.ReplayHideHiddenEffect);
+                flashlightEffectHidden = Config.GetBindable<bool>(OsuRulesetSetting.ReplayHideFlashlightEffect);
+            }
+        }
+
+        private Bindable<bool>? hiddenEffectHidden;
+        private Bindable<bool>? flashlightEffectHidden;
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            // once the mods have been handed the playfield, and flashlight has put its dark over it.
+            hiddenEffectHidden?.BindValueChanged(hide =>
+            {
+                foreach (var hidden in Mods.OfType<OsuModHidden>())
+                    hidden.EffectHidden.Value = hide.NewValue;
+
+                // the objects on screen had hidden's fading put on them as they came in.
+                foreach (var drawable in Playfield.AllHitObjects)
+                    refreshStateTransforms(drawable);
+            }, true);
+
+            flashlightEffectHidden?.BindValueChanged(hide =>
+            {
+                foreach (var flashlight in Overlays.ChildrenOfType<ModFlashlight<OsuHitObject>.Flashlight>())
+                    flashlight.Alpha = hide.NewValue ? 0 : 1;
+            }, true);
+
+            static void refreshStateTransforms(DrawableHitObject drawable)
+            {
+                drawable.RefreshStateTransforms();
+
+                foreach (var nested in drawable.NestedHitObjects)
+                    refreshStateTransforms(nested);
             }
         }
 

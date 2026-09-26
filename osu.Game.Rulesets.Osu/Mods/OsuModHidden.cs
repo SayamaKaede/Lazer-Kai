@@ -27,6 +27,16 @@ namespace osu.Game.Rulesets.Osu.Mods
 
         public override Type[] IncompatibleMods => new[] { typeof(IRequiresApproachCircles), typeof(OsuModSpinIn), typeof(OsuModDepth), typeof(OsuModFreezeFrame) };
 
+        /// <summary>
+        /// Whether the objects are left as they would be without this mod, for a replay watched to see what was there.
+        /// Objects already on screen take it once they are refreshed.
+        /// </summary>
+        /// <remarks>
+        /// Only what is drawn: the shorter fade-in the mod gives the beatmap stays, since that is worked out once for the
+        /// whole beatmap before play.
+        /// </remarks>
+        public readonly BindableBool EffectHidden = new BindableBool();
+
         public const double FADE_IN_DURATION_MULTIPLIER = 0.4;
         public const double FADE_OUT_DURATION_MULTIPLIER = 0.3;
 
@@ -62,7 +72,7 @@ namespace osu.Game.Rulesets.Osu.Mods
 
         private void applyHiddenState(DrawableHitObject drawableObject, bool increaseVisibility)
         {
-            if (!(drawableObject is DrawableOsuHitObject drawableOsuObject))
+            if (EffectHidden.Value || !(drawableObject is DrawableOsuHitObject drawableOsuObject))
                 return;
 
             OsuHitObject hitObject = drawableOsuObject.HitObject;

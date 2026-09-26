@@ -271,6 +271,15 @@ namespace osu.Game.Localisation
             [$@"{green_line_prefix}:filter_green_lines"] = @"緑線のみ",
             [$@"{green_line_prefix}:not_editable"] = @"「Stableとの互換性を強化する」がオンのとき、Stable形式（v14以前）のosu!の譜面で緑線を編集できます",
 
+            // リプレイの解析設定
+            [$@"{replay_prefix}:hide_hidden_effect"] = @"HDの効果を非表示",
+            [$@"{replay_prefix}:hide_flashlight_effect"] = @"FLの効果を非表示",
+            [$@"{replay_prefix}:misses"] = @"ミスの一覧",
+            [$@"{replay_prefix}:judging"] = @"判定を計算しています...",
+            [$@"{replay_prefix}:no_misses"] = @"ミス・スライダーブレイク・100・50 はありません。",
+            [$@"{replay_prefix}:miss"] = @"ミス",
+            [$@"{replay_prefix}:slider_break"] = @"スライダーブレイク",
+
             // 曲選択画面
             [$@"{song_select_prefix}:check_for_update"] = @"更新を確認",
             [$@"{song_select_prefix}:checking"] = @"「{0}」の更新を確認しています...",
@@ -547,6 +556,7 @@ namespace osu.Game.Localisation
         private const string preset_prefix = @"osu.Game.Resources.Localisation.PlacementPreset";
         private const string combo_colour_preset_prefix = @"osu.Game.Resources.Localisation.LazerKaiComboColourPreset";
         private const string mapping_prefix = @"osu.Game.Resources.Localisation.MappingSummary";
+        private const string replay_prefix = @"osu.Game.Resources.Localisation.LazerKaiReplay";
 
         public LazerKaiJapaneseStore(ILocalisationStore fallback)
         {

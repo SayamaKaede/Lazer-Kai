@@ -35,6 +35,18 @@ namespace osu.Game.Rulesets.Osu.UI
             Precision = 200,
         };
 
+        /// <summary>
+        /// Watching a replay played with hidden as if without it, to see what was there to be hit.
+        /// </summary>
+        [SettingSource(typeof(LazerKaiReplayStrings), nameof(LazerKaiReplayStrings.HideHiddenEffect), SettingControlType = typeof(PlayerCheckbox))]
+        public BindableBool HideHiddenEffect { get; } = new BindableBool();
+
+        /// <summary>
+        /// Watching a replay played with flashlight without the dark, to see what was there to be hit.
+        /// </summary>
+        [SettingSource(typeof(LazerKaiReplayStrings), nameof(LazerKaiReplayStrings.HideFlashlightEffect), SettingControlType = typeof(PlayerCheckbox))]
+        public BindableBool HideFlashlightEffect { get; } = new BindableBool();
+
         public ReplayAnalysisSettings(OsuRulesetConfigManager config)
             : base(PlayerSettingsOverlayStrings.AnalysisSettingsTitle)
         {
@@ -51,6 +63,8 @@ namespace osu.Game.Rulesets.Osu.UI
             config.BindWith(OsuRulesetSetting.ReplayCursorPathEnabled, ShowCursorPath);
             config.BindWith(OsuRulesetSetting.ReplayCursorHideEnabled, HideSkinCursor);
             config.BindWith(OsuRulesetSetting.ReplayAnalysisDisplayLength, DisplayLength);
+            config.BindWith(OsuRulesetSetting.ReplayHideHiddenEffect, HideHiddenEffect);
+            config.BindWith(OsuRulesetSetting.ReplayHideFlashlightEffect, HideFlashlightEffect);
         }
     }
 }
