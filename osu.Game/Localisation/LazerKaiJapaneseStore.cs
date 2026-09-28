@@ -295,6 +295,8 @@ namespace osu.Game.Localisation
             [$@"{song_select_prefix}:user_tags"] = @"ユーザータグ",
             [$@"{song_select_prefix}:user_tag_counts"] = @"数字は、今表示している難易度のうち、そのタグが付いている数です。",
             [$@"{song_select_prefix}:no_user_tags"] = @"今表示している難易度には、ユーザータグがありません。",
+            [$@"{song_select_prefix}:set_mods_on_difficulty"] = @"現在のModを難易度に設定",
+            [$@"{song_select_prefix}:clear_difficulty_mods"] = @"難易度のModを解除",
             [$@"{editor_prefix}:selection_handle_colour"] = @"8点ハンドルの色",
             [$@"{editor_prefix}:selection_handle_size"] = @"8点ハンドルの大きさ",
             [$@"{editor_prefix}:slider_anchor_size"] = @"スライダーアンカーの大きさ",

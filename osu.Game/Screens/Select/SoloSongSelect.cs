@@ -9,6 +9,7 @@ using osu.Framework.Audio;
 using osu.Framework.Audio.Sample;
 using osu.Framework.Extensions.LocalisationExtensions;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Platform;
 using osu.Framework.Screens;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics.UserInterface;
@@ -52,12 +53,104 @@ namespace osu.Game.Screens.Select
 
         private Sample? sampleConfirmSelection { get; set; }
 
+        private DifficultyModStore difficultyMods = null!;
+
+        /// <summary>
+        /// The difficulty whose mods were last looked up, so that coming back to the same one (from gameplay, say) leaves
+        /// alone whatever was changed on top of them.
+        /// </summary>
+        private BeatmapInfo? difficultyModsLookedUpFor;
+
+        /// <summary>
+        /// The mods selected before a difficulty's own were put on, to go back to on one without any.
+        /// </summary>
+        private IReadOnlyList<Mod>? modsBeforeDifficultyMods;
+
+        protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent)
+        {
+            var dependencies = new DependencyContainer(base.CreateChildDependencies(parent));
+            dependencies.Cache(difficultyMods = new DifficultyModStore(parent.Get<Storage>()));
+            return dependencies;
+        }
+
         [BackgroundDependencyLoader]
         private void load(AudioManager audio)
         {
             sampleConfirmSelection = audio.Samples.Get(@"SongSelect/confirm-selection");
 
             AddInternal(new SongSelectTouchInputDetector());
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            Beatmap.BindValueChanged(_ => putOnDifficultyMods());
+            Ruleset.BindValueChanged(_ =>
+            {
+                // what was selected before is of the other ruleset, and the game has already carried the mods across.
+                modsBeforeDifficultyMods = null;
+                difficultyModsLookedUpFor = null;
+                Schedule(putOnDifficultyMods);
+            });
+        }
+
+        public override void OnEntering(ScreenTransitionEvent e)
+        {
+            base.OnEntering(e);
+            putOnDifficultyMods();
+        }
+
+        public override IEnumerable<OsuMenuItem> GetDifficultyModActions(BeatmapInfo beatmap)
+        {
+            yield return new OsuMenuItemSpacer();
+
+            yield return new OsuMenuItem(LazerKaiSongSelectStrings.SetModsOnDifficulty, MenuItemType.Standard, () => setDifficultyMods(beatmap))
+            {
+                Icon = FontAwesome.Solid.Thumbtack,
+                Action = { Disabled = Mods.Value.Count == 0 },
+            };
+
+            if (difficultyMods.Get(beatmap, Ruleset.Value.CreateInstance()) != null)
+                yield return new OsuMenuItem(LazerKaiSongSelectStrings.ClearDifficultyMods, MenuItemType.Standard, () => difficultyMods.Clear(beatmap));
+        }
+
+        private void setDifficultyMods(BeatmapInfo beatmap)
+        {
+            difficultyMods.Set(beatmap, Ruleset.Value.CreateInstance(), Mods.Value);
+
+            // they are already on, and what was selected before them is what they are.
+            if (beatmap.Equals(Beatmap.Value.BeatmapInfo))
+                difficultyModsLookedUpFor = beatmap;
+        }
+
+        /// <summary>
+        /// Puts on the mods set on the selected difficulty, or puts back what was selected before on one without any.
+        /// </summary>
+        private void putOnDifficultyMods()
+        {
+            if (!this.IsCurrentScreen() || Beatmap.IsDefault)
+                return;
+
+            var beatmap = Beatmap.Value.BeatmapInfo;
+
+            if (beatmap.Equals(difficultyModsLookedUpFor))
+                return;
+
+            difficultyModsLookedUpFor = beatmap;
+
+            var mods = difficultyMods.Get(beatmap, Ruleset.Value.CreateInstance());
+
+            if (mods != null)
+            {
+                modsBeforeDifficultyMods ??= Mods.Value;
+                Mods.Value = mods;
+            }
+            else if (modsBeforeDifficultyMods != null)
+            {
+                Mods.Value = modsBeforeDifficultyMods;
+                modsBeforeDifficultyMods = null;
+            }
         }
 
         public override IEnumerable<OsuMenuItem> GetForwardActions(BeatmapInfo beatmap)
@@ -157,6 +250,9 @@ namespace osu.Game.Screens.Select
         {
             base.OnResuming(e);
             revertMods();
+
+            // the editor can have moved to another difficulty.
+            putOnDifficultyMods();
         }
 
         public override bool OnExiting(ScreenExitEvent e)

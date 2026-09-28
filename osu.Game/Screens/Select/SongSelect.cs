@@ -1256,6 +1256,9 @@ namespace osu.Game.Screens.Select
                 yield return i;
         }
 
+        // only solo play puts them on: in a room, the mods are the room's.
+        public virtual IEnumerable<OsuMenuItem> GetDifficultyModActions(BeatmapInfo beatmap) => Array.Empty<OsuMenuItem>();
+
         protected IEnumerable<OsuMenuItem> CreateCollectionMenuActions(BeatmapInfo beatmap)
         {
             var collectionItems = realm.Realm.All<BeatmapCollection>()

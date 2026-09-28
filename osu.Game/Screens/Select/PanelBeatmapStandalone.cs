@@ -72,6 +72,7 @@ namespace osu.Game.Screens.Select
         private OsuSpriteText difficultyText = null!;
         private OsuSpriteText authorText = null!;
         private FillFlowContainer mainFill = null!;
+        private DifficultyModIcons modIcons = null!;
 
         private Box backgroundBorder = null!;
 
@@ -209,7 +210,12 @@ namespace osu.Game.Screens.Select
                                     },
                                 }
                             }
-                        }
+                        },
+                        modIcons = new DifficultyModIcons
+                        {
+                            Anchor = Anchor.CentreLeft,
+                            Origin = Anchor.CentreLeft,
+                        },
                     }
                 }
             };
@@ -247,6 +253,7 @@ namespace osu.Game.Screens.Select
             localRank.Beatmap = beatmap;
             difficultyText.Text = beatmap.DifficultyName;
             authorText.Text = BeatmapsetsStrings.ShowDetailsMappedBy(beatmap.Metadata.Author.Username);
+            modIcons.Beatmap = beatmap;
 
             computeStarRating();
             spreadDisplay.Beatmap.Value = beatmap;
@@ -262,6 +269,7 @@ namespace osu.Game.Screens.Select
             beatmapBackground.Beatmap = null;
             updateButton.BeatmapSet = null;
             localRank.Beatmap = null;
+            modIcons.Beatmap = null;
             starDifficultyBindable = null;
             spreadDisplay.Beatmap.Value = null;
 
@@ -336,7 +344,10 @@ namespace osu.Game.Screens.Select
                 List<MenuItem> items = new List<MenuItem>();
 
                 if (songSelect != null)
+                {
                     items.AddRange(songSelect.GetForwardActions(beatmap));
+                    items.AddRange(songSelect.GetDifficultyModActions(beatmap));
+                }
 
                 items.Add(new OsuMenuItemSpacer());
                 items.Add(new OsuMenuItem(BeatmapExportStrings.ExportDifficulty, MenuItemType.Standard, Export)

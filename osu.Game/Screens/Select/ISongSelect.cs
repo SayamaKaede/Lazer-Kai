@@ -64,6 +64,11 @@ namespace osu.Game.Screens.Select
         IEnumerable<OsuMenuItem> GetForwardActions(BeatmapInfo beatmap);
 
         /// <summary>
+        /// Gets the items for setting mods on a difficulty, to be put on whenever it is selected.
+        /// </summary>
+        IEnumerable<OsuMenuItem> GetDifficultyModActions(BeatmapInfo beatmap);
+
+        /// <summary>
         /// Temporarily bypasses filters and shows all difficulties of the given beatmapset.
         /// </summary>
         /// <param name="beatmapSet">The beatmapset.</param>

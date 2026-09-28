@@ -45,6 +45,7 @@ namespace osu.Game.Screens.Select
         private OsuSpriteText difficultyText = null!;
         private OsuSpriteText authorText = null!;
         private FillFlowContainer mainFill = null!;
+        private DifficultyModIcons modIcons = null!;
 
         private IBindable<StarDifficulty>? starDifficultyBindable;
         private CancellationTokenSource? starDifficultyCancellationSource;
@@ -197,7 +198,12 @@ namespace osu.Game.Screens.Select
                                     },
                                 }
                             }
-                        }
+                        },
+                        modIcons = new DifficultyModIcons
+                        {
+                            Anchor = Anchor.CentreLeft,
+                            Origin = Anchor.CentreLeft,
+                        },
                     }
                 }
             };
@@ -220,6 +226,7 @@ namespace osu.Game.Screens.Select
             localRank.Beatmap = beatmap;
             difficultyText.Text = beatmap.DifficultyName;
             authorText.Text = BeatmapsetsStrings.ShowDetailsMappedBy(beatmap.Metadata.Author.Username);
+            modIcons.Beatmap = beatmap;
 
             computeStarRating();
             updateKeyCount();
@@ -240,6 +247,7 @@ namespace osu.Game.Screens.Select
             base.FreeAfterUse();
 
             localRank.Beatmap = null;
+            modIcons.Beatmap = null;
             starDifficultyBindable = null;
 
             starDifficultyCancellationSource?.Cancel();
@@ -323,7 +331,10 @@ namespace osu.Game.Screens.Select
                 List<MenuItem> items = new List<MenuItem>();
 
                 if (songSelect != null)
+                {
                     items.AddRange(songSelect.GetForwardActions(beatmap));
+                    items.AddRange(songSelect.GetDifficultyModActions(beatmap));
+                }
 
                 items.Add(new OsuMenuItemSpacer());
                 items.Add(new OsuMenuItem(BeatmapExportStrings.ExportDifficulty, MenuItemType.Standard, Export)

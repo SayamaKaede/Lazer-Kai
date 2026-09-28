@@ -77,6 +77,16 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString NoUserTags => new TranslatableString(getKey(@"no_user_tags"), @"None of the difficulties shown now have user tags.");
 
+        /// <summary>
+        /// "Set the current mods on this difficulty"
+        /// </summary>
+        public static LocalisableString SetModsOnDifficulty => new TranslatableString(getKey(@"set_mods_on_difficulty"), @"Set the current mods on this difficulty");
+
+        /// <summary>
+        /// "Take this difficulty's mods off"
+        /// </summary>
+        public static LocalisableString ClearDifficultyMods => new TranslatableString(getKey(@"clear_difficulty_mods"), @"Take this difficulty's mods off");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }
