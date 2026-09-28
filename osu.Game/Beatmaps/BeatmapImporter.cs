@@ -172,6 +172,20 @@ namespace osu.Game.Beatmaps
 
             updated.Files.Add(new RealmNamedFileUsage(file.File, filename));
 
+            // the audio and background it was made with go along when the update has nothing under their names --
+            // one renaming its audio left the difficulty with no track or waveform in the editor (DOTNET-8).
+            // One the update has under the same name is what it reads from from now on, as with any other difficulty.
+            foreach (string? referenced in new[] { beatmap.Metadata.AudioFile, beatmap.Metadata.BackgroundFile })
+            {
+                if (string.IsNullOrEmpty(referenced) || updated.GetFile(referenced) != null)
+                    continue;
+
+                var usage = original.GetFile(referenced);
+
+                if (usage != null)
+                    updated.Files.Add(new RealmNamedFileUsage(usage.File, usage.Filename));
+            }
+
             original.Beatmaps.Remove(beatmap);
             updated.Beatmaps.Add(beatmap);
             beatmap.BeatmapSet = updated;

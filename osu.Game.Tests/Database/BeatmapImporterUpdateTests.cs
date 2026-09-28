@@ -95,6 +95,90 @@ namespace osu.Game.Tests.Database
             });
         }
 
+        /// <summary>
+        /// Only the .osu of a kept difficulty is carried over, so an update that renames the audio left it pointing at a
+        /// file the updated set does not have, and the editor opened it with no track or waveform (DOTNET-8). A background
+        /// of its own was left behind the same way.
+        /// </summary>
+        [Test]
+        public void TestKeptDifficultyHasItsAudioAndBackground()
+        {
+            RunTestWithRealmAsync(async (realm, storage) =>
+            {
+                var importer = new BeatmapImporter(storage, realm);
+                using var rulesets = new RealmRulesetStore(realm, storage);
+
+                using var __ = getBeatmapArchiveWithModifications(out string pathUpdate, directory => withAudio(directory, @"audio.ogg"));
+                using var _ = getBeatmapArchiveWithModifications(out string pathWithOwnDifficulty, directory =>
+                {
+                    withAudio(directory, @"audio.mp3");
+
+                    var existing = directory.GetFiles("*.osu").First();
+                    string[] lines = File.ReadAllLines(existing.FullName);
+
+                    for (int i = 0; i < lines.Length; i++)
+                    {
+                        if (lines[i].StartsWith(@"Version:", StringComparison.Ordinal))
+                            lines[i] = @"Version:my own";
+
+                        // a background of its own, which the update does not have either.
+                        lines[i] = lines[i].Replace(@"machinetop_background.jpg", @"my own background.jpg");
+                    }
+
+                    File.Copy(Path.Combine(directory.FullName, @"machinetop_background.jpg"), Path.Combine(directory.FullName, @"my own background.jpg"));
+                    File.WriteAllLines(Path.Combine(directory.FullName, "my own.osu"), lines);
+                });
+
+                var importBeforeUpdate = await importer.Import(new ImportTask(pathWithOwnDifficulty));
+
+                Assert.That(importBeforeUpdate, Is.Not.Null);
+                Debug.Assert(importBeforeUpdate != null);
+
+                realm.Run(r => r.Refresh());
+
+                importBeforeUpdate.PerformWrite(s => s.Beatmaps.Single(b => b.DifficultyName == @"my own").Status = BeatmapOnlineStatus.LocallyModified);
+                importBeforeUpdate.PerformRead(s => Assert.That(s.Beatmaps.Single(b => b.DifficultyName == @"my own").Metadata.BackgroundFile, Is.EqualTo(@"my own background.jpg")));
+
+                var importAfterUpdate = await importer.ImportAsUpdate(new ProgressNotification(), new ImportTask(pathUpdate), importBeforeUpdate.Value);
+
+                Assert.That(importAfterUpdate, Is.Not.Null);
+                Debug.Assert(importAfterUpdate != null);
+
+                realm.Run(r => r.Refresh());
+
+                importAfterUpdate.PerformRead(updated =>
+                {
+                    var kept = updated.Beatmaps.Single(b => b.DifficultyName == @"my own");
+
+                    Assert.That(updated.GetPathForFile(kept.Metadata.AudioFile), Is.Not.Null,
+                        $"the kept difficulty's audio \"{kept.Metadata.AudioFile}\" is not in the updated set");
+                    Assert.That(updated.GetPathForFile(kept.Metadata.BackgroundFile), Is.Not.Null,
+                        $"the kept difficulty's background \"{kept.Metadata.BackgroundFile}\" is not in the updated set");
+
+                    // what the update has under its own names stays as the update has it.
+                    Assert.That(updated.Beatmaps.Where(b => b.DifficultyName != @"my own").Select(b => b.Metadata.AudioFile), Is.All.EqualTo(@"audio.ogg"));
+                });
+            });
+
+            static void withAudio(DirectoryInfo directory, string filename)
+            {
+                File.WriteAllBytes(Path.Combine(directory.FullName, filename), new byte[] { 1, 2, 3, 4 });
+
+                foreach (var file in directory.GetFiles("*.osu"))
+                {
+                    string[] lines = File.ReadAllLines(file.FullName);
+
+                    for (int i = 0; i < lines.Length; i++)
+                    {
+                        if (lines[i].StartsWith(@"AudioFilename:", StringComparison.Ordinal))
+                            lines[i] = $@"AudioFilename: {filename}";
+                    }
+
+                    File.WriteAllLines(file.FullName, lines);
+                }
+            }
+        }
+
         [Test]
         public void TestNewDifficultyAdded()
         {
