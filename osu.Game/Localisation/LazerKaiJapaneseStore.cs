@@ -42,6 +42,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:carry_over_song_select_mods"] = @"曲選択画面とエディターでのMod情報を共有する",
             [$@"{editor_prefix}:carry_over_song_select_mods_description"] = @"テストプレイが曲選択画面で選んだModから始まり、ここで選んだModは出たあとも選ばれたままになります",
             [$@"{editor_prefix}:apply_test_play_mods_to_composer"] = @"編集画面にもModを反映",
+            [$@"{editor_prefix}:editing_locked_by_preview_mods"] = @"オブジェクトを変更するModを反映している間は、編集できません",
             [$@"{editor_prefix}:live_mod_preview"] = @"編集中もModの表示を更新",
 
             // composing

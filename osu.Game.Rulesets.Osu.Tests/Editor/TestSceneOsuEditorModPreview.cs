@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
@@ -10,14 +11,19 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
 using osu.Game.Configuration;
+using osu.Game.Graphics.Sprites;
+using osu.Game.Localisation;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Screens.Edit.Components.Menus;
 using osu.Game.Screens.Edit.Compose.Components.Timeline;
 using osuTK;
+using osuTK.Input;
 using osu.Game.Tests.Visual;
 using osu.Framework.Graphics.Primitives;
 
@@ -35,6 +41,16 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
         [Resolved]
         private OsuConfigManager config { get; set; } = null!;
+
+        public override void SetUpSteps()
+        {
+            // both are kept in the config, which every test here shares: the mods a test picked would otherwise be
+            // previewed from the start of the next one.
+            AddStep("no test play mods", () => config.GetBindable<string>(OsuSetting.EditorTestPlayMods).SetDefault());
+            AddStep("mods not previewed", () => config.GetBindable<bool>(OsuSetting.EditorApplyTestPlayModsToComposer).SetDefault());
+
+            base.SetUpSteps();
+        }
 
         /// <summary>
         /// Turning the preview on or off rebuilds the composer, which disposes the playfield the beatmap's objects were
@@ -134,6 +150,151 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
             AddUntilStep("the preempt is back", () => circle().TimePreempt, () => Is.EqualTo(preemptWhenUnmodded));
         }
+
+        /// <summary>
+        /// Hard rock's circle size and flip reach the composer, as they do test play (2026-09-29 request), while the
+        /// beatmap's own object is left as it is.
+        /// </summary>
+        [Test]
+        public void TestHardRockIsShownInTheComposer()
+        {
+            AddStep("add a circle", () => EditorBeatmap.Add(new HitCircle { StartTime = 1000, Position = new Vector2(100, 100) }));
+            AddStep("go to it", () => EditorClock.Seek(1000));
+
+            previewMods(new OsuModHardRock());
+
+            AddUntilStep("the circle is shown flipped", () => shownCircle()?.Position, () => Is.EqualTo(new Vector2(100, OsuPlayfield.BASE_SIZE.Y - 100)));
+            AddAssert("and smaller", () => shownCircle()!.Scale, () => Is.LessThan(ownCircle().Scale));
+            AddAssert("the beatmap's own circle is where it was", () => ownCircle().Position, () => Is.EqualTo(new Vector2(100, 100)));
+            AddAssert("and as large", () => ownCircle().Scale, () => Is.EqualTo(unmoddedScale()));
+        }
+
+        /// <summary>
+        /// The notice saying why nothing can be edited goes after about five seconds (2026-09-29 request).
+        /// </summary>
+        [Test]
+        public void TestTheLockNoticeGoesAfterAFewSeconds()
+        {
+            AddStep("add a circle", () => EditorBeatmap.Add(new HitCircle { StartTime = 1000, Position = new Vector2(100, 100) }));
+
+            previewMods(new OsuModHardRock());
+
+            AddUntilStep("the notice is shown", () => lockNotice(), () => Is.Not.Empty);
+            AddUntilStep("it goes", () => lockNotice(), () => Is.Empty);
+        }
+
+        private IEnumerable<OsuSpriteText> lockNotice() =>
+            Editor.ChildrenOfType<OsuSpriteText>().Where(t => t.Text.Equals(EditorStrings.EditingLockedByPreviewMods));
+
+        /// <summary>
+        /// What the composer shows under hard rock is not the beatmap being edited, so nothing on it can be picked up.
+        /// </summary>
+        [Test]
+        public void TestObjectsCannotBeSelectedWhileTheirSizeOrPlaceIsChanged()
+        {
+            AddStep("add a circle", () => EditorBeatmap.Add(new HitCircle { StartTime = 1000, Position = new Vector2(256, 192) }));
+            AddStep("go to it", () => EditorClock.Seek(1000));
+
+            previewMods(new OsuModHardRock());
+
+            AddAssert("editing is locked", () => composer().EditingLocked, () => Is.True);
+            AddUntilStep("the circle is shown", () => shownCircle() != null);
+
+            AddStep("click it", () =>
+            {
+                InputManager.MoveMouseTo(composer().Playfield.ToScreenSpace(shownCircle()!.Position));
+                InputManager.Click(MouseButton.Left);
+            });
+
+            AddAssert("nothing is selected", () => EditorBeatmap.SelectedHitObjects, () => Is.Empty);
+        }
+
+        /// <summary>
+        /// Freeze frame only changes when objects come in, and the composer goes on editing the beatmap under it.
+        /// </summary>
+        [Test]
+        public void TestObjectsCanBeSelectedUnderFreezeFrame()
+        {
+            AddStep("add a circle", () => EditorBeatmap.Add(new HitCircle { StartTime = 1000, Position = new Vector2(256, 192) }));
+            AddStep("go to it", () => EditorClock.Seek(1000));
+
+            previewMods(new OsuModFreezeFrame());
+
+            AddAssert("editing is not locked", () => composer().EditingLocked, () => Is.False);
+            AddUntilStep("the circle is shown", () => shownCircle() != null);
+
+            AddStep("click it", () =>
+            {
+                InputManager.MoveMouseTo(composer().Playfield.ToScreenSpace(shownCircle()!.Position));
+                InputManager.Click(MouseButton.Left);
+            });
+
+            AddAssert("it is selected", () => EditorBeatmap.SelectedHitObjects, () => Has.Count.EqualTo(1));
+        }
+
+        /// <summary>
+        /// The copy the composer shows is made again when the beatmap changes some other way, such as an undo.
+        /// </summary>
+        [Test]
+        public void TestAnEditMadeElsewhereIsShown()
+        {
+            AddStep("add a circle", () => EditorBeatmap.Add(new HitCircle { StartTime = 1000, Position = new Vector2(100, 100) }));
+            AddStep("go to it", () => EditorClock.Seek(1000));
+
+            previewMods(new OsuModHardRock());
+
+            AddUntilStep("the circle is shown flipped", () => shownCircle()?.Position, () => Is.EqualTo(new Vector2(100, OsuPlayfield.BASE_SIZE.Y - 100)));
+
+            AddStep("move it", () =>
+            {
+                EditorBeatmap.BeginChange();
+                ownCircle().Position = new Vector2(200, 100);
+                EditorBeatmap.Update(ownCircle());
+                EditorBeatmap.EndChange();
+            });
+
+            AddUntilStep("the move is shown, flipped", () => shownCircle()?.Position, () => Is.EqualTo(new Vector2(200, OsuPlayfield.BASE_SIZE.Y - 100)));
+        }
+
+        /// <summary>
+        /// Random used to be applied to the beatmap's own objects, so what was saved after previewing it was the shuffle.
+        /// </summary>
+        [Test]
+        public void TestRandomLeavesTheBeatmapWhereItWas()
+        {
+            Vector2[] positions = [];
+
+            AddStep("add circles", () =>
+            {
+                for (int i = 0; i < 10; i++)
+                    EditorBeatmap.Add(new HitCircle { StartTime = 1000 + i * 500, Position = new Vector2(100 + i * 30, 100) });
+            });
+
+            AddStep("remember where everything is", () => positions = ownPositions());
+
+            previewMods(new OsuModRandom { Seed = { Value = 1 } });
+
+            AddAssert("everything is where it was", ownPositions, () => Is.EqualTo(positions));
+        }
+
+        private Vector2[] ownPositions() => EditorBeatmap.HitObjects.OfType<OsuHitObject>().Select(h => h.Position).ToArray();
+
+        private void previewMods(params Mod[] mods)
+        {
+            AddStep("preview test play mods", () => config.SetValue(OsuSetting.EditorApplyTestPlayModsToComposer, true));
+            AddStep($"pick {string.Join(", ", mods.Select(m => m.Acronym))}", () => Editor.TestPlayMods.Mods.Value = mods);
+            waitForComposerReload();
+        }
+
+        /// <summary>The circle at 1000 as the composer draws it, or null while there is no composer.</summary>
+        private HitCircle? shownCircle() =>
+            Editor.ChildrenOfType<HitObjectComposer>().SingleOrDefault()?.Playfield.AllHitObjects
+                  .Select(d => d.HitObject).OfType<HitCircle>().SingleOrDefault(h => h.StartTime == 1000);
+
+        /// <summary>The circle at 1000 in the beatmap being edited.</summary>
+        private HitCircle ownCircle() => EditorBeatmap.HitObjects.OfType<HitCircle>().Single(h => h.StartTime == 1000);
+
+        private float unmoddedScale() => LegacyRulesetExtensions.CalculateScaleFromCircleSize(EditorBeatmap.Difficulty.CircleSize, true);
 
         /// <summary>
         /// Flashlight is drawn by the ruleset, which only ever fills the space the playfield was given. Left there, the

@@ -378,6 +378,12 @@ namespace osu.Game.Localisation
         public static LocalisableString ApplyTestPlayModsToComposer => new TranslatableString(getKey(@"apply_test_play_mods_to_composer"), @"Preview mods while composing");
 
         /// <summary>
+        /// "Objects can't be edited while mods that change them are previewed"
+        /// </summary>
+        public static LocalisableString EditingLockedByPreviewMods => new TranslatableString(getKey(@"editing_locked_by_preview_mods"),
+            @"Objects can't be edited while mods that change them are previewed");
+
+        /// <summary>
         /// "Advance by previous spacing after placing objects"
         /// </summary>
         public static LocalisableString AdvanceByPreviousSpacingOnPlacement =>

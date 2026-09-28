@@ -187,7 +187,7 @@ namespace osu.Game.Screens.Edit.Compose
         private void updateClipboardActionAvailability()
         {
             CanCut.Value = CanCopy.Value = EditorBeatmap.SelectedHitObjects.Any();
-            CanPaste.Value = composer.IsLoaded && !string.IsNullOrEmpty(clipboard.Value);
+            CanPaste.Value = composer.IsLoaded && !composer.EditingLocked && !string.IsNullOrEmpty(clipboard.Value);
         }
 
         private string getTimestamp()

@@ -4,7 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
+using System.Text;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.IEnumerableExtensions;
@@ -18,11 +20,15 @@ using osu.Framework.Logging;
 using osu.Framework.Testing;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Formats;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
+using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Input.Bindings;
+using osu.Game.IO;
+using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osu.Game.Rulesets.Configuration;
 using osu.Game.Rulesets.Edit.Tools;
@@ -39,6 +45,7 @@ using osu.Game.Screens.Edit.Compose;
 using osu.Game.Screens.Edit.Compose.Components;
 using osuTK;
 using osuTK.Graphics;
+using Decoder = osu.Game.Beatmaps.Formats.Decoder;
 
 namespace osu.Game.Rulesets.Edit
 {
@@ -102,6 +109,8 @@ namespace osu.Game.Rulesets.Edit
         private FillFlowContainer togglesCollection = null!;
         private FillFlowContainer<SampleBankTernaryButton> sampleBankTogglesCollection = null!;
 
+        private Container? lockNotice;
+
         private IBindable<bool> hasTiming = null!;
         private Bindable<bool> autoSeekOnPlacement = null!;
         private Bindable<bool> advanceByPreviousSpacingOnPlacement = null!;
@@ -120,6 +129,8 @@ namespace osu.Game.Rulesets.Edit
         private Mod[] previewMods = Array.Empty<Mod>();
         private readonly Bindable<bool> composerFocusMode = new Bindable<bool>();
 
+        private IEditorChangeHandler? changeHandler;
+
         private EditorRadioButton? lastTool;
 
         protected DrawableRuleset<TObject> DrawableRuleset { get; private set; } = null!;
@@ -133,9 +144,10 @@ namespace osu.Game.Rulesets.Edit
             dependencies = new DependencyContainer(base.CreateChildDependencies(parent));
 
         [BackgroundDependencyLoader(true)]
-        private void load(OsuConfigManager config, Editor? editor, ReadableKeyCombinationProvider keyCombinationProvider)
+        private void load(OsuConfigManager config, Editor? editor, ReadableKeyCombinationProvider keyCombinationProvider, IEditorChangeHandler? changeHandler)
         {
             host = editor;
+            this.changeHandler = changeHandler;
 
             autoSeekOnPlacement = config.GetBindable<bool>(OsuSetting.EditorAutoSeekOnPlacement);
             advanceByPreviousSpacingOnPlacement = config.GetBindable<bool>(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement);
@@ -165,6 +177,8 @@ namespace osu.Game.Rulesets.Edit
                 }
             }
 
+            EditingLocked = previewMods.Any(ChangesObjects);
+
             // must happen before the drawable ruleset is constructed so that hit objects are already in their modded state.
             applyBeatmapPreviewMods();
 
@@ -174,9 +188,9 @@ namespace osu.Game.Rulesets.Edit
             {
                 var autoplay = Ruleset.GetAutoplayMod();
 
-                DrawableRuleset = CreateDrawableRuleset(Ruleset, EditorBeatmap.PlayableBeatmap,
+                DrawableRuleset = CreateDrawableRuleset(Ruleset, EditingLocked ? createModdedCopy() : EditorBeatmap.PlayableBeatmap,
                     autoplay != null ? previewMods.Prepend(autoplay).ToArray() : previewMods);
-                drawableRulesetWrapper = new DrawableEditorRulesetWrapper<TObject>(DrawableRuleset)
+                drawableRulesetWrapper = new DrawableEditorRulesetWrapper<TObject>(DrawableRuleset, followsEditorBeatmap: !EditingLocked)
                 {
                     Clock = EditorClock,
                     ProcessCustomClock = false
@@ -358,6 +372,35 @@ namespace osu.Game.Rulesets.Edit
                 toolboxCollection.AddButton(button);
             }
 
+            if (EditingLocked)
+            {
+                PlayfieldContentContainer.Add(lockNotice = new Container
+                {
+                    Anchor = Anchor.TopCentre,
+                    Origin = Anchor.TopCentre,
+                    AutoSizeAxes = Axes.Both,
+                    Margin = new MarginPadding { Top = 10 },
+                    Masking = true,
+                    CornerRadius = 5,
+                    Children = new Drawable[]
+                    {
+                        new Box
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Colour = colourProvider.Background5,
+                            Alpha = 0.85f,
+                        },
+                        new OsuSpriteText
+                        {
+                            Text = EditorStrings.EditingLockedByPreviewMods,
+                            Font = OsuFont.GetFont(weight: FontWeight.SemiBold, size: 14),
+                            Colour = colourProvider.Content1,
+                            Margin = new MarginPadding { Horizontal = 12, Vertical = 6 },
+                        },
+                    }
+                });
+            }
+
             togglesCollection.AddRange(CreateTernaryButtons().ToArray());
 
             sampleBankTogglesCollection.AddRange(createSampleBankTernaryButtons());
@@ -404,8 +447,21 @@ namespace osu.Game.Rulesets.Edit
                 referenceColour.BindValueChanged(c => referenceRulesetContainer.Colour = c.NewValue.ToColour() ?? Color4.White, true);
             }
 
-            if (previewMods.OfType<IApplicableToBeatmap>().Any())
+            if (!EditingLocked && previewMods.OfType<IApplicableToBeatmap>().Any())
                 EditorBeatmap.BeatmapReprocessed += onBeatmapReprocessed;
+
+            if (EditingLocked)
+            {
+                // what was selected before cannot be seen as selected on the copy, and would still go with a delete.
+                EditorBeatmap.SelectedHitObjects.Clear();
+
+                // the copy is of the beatmap as it stood; an undo, or an edit on another screen, needs a new one.
+                if (changeHandler != null)
+                    changeHandler.OnStateChange += onStateChanged;
+
+                // the greyed-out tools say it for as long as it holds; the words are only there to say why.
+                lockNotice?.Delay(5000).FadeOut(500).Expire();
+            }
 
             hasTiming = EditorBeatmap.HasTiming.GetBoundCopy();
             hasTiming.BindValueChanged(timing =>
@@ -419,7 +475,7 @@ namespace osu.Game.Rulesets.Edit
             {
                 foreach (var item in toolboxCollection.Items)
                 {
-                    item.Selected.Disabled = !hasTiming.NewValue;
+                    item.Selected.Disabled = !hasTiming.NewValue || EditingLocked;
                 }
             }, true);
 
@@ -732,6 +788,8 @@ namespace osu.Game.Rulesets.Edit
                 advanceByPreviousSpacing(hitObject);
         }
 
+        private void onStateChanged() => host?.RefreshComposer();
+
         // deferred to the next frame both to avoid re-entering `EditorBeatmap`'s own processing and to coalesce bursts of edits.
         private void onBeatmapReprocessed()
         {
@@ -741,7 +799,8 @@ namespace osu.Game.Rulesets.Edit
 
         public override void RevertBeatmapPreviewMods()
         {
-            if (!previewMods.OfType<IApplicableToBeatmap>().Any())
+            // the mods went into a copy, and the beatmap itself was never touched.
+            if (EditingLocked || !previewMods.OfType<IApplicableToBeatmap>().Any())
                 return;
 
             foreach (var hitObject in EditorBeatmap.PlayableBeatmap.HitObjects)
@@ -760,7 +819,7 @@ namespace osu.Game.Rulesets.Edit
         {
             var beatmapMods = previewMods.OfType<IApplicableToBeatmap>().ToArray();
 
-            if (beatmapMods.Length == 0)
+            if (EditingLocked || beatmapMods.Length == 0)
                 return;
 
             foreach (var hitObject in EditorBeatmap.PlayableBeatmap.HitObjects)
@@ -768,6 +827,31 @@ namespace osu.Game.Rulesets.Edit
 
             foreach (var mod in beatmapMods)
                 mod.ApplyToBeatmap(EditorBeatmap.PlayableBeatmap);
+        }
+
+        /// <summary>
+        /// The beatmap as it stands, read back into objects of its own and put through the preview mods the way test
+        /// play puts it through them, for <see cref="HitObjectComposer.EditingLocked"/>.
+        /// </summary>
+        /// <remarks>
+        /// Written out and read back as an undo does, which is what gives the copy objects of its own: hard rock flips
+        /// each object where it stands, and the beatmap's own objects are what is saved, backed up and undone.
+        /// </remarks>
+        private IBeatmap createModdedCopy()
+        {
+            using var stream = new MemoryStream();
+
+            using (var writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                new LegacyBeatmapEncoder(EditorBeatmap, EditorBeatmap.BeatmapSkin, EditorBeatmap.Storyboard).Encode(writer);
+
+            stream.Position = 0;
+
+            using var reader = new LineBufferedReader(stream);
+
+            var decoded = Decoder.GetDecoder<Beatmap>(reader).Decode(reader);
+            decoded.BeatmapInfo.Ruleset = EditorBeatmap.BeatmapInfo.Ruleset;
+
+            return new FlatWorkingBeatmap(decoded).GetPlayableBeatmap(EditorBeatmap.BeatmapInfo.Ruleset, previewMods);
         }
 
         /// <summary>
@@ -898,6 +982,9 @@ namespace osu.Game.Rulesets.Edit
                 EditorBeatmap.BeatmapReprocessed -= invalidatePreviewComboTimes;
             }
 
+            if (changeHandler != null)
+                changeHandler.OnStateChange -= onStateChanged;
+
             base.Dispose(isDisposing);
         }
 
@@ -925,6 +1012,29 @@ namespace osu.Game.Rulesets.Edit
         public virtual void RevertBeatmapPreviewMods()
         {
         }
+
+        /// <summary>
+        /// Whether the objects cannot be edited here, because the mods being previewed change the objects themselves and
+        /// what is shown is a copy of the beatmap with them applied.
+        /// </summary>
+        public bool EditingLocked { get; protected set; }
+
+        /// <summary>
+        /// Whether a mod changes the objects themselves -- their size, when they come in, or where they are -- rather than
+        /// only how they are drawn. Easy, hard rock and difficulty adjust are the ones asked for (2026-09-29).
+        /// </summary>
+        /// <remarks>
+        /// Random and mirror are named because some rulesets' versions move objects from <see cref="IApplicableToBeatmap"/>,
+        /// which freeze frame and hidden use too, only to change when objects come in.
+        /// </remarks>
+        public static bool ChangesObjects(Mod mod) =>
+            mod is IApplicableToDifficulty
+                or IApplicableToHitObject
+                or IApplicableToBeatmapConverter
+                or IApplicableAfterBeatmapConversion
+                or IApplicableToBeatmapProcessor
+                or ModRandom
+                or ModMirror;
 
         /// <summary>
         /// The same values as the inspector panel's, laid out for a strip rather than a panel, or null where the

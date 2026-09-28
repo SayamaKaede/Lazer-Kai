@@ -25,15 +25,22 @@ namespace osu.Game.Rulesets.Edit
 
         private readonly DrawableRuleset<TObject> drawableRuleset;
 
+        private readonly bool followsEditorBeatmap;
+
         [Resolved]
         private EditorBeatmap beatmap { get; set; } = null!;
 
         [Resolved]
         private EditorClock editorClock { get; set; } = null!;
 
-        public DrawableEditorRulesetWrapper(DrawableRuleset<TObject> drawableRuleset)
+        /// <param name="drawableRuleset">The ruleset to show.</param>
+        /// <param name="followsEditorBeatmap">
+        /// False when the ruleset shows a copy of the beatmap, whose objects are not the ones being added and removed.
+        /// </param>
+        public DrawableEditorRulesetWrapper(DrawableRuleset<TObject> drawableRuleset, bool followsEditorBeatmap = true)
         {
             this.drawableRuleset = drawableRuleset;
+            this.followsEditorBeatmap = followsEditorBeatmap;
 
             RelativeSizeAxes = Axes.Both;
 
@@ -56,6 +63,11 @@ namespace osu.Game.Rulesets.Edit
         {
             base.LoadComplete();
 
+            Scheduler.AddOnce(regenerateAutoplay);
+
+            if (!followsEditorBeatmap)
+                return;
+
             beatmap.HitObjectAdded += hitObjectAdded;
             beatmap.HitObjectRemoved += hitObjectRemoved;
 
@@ -68,8 +80,6 @@ namespace osu.Game.Rulesets.Edit
             {
                 beatmap.HitObjectUpdated += hitObjectUpdated;
             }
-
-            Scheduler.AddOnce(regenerateAutoplay);
         }
 
         protected override void Update()

@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
@@ -33,9 +34,20 @@ namespace osu.Game.Rulesets.Osu.Edit
             };
         }
 
+        [Resolved]
+        private HitObjectComposer composer { get; set; } = null!;
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            // what it generates goes into the beatmap, which cannot be edited while a copy of it is being shown.
+            polygonButton.Enabled.Value = !composer.EditingLocked;
+        }
+
         protected override bool OnKeyDown(KeyDownEvent e)
         {
-            if (e.Repeat) return false;
+            if (e.Repeat || !polygonButton.Enabled.Value) return false;
 
             switch (e.Key)
             {

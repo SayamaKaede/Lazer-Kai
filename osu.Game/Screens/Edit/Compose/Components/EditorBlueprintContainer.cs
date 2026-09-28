@@ -34,6 +34,12 @@ namespace osu.Game.Screens.Edit.Compose.Components
             Composer = composer;
         }
 
+        // nothing is picked up, placed or dragged, in the composer or on the timeline, while what the composer shows is a
+        // copy with the mods applied; on the timeline, a drag goes through to seeking instead.
+        public override bool PropagatePositionalInputSubTree => Composer?.EditingLocked != true && base.PropagatePositionalInputSubTree;
+
+        public override bool PropagateNonPositionalInputSubTree => Composer?.EditingLocked != true && base.PropagateNonPositionalInputSubTree;
+
         [BackgroundDependencyLoader]
         private void load()
         {

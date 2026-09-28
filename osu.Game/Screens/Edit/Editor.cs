@@ -2075,6 +2075,15 @@ namespace osu.Game.Screens.Edit
             if (!editorApplyTestPlayModsToComposer.Value)
                 return;
 
+            RefreshComposer();
+        }
+
+        /// <summary>
+        /// Rebuilds the composer once changes stop coming, for what it only reads while being built: the mods it
+        /// previews, or the copy of the beatmap it shows while <see cref="HitObjectComposer.EditingLocked"/>.
+        /// </summary>
+        public void RefreshComposer()
+        {
             // dragging a mod's setting changes it every frame, and rebuilding the composer is far from free.
             composerReloadDebounce?.Cancel();
             composerReloadDebounce = Scheduler.AddDelayed(reloadComposeScreen, 200);
