@@ -142,7 +142,7 @@ namespace osu.Game.Tests.Visual.Editing
         public void TestTheReadoutFollowsTheCursor(float across)
         {
             AddStep("open the detail screen", () => overlay().Show());
-            AddUntilStep("the curve is drawn", () => graph().ChildrenOfType<Box>().Any(), () => Is.True);
+            waitForTheBeatmapToBeWorkedOut();
 
             AddStep($"point at {across:P0} across", () =>
             {
@@ -165,7 +165,7 @@ namespace osu.Game.Tests.Visual.Editing
         public void TestClickingSeeksToWhereTheCursorIs(float across)
         {
             AddStep("open the detail screen", () => overlay().Show());
-            AddUntilStep("the curve is drawn", () => graph().ChildrenOfType<Box>().Any(), () => Is.True);
+            waitForTheBeatmapToBeWorkedOut();
 
             AddStep($"click {across:P0} across", () =>
             {
@@ -187,7 +187,7 @@ namespace osu.Game.Tests.Visual.Editing
         public void TestTheTopReadoutFollowsPlayback()
         {
             AddStep("open the detail screen", () => overlay().Show());
-            AddUntilStep("the curve is drawn", () => graph().ChildrenOfType<Box>().Any(), () => Is.True);
+            waitForTheBeatmapToBeWorkedOut();
 
             AddStep("seek to a third in", () => EditorClock.Seek(Beatmap.Value.Track.Length / 3));
             AddUntilStep("it says so", () => readoutTime(), () => Is.EqualTo((Beatmap.Value.Track.Length / 3).ToEditorFormattedString()));
@@ -203,7 +203,7 @@ namespace osu.Game.Tests.Visual.Editing
         public void TestTheTopReadoutNamesEverySkill()
         {
             AddStep("open the detail screen", () => overlay().Show());
-            AddUntilStep("the curve is drawn", () => graph().ChildrenOfType<Box>().Any(), () => Is.True);
+            waitForTheBeatmapToBeWorkedOut();
 
             AddAssert("every skill is named", () => overlay().ChildrenOfType<PlayheadReadout>().Single()
                                                             .ChildrenOfType<OsuSpriteText>().Select(t => t.Text.ToString()),
@@ -229,6 +229,14 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddAssert("and still takes the mouse", () => overlay().ReceivePositionalInputAt(overlay().ScreenSpaceDrawQuad.Centre), () => Is.True);
         }
+
+        /// <summary>
+        /// The graph has boxes of its own — its background — before anything is worked out, so they say nothing about
+        /// whether the beatmap has been. The rows come with the first thing drawn from it. Waiting on the boxes let the
+        /// tests read the readout ahead of the calculation, which held only as long as the calculation was quick.
+        /// </summary>
+        private void waitForTheBeatmapToBeWorkedOut() =>
+            AddUntilStep("the beatmap is worked out", () => overlay().ChildrenOfType<SkillRow>().Any(), () => Is.True);
 
         private Drawable shade() => overlay().ChildrenOfType<Box>().First().Parent!;
 
