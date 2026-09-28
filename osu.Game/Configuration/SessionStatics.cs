@@ -35,6 +35,7 @@ namespace osu.Game.Configuration
             SetDefault<UserActivity?>(Static.UserOnlineActivity, null);
             SetDefault<APITag[]?>(Static.AllBeatmapTags, null);
             SetDefault(Static.StableCompatibilityNoticeShown, false);
+            SetDefault(Static.ScoreSubmissionFailureShown, false);
         }
 
         /// <summary>
@@ -116,5 +117,12 @@ namespace osu.Game.Configuration
         /// when the option is turned on: again every time would be in the way of somebody trying it out.
         /// </summary>
         StableCompatibilityNoticeShown,
+
+        /// <summary>
+        /// Whether the notice that a score will not be submitted has been shown since song select was last come to. A
+        /// retry would tell the same thing again, straight after the last one, with nothing new to tell. Song select
+        /// clears it.
+        /// </summary>
+        ScoreSubmissionFailureShown,
     }
 }

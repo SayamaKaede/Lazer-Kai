@@ -147,10 +147,21 @@ namespace osu.Game.Screens.Play
                         ? "Cannot start play"
                         : "Score will not be submitted";
 
-                    if (string.IsNullOrEmpty(exception.Message))
-                        notifications?.Post(new ScoreSubmissionFailureNotification(whatWillHappen, "Failed to retrieve a score submission token."));
-                    else
-                        notifications?.Post(new ScoreSubmissionFailureNotification(whatWillHappen, getUserFacingAPIError(exception)));
+                    // play carries on without submitting, so this is a heads up rather than a reason play stopped: it is
+                    // brief, and said once until song select is come back to, not on every retry.
+                    var failedToSubmit = statics.GetBindable<bool>(Static.ScoreSubmissionFailureShown);
+
+                    if (shouldExit || !failedToSubmit.Value)
+                    {
+                        if (!shouldExit)
+                            failedToSubmit.Value = true;
+
+                        string reason = string.IsNullOrEmpty(exception.Message)
+                            ? "Failed to retrieve a score submission token."
+                            : getUserFacingAPIError(exception);
+
+                        notifications?.Post(new ScoreSubmissionFailureNotification(whatWillHappen, reason) { IsImportant = shouldExit });
+                    }
                 }
 
                 if (shouldExit)

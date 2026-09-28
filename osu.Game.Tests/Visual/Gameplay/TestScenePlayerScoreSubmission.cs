@@ -4,14 +4,18 @@
 #nullable disable
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Online.API;
 using osu.Game.Online.Rooms;
 using osu.Game.Online.Solo;
@@ -24,6 +28,8 @@ using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Judgements;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.Taiko;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Taiko.Mods;
 using osu.Game.Scoring;
 using osu.Game.Screens.Play;
@@ -164,6 +170,67 @@ namespace osu.Game.Tests.Visual.Gameplay
 
             AddStep("exit", () => Player.Exit());
             AddAssert("ensure no submission", () => Player.SubmittedScore == null);
+        }
+
+        /// <summary>
+        /// The notice that the score will not be submitted is short (2026-09-29 request): it comes at the start of every
+        /// play, and it is not news that needs twelve seconds of the corner of the screen.
+        /// </summary>
+        [Test]
+        public void TestTheFailureNoticeIsTheShortOne()
+        {
+            forgetNotices();
+            prepareTestAPI(false);
+
+            createPlayerTest();
+
+            AddUntilStep("wait for token request", () => Player.TokenCreationRequested);
+            AddUntilStep("the notice is posted", () => failureNotices().Length, () => Is.EqualTo(1));
+            AddAssert("it is the short one", () => failureNotices().Single().IsImportant, () => Is.False);
+        }
+
+        /// <summary>
+        /// A retry starts the same play over, and would say the same thing again a moment after the last time.
+        /// </summary>
+        [Test]
+        public void TestTheFailureNoticeIsNotShownAgainOnRetry()
+        {
+            forgetNotices();
+            prepareTestAPI(false);
+
+            createPlayerTest();
+
+            AddUntilStep("wait for token request", () => Player.TokenCreationRequested);
+            AddUntilStep("the notice is posted", () => failureNotices().Length, () => Is.EqualTo(1));
+
+            AddStep("retry", LoadPlayer);
+            AddUntilStep("player loaded", () => Player.IsLoaded && Player.Alpha == 1);
+            AddUntilStep("wait for token request", () => Player.TokenCreationRequested);
+            AddWaitStep("give it time to be posted", 10);
+
+            AddAssert("it was not posted again", () => failureNotices().Length, () => Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// Coming back to song select puts things back as they were: the next play says it again.
+        /// </summary>
+        [Test]
+        public void TestTheFailureNoticeIsShownAgainAfterSongSelect()
+        {
+            forgetNotices();
+            prepareTestAPI(false);
+
+            createPlayerTest();
+
+            AddUntilStep("wait for token request", () => Player.TokenCreationRequested);
+            AddUntilStep("the notice is posted", () => failureNotices().Length, () => Is.EqualTo(1));
+
+            // what song select does as it is come to.
+            AddStep("back at song select", () => statics.SetValue(Static.ScoreSubmissionFailureShown, false));
+
+            AddStep("play again", LoadPlayer);
+            AddUntilStep("player loaded", () => Player.IsLoaded && Player.Alpha == 1);
+            AddUntilStep("the notice is posted again", () => failureNotices().Length, () => Is.EqualTo(2));
         }
 
         [Test]
@@ -372,6 +439,54 @@ namespace osu.Game.Tests.Visual.Gameplay
 
             AddStep("exit", () => Player.Exit());
             AddAssert("ensure no submission", () => Player.SubmittedScore == null);
+        }
+
+        [Cached(typeof(INotificationOverlay))]
+        private readonly RecordingNotificationOverlay notifications = new RecordingNotificationOverlay();
+
+        [Resolved]
+        private SessionStatics statics { get; set; }
+
+        private void forgetNotices() => AddStep("forget the notices", () =>
+        {
+            notifications.Clear();
+            statics.SetValue(Static.ScoreSubmissionFailureShown, false);
+        });
+
+        private ScoreSubmissionFailureNotification[] failureNotices() => notifications.Posted.OfType<ScoreSubmissionFailureNotification>().ToArray();
+
+        private class RecordingNotificationOverlay : INotificationOverlay
+        {
+            private readonly List<Notification> posted = new List<Notification>();
+
+            public Notification[] Posted
+            {
+                get
+                {
+                    lock (posted)
+                        return posted.ToArray();
+                }
+            }
+
+            public void Clear()
+            {
+                lock (posted)
+                    posted.Clear();
+            }
+
+            public void Post(Notification notification)
+            {
+                lock (posted)
+                    posted.Add(notification);
+            }
+
+            public void Hide()
+            {
+            }
+
+            public IBindable<int> UnreadCount { get; } = new Bindable<int>();
+
+            public IEnumerable<Notification> AllNotifications => Posted;
         }
 
         private void createPlayerTest(bool allowFail = false, Func<RulesetInfo, IBeatmap> createBeatmap = null, Func<Ruleset> createRuleset = null, Func<Mod[]> createMods = null)

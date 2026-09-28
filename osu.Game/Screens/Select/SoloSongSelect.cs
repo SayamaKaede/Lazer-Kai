@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Platform;
 using osu.Framework.Screens;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Localisation;
 using osu.Game.Online.API;
@@ -50,6 +51,9 @@ namespace osu.Game.Screens.Select
 
         [Resolved]
         private OsuGame? game { get; set; }
+
+        [Resolved]
+        private SessionStatics statics { get; set; } = null!;
 
         private Sample? sampleConfirmSelection { get; set; }
 
@@ -99,7 +103,13 @@ namespace osu.Game.Screens.Select
         {
             base.OnEntering(e);
             putOnDifficultyMods();
+            allowScoreSubmissionNoticeAgain();
         }
+
+        /// <summary>
+        /// Song select is what has been come back to, so the next play may say again that its score will not be submitted.
+        /// </summary>
+        private void allowScoreSubmissionNoticeAgain() => statics.SetValue(Static.ScoreSubmissionFailureShown, false);
 
         public override IEnumerable<OsuMenuItem> GetDifficultyModActions(BeatmapInfo beatmap)
         {
@@ -262,6 +272,7 @@ namespace osu.Game.Screens.Select
 
             // the editor can have moved to another difficulty.
             putOnDifficultyMods();
+            allowScoreSubmissionNoticeAgain();
         }
 
         public override bool OnExiting(ScreenExitEvent e)
