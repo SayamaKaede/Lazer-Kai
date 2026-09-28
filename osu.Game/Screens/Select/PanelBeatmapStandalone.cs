@@ -83,6 +83,8 @@ namespace osu.Game.Screens.Select
 
         protected override void Export() => beatmaps.ExportBeatmapFile(beatmap, config.Get<BeatmapExportFormat>(OsuSetting.BeatmapExportFormat));
 
+        protected override bool Edit() => songSelect?.EditDifficulty(beatmap) == true;
+
 
         public PanelBeatmapStandalone()
         {

@@ -246,6 +246,15 @@ namespace osu.Game.Screens.Select
             SelectAndRun(beatmap, () => this.Push(new EditorLoader()));
         }
 
+        public override bool EditDifficulty(BeatmapInfo beatmap)
+        {
+            if (!this.IsCurrentScreen())
+                return false;
+
+            Edit(beatmap);
+            return true;
+        }
+
         public override void OnResuming(ScreenTransitionEvent e)
         {
             base.OnResuming(e);

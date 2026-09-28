@@ -69,6 +69,12 @@ namespace osu.Game.Screens.Select
         IEnumerable<OsuMenuItem> GetDifficultyModActions(BeatmapInfo beatmap);
 
         /// <summary>
+        /// Selects the difficulty and opens it in the editor, if this song select can.
+        /// </summary>
+        /// <returns>Whether it was opened.</returns>
+        bool EditDifficulty(BeatmapInfo beatmap);
+
+        /// <summary>
         /// Temporarily bypasses filters and shows all difficulties of the given beatmapset.
         /// </summary>
         /// <param name="beatmapSet">The beatmapset.</param>

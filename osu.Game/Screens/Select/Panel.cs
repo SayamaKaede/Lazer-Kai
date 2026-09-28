@@ -276,6 +276,16 @@ namespace osu.Game.Screens.Select
         {
         }
 
+        /// <summary>
+        /// Opens whatever this row stands for in the editor, if it stands for something that can be opened there.
+        /// </summary>
+        /// <remarks>
+        /// Reached by alt-clicking the row. Going through selecting it first and then the menu's Edit is
+        /// two steps every time a difficulty is opened to work on it.
+        /// </remarks>
+        /// <returns>Whether it was opened. If not, the click goes on to select the row as it always did.</returns>
+        protected virtual bool Edit() => false;
+
         protected override bool OnMouseDown(MouseDownEvent e)
         {
             // handled here rather than left to the context menu, which opens on the same button. Taking the event
@@ -294,6 +304,9 @@ namespace osu.Game.Screens.Select
             // Item may be set to null before actual `FreeAfterUse`.
             // This is because Carousel knows to do this ahead of time and let the drawable fade/animate away.
             // See https://github.com/ppy/osu/blob/033e13cb3b79e6195ddcd9f659b04095aa52fd2f/osu.Game/Graphics/Carousel/Carousel.cs#L1132-L1135.
+            if (e.AltPressed && item != null && Edit())
+                return true;
+
             if (item != null)
                 carousel?.Activate(item);
 

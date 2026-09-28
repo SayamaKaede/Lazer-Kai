@@ -1259,6 +1259,9 @@ namespace osu.Game.Screens.Select
         // only solo play puts them on: in a room, the mods are the room's.
         public virtual IEnumerable<OsuMenuItem> GetDifficultyModActions(BeatmapInfo beatmap) => Array.Empty<OsuMenuItem>();
 
+        // only solo song select has the editor to go to: in a room, the difficulty is being picked for the room.
+        public virtual bool EditDifficulty(BeatmapInfo beatmap) => false;
+
         protected IEnumerable<OsuMenuItem> CreateCollectionMenuActions(BeatmapInfo beatmap)
         {
             var collectionItems = realm.Realm.All<BeatmapCollection>()
