@@ -57,6 +57,23 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         private double lastReportTime = double.NegativeInfinity;
 
         /// <summary>
+        /// Forgets everything spun so far, as if nothing had been reported.
+        /// </summary>
+        /// <remarks>
+        /// For when the clock goes back to before the spinner began. Rewinding by <see cref="ReportDelta"/> follows the
+        /// spin back as it was undone, one report at a time; a clock which jumps back past the start reports nothing on
+        /// the way, and what was spun the last time would otherwise still be there the next time the clock came over it.
+        /// </remarks>
+        public void Reset()
+        {
+            totalAccumulatedRotation = 0;
+            totalAccumulatedRotationAtLastCompletion = 0;
+            currentSpinMaxRotation = 0;
+            completedSpins.Clear();
+            lastReportTime = double.NegativeInfinity;
+        }
+
+        /// <summary>
         /// Report a delta update based on user input.
         /// </summary>
         /// <param name="currentTime">The current time.</param>

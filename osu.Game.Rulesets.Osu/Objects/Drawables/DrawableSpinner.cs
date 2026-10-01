@@ -300,6 +300,11 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         {
             base.Update();
 
+            // the clock can come back to before the spinner to go over it again, as the editor's does whenever it is
+            // asked to, and nothing has been spun until it begins.
+            if (Time.Current < HitObject.StartTime && Result.HasSpinning)
+                Result.ResetSpinning();
+
             if (HandleUserInput)
                 RotationTracker.Tracking = RotationTracker.IsSpinnableTime && !Result.HasResult && correctButtonPressed();
 

@@ -37,6 +37,21 @@ namespace osu.Game.Rulesets.Osu.Judgements
         /// </summary>
         public double? TimeCompleted;
 
+        /// <summary>
+        /// Whether anything has been spun, or the spin started or completed.
+        /// </summary>
+        public bool HasSpinning => History.TotalRotation != 0 || TimeStarted != null || TimeCompleted != null;
+
+        /// <summary>
+        /// Forgets everything spun so far.
+        /// </summary>
+        public void ResetSpinning()
+        {
+            History.Reset();
+            TimeStarted = null;
+            TimeCompleted = null;
+        }
+
         public OsuSpinnerJudgementResult(HitObject hitObject, Judgement judgement)
             : base(hitObject, judgement)
         {

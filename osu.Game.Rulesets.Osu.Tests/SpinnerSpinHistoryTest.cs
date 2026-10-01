@@ -119,6 +119,22 @@ namespace osu.Game.Rulesets.Osu.Tests
         }
 
         [Test]
+        public void TestResetForgetsWhatWasSpun()
+        {
+            history.ReportDelta(1000, 740);
+            history.ReportDelta(2000, 360);
+
+            Assert.That(history.TotalRotation, Is.EqualTo(1100));
+
+            history.Reset();
+            Assert.That(history.TotalRotation, Is.Zero);
+
+            // a clock back at an earlier time is not rewinding what is no longer there: the spin begins again.
+            history.ReportDelta(500, 90);
+            Assert.That(history.TotalRotation, Is.EqualTo(90));
+        }
+
+        [Test]
         public void TestRewindOverDirectionChange()
         {
             history.ReportDelta(1000, 40); // max is now CW 40 degrees
