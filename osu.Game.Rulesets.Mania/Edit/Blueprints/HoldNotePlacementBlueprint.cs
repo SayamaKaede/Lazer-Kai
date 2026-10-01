@@ -38,7 +38,7 @@ namespace osu.Game.Rulesets.Mania.Edit.Blueprints
         {
             RelativeSizeAxes = Axes.Both;
 
-            AddRangeInternal(new Drawable[]
+            Children = new Drawable[]
             {
                 bodyPiece = new EditBodyPiece { Origin = Anchor.TopCentre },
                 headPiece = new Circle
@@ -53,7 +53,7 @@ namespace osu.Game.Rulesets.Mania.Edit.Blueprints
                     Colour = colours.Yellow,
                     Height = 10
                 },
-            });
+            };
         }
 
         protected override void Update()

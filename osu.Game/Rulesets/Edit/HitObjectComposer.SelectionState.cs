@@ -243,8 +243,7 @@ namespace osu.Game.Rulesets.Edit
             if (EditorBeatmap.SelectedHitObjects.Count > 0)
                 return;
 
-            if (SelectionNewComboState != null)
-                SelectionNewComboState.Value = TernaryState.False;
+            SelectionNewComboState?.Value = TernaryState.False;
             AutoSelectionBankEnabled.Value = true;
             selectionBankStates[HIT_BANK_AUTO].Value = TernaryState.True;
             // an addition bank cannot live on an object until an addition sample does, so the editor carries a

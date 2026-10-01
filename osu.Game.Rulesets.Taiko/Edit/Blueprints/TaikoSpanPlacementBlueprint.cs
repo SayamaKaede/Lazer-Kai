@@ -37,7 +37,7 @@ namespace osu.Game.Rulesets.Taiko.Edit.Blueprints
 
             RelativeSizeAxes = Axes.Both;
 
-            AddRangeInternal(new Drawable[]
+            Children = new Drawable[]
             {
                 headPiece = new HitPiece
                 {
@@ -51,7 +51,7 @@ namespace osu.Game.Rulesets.Taiko.Edit.Blueprints
                 {
                     Size = new Vector2(TaikoHitObject.DEFAULT_SIZE * TaikoPlayfield.BASE_HEIGHT)
                 }
-            });
+            };
         }
 
         private double originalStartTime;

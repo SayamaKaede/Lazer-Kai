@@ -163,12 +163,12 @@ namespace osu.Game.Screens.Edit
         /// Answers with the combo colours the dropped file carried, and nothing else.
         /// </summary>
         /// <remarks>
-        /// The colours are asked for through the skin, but a dropped file has no skin to speak of — its
-        /// `[Colours]` section is the whole of it. <see cref="SkinConfiguration.ComboColours"/> is deliberately
-        /// not used: it stands in the default set when a file has none, which would write colours into a
-        /// difficulty that never had any.
+        /// The encoder reads the colours off the skin through <see cref="IHasComboColours"/>, but a dropped file has
+        /// no skin to speak of — its `[Colours]` section is the whole of it. <see cref="SkinConfiguration.ComboColours"/>
+        /// is deliberately not passed on: it stands in the default set when a file has none, which would write colours
+        /// into a difficulty that never had any.
         /// </remarks>
-        private class DroppedFileSkin : ISkin
+        private class DroppedFileSkin : ISkin, IHasComboColours
         {
             private readonly SkinConfiguration configuration;
 
@@ -177,13 +177,11 @@ namespace osu.Game.Screens.Edit
                 this.configuration = configuration;
             }
 
-            public IBindable<TValue> GetConfig<TLookup, TValue>(TLookup lookup)
-            {
-                if (lookup is GlobalSkinColours.ComboColours && configuration.CustomComboColours.Count > 0)
-                    return SkinUtils.As<TValue>(new Bindable<IReadOnlyList<Color4>>(configuration.CustomComboColours));
+            public IReadOnlyList<Color4> ComboColours => configuration.CustomComboColours.Count > 0 ? configuration.CustomComboColours : null;
 
-                return null;
-            }
+            public List<Color4> CustomComboColours => configuration.CustomComboColours;
+
+            public IBindable<TValue> GetConfig<TLookup, TValue>(TLookup lookup) => null;
 
             public Drawable GetDrawableComponent(ISkinComponentLookup lookup) => null;
 

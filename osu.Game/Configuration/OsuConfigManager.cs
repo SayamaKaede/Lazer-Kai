@@ -386,6 +386,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.DashboardSortMode, UserSortCriteria.LastVisit);
             SetDefault(OsuSetting.DashboardDisplayStyle, OverlayPanelDisplayStyle.Card);
 
+            SetDefault(OsuSetting.PMFriendsOnly, false);
+
             // the look the game wears, which is nothing to do with the editor and so is kept away from it.
             SetDefault(OsuSetting.UiTheme, UiPaletteValues.Default.Theme);
 
@@ -686,6 +688,11 @@ namespace osu.Game.Configuration
 
         DashboardSortMode,
         DashboardDisplayStyle,
+
+        /// <summary>
+        /// Blocks private messages, multiplayer room invites, and duel requests from people not on the user's friends list.
+        /// </summary>
+        PMFriendsOnly,
 
         /// <summary>
         /// Mods to apply when entering gameplay test from the editor, serialised as a per-ruleset dictionary of <see cref="Online.API.APIMod"/>s.

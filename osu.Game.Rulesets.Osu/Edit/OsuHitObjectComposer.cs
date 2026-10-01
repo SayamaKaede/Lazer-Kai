@@ -41,13 +41,12 @@ using osu.Game.Screens.Edit.Compose.Components;
 using osuTK;
 using osuTK.Input;
 
-using osu.Framework.Input.Bindings;
 using osu.Game.Input.Bindings;
 
 namespace osu.Game.Rulesets.Osu.Edit
 {
     [Cached]
-    public partial class OsuHitObjectComposer : HitObjectComposer<OsuHitObject, OsuAction>, IKeyBindingHandler<GlobalAction>
+    public partial class OsuHitObjectComposer : HitObjectComposer<OsuHitObject, OsuAction>
     {
         /// <summary>
         /// Amount the slider velocity shortcuts move the velocity by, and the smaller step used when holding the fine modifier.
@@ -67,7 +66,7 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         public override Bindable<TernaryState> SelectionNewComboState { get; } = new Bindable<TernaryState>();
 
-        public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
+        public override bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
         {
             switch (e.Action)
             {
@@ -86,14 +85,9 @@ namespace osu.Game.Rulesets.Osu.Edit
                 case GlobalAction.EditorIncreaseSliderVelocityFine:
                     adjustSliderVelocity(velocity_adjust_step_fine);
                     return true;
-
-                default:
-                    return false;
             }
-        }
 
-        public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
-        {
+            return base.OnPressed(e);
         }
 
         /// <summary>

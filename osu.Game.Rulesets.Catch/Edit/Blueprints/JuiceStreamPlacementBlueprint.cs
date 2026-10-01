@@ -44,12 +44,12 @@ namespace osu.Game.Rulesets.Catch.Edit.Blueprints
 
         public JuiceStreamPlacementBlueprint()
         {
-            AddRangeInternal(new Drawable[]
+            Children = new Drawable[]
             {
                 scrollingPath = new ScrollingPath(),
                 nestedOutlineContainer = new NestedOutlineContainer(),
                 editablePath = new PlacementEditablePath(positionToTime)
-            });
+            };
         }
 
         protected override void Update()

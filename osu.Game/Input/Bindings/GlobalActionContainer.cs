@@ -151,6 +151,7 @@ namespace osu.Game.Input.Bindings
 
             new KeyBinding(InputKey.F10, GlobalAction.ToggleGameplayMouseButtons),
             new KeyBinding(InputKey.F12, GlobalAction.TakeScreenshot),
+            new KeyBinding(new[] { InputKey.Shift, InputKey.F12 }, GlobalAction.TakeAndUploadScreeshot),
         };
 
         private static IEnumerable<KeyBinding> overlayKeyBindings => new[]
@@ -745,6 +746,10 @@ namespace osu.Game.Input.Bindings
 
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.ToggleReplayMissTimeline))]
         ToggleReplayMissTimeline,
+
+        // upstream's, from after Lazer-Kai's own block had been appended: it goes after that block for the same reason.
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.TakeAndUploadScreenshot))]
+        TakeAndUploadScreeshot,
     }
 
     public enum GlobalActionCategory

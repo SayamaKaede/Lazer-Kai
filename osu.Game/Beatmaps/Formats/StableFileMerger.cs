@@ -1168,9 +1168,9 @@ namespace osu.Game.Beatmaps.Formats
 
             private bool uninherited => fields.Length <= 6 ? !fields[1].StartsWith('-') : fields[6].Trim() == @"1";
 
-            public int Volume => int.TryParse(field(5, @"100"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int volume) ? volume : 100;
+            public int Volume => int.TryParse(fieldAt(5, @"100"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int volume) ? volume : 100;
 
-            public int CustomIndex => int.TryParse(field(4, @"0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int index) ? index : 0;
+            public int CustomIndex => int.TryParse(fieldAt(4, @"0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int index) ? index : 0;
 
             /// <summary>
             /// The velocity a slider starting under this line gets, clamped the way the decoder clamps it.
@@ -1179,18 +1179,19 @@ namespace osu.Game.Beatmaps.Formats
             {
                 get
                 {
-                    if (uninherited || !double.TryParse(field(1, @"-100"), NumberStyles.Float, CultureInfo.InvariantCulture, out double beatLength) || beatLength >= 0)
+                    if (uninherited || !double.TryParse(fieldAt(1, @"-100"), NumberStyles.Float, CultureInfo.InvariantCulture, out double beatLength) || beatLength >= 0)
                         return 1;
 
                     return Math.Clamp(100 / -beatLength, 0.1, 10);
                 }
             }
 
-            private string field(int index, string fallback) => fields.Length > index ? fields[index].Trim() : fallback;
+            // not `field`: inside a property, which is where most of these are read, C# 14 takes that for the backing field.
+            private string fieldAt(int index, string fallback) => fields.Length > index ? fields[index].Trim() : fallback;
 
             public bool IsRed => uninherited;
 
-            private int effects => int.TryParse(field(7, @"0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) ? value : 0;
+            private int effects => int.TryParse(fieldAt(7, @"0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) ? value : 0;
 
             /// <summary>
             /// Every field, the ones an old file leaves out filled in with what stable reads them as.
@@ -1224,8 +1225,8 @@ namespace osu.Game.Beatmaps.Formats
             /// </summary>
             public TimingLine WithTiming(double beatLength, int meter, bool omitFirstBarLine)
             {
-                bool sameBeat = double.TryParse(field(1, @"0"), NumberStyles.Float, CultureInfo.InvariantCulture, out double written) && Math.Abs(written - beatLength) < 1e-9;
-                bool sameMeter = field(2, @"4") == meter.ToString(CultureInfo.InvariantCulture);
+                bool sameBeat = double.TryParse(fieldAt(1, @"0"), NumberStyles.Float, CultureInfo.InvariantCulture, out double written) && Math.Abs(written - beatLength) < 1e-9;
+                bool sameMeter = fieldAt(2, @"4") == meter.ToString(CultureInfo.InvariantCulture);
                 bool sameOmit = ((effects & 8) != 0) == omitFirstBarLine;
 
                 if (sameBeat && sameMeter && sameOmit)
@@ -1248,9 +1249,9 @@ namespace osu.Game.Beatmaps.Formats
             /// </summary>
             public static TimingLine Red(double time, double beatLength, int meter, bool omitFirstBarLine, TimingLine? soundsFrom)
             {
-                string sampleSet = soundsFrom?.field(3, @"0") ?? @"0";
-                string index = soundsFrom?.field(4, @"0") ?? @"0";
-                string volume = soundsFrom?.field(5, @"100") ?? @"100";
+                string sampleSet = soundsFrom?.fieldAt(3, @"0") ?? @"0";
+                string index = soundsFrom?.fieldAt(4, @"0") ?? @"0";
+                string volume = soundsFrom?.fieldAt(5, @"100") ?? @"100";
 
                 return new TimingLine(string.Join(',', time.ToString(CultureInfo.InvariantCulture), beatLength.ToString(@"R", CultureInfo.InvariantCulture),
                     meter.ToString(CultureInfo.InvariantCulture), sampleSet, index, volume, @"1", omitFirstBarLine ? @"8" : @"0"));
@@ -1315,16 +1316,16 @@ namespace osu.Game.Beatmaps.Formats
             /// </summary>
             public TimingLine Inherited(double time, double? sliderVelocity, int? volume, int? customIndex)
             {
-                string beatLength = uninherited ? @"-100" : field(1, @"-100");
+                string beatLength = uninherited ? @"-100" : fieldAt(1, @"-100");
 
                 if (sliderVelocity != null)
                     beatLength = (-100 / sliderVelocity.Value).ToString(@"R", CultureInfo.InvariantCulture);
 
-                string meter = field(2, @"4");
-                string sampleSet = field(3, @"0");
-                string index = customIndex?.ToString(CultureInfo.InvariantCulture) ?? field(4, @"0");
-                string volumeText = volume?.ToString(CultureInfo.InvariantCulture) ?? field(5, @"100");
-                string effects = field(7, @"0");
+                string meter = fieldAt(2, @"4");
+                string sampleSet = fieldAt(3, @"0");
+                string index = customIndex?.ToString(CultureInfo.InvariantCulture) ?? fieldAt(4, @"0");
+                string volumeText = volume?.ToString(CultureInfo.InvariantCulture) ?? fieldAt(5, @"100");
+                string effects = fieldAt(7, @"0");
 
                 return new TimingLine(string.Join(',', time.ToString(CultureInfo.InvariantCulture), beatLength, meter, sampleSet, index, volumeText, @"0", effects));
             }

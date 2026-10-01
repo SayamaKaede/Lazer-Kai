@@ -99,13 +99,13 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
-            AddRangeInternal(new Drawable[]
+            Children = new Drawable[]
             {
                 bodyPiece = new SliderBodyPiece(),
                 headCirclePiece = new HitCirclePiece(),
                 tailCirclePiece = new HitCirclePiece(),
                 controlPointVisualiser = new PathControlPointVisualiser<Slider>(HitObject, false)
-            });
+            };
 
             state = SliderPlacementState.Initial;
             limitedDistanceSnap = config.GetBindable<bool>(OsuSetting.EditorLimitedDistanceSnap);

@@ -47,8 +47,7 @@ namespace osu.Game.Screens.Edit.Setup
                 comboColours,
             };
 
-            if (setupScreen != null)
-                setupScreen.BackgroundChanged += refreshSuggestions;
+            setupScreen?.BackgroundChanged += refreshSuggestions;
 
             refreshSuggestions();
         }
