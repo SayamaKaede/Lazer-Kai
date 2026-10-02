@@ -655,6 +655,165 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("all of them", () => panel.SelectedLines.Count, () => Is.EqualTo(rows().Count()));
         }
 
+        /// <summary>
+        /// The selected lines go to the playhead as far apart as they are, and the originals stay. Copied as they are,
+        /// the second would land at 34088, a millisecond after the slider it is for, since the lines are whole
+        /// milliseconds and the beats are not: it goes onto its beat instead, and the slider gets its velocity.
+        /// </summary>
+        [Test]
+        public void TestPastingCopiesTheLinesFromThePlayhead()
+        {
+            addTwoLinesToCopy();
+            AddStep("go to 33593", () => clock.Seek(33593));
+            AddStep("paste", () => panel.PasteAtCurrentTime());
+
+            AddAssert("the copies are there", () => editorLines(), () => Does.Contain("33593,-100,4,2,0,65,0,0").And.Contain("34087,-50,4,2,0,65,0,0"));
+            AddAssert("not a millisecond late", () => editorLines(), () => Has.None.StartsWith("34088,"));
+            AddAssert("the originals stay", () => editorLines(), () => Does.Contain("21065,-100,4,2,0,65,0,0").And.Contain("21560,-50,4,2,0,65,0,0"));
+            AddAssert("the slider at the second is twice as fast", () => slider(34087).SliderVelocityMultiplier, () => Is.EqualTo(2).Within(0.001));
+            AddAssert("the copies are selected", () => selectedTimes(), () => Is.EqualTo(new[] { 33593d, 34087 }));
+        }
+
+        /// <summary>
+        /// A line on 1/12 goes onto 1/12 where it lands, with the editor on 1/4: copied as it is, it would be at 33731.
+        /// </summary>
+        [Test]
+        public void TestALineOnAFinerDivisorGoesOntoItsOwn()
+        {
+            openAt(21065);
+            AddStep("add a line", () => panel.AddLine());
+            setDivisor(12);
+            AddStep("go to 21203, on 1/12", () => clock.Seek(21203));
+            AddStep("add a line", () => panel.AddLine());
+            setDivisor(4);
+            AddStep("confirm", () => panel.Confirm());
+            clickRow(21065, Key.ControlLeft);
+
+            AddStep("go to 33593", () => clock.Seek(33593));
+            AddStep("paste", () => panel.PasteAtCurrentTime());
+
+            AddAssert("on its 1/12", () => editorLines(), () => Does.Contain("33730,-100,4,2,0,65,0,0"));
+            AddAssert("not a millisecond late", () => editorLines(), () => Has.None.StartsWith("33731,"));
+        }
+
+        /// <summary>
+        /// A line put 3 ms before a beat stays that far before it, rather than being taken onto it.
+        /// </summary>
+        [Test]
+        public void TestALineOffTheBeatOnPurposeKeepsItsDistance()
+        {
+            openAt(21065);
+            AddStep("add a line", () => panel.AddLine());
+            AddStep("confirm", () => panel.Confirm());
+            AddStep("a line in the file at 21557, 3 ms before the beat", () =>
+            {
+                var lines = Editor.ChildrenOfType<SavedTimingLines>().Single().Lines;
+                lines.Insert(lines.Count(l => l.Time <= 21557), SavedTimingLines.Parse("21557,-100,4,2,0,40,0,0")!.Value);
+            });
+            clickRow(21557, Key.ControlLeft);
+
+            AddStep("go to 33593", () => clock.Seek(33593));
+            AddStep("paste", () => panel.PasteAtCurrentTime());
+
+            AddAssert("3 ms before the beat there too", () => editorLines(), () => Does.Contain("34085,-100,4,2,0,40,0,0"));
+            AddAssert("not on it", () => editorLines(), () => Has.None.StartsWith("34087,"));
+        }
+
+        [Test]
+        public void TestPastingReplacesTheGreenLinesInItsWay()
+        {
+            addTwoLinesToCopy();
+            AddStep("go to 33840", () => clock.Seek(33840));
+            AddStep("add a line between where the copies go", () => panel.AddLine());
+            AddStep("go to 34252", () => clock.Seek(34252));
+            AddStep("add a line after them", () => panel.AddLine());
+            AddStep("confirm", () => panel.Confirm());
+            AddStep("click the line at 21065", () => rows().First(r => r.Line.Time == 21065).TriggerClick());
+            clickRow(21560, Key.ControlLeft);
+
+            AddStep("go to 33593", () => clock.Seek(33593));
+            AddStep("paste", () => panel.PasteAtCurrentTime());
+
+            AddAssert("the line between is gone", () => editorLines(), () => Has.None.StartsWith("33840,"));
+            AddAssert("the one after stays", () => editorLines(), () => Has.Some.StartsWith("34252,"));
+            AddAssert("so does the one before", () => editorLines(), () => Has.Some.StartsWith("22054,"));
+        }
+
+        /// <summary>
+        /// A red line is copied as a green line saying what it does, so the velocity goes back to 1 there as it does at
+        /// the original. No red line is put in: the beats are not counted anew there.
+        /// </summary>
+        [Test]
+        public void TestARedLineIsCopiedAsAGreenLine()
+        {
+            int red = 0;
+
+            openAt(1000);
+            AddAssert("the red line is selected", () => panel.Selected?.Uninherited, () => Is.True);
+            clickRow(20736, Key.ControlLeft);
+            AddStep("note how many red lines", () => red = savedLines.Count(l => l.Uninherited));
+
+            AddStep("go to 22384", () => clock.Seek(22384));
+            AddStep("paste", () => panel.PasteAtCurrentTime());
+
+            AddAssert("a green line for the red one", () => editorLines(), () => Does.Contain("22384,-100,4,2,0,60,0,0"));
+            AddAssert("and the green one", () => editorLines(), () => Does.Contain("42164,-100,4,2,0,65,0,0"));
+            AddAssert("no red line was put in", () => savedLines.Count(l => l.Uninherited), () => Is.EqualTo(red));
+        }
+
+        /// <summary>
+        /// With a green line beside the red one, the green line says what goes on from there, so it alone is copied.
+        /// </summary>
+        [Test]
+        public void TestARedLineWithAGreenLineBesideItIsCopiedAsTheGreenOne()
+        {
+            openAt(956);
+            AddStep("add a line beside the red one", () => panel.AddLine());
+            AddStep("make it 1.5x", () => panel.SliderVelocity.Value = 1.5);
+            AddStep("confirm", () => panel.Confirm());
+            clickRow(956, Key.ControlLeft);
+            AddAssert("both are selected", () => panel.SelectedLines.Select(l => l.Uninherited), () => Is.EquivalentTo(new[] { false, true }));
+
+            AddStep("go to 22384", () => clock.Seek(22384));
+            AddStep("paste", () => panel.PasteAtCurrentTime());
+
+            AddAssert("one line there, at 1.5x", () => savedLines.Where(l => l.Time == 22384).Select(l => l.SliderVelocity), () => Is.EqualTo(new[] { 1.5 }).Within(0.001));
+        }
+
+        [Test]
+        public void TestAConfirmedPasteIsOneStepToUndo()
+        {
+            addTwoLinesToCopy();
+            AddStep("go to 33593", () => clock.Seek(33593));
+            AddStep("paste", () => panel.PasteAtCurrentTime());
+            AddStep("confirm", () => panel.Confirm());
+
+            AddStep("undo once", () => ((EditorChangeHandler)Editor.Dependencies.Get(typeof(IEditorChangeHandler))).RestoreState(-1));
+
+            AddAssert("the copies are gone", () => editorLines(), () => Has.None.StartsWith("33593,").And.None.StartsWith("34087,"));
+            AddAssert("the originals stay", () => editorLines(), () => Does.Contain("21065,-100,4,2,0,65,0,0").And.Contain("21560,-50,4,2,0,65,0,0"));
+            AddAssert("the slider is as it was", () => slider(34087).SliderVelocityMultiplier, () => Is.EqualTo(1).Within(0.001));
+        }
+
+        /// <summary>
+        /// Lines at 21065 (on the beat) and 21560 (half a beat on, at 2x), confirmed, and both selected.
+        /// </summary>
+        private void addTwoLinesToCopy()
+        {
+            openAt(21065);
+            AddStep("add a line", () => panel.AddLine());
+            AddStep("go to 21560", () => clock.Seek(21560));
+            AddStep("add a line", () => panel.AddLine());
+            AddStep("double its velocity", () => panel.SliderVelocity.Value = 2);
+            AddStep("confirm", () => panel.Confirm());
+            clickRow(21065, Key.ControlLeft);
+            AddAssert("both are selected", () => selectedTimes().Order(), () => Is.EqualTo(new[] { 21065d, 21560 }));
+        }
+
+        private void setDivisor(int divisor) => AddStep($"divisor 1/{divisor}", () => ((BindableBeatDivisor)Editor.Dependencies.Get(typeof(BindableBeatDivisor))).SetArbitraryDivisor(divisor));
+
+        private IReadOnlyList<SavedTimingLine> savedLines => Editor.ChildrenOfType<SavedTimingLines>().Single().Lines;
+
         private IEnumerable<GreenLinePanel.LineRow> rows() => panel.ChildrenOfType<GreenLinePanel.LineRow>();
 
         private double[] selectedTimes() => panel.SelectedLines.Select(l => l.Time).ToArray();

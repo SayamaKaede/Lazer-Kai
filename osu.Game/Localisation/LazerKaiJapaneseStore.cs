@@ -256,6 +256,7 @@ namespace osu.Game.Localisation
             [$@"{green_line_prefix}:confirm"] = @"確定",
             [$@"{green_line_prefix}:time"] = @"時刻",
             [$@"{green_line_prefix}:use_current_time"] = @"現在の時刻を使う",
+            [$@"{green_line_prefix}:paste_at_current_time"] = @"選択した線を現在位置から貼り付け",
             [$@"{green_line_prefix}:use_green_line_velocity"] = @"緑線のSVを使う（{0}x）",
             [$@"{green_line_prefix}:using_green_line_velocity"] = @"緑線のSVを使用中",
             [$@"{green_line_prefix}:remove_unneeded"] = @"不要な緑線を削除",

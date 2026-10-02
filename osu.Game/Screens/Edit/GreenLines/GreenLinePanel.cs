@@ -145,6 +145,7 @@ namespace osu.Game.Screens.Edit.GreenLines
         private FillFlowContainer usedIndexButtons = null!;
         private RoundedButton removeButton = null!;
         private RoundedButton useCurrentTimeButton = null!;
+        private RoundedButton pasteButton = null!;
         private RoundedButton cancelButton = null!;
         private RoundedButton confirmButton = null!;
 
@@ -292,6 +293,14 @@ namespace osu.Game.Screens.Edit.GreenLines
                     Current = Filter,
                 },
                 createRows(),
+                // under the list, whose selection it copies.
+                pasteButton = new RoundedButton
+                {
+                    RelativeSizeAxes = Axes.X,
+                    Height = 30,
+                    Text = LazerKaiGreenLineStrings.PasteAtCurrentTime,
+                    Action = PasteAtCurrentTime,
+                },
             }
         };
 
@@ -569,6 +578,31 @@ namespace osu.Game.Screens.Edit.GreenLines
             select(moved);
         }
 
+        /// <summary>
+        /// Copies the selected lines to the playhead, on the beat divisor, as far apart as they are, and selects the copies,
+        /// so that the next time the part comes round they can be copied there in turn (see <see cref="GreenLineEditing.Paste"/>).
+        /// </summary>
+        public void PasteAtCurrentTime()
+        {
+            if (!Editable || selection.Count == 0)
+                return;
+
+            takeShownIfAny();
+
+            // stable's lines stand on whole milliseconds, and one just before the object is still read by it.
+            var copies = editing.Paste(selection, Math.Floor(editorBeatmap.SnapTime(editorClock.CurrentTime, null)));
+
+            if (copies.Count == 0)
+                return;
+
+            selection.Clear();
+            selection.AddRange(copies);
+            Selected = rangeStart = copies[0];
+
+            savedTimingLines.Selected.Value = Selected;
+            show();
+        }
+
         public void Confirm()
         {
             editing.Confirm();
@@ -827,6 +861,7 @@ namespace osu.Game.Screens.Edit.GreenLines
             removeButton.Enabled.Value = green || selection.Any(l => !l.Uninherited);
 
             useCurrentTimeButton.Enabled.Value = line != null && selection.Count <= 1;
+            pasteButton.Enabled.Value = selection.Count > 0;
 
             if (line == null)
                 lineText.Text = default;

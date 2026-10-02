@@ -50,6 +50,11 @@ namespace osu.Game.Localisation
         public static LocalisableString UseCurrentTime => new TranslatableString(getKey(@"use_current_time"), @"Use current time");
 
         /// <summary>
+        /// "Paste the selected lines from the current time"
+        /// </summary>
+        public static LocalisableString PasteAtCurrentTime => new TranslatableString(getKey(@"paste_at_current_time"), @"Paste the selected lines from the current time");
+
+        /// <summary>
         /// "Time"
         /// </summary>
         public static LocalisableString Time => new TranslatableString(getKey(@"time"), @"Time");

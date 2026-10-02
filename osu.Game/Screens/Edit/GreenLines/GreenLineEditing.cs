@@ -343,6 +343,94 @@ namespace osu.Game.Screens.Edit.GreenLines
         }
 
         /// <summary>
+        /// Puts in copies of lines from a time on, as far apart as they are, the first at that time: a part of the song
+        /// that comes again gets the lines of the first time round. The green lines that stood from the first copy to the
+        /// last go, so that what the copies say is not broken up by what was there.
+        /// </summary>
+        /// <remarks>
+        /// A red line is copied as a green line saying what it does, velocity 1, since the beats are not counted anew
+        /// where it lands. Where a green line beside it is copied as well, that one says what goes on from there, and
+        /// alone is copied.
+        ///
+        /// A copy of a line that stood on a beat divisor goes onto the same divisor where it lands, if that is within
+        /// <see cref="paste_snap_leniency"/>: lines are whole milliseconds and the divisors are not, so copies are
+        /// otherwise up to a millisecond off, and one after a slider leaves the slider out of its velocity. The divisor is
+        /// the line's own rather than the editor's, which would leave a line on 1/12 off with the editor on 1/4, and with
+        /// it on 1/16 take one on 1/12 onto 1/16 above 250 BPM, 1/48 of a beat apart. A line that stood off every divisor
+        /// was put there on purpose, and its copy keeps its distance (2026-10-03).
+        /// </remarks>
+        /// <returns>The copies, in the order they stand.</returns>
+        public IReadOnlyList<SavedTimingLine> Paste(IEnumerable<SavedTimingLine> toCopy, double time)
+        {
+            var copying = toCopy.ToHashSet();
+            var copied = lines.Lines.Where(copying.Contains).ToList();
+
+            if (copied.Count == 0)
+                return Array.Empty<SavedTimingLine>();
+
+            // from a whole millisecond, so that copies of whole milliseconds are whole too: a red line can stand between.
+            double offset = time - Math.Floor(copied[0].Time);
+
+            var copies = copied.Where(l => !l.Uninherited || !copied.Any(g => !g.Uninherited && g.Time == l.Time))
+                               .Select(l =>
+                               {
+                                   double at = landingTime(l.Time, l.Time + offset);
+                                   return l.Uninherited ? l.GreenLineAt(at) : l.WithTime(at);
+                               })
+                               // taken onto its divisor, a copy can land beside or past the next one.
+                               .OrderBy(l => l.Time)
+                               .ToList();
+
+            double first = copies[0].Time;
+            double last = copies[^1].Time;
+
+            change(() =>
+            {
+                var kept = lines.Lines.Where(l => l.Uninherited || l.Time < first || l.Time > last).ToList();
+
+                lines.Lines.Clear();
+                lines.Lines.AddRange(kept);
+
+                foreach (var copy in copies)
+                    lines.Lines.Insert(placeFor(copy), copy);
+            });
+
+            return copies;
+        }
+
+        /// <summary>
+        /// Where the copy of a line lands: on the divisor the line stood on, if that is near enough, else where it was put.
+        /// </summary>
+        private double landingTime(double from, double to)
+        {
+            var info = beatmap.ControlPointInfo;
+
+            foreach (int divisor in stable_divisors)
+            {
+                // lines are whole milliseconds, so one on a divisor stands up to a millisecond from it.
+                if (Math.Abs(from - info.GetClosestSnappedTime(from, divisor)) >= 1)
+                    continue;
+
+                double snapped = info.GetClosestSnappedTime(to, divisor);
+
+                // just before rather than after, as a line put in on the divisor is.
+                return Math.Abs(to - snapped) <= paste_snap_leniency ? Math.Floor(snapped) : to;
+            }
+
+            return to;
+        }
+
+        /// <summary>
+        /// How far from the divisor a copy can land and still be taken onto it.
+        /// </summary>
+        private const double paste_snap_leniency = 5;
+
+        /// <summary>
+        /// The divisors stable's editor offers, coarsest first: a line on 1/4 is on 1/16 as well, and is taken as on 1/4.
+        /// </summary>
+        private static readonly int[] stable_divisors = { 1, 2, 3, 4, 6, 8, 12, 16 };
+
+        /// <summary>
         /// Moves a red line, and the timing screen's timing point with it: the beats from there on are counted from its
         /// new time. The objects stay where they are, as in stable, and so does anything else at its old time.
         /// </summary>
