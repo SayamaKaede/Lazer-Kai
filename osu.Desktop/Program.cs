@@ -65,6 +65,13 @@ namespace osu.Desktop
             if (OperatingSystem.IsWindows())
                 NVAPI.ThreadedOptimisations = NvThreadControlSetting.OGL_THREAD_CONTROL_DEFAULT;
 
+            // the keyboard as it was before the framework turned raw input on (6ee1367, 2026-09-30): with it, the
+            // half-width/full-width key of a Japanese keyboard no longer holds quick retry, which is bound to that key's
+            // place by default (2026-10-03). Set before the window is made, and above the framework's own setting of it,
+            // which then only logs that it could not set it. Blocking the windows key reads it, and keeps to its hook.
+            if (OperatingSystem.IsWindows())
+                SDL3.SDL_SetHintWithPriority(SDL3.SDL_HINT_WINDOWS_RAW_KEYBOARD, "0"u8, SDL_HintPriority.SDL_HINT_OVERRIDE);
+
             // This is a safe default. Localised usages should specify lower values as required.
             AppDomain.CurrentDomain.SetData("REGEX_DEFAULT_MATCH_TIMEOUT", TimeSpan.FromMilliseconds(1000));
 
