@@ -22,7 +22,11 @@ namespace osu.Game.Tests.Input
                                   .SelectMany(GlobalActionContainer.GetGlobalActionsFor)
                                   .ToHashSet();
 
-            var missing = Enum.GetValues<GlobalAction>().Where(a => !categorised.Contains(a)).ToArray();
+            // left out on purpose, so that it never fires: upstream's upload to the official servers, which this build does
+            // not do (see TestSceneScreenshotsStayLocal).
+            var leftOut = new[] { GlobalAction.TakeAndUploadScreeshot };
+
+            var missing = Enum.GetValues<GlobalAction>().Where(a => !categorised.Contains(a) && !leftOut.Contains(a)).ToArray();
 
             Assert.That(missing, Is.Empty, $"not filed under any category: {string.Join(", ", missing)}");
         }

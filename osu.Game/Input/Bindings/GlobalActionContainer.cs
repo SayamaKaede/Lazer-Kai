@@ -151,7 +151,9 @@ namespace osu.Game.Input.Bindings
 
             new KeyBinding(InputKey.F10, GlobalAction.ToggleGameplayMouseButtons),
             new KeyBinding(InputKey.F12, GlobalAction.TakeScreenshot),
-            new KeyBinding(new[] { InputKey.Shift, InputKey.F12 }, GlobalAction.TakeAndUploadScreeshot),
+            // upstream uploads to the official servers here. A modified client keeps its screenshots on the player's
+            // machine, so the key stable players reach for takes an ordinary one (2026-10-03).
+            new KeyBinding(new[] { InputKey.Shift, InputKey.F12 }, GlobalAction.TakeScreenshot),
         };
 
         private static IEnumerable<KeyBinding> overlayKeyBindings => new[]

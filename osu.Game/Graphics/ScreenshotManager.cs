@@ -91,10 +91,8 @@ namespace osu.Game.Graphics
                     TakeScreenshotAsync().FireAndForget();
                     return true;
 
-                case GlobalAction.TakeAndUploadScreeshot:
-                    shutter?.Play();
-                    TakeAndUploadScreenshotAsync().FireAndForget();
-                    return true;
+                // not uploaded: see the binding in GlobalActionContainer. A build that had it left the binding stored,
+                // so the action can still arrive.
             }
 
             return false;
