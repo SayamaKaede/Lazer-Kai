@@ -633,20 +633,27 @@ namespace osu.Game.Beatmaps.Formats
                     if (!add(moments, want.Samples, have.Samples, start, start + LegacyBeatmapDecoder.CONTROL_POINT_LENIENCY + 1, null, null))
                         return null;
 
-                    if (wantRepeats.NodeSamples.Count != haveRepeats.NodeSamples.Count)
+                    // the nodes the slider has, and not the samples it holds: it keeps those of the nodes a reverse taken off
+                    // it had, and those are neither played nor written (2026-10-04, DOTNET-D).
+                    int nodes = wantRepeats.SpanCount() + 1;
+
+                    if (haveRepeats.NodeSamples.Count != nodes)
                     {
                         // with what was wanted, what came back, the line written and the timing lines in effect: a report
                         // of this was once all there was to go on, and it could not be made to happen again (2026-09-25).
                         Failure = FormattableString.Invariant(
-                            $@"the slider at {want.StartTime} reads back with {haveRepeats.NodeSamples.Count} nodes, not {wantRepeats.NodeSamples.Count}; wanted {describeSlider(want)}; read back {describeSlider(have)}; written ""{writtenLineAt(candidate, have.StartTime)}""; lines in effect ""{string.Join(@" / ", timingLinesAt(written, have.StartTime))}""");
+                            $@"the slider at {want.StartTime} reads back with {haveRepeats.NodeSamples.Count} nodes, not {nodes}; wanted {describeSlider(want)}; read back {describeSlider(have)}; written ""{writtenLineAt(candidate, have.StartTime)}""; lines in effect ""{string.Join(@" / ", timingLinesAt(written, have.StartTime))}""");
                         return null;
                     }
 
-                    for (int node = 0; node < wantRepeats.NodeSamples.Count; node++)
+                    for (int node = 0; node < nodes; node++)
                     {
                         double nodeTime = start + node * haveRepeats.Duration / haveRepeats.SpanCount();
 
-                        if (!add(moments, wantRepeats.NodeSamples[node], haveRepeats.NodeSamples[node], nodeTime, nodeTime + LegacyBeatmapDecoder.CONTROL_POINT_LENIENCY, null, null))
+                        // a node it holds no samples for plays the slider's own.
+                        var wantSamples = node < wantRepeats.NodeSamples.Count ? wantRepeats.NodeSamples[node] : want.Samples;
+
+                        if (!add(moments, wantSamples, haveRepeats.NodeSamples[node], nodeTime, nodeTime + LegacyBeatmapDecoder.CONTROL_POINT_LENIENCY, null, null))
                             return null;
                     }
                 }

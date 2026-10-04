@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.IO;
+using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using osu.Game.Beatmaps;
@@ -22,7 +23,8 @@ namespace osu.Game.Tests.Editing
     /// </summary>
     /// <remarks>
     /// Written after DOTNET-3 (2026-09-25), from the mapper's account of it. None of these made it happen, and neither
-    /// did the mapper doing the same again; they stay as what was tried. The report now says more when it happens.
+    /// did the mapper doing the same again; they stay as what was tried. The report now says more when it happens, and
+    /// the next one, DOTNET-D, said enough: a reverse taken off a slider (<see cref="TestARepeatTakenBackOffASliderStaysStable"/>).
     /// </remarks>
     [TestFixture]
     public class StableFileNewObjectsTest
@@ -180,6 +182,44 @@ namespace osu.Game.Tests.Editing
 
             foreach (var hitObject in beatmap.HitObjects)
                 hitObject.ApplyDefaults(beatmap.ControlPointInfo, beatmap.Difficulty);
+
+            byte[]? written = keeper.Write(beatmap, null, null, null, out _);
+
+            Assert.That(written, Is.Not.Null, "could not be kept in stable's format: " + keeper.LastFailure);
+        }
+
+        /// <summary>
+        /// Reported through the error reports on 2026-10-04 (DOTNET-D), by another mapper: a slider with no repeats
+        /// "reads back with 2 nodes, not 3", with its length, velocity and duration all as wanted. A slider keeps the
+        /// samples of nodes it no longer has, so one that had a repeat taken off, or was given one and had it taken back
+        /// as dragging its end on the timeline out and back does, holds three nodes' samples with two nodes. Another
+        /// object is moved as well: with no other edit, the slider given a repeat and had it taken back writes the same
+        /// as it was read, and the objects are not read back at all.
+        /// </summary>
+        [TestCase(0)]
+        [TestCase(1)]
+        public void TestARepeatTakenBackOffASliderStaysStable(int repeatsInFile)
+        {
+            int nodes = repeatsInFile + 2;
+            byte[] bytes = Encoding.UTF8.GetBytes(file_start + file_end
+                                                  + $"250,200,14966,2,0,P|290:160|340:180,{repeatsInFile + 1},126,{string.Join('|', Enumerable.Repeat("0", nodes))},"
+                                                  + $"{string.Join('|', Enumerable.Repeat("1:0", nodes))},1:0:0:0:\r\n");
+            var beatmap = open(bytes);
+            var keeper = new StableFileKeeper(bytes, beatmap, null, null);
+
+            var slider = (Slider)beatmap.HitObjects[1];
+
+            foreach (int repeats in new[] { 1, 0 })
+            {
+                slider.RepeatCount = repeats;
+                slider.ApplyDefaults(beatmap.ControlPointInfo, beatmap.Difficulty);
+            }
+
+            Assert.That(slider.NodeSamples, Has.Count.EqualTo(3), "the slider no longer keeps the samples of a node it lost");
+
+            var other = (Slider)beatmap.HitObjects[0];
+            other.Position += new Vector2(10, 0);
+            other.ApplyDefaults(beatmap.ControlPointInfo, beatmap.Difficulty);
 
             byte[]? written = keeper.Write(beatmap, null, null, null, out _);
 
