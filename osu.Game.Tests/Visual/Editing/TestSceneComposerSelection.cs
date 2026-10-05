@@ -5,12 +5,14 @@ using System;
 using System.Linq;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
+using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Edit;
@@ -38,6 +40,24 @@ namespace osu.Game.Tests.Visual.Editing
 
         private ContextMenuContainer contextMenuContainer
             => Editor.ChildrenOfType<ContextMenuContainer>().First();
+
+        [Resolved]
+        private OsuConfigManager config { get; set; } = null!;
+
+        [TearDownSteps]
+        public void PutTheSettingBack()
+        {
+            AddStep("back to the stock answer", () => config.SetValue(OsuSetting.EditorIntegerPositions, true));
+        }
+
+        /// <summary>
+        /// For the tests that measure the selection's centre to a fraction of a pixel in the middle of a stretch. With
+        /// whole coordinates on -- as they are for anyone who has not turned them off -- positions are cut on every step
+        /// of a stretch (2026-10-05), which moves the centre by under a pixel. That rounding is what
+        /// TestSceneIntegerPositions looks at; here it would only hide whether the stretch itself is right.
+        /// </summary>
+        private void letPositionsCarryAFraction() =>
+            AddStep("let positions carry a fraction", () => config.SetValue(OsuSetting.EditorIntegerPositions, false));
 
         private SelectionBoxScaleHandle getScaleHandle(Anchor anchor)
             => Editor.ChildrenOfType<SelectionBoxScaleHandle>().First(it => it.Anchor == anchor);
@@ -683,6 +703,8 @@ namespace osu.Game.Tests.Visual.Editing
 
             Vector2 getCenter() => (addedObjects[0].Position + addedObjects[1].Position) / 2;
 
+            letPositionsCarryAFraction();
+
             AddStep("add hitobjects", () =>
             {
                 EditorBeatmap.AddRange(addedObjects = new[]
@@ -725,6 +747,8 @@ namespace osu.Game.Tests.Visual.Editing
             float getAspectRatio() => (addedObjects[1].X - addedObjects[0].X) / (addedObjects[1].Y - addedObjects[0].Y);
 
             Vector2 getCenter() => (addedObjects[0].Position + addedObjects[1].Position) / 2;
+
+            letPositionsCarryAFraction();
 
             AddStep("add hitobjects", () =>
             {

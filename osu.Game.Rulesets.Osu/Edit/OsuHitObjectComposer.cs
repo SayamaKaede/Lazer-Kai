@@ -140,9 +140,28 @@ namespace osu.Game.Rulesets.Osu.Edit
         /// The game keeps a fraction of a pixel and writes it out, but stable and the website read a whole number,
         /// so a position half a pixel off lands somewhere else the moment the beatmap leaves the editor -- onto a
         /// stack it was never meant to be on, or off one it was.
+        ///
+        /// The fraction is cut off, as stable does, rather than rounded (2026-10-05). Two circles stacked on a slider's
+        /// end at (416.59, 195.76) were put on (417, 196) here, and stable, stacking them on it again, put them on
+        /// (416, 195): read from what stable showed for both before and after, with the stack's offset taken off.
         /// </remarks>
         public Vector2 RoundPositionIfAsked(Vector2 position) =>
-            integerPositions.Value ? new Vector2(MathF.Round(position.X), MathF.Round(position.Y)) : position;
+            integerPositions.Value ? new Vector2(cutFraction(position.X), cutFraction(position.Y)) : position;
+
+        /// <summary>
+        /// Whether positions are kept on whole coordinates, as <see cref="RoundPositionIfAsked"/> does.
+        /// </summary>
+        public bool KeepsWholeCoordinates => integerPositions.Value;
+
+        /// <summary>
+        /// A value a hair under a whole number is that number. What a snap decides goes through screen space and
+        /// back, and a slider's end on 192 comes out as 191.99998, which cutting the fraction off would put on 191.
+        /// </summary>
+        private static float cutFraction(float value)
+        {
+            float nearest = MathF.Round(value);
+            return MathF.Abs(value - nearest) < 0.001f ? nearest : MathF.Truncate(value);
+        }
 
         private readonly Bindable<bool> integerPositions = new Bindable<bool>();
 
@@ -485,17 +504,24 @@ namespace osu.Game.Rulesets.Osu.Edit
                 if (!snapPositions.Any())
                     continue;
 
-                var closestSnapPosition = snapPositions.MinBy(p => Vector2.Distance(p, screenSpacePosition));
+                // if the snap target is a stacked object, snap to its unstacked position rather than its stacked position.
+                // this is intended to make working with stacks easier (because thanks to this, you can drag an object to any
+                // of the items on the stack to add an object to it, rather than having to drag to the position of the *first* object on it at all times).
+                Vector2 unstacked(Vector2 p) => b.Item is OsuHitObject osuObject && osuObject.StackOffset != Vector2.Zero
+                    ? b.ToScreenSpace(b.ToLocalSpace(p) - osuObject.StackOffset)
+                    : p;
 
-                if (Vector2.Distance(closestSnapPosition, screenSpacePosition) < snapRadius)
+                // in reach of where it is drawn or of where it is stored (2026-10-05). An object that comes to be stacked
+                // on what is being brought to it is drawn a stack's worth away the moment it is; measured only from where
+                // it is drawn, it went out of reach, the snap let go, the stack came off and the snap took hold again, on
+                // every movement -- a slider held with its end beside a circle shook between the two places.
+                float reach(Vector2 p) => MathF.Min(Vector2.Distance(p, screenSpacePosition), Vector2.Distance(unstacked(p), screenSpacePosition));
+
+                var closestSnapPosition = snapPositions.MinBy(reach);
+
+                if (reach(closestSnapPosition) < snapRadius)
                 {
-                    var snapPosition = closestSnapPosition;
-
-                    // if the snap target is a stacked object, snap to its unstacked position rather than its stacked position.
-                    // this is intended to make working with stacks easier (because thanks to this, you can drag an object to any
-                    // of the items on the stack to add an object to it, rather than having to drag to the position of the *first* object on it at all times).
-                    if (b.Item is OsuHitObject osuObject && osuObject.StackOffset != Vector2.Zero)
-                        snapPosition = b.ToScreenSpace(b.ToLocalSpace(snapPosition) - osuObject.StackOffset);
+                    var snapPosition = unstacked(closestSnapPosition);
 
                     // only return distance portion, since time is not really valid
                     snapResult = new SnapResult(snapPosition, null, playfield);

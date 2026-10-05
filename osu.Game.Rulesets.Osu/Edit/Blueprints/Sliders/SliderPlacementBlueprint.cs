@@ -149,8 +149,6 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             if (composer?.TrySnapToPositionGrid(result?.ScreenSpacePosition ?? screenSpacePosition, result?.Time ?? fallbackTime) is SnapResult gridSnapResult)
                 result = gridSnapResult;
 
-            bool snapped = result != null;
-
             result ??= new SnapResult(screenSpacePosition, fallbackTime);
 
             base.UpdateTimeAndPosition(result.ScreenSpacePosition, result.Time ?? fallbackTime);
@@ -161,7 +159,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
                     BeginPlacement();
 
                     HitObject.SliderVelocityMultiplier = sliderVelocityToolbox?.SliderVelocity.Value ?? 1;
-                    HitObject.Position = roundIfAsked(ToLocalSpace(result.ScreenSpacePosition), snapped);
+                    HitObject.Position = roundIfAsked(ToLocalSpace(result.ScreenSpacePosition));
 
                     // Replacing the DifficultyControlPoint above doesn't trigger any kind of invalidation.
                     // Without re-applying defaults, velocity won't be updated.
@@ -447,16 +445,15 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
 
             result ??= composer?.TrySnapToPositionGrid(mousePosition);
 
-            return roundIfAsked(ToLocalSpace(result?.ScreenSpacePosition ?? inputManager.CurrentState.Mouse.Position), snapped: result != null) - HitObject.Position;
+            return roundIfAsked(ToLocalSpace(result?.ScreenSpacePosition ?? inputManager.CurrentState.Mouse.Position)) - HitObject.Position;
         }
 
         /// <summary>
         /// The point as the beatmap should hold it. Rounded before the head is taken off it, so that both the head
-        /// and the anchors past it land on whole coordinates -- unless a snap decided the point, which is already
-        /// the one asked for.
+        /// and the anchors past it land on whole coordinates, including where a snap decided the point (2026-10-05):
+        /// the point follows the cursor, not the slider, so rounding it cannot pull it off the snap and back.
         /// </summary>
-        private Vector2 roundIfAsked(Vector2 position, bool snapped) =>
-            snapped ? position : composer?.RoundPositionIfAsked(position) ?? position;
+        private Vector2 roundIfAsked(Vector2 position) => composer?.RoundPositionIfAsked(position) ?? position;
 
         /// <summary>
         /// Whether a new control point can be placed at the current mouse position.

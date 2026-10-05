@@ -37,8 +37,9 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddStep("get playfield", () => playfield = Editor.ChildrenOfType<OsuPlayfield>().First());
             AddStep("seek to first control point", () => EditorClock.Seek(Beatmap.Value.Beatmap.ControlPointInfo.TimingPoints.First().Time));
 
-            // whole coordinates are on, as they are for anyone who has not turned them off: what a snap lands on is
-            // left exactly where the snap put it, so everything below holds either way.
+            // whole coordinates are on, as they are for anyone who has not turned them off. What a snap lands on is
+            // rounded once a drag or a placement is over (2026-10-05), which moves it under a pixel; the tests below
+            // that compare positions exactly turn them off.
             AddStep("keep whole coordinates", () => config.SetValue(OsuSetting.EditorIntegerPositions, true));
         }
 
@@ -199,6 +200,214 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             }
 
             AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
+        }
+
+        /// <summary>
+        /// Two circles already stacked on each other, taken together onto a slider's end, land on the end the slider
+        /// stores, both of them, wherever the hand comes to rest over it (2026-10-05). The earlier of the two is drawn a
+        /// stack's worth up and to the left, and whichever of the two reached the end first used to decide where they
+        /// landed: one way they were on the end, the other a stack's worth off it, looking just as right.
+        /// </summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TestTwoStackedCirclesDraggedOntoASliderEndLandOnIt(bool endOnAFraction)
+        {
+            HitCircle first = null!;
+            HitCircle second = null!;
+            Slider slider = null!;
+            Vector2[] drawnWhileHeld = null!;
+
+            AddStep("disable distance snap", () => InputManager.Key(Key.Q));
+
+            AddStep("add a slider, and two stacked circles away from it", () =>
+            {
+                EditorBeatmap.Add(slider = new Slider
+                {
+                    StartTime = EditorClock.CurrentTime,
+                    Position = endOnAFraction ? new Vector2(156.59f, 191.76f) : new Vector2(156, 192),
+                    Path = new SliderPath(new[]
+                    {
+                        new PathControlPoint(new Vector2(0), PathType.LINEAR),
+                        new PathControlPoint(new Vector2(100, 0)),
+                    })
+                });
+
+                EditorBeatmap.Add(first = new HitCircle { StartTime = EditorClock.CurrentTime + 500, Position = new Vector2(256, 300) });
+                EditorBeatmap.Add(second = new HitCircle { StartTime = EditorClock.CurrentTime + 600, Position = new Vector2(256, 300) });
+
+                EditorBeatmap.SelectedHitObjects.Clear();
+                EditorBeatmap.SelectedHitObjects.AddRange(new[] { first, second });
+            });
+
+            AddUntilStep("the circles are stacked", () => first.StackHeight, () => Is.Not.EqualTo(0));
+
+            AddStep("take hold of the later circle", () =>
+            {
+                InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(new Vector2(256, 300)));
+                InputManager.PressButton(MouseButton.Left);
+            });
+
+            AddStep("start the drag", () => InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(new Vector2(256, 280))));
+
+            // the later circle aimed at the end, then the hand still moving a pixel at a time over it.
+            for (int i = 0; i <= 4; i++)
+            {
+                float x = 256 + i;
+
+                AddStep($"over the end ({i})", () => InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(new Vector2(x, 192))));
+                AddAssert($"the first is on the end ({i})", () => Vector2.Distance(slider.EndPosition, first.Position), () => Is.LessThan(3));
+                AddAssert($"the second is on the end ({i})", () => Vector2.Distance(slider.EndPosition, second.Position), () => Is.LessThan(3));
+            }
+
+            // where stable puts them when they are stacked on the end there: the fraction cut off, as measured on
+            // 2026-10-05 -- (416.59, 195.76) became (416, 195) -- so that stacking them again in stable moves nothing.
+            // Already while they are held, so that letting go does not move them (2026-10-05).
+            Vector2 whereStableHasThem = endOnAFraction ? new Vector2(256, 191) : new Vector2(256, 192);
+
+            AddUntilStep("both are stacked on the end while held", () => new[] { first.StackHeight, second.StackHeight }, () => Has.All.LessThan(0));
+            AddAssert("the first is where stable has it while held", () => first.Position, () => Is.EqualTo(whereStableHasThem));
+            AddAssert("the second is where stable has it while held", () => second.Position, () => Is.EqualTo(whereStableHasThem));
+            AddStep("note where they are drawn", () => drawnWhileHeld = new[] { first.StackedPosition, second.StackedPosition });
+
+            AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
+
+            AddUntilStep("both are stacked on the end", () => new[] { first.StackHeight, second.StackHeight }, () => Has.All.LessThan(0));
+            AddAssert("the first is drawn where it was held", () => first.StackedPosition, () => Is.EqualTo(drawnWhileHeld[0]));
+            AddAssert("the second is drawn where it was held", () => second.StackedPosition, () => Is.EqualTo(drawnWhileHeld[1]));
+            AddAssert("the first is where stable has it", () => first.Position, () => Is.EqualTo(whereStableHasThem));
+            AddAssert("the second is where stable has it", () => second.Position, () => Is.EqualTo(whereStableHasThem));
+        }
+
+        /// <summary>
+        /// A slider taken by its body until its end is on a circle, then the circle taken back onto the end, leaves
+        /// the circle where it was (2026-10-05). The slider's head used to be cut to a whole number on its own, which
+        /// put the end under a pixel short of the circle; the circle, snapped back onto it, was then cut a pixel over,
+        /// and going back and forth walked them a pixel at a time.
+        /// </summary>
+        [Test]
+        public void TestASliderEndBroughtOntoACircleKeepsItWhereItIs()
+        {
+            HitCircle circle = null!;
+            Slider slider = null!;
+
+            AddStep("disable distance snap", () => InputManager.Key(Key.Q));
+
+            AddStep("add a slider whose end is a fraction off its head, and a circle after it", () =>
+            {
+                EditorBeatmap.Add(slider = new Slider
+                {
+                    StartTime = EditorClock.CurrentTime,
+                    Position = new Vector2(100, 100),
+                    Path = new SliderPath(new[]
+                    {
+                        new PathControlPoint(new Vector2(0), PathType.LINEAR),
+                        new PathControlPoint(new Vector2(50.59f, 30.76f)),
+                    })
+                });
+
+                EditorBeatmap.Add(circle = new HitCircle { StartTime = EditorClock.CurrentTime + 500, Position = new Vector2(300, 250) });
+
+                EditorBeatmap.SelectedHitObjects.Clear();
+                EditorBeatmap.SelectedHitObjects.Add(slider);
+            });
+
+            // by the middle of its body: the head of a selected slider is an anchor, which would change its shape.
+            Vector2 middle = default;
+
+            AddStep("take hold of the slider's body", () =>
+            {
+                middle = slider.Path.PositionAt(0.5);
+                InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(slider.Position + middle));
+                InputManager.PressButton(MouseButton.Left);
+            });
+
+            AddStep("start the drag", () => InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(slider.Position + middle + new Vector2(20, 20))));
+            // near enough for the snap to take it the rest of the way, as a hand does; exactly on it is not a snap at all.
+            AddStep("bring its end near the circle", () => InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(new Vector2(301.3f, 249.2f) - slider.Path.PositionAt(1) + middle)));
+            AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
+
+            AddAssert("the end is on the circle", () => Vector2.Distance(slider.EndPosition, circle.Position), () => Is.LessThan(3));
+            AddAssert("the head is on a whole coordinate", () => slider.Position.X % 1 == 0 && slider.Position.Y % 1 == 0);
+
+            AddStep("select the circle", () =>
+            {
+                EditorBeatmap.SelectedHitObjects.Clear();
+                EditorBeatmap.SelectedHitObjects.Add(circle);
+            });
+
+            AddStep("take hold of the circle", () =>
+            {
+                InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(circle.StackedPosition));
+                InputManager.PressButton(MouseButton.Left);
+            });
+
+            AddStep("take it off the end", () => InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(circle.StackedPosition + new Vector2(30, 30))));
+            AddStep("bring it back onto the end", () => InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(slider.EndPosition)));
+            AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
+
+            AddAssert("the circle is where it was", () => circle.Position, () => Is.EqualTo(new Vector2(300, 250)));
+        }
+
+        /// <summary>
+        /// A slider held with its end a little up and to the left of a circle stays put, however the hand trembles
+        /// (2026-10-05). The snap takes the end onto the circle, which then stacks on it and is drawn a stack's worth
+        /// down and to the right; measured only from where it is drawn, the circle was out of reach, so the snap let
+        /// go, the stack came off, the circle was drawn back, and the snap took hold again -- on every movement, as
+        /// fast as the input came in.
+        /// </summary>
+        [Test]
+        public void TestASliderEndHeldNearACircleDoesNotShake()
+        {
+            HitCircle circle = null!;
+            Slider slider = null!;
+            Vector2 middle = default;
+            var heldAt = new System.Collections.Generic.List<Vector2>();
+
+            AddStep("disable distance snap", () => InputManager.Key(Key.Q));
+
+            AddStep("add a slider and a circle after it", () =>
+            {
+                EditorBeatmap.Add(slider = new Slider
+                {
+                    StartTime = EditorClock.CurrentTime,
+                    Position = new Vector2(100, 100),
+                    Path = new SliderPath(new[]
+                    {
+                        new PathControlPoint(new Vector2(0), PathType.LINEAR),
+                        new PathControlPoint(new Vector2(60, 40)),
+                    })
+                });
+
+                EditorBeatmap.Add(circle = new HitCircle { StartTime = EditorClock.CurrentTime + 500, Position = new Vector2(300, 250) });
+
+                EditorBeatmap.SelectedHitObjects.Clear();
+                EditorBeatmap.SelectedHitObjects.Add(slider);
+            });
+
+            AddStep("take hold of the slider's body", () =>
+            {
+                middle = slider.Path.PositionAt(0.5);
+                InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(slider.Position + middle));
+                InputManager.PressButton(MouseButton.Left);
+            });
+
+            AddStep("start the drag", () => InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(slider.Position + middle + new Vector2(20, 20))));
+
+            // the end aimed two and a half pixels up and to the left of the circle: in reach of where the circle is
+            // stored, out of reach of where it is drawn once it stacks.
+            for (int i = 0; i < 8; i++)
+            {
+                float tremble = i % 2 == 0 ? 0.1f : -0.1f;
+
+                AddStep($"hold the end near the circle ({i})", () =>
+                    InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(new Vector2(297.5f + tremble, 247.5f) - slider.Path.PositionAt(1) + middle)));
+                AddStep($"note where the slider is ({i})", () => heldAt.Add(slider.Position));
+            }
+
+            AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
+
+            AddAssert("the slider stayed in one place", () => heldAt.Distinct().Count(), () => Is.EqualTo(1));
+            AddAssert("its end is on the circle", () => Vector2.Distance(slider.EndPosition, circle.Position), () => Is.LessThan(3));
         }
 
         [TestCase(true)]

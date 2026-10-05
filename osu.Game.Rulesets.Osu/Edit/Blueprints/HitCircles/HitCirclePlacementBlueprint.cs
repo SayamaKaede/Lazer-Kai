@@ -71,15 +71,14 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.HitCircles
             if (composer?.TrySnapToPositionGrid(result?.ScreenSpacePosition ?? screenSpacePosition, result?.Time ?? fallbackTime) is SnapResult gridSnapResult)
                 result = gridSnapResult;
 
-            // a position a snap decided is already the one asked for, and is not rounded off it afterwards.
-            bool snapped = result != null;
-
             result ??= new SnapResult(screenSpacePosition, fallbackTime);
 
             base.UpdateTimeAndPosition(result.ScreenSpacePosition, result.Time ?? fallbackTime);
 
+            // what a snap decided too (2026-10-05): the circle follows the cursor rather than its own position, so
+            // rounding it cannot pull it off the snap and back, and it lands within a pixel of what it was put on.
             Vector2 position = ToLocalSpace(result.ScreenSpacePosition);
-            HitObject.Position = snapped ? position : composer?.RoundPositionIfAsked(position) ?? position;
+            HitObject.Position = composer?.RoundPositionIfAsked(position) ?? position;
             return result;
         }
     }

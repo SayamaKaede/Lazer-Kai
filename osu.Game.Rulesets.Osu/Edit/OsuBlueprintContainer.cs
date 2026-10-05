@@ -135,36 +135,12 @@ namespace osu.Game.Rulesets.Osu.Edit
             if (Composer.TrySnapToPositionGrid(result?.ScreenSpacePosition ?? movePosition, result?.Time) is SnapResult gridSnapResult)
                 result = gridSnapResult;
 
-            // a position a snap decided is already the one asked for, and is not rounded afterwards.
-            snapped = result != null;
             result ??= new SnapResult(movePosition, null);
 
             bool moved = SelectionHandler.HandleMovement(new MoveSelectionEvent<HitObject>(referenceBlueprint, result.ScreenSpacePosition - referenceBlueprint.ScreenSpaceSelectionPoint));
             if (moved)
                 ApplySnapResultTime(result, referenceBlueprint.Item.StartTime);
             return moved;
-        }
-
-        protected override void DragOperationCompleted()
-        {
-            base.DragOperationCompleted();
-
-            // while the change this drag made is still open, so undo takes it with the rest of the drag.
-            if (SelectionHandler is OsuSelectionHandler osuSelectionHandler)
-                osuSelectionHandler.RoundPositionsIfAsked();
-        }
-
-        /// <summary>
-        /// Tells the selection handler whether a snap decided where the movement it is about to handle lands, so that
-        /// a position asked for by a snap is not rounded off it afterwards.
-        /// </summary>
-        private bool snapped
-        {
-            set
-            {
-                if (SelectionHandler is OsuSelectionHandler osuSelectionHandler)
-                    osuSelectionHandler.MovementCameFromSnap = value;
-            }
         }
 
         /// <summary>
@@ -187,9 +163,19 @@ namespace osu.Game.Rulesets.Osu.Edit
 
                 if (positionalResult == null || positionalResult.ScreenSpacePosition == testPosition) continue;
 
-                var delta = positionalResult.ScreenSpacePosition - currentPositions[i];
+                // the snap gives where the target is stored rather than drawn, so what is brought onto it is where this
+                // object is stored too. Measured from where it is drawn, an object a stack's worth off its stored
+                // position -- the earlier of two stacked circles taken together -- lands that far off the target,
+                // looking just as right and too far to stack on it (2026-10-05).
+                var delta = positionalResult.ScreenSpacePosition - unstacked(blueprint, currentPositions[i]);
 
-                snapped = true;
+                // which point was brought onto the target, so that putting the selection on whole coordinates keeps
+                // that point on the target's whole number rather than the object's position.
+                if (SelectionHandler is OsuSelectionHandler osuSelectionHandler && blueprint.Item is OsuHitObject osuObject)
+                {
+                    Vector2 offset = blueprint.ToLocalSpace(currentPositions[i]) - blueprint.ToLocalSpace(blueprint.ScreenSpaceSelectionPoint);
+                    osuSelectionHandler.NextMovementSnappedPoint = new OsuSelectionHandler.SnappedPoint(osuObject, offset);
+                }
 
                 // attempt to move the objects, and apply any time based snapping if we can.
                 if (SelectionHandler.HandleMovement(new MoveSelectionEvent<HitObject>(blueprint, delta)))
@@ -201,5 +187,14 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             return false;
         }
+
+        /// <summary>
+        /// A point on a blueprint, moved from where the object is drawn to where it is stored, as the snap does with
+        /// the object it is aimed at.
+        /// </summary>
+        private static Vector2 unstacked(SelectionBlueprint<HitObject> blueprint, Vector2 screenSpacePosition) =>
+            blueprint.Item is OsuHitObject osuObject && osuObject.StackOffset != Vector2.Zero
+                ? blueprint.ToScreenSpace(blueprint.ToLocalSpace(screenSpacePosition) - osuObject.StackOffset)
+                : screenSpacePosition;
     }
 }

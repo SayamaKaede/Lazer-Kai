@@ -139,20 +139,20 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             if (!allowOutsidePlayArea.Value)
                 moveSelectionInBounds();
+
+            // on every step of the stretch, from where it was before it, so that what is shown while stretching is
+            // where it is left (2026-10-05). Rounding only once the stretch was settled moved everything as it was let go.
+            if (composer != null)
+            {
+                foreach (var (h, _) in objectsInScale)
+                    h.Position = composer.RoundPositionIfAsked(h.Position);
+            }
         }
 
         public override void Commit()
         {
             if (!OperationInProgress.Value)
                 throw new InvalidOperationException($"Cannot {nameof(Commit)} a rotate operation without calling {nameof(Begin)} first!");
-
-            // once the scale is settled rather than while it is being dragged, so the objects do not step between
-            // whole coordinates on the way.
-            if (composer != null && objectsInScale != null)
-            {
-                foreach (var (h, _) in objectsInScale)
-                    h.Position = composer.RoundPositionIfAsked(h.Position);
-            }
 
             changeHandler?.EndChange();
 

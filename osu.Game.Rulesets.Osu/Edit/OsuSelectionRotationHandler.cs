@@ -83,7 +83,10 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             foreach (var ho in objectsInRotation)
             {
+                // on every step of the turn, from where it was before it, so that what is shown while turning is where
+                // it is left (2026-10-05). Rounding only once the turn was settled moved everything as it was let go.
                 ho.Position = GeometryUtils.RotatePointAroundOrigin(originalPositions[ho], actualOrigin, rotation);
+                ho.Position = composer?.RoundPositionIfAsked(ho.Position) ?? ho.Position;
 
                 if (ho is IHasPath withPath)
                 {
@@ -99,14 +102,6 @@ namespace osu.Game.Rulesets.Osu.Edit
         {
             if (!OperationInProgress.Value)
                 throw new InvalidOperationException($"Cannot {nameof(Commit)} a rotate operation without calling {nameof(Begin)} first!");
-
-            // once the turn is settled rather than while it is being dragged, so the objects do not step between
-            // whole coordinates on the way round.
-            if (composer != null && objectsInRotation != null)
-            {
-                foreach (var h in objectsInRotation)
-                    h.Position = composer.RoundPositionIfAsked(h.Position);
-            }
 
             changeHandler?.EndChange();
 

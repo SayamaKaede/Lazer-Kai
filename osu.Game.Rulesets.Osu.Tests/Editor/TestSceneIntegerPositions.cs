@@ -93,7 +93,8 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         }
 
         /// <summary>
-        /// A turn puts objects anywhere, so the rounding is done once the turn is settled rather than on the way.
+        /// A turn puts objects anywhere, so they are rounded on every step of it, from where they were before it:
+        /// what is shown while turning is where it is left (2026-10-05).
         /// </summary>
         [TestCase(true)]
         [TestCase(false)]
@@ -117,10 +118,16 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
                 rotation.Begin();
                 rotation.Update(23);
-                rotation.Commit();
             });
 
+            AddAssert("the position is as the setting asks while turning", () => isWhole(circle.Position), () => Is.EqualTo(wholeCoordinates));
+
+            Vector2 whileTurning = default;
+            AddStep("note where it is", () => whileTurning = circle.Position);
+            AddStep("settle the turn", () => Editor.ChildrenOfType<OsuSelectionRotationHandler>().Single().Commit());
+
             AddAssert("the position is as the setting asks", () => isWhole(circle.Position), () => Is.EqualTo(wholeCoordinates));
+            AddAssert("settling it moved nothing", () => circle.Position, () => Is.EqualTo(whileTurning));
         }
 
         [TestCase(true)]
@@ -146,10 +153,16 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                 scaling.Begin();
                 // a factor that lands the far circle on a fraction: 100 + 200 * 1.007 is 301.4.
                 scaling.Update(new Vector2(1.007f), new Vector2(100, 100));
-                scaling.Commit();
             });
 
+            AddAssert("the position is as the setting asks while stretching", () => isWhole(EditorBeatmap.HitObjects.OfType<HitCircle>().Last().Position), () => Is.EqualTo(wholeCoordinates));
+
+            Vector2 whileStretching = default;
+            AddStep("note where it is", () => whileStretching = EditorBeatmap.HitObjects.OfType<HitCircle>().Last().Position);
+            AddStep("settle the stretch", () => Editor.ChildrenOfType<OsuSelectionScaleHandler>().Single().Commit());
+
             AddAssert("the position is as the setting asks", () => isWhole(EditorBeatmap.HitObjects.OfType<HitCircle>().Last().Position), () => Is.EqualTo(wholeCoordinates));
+            AddAssert("settling it moved nothing", () => EditorBeatmap.HitObjects.OfType<HitCircle>().Last().Position, () => Is.EqualTo(whileStretching));
         }
 
         [TestCase(true)]
@@ -180,7 +193,9 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         /// <summary>
         /// Holding a circle on a slider's end, with whole coordinates asked for. The end of a slider placed before
         /// the setting existed sits on a fraction of a pixel, so rounding pulls the circle off the spot the snap just
-        /// put it on, the snap takes hold again on the next frame, and the circle shakes between the two.
+        /// put it on, the snap takes hold again on the next frame, and the circle shakes between the two. Once let go
+        /// it is rounded all the same (2026-10-05): a fraction left there is written as a whole number anyway, and the
+        /// rounding moves it under a pixel, well inside the three that keep it stacked on the end.
         /// </summary>
         [Test]
         public void TestHoldingACircleOnAFractionalSliderEnd()
@@ -229,6 +244,48 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             }
 
             AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
+
+            AddAssert("it is on a whole coordinate", () => isWhole(circle.Position));
+            AddAssert("still on the end", () => Vector2.Distance(slider.EndPosition, circle.Position), () => Is.LessThan(1));
+            AddUntilStep("stacked on it", () => circle.StackHeight, () => Is.Not.EqualTo(0));
+        }
+
+        /// <summary>
+        /// A circle placed on a slider's end that sits on a fraction is put on a whole coordinate, as one placed
+        /// anywhere else is, and on the one stable puts it on: the fraction cut off rather than rounded (2026-10-05).
+        /// </summary>
+        [Test]
+        public void TestPlacingACircleOnAFractionalSliderEnd()
+        {
+            Slider slider = null!;
+
+            keepWholeCoordinates(true);
+
+            AddStep("disable distance snap", () => InputManager.Key(Key.Q));
+
+            AddStep("add a slider ending on a fraction", () =>
+            {
+                EditorBeatmap.Add(slider = new Slider
+                {
+                    StartTime = EditorClock.CurrentTime,
+                    Position = new Vector2(156.59f, 191.76f),
+                    Path = new SliderPath(new[]
+                    {
+                        new PathControlPoint(new Vector2(0), PathType.LINEAR),
+                        new PathControlPoint(new Vector2(100, 0)),
+                    })
+                });
+            });
+
+            AddStep("seek past it", () => EditorClock.Seek(slider.GetEndTime() + 250));
+            AddStep("enter circle placement", () => InputManager.Key(Key.Number2));
+            AddStep("aim at the end", () => InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(slider.EndPosition + new Vector2(1, 0))));
+            AddStep("place", () => InputManager.Click(MouseButton.Left));
+
+            AddAssert("a circle was placed", () => EditorBeatmap.HitObjects.OfType<HitCircle>().Count(), () => Is.EqualTo(1));
+            AddAssert("it is on a whole coordinate", () => isWhole(placedCircle().Position));
+            AddAssert("it is on the end", () => Vector2.Distance(slider.EndPosition, placedCircle().Position), () => Is.LessThan(1.5f));
+            AddAssert("it is where stable puts it", () => placedCircle().Position, () => Is.EqualTo(new Vector2(256, 191)));
         }
 
         private void keepWholeCoordinates(bool whole)

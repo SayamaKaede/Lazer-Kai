@@ -29,11 +29,19 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         private OsuConfigManager config { get; set; } = null!;
 
         [SetUpSteps]
-        public void KeepWholeCoordinates()
+        public void LetPositionsCarryAFraction()
         {
-            // a grid at an angle lands on fractions of a pixel, and what a snap lands on is left exactly there, so
-            // the grid holds with whole coordinates on -- which is how anyone who has not turned them off edits.
-            AddStep("keep whole coordinates", () => config.SetValue(OsuSetting.EditorIntegerPositions, true));
+            // these measure where a grid puts what is being placed, to a fraction of a pixel. A triangular, circular or
+            // turned grid lands on fractions, and with whole coordinates on -- as they are for anyone who has not turned
+            // them off -- what a snap decides is rounded too (2026-10-05), under a pixel off the grid. That rounding is
+            // what TestSceneIntegerPositions looks at; here it would only hide whether the grid itself is right.
+            AddStep("let positions carry a fraction", () => config.SetValue(OsuSetting.EditorIntegerPositions, false));
+        }
+
+        [TearDownSteps]
+        public void PutTheSettingBack()
+        {
+            AddStep("back to the stock answer", () => config.SetValue(OsuSetting.EditorIntegerPositions, true));
         }
 
         [Test]

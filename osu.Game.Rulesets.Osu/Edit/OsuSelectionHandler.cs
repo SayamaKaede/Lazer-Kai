@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
@@ -36,23 +37,25 @@ namespace osu.Game.Rulesets.Osu.Edit
         private OsuHitObjectComposer? composer { get; set; }
 
         /// <summary>
-        /// Whether a snap decided where the last movement landed, in which case the position is already the one
-        /// asked for and nothing is rounded off it.
-        /// </summary>
-        internal bool MovementCameFromSnap { get; set; }
-
-        /// <summary>
-        /// Puts the selection on whole coordinates once a drag is over, as one piece.
+        /// Puts the selection on whole coordinates, as one piece.
         /// </summary>
         /// <remarks>
-        /// Not while the drag is happening: a position rounded every frame is pulled off whatever the snap had just
-        /// put it on, the snap takes hold again on the next frame, and a circle held on a slider's end shakes
-        /// between the two. Rounding each object on its own also pulls a pattern apart, since each moves by its own
-        /// fraction, so the whole selection is moved by what the first object needs.
+        /// Rounding each object on its own would pull a pattern apart, since each moves by its own fraction, so the
+        /// whole selection is moved by what the first object needs.
+        ///
+        /// What a snap decided is rounded too (2026-10-05). The fraction left on a slider's end used to stay, and was
+        /// written as a whole number anyway, so stable read the stack from somewhere other than where it was made.
+        /// Rounding moves it under a pixel, well inside the three that keep it on the stack.
+        ///
+        /// It is done on every step of a drag (2026-10-05). Until then it waited for the drag to be over, so a circle
+        /// held on a slider's end moved when let go: on 2026-09-21 rounding every step had made one shake, held there.
+        /// That came from the dragged object being measured where it is drawn, a stack's worth off where it is
+        /// stored, which <see cref="OsuBlueprintContainer"/> no longer does; each step now lands on the same place.
         /// </remarks>
-        internal void RoundPositionsIfAsked()
+        /// <param name="snappedPoint">The point a snap brought onto what it was aimed at, if one did.</param>
+        internal void RoundPositionsIfAsked(SnappedPoint? snappedPoint = null)
         {
-            if (MovementCameFromSnap || composer == null)
+            if (composer?.KeepsWholeCoordinates != true)
                 return;
 
             var hitObjects = selectedMovableObjects;
@@ -60,7 +63,20 @@ namespace osu.Game.Rulesets.Osu.Edit
             if (hitObjects.Length == 0)
                 return;
 
-            Vector2 delta = composer.RoundPositionIfAsked(hitObjects[0].Position) - hitObjects[0].Position;
+            Vector2 delta;
+
+            if (snappedPoint is SnappedPoint snapped && hitObjects.Contains(snapped.HitObject))
+            {
+                // the point that was snapped, rather than the object's position, keeps the whole number it was put
+                // on (2026-10-05). A slider brought by its end onto a circle had its head cut on its own, which left
+                // the end under a pixel short of the circle; the circle, snapped back onto that end, was cut a pixel
+                // over, and going back and forth walked the two a pixel at a time. With the head placed so that the
+                // end cuts to the circle's own whole number, the circle snapped back onto it stays where it is.
+                Vector2 position = composer.RoundPositionIfAsked(snapped.HitObject.Position + snapped.Offset) - wholePartOf(snapped.Offset);
+                delta = position - snapped.HitObject.Position;
+            }
+            else
+                delta = composer.RoundPositionIfAsked(hitObjects[0].Position) - hitObjects[0].Position;
 
             if (delta == Vector2.Zero)
                 return;
@@ -70,6 +86,30 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             Scheduler.AddOnce(OsuBeatmapProcessor.ApplyStacking, EditorBeatmap);
         }
+
+        /// <summary>
+        /// The whole number below each coordinate, taking one a hair under a whole number as that number, as
+        /// <see cref="OsuHitObjectComposer.RoundPositionIfAsked"/> does.
+        /// </summary>
+        private static Vector2 wholePartOf(Vector2 offset)
+        {
+            static float wholePart(float value)
+            {
+                float nearest = MathF.Round(value);
+                return MathF.Abs(value - nearest) < 0.001f ? nearest : MathF.Floor(value);
+            }
+
+            return new Vector2(wholePart(offset.X), wholePart(offset.Y));
+        }
+
+        /// <summary>
+        /// The point a snap brought onto what it was aimed at in the movement about to be handled: the object it is
+        /// on, and how far it is from that object's position -- nothing for a circle, the path's end for a slider
+        /// brought by its end. Set by <see cref="OsuBlueprintContainer"/> and used up by that movement.
+        /// </summary>
+        internal SnappedPoint? NextMovementSnappedPoint { get; set; }
+
+        internal readonly record struct SnappedPoint(OsuHitObject HitObject, Vector2 Offset);
 
         private readonly Bindable<bool> allowOutsidePlayArea = new Bindable<bool>();
 
@@ -146,6 +186,9 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         public override bool HandleMovement(MoveSelectionEvent<HitObject> moveEvent)
         {
+            var snappedPoint = NextMovementSnappedPoint;
+            NextMovementSnappedPoint = null;
+
             var hitObjects = selectedMovableObjects;
 
             var localDelta = this.ScreenSpaceDeltaToParentSpace(moveEvent.ScreenSpaceDelta);
@@ -164,6 +207,10 @@ namespace osu.Game.Rulesets.Osu.Edit
                 return true;
 
             moveObjects(hitObjects, localDelta);
+
+            // on every step of a drag rather than once it is over, so that what is held is drawn where letting go
+            // leaves it (2026-10-05).
+            RoundPositionsIfAsked(snappedPoint);
 
             return true;
         }
@@ -201,9 +248,6 @@ namespace osu.Game.Rulesets.Osu.Edit
             // the selection rather than its blueprints, which only exist for what is on screen.
             if (SelectedItems.Count == 0)
                 return false;
-
-            // a nudge is the user's own whole number of pixels, with no snap involved.
-            MovementCameFromSnap = false;
 
             moveObjects(selectedMovableObjects, delta);
             RoundPositionsIfAsked();
