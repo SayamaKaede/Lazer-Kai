@@ -585,6 +585,9 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
                 }
             }
 
+            // on every step, so that the shape held is the shape the beatmap keeps (2026-10-05).
+            positionSnapProvider?.PutPathOnWholeCoordinatesIfAsked(hitObject);
+
             // Snap the path to the current beat divisor before checking length validity.
             snapLength();
 

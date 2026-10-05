@@ -58,6 +58,9 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
         [Resolved(CanBeNull = true)]
         private StreamConversionPanel? streamConversionPanel { get; set; }
 
+        [Resolved(CanBeNull = true)]
+        private OsuHitObjectComposer? composer { get; set; }
+
         private PathControlPoint? placementControlPoint;
 
         public override Quad SelectionQuad
@@ -467,6 +470,9 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             if (stableSliderControls.Value)
                 SliderAnchorInsertion.ShapeAroundInsertion(controlPoints, insertionIndex, anchorType.Value.ToPathType());
 
+            // where the click was rather than a fraction of a pixel off it (2026-10-05).
+            composer?.PutPathOnWholeCoordinatesIfAsked(HitObject);
+
             ControlPointVisualiser?.EnsureValidPathTypes();
 
             HitObject.SnapTo(distanceSnapProvider);
@@ -508,6 +514,8 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             foreach (var c in controlPoints)
                 c.Position -= first;
             HitObject.Position += first;
+
+            composer?.PutPathOnWholeCoordinatesIfAsked(HitObject);
         }
 
         private void splitControlPoints(List<PathControlPoint> controlPointsToSplitAt)
@@ -553,6 +561,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
                 // Increase the start time of the slider before adding the new slider so the new slider is immediately inserted at the correct index and internal state remains valid.
                 HitObject.StartTime += split_gap;
 
+                composer?.PutPathOnWholeCoordinatesIfAsked(newSlider);
                 editorBeatmap.Add(newSlider);
 
                 HitObject.NewCombo = false;
@@ -572,6 +581,8 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             foreach (var c in controlPoints)
                 c.Position -= first;
             HitObject.Position += first;
+
+            composer?.PutPathOnWholeCoordinatesIfAsked(HitObject);
         }
 
         /// <summary>

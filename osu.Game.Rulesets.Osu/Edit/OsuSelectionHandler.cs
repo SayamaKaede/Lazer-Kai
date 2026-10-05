@@ -280,6 +280,10 @@ namespace osu.Game.Rulesets.Osu.Edit
                 {
                     slider.Path.Reverse(out Vector2 offset);
                     slider.Position += offset;
+
+                    // the new head is where the path ended, which a slider cut short of its last anchor leaves on a
+                    // fraction (2026-10-05).
+                    composer?.PutPathOnWholeCoordinatesIfAsked(slider);
                 }
             }
 
@@ -349,7 +353,13 @@ namespace osu.Game.Rulesets.Osu.Edit
                 }
 
                 if (composer != null)
+                {
                     h.Position = composer.RoundPositionIfAsked(h.Position);
+
+                    // the anchors too: over a turned grid's axis they land on fractions.
+                    if (h is Slider wholeSlider)
+                        composer.PutPathOnWholeCoordinatesIfAsked(wholeSlider);
+                }
             }
 
             return didFlip;

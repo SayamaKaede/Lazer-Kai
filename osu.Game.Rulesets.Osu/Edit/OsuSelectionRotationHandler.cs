@@ -95,6 +95,10 @@ namespace osu.Game.Rulesets.Osu.Edit
                     for (int i = 0; i < withPath.Path.ControlPoints.Count; ++i)
                         withPath.Path.ControlPoints[i].Position = GeometryUtils.RotatePointAroundOrigin(originalPath[i], Vector2.Zero, rotation);
                 }
+
+                // the anchors too, from where they were before the turn, so the shape shown is the shape kept.
+                if (ho is Slider slider)
+                    composer?.PutPathOnWholeCoordinatesIfAsked(slider);
             }
         }
 

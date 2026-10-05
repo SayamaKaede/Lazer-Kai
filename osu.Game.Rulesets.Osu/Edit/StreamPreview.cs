@@ -6,6 +6,7 @@ using System.Linq;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Screens.Edit;
+using osuTK;
 
 namespace osu.Game.Rulesets.Osu.Edit
 {
@@ -57,19 +58,22 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             var added = new List<HitCircle>();
 
+            // on whole coordinates, as every other position is (2026-10-05): a stream laid along a curve lands on fractions.
+            Vector2 whole(Vector2 position) => (composer as OsuHitObjectComposer)?.RoundPositionIfAsked(position) ?? position;
+
             for (int i = 0; i < plan.Count; i++)
             {
                 if (i < circles.Count)
                 {
                     circles[i].StartTime = plan[i].Time;
-                    circles[i].Position = plan[i].Position;
+                    circles[i].Position = whole(plan[i].Position);
                     continue;
                 }
 
                 added.Add(new HitCircle
                 {
                     StartTime = plan[i].Time,
-                    Position = plan[i].Position,
+                    Position = whole(plan[i].Position),
                     Samples = source.HeadCircle.Samples.Select(s => s.With()).ToList(),
                 });
             }

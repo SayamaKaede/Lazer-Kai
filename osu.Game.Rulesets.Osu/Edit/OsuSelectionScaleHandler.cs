@@ -145,7 +145,13 @@ namespace osu.Game.Rulesets.Osu.Edit
             if (composer != null)
             {
                 foreach (var (h, _) in objectsInScale)
+                {
                     h.Position = composer.RoundPositionIfAsked(h.Position);
+
+                    // the anchors too, so the shape shown is the shape kept.
+                    if (h is Slider scaledSlider)
+                        composer.PutPathOnWholeCoordinatesIfAsked(scaledSlider);
+                }
             }
         }
 

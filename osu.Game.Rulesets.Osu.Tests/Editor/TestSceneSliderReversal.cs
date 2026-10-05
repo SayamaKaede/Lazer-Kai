@@ -3,9 +3,11 @@
 
 using System.Linq;
 using NUnit.Framework;
+using osu.Framework.Allocation;
 using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders;
@@ -21,6 +23,25 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
     public partial class TestSceneSliderReversal : TestSceneOsuEditor
     {
         protected override IBeatmap CreateBeatmap(RulesetInfo ruleset) => new TestBeatmap(Ruleset.Value, false);
+
+        [Resolved]
+        private OsuConfigManager config { get; set; } = null!;
+
+        [SetUpSteps]
+        public void LetPositionsCarryAFraction()
+        {
+            // these measure where a reversed slider's head and anchors are, to a fraction of a pixel. With whole
+            // coordinates on -- as they are for anyone who has not turned them off -- a reversed slider's head and
+            // anchors are cut to whole numbers (2026-10-05), as stable keeps them, which moves them under a pixel. That
+            // is what TestSceneIntegerPositions looks at; here it would only hide whether the reversal itself is right.
+            AddStep("let positions carry a fraction", () => config.SetValue(OsuSetting.EditorIntegerPositions, false));
+        }
+
+        [TearDownSteps]
+        public void PutTheSettingBack()
+        {
+            AddStep("back to the stock answer", () => config.SetValue(OsuSetting.EditorIntegerPositions, true));
+        }
 
         private readonly PathControlPoint[][] paths =
         {

@@ -257,7 +257,11 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             foreach ((double expectedTime, double expectedPathPosition) in expectedCircles)
             {
                 double time = slider.StartTime + slider.Duration * expectedTime;
-                Vector2 position = slider.Position + slider.Path.PositionAt(expectedPathPosition);
+
+                // on the path, and on whole coordinates as the beatmap keeps them (2026-10-05): a stream laid along a
+                // curve lands on fractions, which are cut the way every other position is.
+                Vector2 position = Editor.ChildrenOfType<OsuHitObjectComposer>().Single()
+                                         .RoundPositionIfAsked(slider.Position + slider.Path.PositionAt(expectedPathPosition));
 
                 if (!EditorBeatmap.HitObjects.OfType<HitCircle>().Any(h => matches(h, time, position, slider.NewCombo && expectedTime == 0)))
                     return false;

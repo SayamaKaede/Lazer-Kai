@@ -154,6 +154,37 @@ namespace osu.Game.Rulesets.Osu.Edit
         public bool KeepsWholeCoordinates => integerPositions.Value;
 
         /// <summary>
+        /// Puts a slider's head and every anchor of its path on whole coordinates, while the setting asks for that.
+        /// </summary>
+        /// <remarks>
+        /// The anchors, not only the head (2026-10-05). They are held here as offsets from the head and were left as
+        /// fractions, while stable holds each as whole coordinates of its own and the save writes them that way; the
+        /// path, its end and whatever was stacked on that end moved once the beatmap was opened again. un!stable
+        /// does the same ("slider paths use truncated coordinates"). Each anchor is cut where it is, so one that was
+        /// already whole stays exactly where it was whatever happens to the head.
+        /// </remarks>
+        public void PutPathOnWholeCoordinatesIfAsked<T>(T hitObject)
+            where T : OsuHitObject, IHasPath
+        {
+            if (!integerPositions.Value)
+                return;
+
+            Vector2 head = RoundPositionIfAsked(hitObject.Position);
+            var points = hitObject.Path.ControlPoints;
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                Vector2 whole = RoundPositionIfAsked(hitObject.Position + points[i].Position) - head;
+
+                if (points[i].Position != whole)
+                    points[i].Position = whole;
+            }
+
+            if (hitObject.Position != head)
+                hitObject.Position = head;
+        }
+
+        /// <summary>
         /// A value a hair under a whole number is that number. What a snap decides goes through screen space and
         /// back, and a slider's end on 192 comes out as 191.99998, which cutting the fraction off would put on 191.
         /// </summary>

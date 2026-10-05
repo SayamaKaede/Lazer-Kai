@@ -169,6 +169,10 @@ namespace osu.Game.Rulesets.Osu.Edit
                 float angle = float.DegreesToRadians(offsetAngleInput.Current.Value) + (i + 1) * (2 * float.Pi / pointInput.Current.Value);
                 var position = OsuPlayfield.BASE_SIZE / 2 + new Vector2(polygonRadius * float.Cos(angle), polygonRadius * float.Sin(angle));
 
+                // on whole coordinates as every other position is (2026-10-05): around a circle, it lands on fractions.
+                if (composer is OsuHitObjectComposer osuComposer)
+                    position = osuComposer.RoundPositionIfAsked(position);
+
                 HitCircle circle;
 
                 if (i < insertedCircles.Count)

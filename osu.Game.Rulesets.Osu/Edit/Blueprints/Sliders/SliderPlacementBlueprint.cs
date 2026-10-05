@@ -527,6 +527,9 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
                 if (isLastSegment)
                     HitObject.Path.ControlPoints.Add(new PathControlPoint(segment[^1]));
             }
+
+            // a drawn path lands its anchors anywhere; kept where the beatmap will keep them (2026-10-05).
+            composer?.PutPathOnWholeCoordinatesIfAsked(HitObject);
         }
 
         private Vector2[]? tryCircleArc(List<Vector2> segment)

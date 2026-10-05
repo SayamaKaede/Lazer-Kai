@@ -16,6 +16,7 @@ using osu.Framework.Input.Events;
 using osu.Game.Extensions;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Input.Bindings;
+using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Objects;
@@ -30,6 +31,12 @@ namespace osu.Game.Rulesets.Osu.Edit
     {
         [Resolved]
         private EditorBeatmap editorBeatmap { get; set; } = null!;
+
+        // as the composer is offered to what is shown in a popover: by its base type.
+        [Resolved(CanBeNull = true)]
+        private HitObjectComposer? hitObjectComposer { get; set; }
+
+        private OsuHitObjectComposer? composer => hitObjectComposer as OsuHitObjectComposer;
 
         private readonly Dictionary<HitObject, Vector2> initialPositions = new Dictionary<HitObject, Vector2>();
         private RectangleF initialSurroundingQuad;
@@ -181,16 +188,27 @@ namespace osu.Game.Rulesets.Osu.Edit
             if (!editorBeatmap.TransactionActive)
                 return;
 
+            var pos = new Vector2(xBindable.Value, yBindable.Value);
+
+            // on whole coordinates as one piece, by what the first object needs (2026-10-05). The numbers are whole,
+            // but a selection already a fraction off stayed that far off; cut one by one, it would come apart.
+            Vector2 shift = Vector2.Zero;
+
+            if (composer != null && initialPositions.Count > 0)
+            {
+                Vector2 firstPosition = relativeCheckbox.Current.Value ? initialPositions.First().Value + pos : pos;
+                shift = composer.RoundPositionIfAsked(firstPosition) - firstPosition;
+            }
+
             editorBeatmap.PerformOnSelection(ho =>
             {
                 if (!initialPositions.TryGetValue(ho, out var initialPosition))
                     return;
 
-                var pos = new Vector2(xBindable.Value, yBindable.Value);
                 if (relativeCheckbox.Current.Value)
-                    ((IHasPosition)ho).Position = initialPosition + pos;
+                    ((IHasPosition)ho).Position = initialPosition + pos + shift;
                 else
-                    ((IHasPosition)ho).Position = pos;
+                    ((IHasPosition)ho).Position = pos + shift;
             });
         }
 

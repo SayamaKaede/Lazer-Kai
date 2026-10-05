@@ -4,14 +4,18 @@
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Graphics;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
+using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Edit;
+using osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.UI;
+using osu.Game.Screens.Edit.Components;
 using osu.Game.Tests.Beatmaps;
 using osuTK;
 using osuTK.Input;
@@ -287,6 +291,193 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddAssert("it is on the end", () => Vector2.Distance(slider.EndPosition, placedCircle().Position), () => Is.LessThan(1.5f));
             AddAssert("it is where stable puts it", () => placedCircle().Position, () => Is.EqualTo(new Vector2(256, 191)));
         }
+
+        /// <summary>
+        /// A circle placed with distance snap is on a whole coordinate (2026-10-05). The snap puts it on a ring around
+        /// the circle before it, which is almost never a whole number, and what a snap decided used to be left as it was.
+        /// </summary>
+        [Test]
+        public void TestPlacingACircleWithDistanceSnap()
+        {
+            keepWholeCoordinates(true);
+
+            AddStep("add a circle to measure from", () => EditorBeatmap.Add(new HitCircle { StartTime = EditorClock.CurrentTime, Position = new Vector2(200, 200) }));
+            AddStep("move a beat on", () => EditorClock.SeekForward(true));
+            AddStep("pick the circle tool", () => InputManager.Key(Key.Number2));
+
+            // off at an angle, so the ring is crossed away from any whole number.
+            AddStep("aim off at an angle", () => InputManager.MoveMouseTo(playfield.ToScreenSpace(new Vector2(263.3f, 237.1f))));
+            AddStep("place it", () => InputManager.Click(MouseButton.Left));
+
+            AddAssert("a second circle was placed", () => EditorBeatmap.HitObjects.OfType<HitCircle>().Count(), () => Is.EqualTo(2));
+            AddAssert("it is on a whole coordinate", () => isWhole(placedCircle().Position));
+        }
+
+        /// <summary>
+        /// The circles a polygon is generated with are on whole coordinates (2026-10-05). They are worked out around a
+        /// circle, which lands on fractions.
+        /// </summary>
+        [Test]
+        public void TestGeneratingAPolygon()
+        {
+            keepWholeCoordinates(true);
+
+            AddStep("open the polygon generator", () => Editor.ChildrenOfType<EditorToolButton>().Single(b => b.Text.ToString() == "Polygon").TriggerClick());
+            AddUntilStep("circles were generated", () => EditorBeatmap.HitObjects.OfType<HitCircle>().Count(), () => Is.GreaterThan(0));
+            AddAssert("they are on whole coordinates", () => EditorBeatmap.HitObjects.OfType<HitCircle>().All(c => isWhole(c.Position)));
+            AddStep("close it", () => InputManager.Key(Key.Escape));
+        }
+
+        /// <summary>
+        /// Moving a selection by numbers puts it on whole coordinates, as one piece (2026-10-05). The numbers are whole,
+        /// but a selection that was already a fraction off stayed that far off.
+        /// </summary>
+        [Test]
+        public void TestMovingBySetNumbers()
+        {
+            HitCircle first = null!;
+            HitCircle second = null!;
+
+            keepWholeCoordinates(true);
+
+            AddStep("add two circles a fraction off", () =>
+            {
+                EditorBeatmap.Add(first = new HitCircle { StartTime = EditorClock.CurrentTime, Position = new Vector2(100.6f, 100.4f) });
+                EditorBeatmap.Add(second = new HitCircle { StartTime = EditorClock.CurrentTime + 500, Position = new Vector2(200.6f, 150.4f) });
+                EditorBeatmap.SelectedHitObjects.Clear();
+                EditorBeatmap.SelectedHitObjects.AddRange(new[] { first, second });
+            });
+
+            AddStep("open the move popover", () => Editor.ChildrenOfType<EditorToolButton>().Single(b => b.Text.ToString() == "Move").TriggerClick());
+            AddUntilStep("it is open", () => Editor.ChildrenOfType<PreciseMovementPopover>().Any());
+            AddStep("move by ten across", () => Editor.ChildrenOfType<PreciseMovementPopover>().Single().ChildrenOfType<FormSliderBar<float>>().First().Current.Value = 10);
+
+            AddAssert("the first is on a whole coordinate", () => isWhole(first.Position));
+            AddAssert("the second is on a whole coordinate", () => isWhole(second.Position));
+            AddAssert("they are as far apart as they were", () => second.Position - first.Position, () => Is.EqualTo(new Vector2(100, 50)));
+            AddStep("close it", () => InputManager.Key(Key.Escape));
+        }
+
+        /// <summary>
+        /// A slider's anchors are kept on whole coordinates too, as stable holds them (2026-10-05). They used to be
+        /// left as fractions, which the save wrote as whole numbers, so the path -- and the end of it, and whatever was
+        /// stacked on that end -- moved once the beatmap was opened again. Each way of changing them is tried in turn,
+        /// and the anchors are looked at as where they are, not as offsets from the head.
+        /// </summary>
+        [TestCase(AnchorChange.DraggingAnAnchor)]
+        [TestCase(AnchorChange.DraggingTheHead)]
+        [TestCase(AnchorChange.AddingAnAnchor)]
+        [TestCase(AnchorChange.Turning)]
+        [TestCase(AnchorChange.Stretching)]
+        [TestCase(AnchorChange.Flipping)]
+        [TestCase(AnchorChange.Reversing)]
+        public void TestASlidersAnchorsStayWhole(AnchorChange change)
+        {
+            Slider slider = null!;
+
+            keepWholeCoordinates(true);
+
+            // a case that failed with the button held leaves it held into the next.
+            AddStep("let go of everything", () => InputManager.ReleaseButton(MouseButton.Left));
+            AddStep("disable distance snap", () => InputManager.Key(Key.Q));
+
+            AddStep("add a slider", () =>
+            {
+                EditorBeatmap.Add(slider = new Slider
+                {
+                    StartTime = EditorClock.CurrentTime,
+                    Position = new Vector2(150, 150),
+                    Path = new SliderPath(new[]
+                    {
+                        new PathControlPoint(new Vector2(0), PathType.BEZIER),
+                        new PathControlPoint(new Vector2(60, -40)),
+                        new PathControlPoint(new Vector2(120, 10)),
+                    })
+                });
+
+                EditorBeatmap.SelectedHitObjects.Clear();
+                EditorBeatmap.SelectedHitObjects.Add(slider);
+            });
+
+            switch (change)
+            {
+                case AnchorChange.DraggingAnAnchor:
+                case AnchorChange.DraggingTheHead:
+                    int index = change == AnchorChange.DraggingTheHead ? 0 : 1;
+
+                    AddStep("take hold of the anchor", () =>
+                    {
+                        InputManager.MoveMouseTo(Editor.ChildrenOfType<PathControlPointPiece<Slider>>().ElementAt(index));
+                        InputManager.PressButton(MouseButton.Left);
+                    });
+                    AddStep("move it a fraction of a pixel's worth off", () =>
+                        InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(slider.Position + slider.Path.ControlPoints[index].Position + new Vector2(10.4f, 7.3f))));
+                    AddAssert("the anchors are whole while held", () => anchorsAreWhole(slider));
+                    AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
+                    AddAssert("the anchor moved", () => slider.Position + slider.Path.ControlPoints[index].Position,
+                        () => Is.Not.EqualTo(new Vector2(150, 150) + (index == 0 ? Vector2.Zero : new Vector2(60, -40))));
+                    break;
+
+                case AnchorChange.AddingAnAnchor:
+                    AddStep("ctrl-click on the body", () =>
+                    {
+                        InputManager.MoveMouseTo(playfield.GamefieldToScreenSpace(slider.Position + slider.Path.PositionAt(0.3) + new Vector2(0.4f, 0.3f)));
+                        InputManager.PressKey(Key.ControlLeft);
+                        InputManager.Click(MouseButton.Left);
+                        InputManager.ReleaseKey(Key.ControlLeft);
+                    });
+                    AddAssert("an anchor was added", () => slider.Path.ControlPoints.Count, () => Is.EqualTo(4));
+                    break;
+
+                case AnchorChange.Turning:
+                    AddStep("turn it", () =>
+                    {
+                        var rotation = Editor.ChildrenOfType<OsuSelectionRotationHandler>().Single();
+                        rotation.Begin();
+                        rotation.Update(23);
+                    });
+                    AddAssert("the anchors are whole while turning", () => anchorsAreWhole(slider));
+                    AddStep("settle it", () => Editor.ChildrenOfType<OsuSelectionRotationHandler>().Single().Commit());
+                    break;
+
+                case AnchorChange.Stretching:
+                    AddStep("stretch it", () =>
+                    {
+                        var scaling = Editor.ChildrenOfType<OsuSelectionScaleHandler>().Single();
+                        scaling.Begin();
+                        scaling.Update(new Vector2(1.07f), new Vector2(150, 150));
+                    });
+                    AddAssert("the anchors are whole while stretching", () => anchorsAreWhole(slider));
+                    AddStep("settle it", () => Editor.ChildrenOfType<OsuSelectionScaleHandler>().Single().Commit());
+                    break;
+
+                case AnchorChange.Flipping:
+                    // across the selection, whose middle is a fraction off a whole number for this path.
+                    AddStep("flip it", () => Editor.ChildrenOfType<OsuSelectionHandler>().Single().HandleFlip(Direction.Vertical, false));
+                    break;
+
+                case AnchorChange.Reversing:
+                    AddStep("shorten it to a fraction of its path", () => slider.Path.ExpectedDistance.Value = slider.Path.CalculatedDistance - 7.3);
+                    AddStep("reverse it", () => Editor.ChildrenOfType<OsuSelectionHandler>().Single().HandleReverse());
+                    break;
+            }
+
+            AddAssert("the anchors are whole", () => anchorsAreWhole(slider));
+        }
+
+        public enum AnchorChange
+        {
+            DraggingAnAnchor,
+            DraggingTheHead,
+            AddingAnAnchor,
+            Turning,
+            Stretching,
+            Flipping,
+            Reversing,
+        }
+
+        private static bool anchorsAreWhole(Slider slider) =>
+            isWhole(slider.Position) && slider.Path.ControlPoints.All(point => isWhole(slider.Position + point.Position));
 
         private void keepWholeCoordinates(bool whole)
         {
