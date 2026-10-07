@@ -63,7 +63,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:addition_bank_soft"] = @"Soft",
             [$@"{editor_prefix}:addition_bank_drum"] = @"Drum",
             [$@"{editor_prefix}:stable_slider_controls"] = @"スライダーの操作をStableに近づける",
-            [$@"{editor_prefix}:stable_slider_controls_description"] = @"Ctrl+クリックで追加したアンカーは、区間を分けずにその区間の形を決めます。既存のアンカーへのCtrl+クリックは、その点より後ろではなく手前の形を変えます",
+            [$@"{editor_prefix}:stable_slider_controls_description"] = @"Ctrl+クリックで追加したアンカーは、区間を分けずにその区間の形を決めます（直線の区間では、追加した1本だけ）。既存のアンカーをCtrl+クリックすると、曲線の途中の点は角になります。続けてCtrl+クリックすると、前後の角までの形を順に切り替えます",
             [$@"{editor_prefix}:anchor_add_type"] = @"追加するアンカーの種類",
             [$@"{editor_prefix}:anchor_add_type_description"] = @"編集中は Ctrl+1〜4 で切り替えできます。通常はパーフェクトカーブ推奨",
             [$@"{editor_prefix}:timeline_inspector"] = @"拍設定の上部にインスペクターを表示",

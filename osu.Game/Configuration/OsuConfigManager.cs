@@ -859,8 +859,8 @@ namespace osu.Game.Configuration
 
         /// <summary>
         /// Whether sliders are shaped the way stable shapes them: an anchor added with ctrl+click gives its part of
-        /// the path a shape without splitting it, and ctrl+clicking an anchor changes the shape leading up to it.
-        /// While on, ctrl no longer adds control points to the selection.
+        /// the path a shape without splitting it, and ctrl+clicking an anchor makes a corner of it or changes the shape
+        /// between the corners either side of it. While on, ctrl no longer adds control points to the selection.
         /// </summary>
         EditorStableSliderControls,
 

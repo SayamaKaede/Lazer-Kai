@@ -383,78 +383,42 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
         }
 
         /// <summary>
-        /// Advances a single control point to the next curve type in <see cref="path_types"/>, wrapping around.
+        /// Changes the shape of the path around a single control point, as a ctrl+click on it does.
         /// </summary>
         /// <remarks>
-        /// Used by the ctrl+click shortcut, which replaces ctrl's usual add-to-selection role on control points.
+        /// Used by the ctrl+click shortcut, which replaces ctrl's usual add-to-selection role on control points. What
+        /// it does is <see cref="SliderAnchorCycling"/>'s.
         /// </remarks>
         public void CycleCurveType(PathControlPointPiece<T> piece)
         {
-            var target = segmentArrivingAt(piece.ControlPoint);
+            var point = piece.ControlPoint;
+            var points = hitObject.Path.ControlPoints;
 
-            int index = Array.IndexOf(path_types, target.Type);
-            bool isFirstPoint = ReferenceEquals(target, controlPoints[0]);
-
-            PathType? next = null;
-
-            // walks rather than steps once, so an invalid choice (inherit on the first point) is skipped over
-            // instead of leaving the type unchanged.
-            for (int i = 1; i <= path_types.Length; i++)
-            {
-                var candidate = path_types[(index + i + path_types.Length) % path_types.Length];
-
-                // the first control point can never be inherit type.
-                if (isFirstPoint && candidate == null)
-                    continue;
-
-                next = candidate;
-                break;
-            }
+            bool carryOn = ReferenceEquals(point, lastCycledPoint) && points.Select(p => p.Type).SequenceEqual(typesAfterLastCycle);
 
             changeHandler?.BeginChange();
 
             double originalDistance = hitObject.Path.Distance;
 
-            if (next?.Type == SplineType.PerfectCurve)
-            {
-                // an arc is three points. Where the segment holds more, the rest of it carries on as it was, the same
-                // way the curve type menu splits it.
-                var pointsInSegment = hitObject.Path.PointsInSegment(target);
-
-                if (pointsInSegment.Count > 3)
-                    pointsInSegment[2].Type = pointsInSegment[0].Type;
-            }
-
-            target.Type = next;
+            SliderAnchorCycling.Cycle(points, points.IndexOf(point), carryOn);
 
             EnsureValidPathTypes();
             hitObject.Path.ExpectedDistance.Value = originalDistance;
 
             changeHandler?.EndChange();
+
+            lastCycledPoint = point;
+            typesAfterLastCycle = points.Select(p => p.Type).ToArray();
         }
 
         /// <summary>
-        /// The control point that starts the segment the path is travelling in when it arrives at <paramref name="point"/>.
+        /// The control point last ctrl+clicked, and the path's types as that click left them: clicking it again with
+        /// nothing changed since goes on through the shapes, where a first click on an anchor in a curve makes a corner
+        /// of it.
         /// </summary>
-        /// <remarks>
-        /// What a click on an anchor is about is the shape leading up to it, which is the segment it arrives in —
-        /// stable's feel, and the reason this is not the anchor's own type: an anchor's type is the segment that
-        /// leaves it, so changing it moves the path after the anchor rather than before it.
-        ///
-        /// The first anchor has nothing before it, so it answers for the segment it starts.
-        /// </remarks>
-        private PathControlPoint segmentArrivingAt(PathControlPoint point)
-        {
-            int index = hitObject.Path.ControlPoints.IndexOf(point);
+        private PathControlPoint lastCycledPoint;
 
-            for (int i = index - 1; i > 0; i--)
-            {
-                if (controlPoints[i].Type != null)
-                    return controlPoints[i];
-            }
-
-            return controlPoints[0];
-        }
+        private PathType?[] typesAfterLastCycle = Array.Empty<PathType?>();
 
         /// <summary>
         /// Attempts to set all selected control point pieces to the given path type.

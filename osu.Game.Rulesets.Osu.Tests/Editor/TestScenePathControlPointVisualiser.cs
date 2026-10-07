@@ -295,6 +295,136 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             assertControlPointPathType(0, PathType.BSpline(4));
         }
 
+        /// <summary>
+        /// The user's case (2026-10-07): a straight line to a corner, then an arc through an anchor to the end. A
+        /// ctrl+click on the anchor in the arc makes a corner of it, as stable does, rather than moving the arc on to the
+        /// next shape.
+        /// </summary>
+        [Test]
+        public void TestCtrlClickMakesACornerOfAnAnchorInACurve()
+        {
+            createStableShapedVisualiser();
+
+            addControlPointStep(new Vector2(200), PathType.LINEAR);
+            addControlPointStep(new Vector2(150, 300), PathType.PERFECT_CURVE);
+            addControlPointStep(new Vector2(300, 350));
+            addControlPointStep(new Vector2(350, 500));
+
+            moveMouseToControlPoint(2);
+            ctrlClick();
+
+            assertTypes(PathType.LINEAR, PathType.LINEAR, PathType.LINEAR, null);
+        }
+
+        /// <summary>
+        /// A straight path with two corners, the anchor after the first of them clicked: the line up to the first corner
+        /// is not part of what was clicked, and stays a line. It used to be the whole path that changed, as all of it was
+        /// one straight segment (2026-10-07).
+        /// </summary>
+        [Test]
+        public void TestCtrlClickOnACornerLeavesTheLinesBeforeIt()
+        {
+            createStableShapedVisualiser();
+
+            addControlPointStep(new Vector2(200), PathType.LINEAR);
+            addControlPointStep(new Vector2(150, 300));
+            addControlPointStep(new Vector2(300, 350));
+            addControlPointStep(new Vector2(350, 500));
+
+            moveMouseToControlPoint(2);
+            ctrlClick();
+
+            assertTypes(PathType.LINEAR, PathType.BEZIER, null, null);
+        }
+
+        /// <summary>
+        /// Clicking the same anchor again goes on through the shapes between the corners either side of it, and comes
+        /// back round to the corner.
+        /// </summary>
+        [Test]
+        public void TestCtrlClickingTheSameAnchorGoesThroughTheShapes()
+        {
+            createStableShapedVisualiser();
+
+            addControlPointStep(new Vector2(200), PathType.LINEAR);
+            addControlPointStep(new Vector2(150, 300), PathType.PERFECT_CURVE);
+            addControlPointStep(new Vector2(300, 350));
+            addControlPointStep(new Vector2(350, 500));
+
+            moveMouseToControlPoint(2);
+
+            ctrlClick();
+            assertTypes(PathType.LINEAR, PathType.LINEAR, PathType.LINEAR, null);
+
+            ctrlClick();
+            assertTypes(PathType.LINEAR, PathType.BEZIER, null, null);
+
+            ctrlClick();
+            assertTypes(PathType.LINEAR, PathType.PERFECT_CURVE, null, null);
+
+            ctrlClick();
+            assertTypes(PathType.LINEAR, PathType.BSpline(4), null, null);
+
+            ctrlClick();
+            assertTypes(PathType.LINEAR, PathType.LINEAR, PathType.LINEAR, null);
+        }
+
+        /// <summary>
+        /// Going on to another anchor in a curve starts from the corner again, and the part made by the first click
+        /// stays as it is.
+        /// </summary>
+        [Test]
+        public void TestCtrlClickOnAnotherAnchorMakesACornerFirst()
+        {
+            createStableShapedVisualiser();
+
+            addControlPointStep(new Vector2(200), PathType.BEZIER);
+            addControlPointStep(new Vector2(150, 300));
+            addControlPointStep(new Vector2(300, 350));
+            addControlPointStep(new Vector2(350, 500));
+
+            moveMouseToControlPoint(1);
+            ctrlClick();
+            assertTypes(PathType.LINEAR, PathType.BEZIER, null, null);
+
+            moveMouseToControlPoint(2);
+            ctrlClick();
+            assertTypes(PathType.LINEAR, PathType.LINEAR, PathType.LINEAR, null);
+        }
+
+        /// <summary>
+        /// A corner in the middle of a straight path: the lines from the corner after it on stay lines.
+        /// </summary>
+        [Test]
+        public void TestCtrlClickOnACornerLeavesTheLinesAfterIt()
+        {
+            createStableShapedVisualiser();
+
+            addControlPointStep(new Vector2(200), PathType.LINEAR);
+            addControlPointStep(new Vector2(150, 300));
+            addControlPointStep(new Vector2(300, 350));
+            addControlPointStep(new Vector2(350, 500));
+            addControlPointStep(new Vector2(500, 450));
+
+            moveMouseToControlPoint(2);
+            ctrlClick();
+
+            assertTypes(PathType.LINEAR, PathType.BEZIER, null, PathType.LINEAR, null);
+        }
+
+        private void createStableShapedVisualiser()
+        {
+            AddStep("shape sliders stable's way", () => config.SetValue(OsuSetting.EditorStableSliderControls, true));
+            createVisualiser(true);
+        }
+
+        private void assertTypes(params PathType?[] types)
+        {
+            AddAssert($"the points are {string.Join(", ", types.Select(t => t?.ToString() ?? "-"))}",
+                () => slider.Path.ControlPoints.Select(p => p.Type).ToArray(),
+                () => Is.EqualTo(types));
+        }
+
         private void ctrlClick() => AddStep("ctrl+click", () =>
         {
             InputManager.PressKey(Key.LControl);

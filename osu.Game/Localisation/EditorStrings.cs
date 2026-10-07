@@ -773,10 +773,10 @@ namespace osu.Game.Localisation
         public static LocalisableString StableSliderControls => new TranslatableString(getKey(@"stable_slider_controls"), @"Shape sliders the way stable does");
 
         /// <summary>
-        /// "An anchor added with ctrl+click shapes the part of the path it lands in, without splitting it, and ctrl+clicking an anchor changes the shape leading up to it rather than the shape after it."
+        /// "An anchor added with ctrl+click shapes the part of the path it lands in without splitting it (in a straight part, only the line it lands on). Ctrl+clicking an anchor in a curve makes a corner of it, and ctrl+clicking it again goes through the shapes between the corners either side."
         /// </summary>
         public static LocalisableString StableSliderControlsDescription => new TranslatableString(getKey(@"stable_slider_controls_description"),
-            @"An anchor added with ctrl+click shapes the part of the path it lands in, without splitting it, and ctrl+clicking an anchor changes the shape leading up to it rather than the shape after it.");
+            @"An anchor added with ctrl+click shapes the part of the path it lands in without splitting it (in a straight part, only the line it lands on). Ctrl+clicking an anchor in a curve makes a corner of it, and ctrl+clicking it again goes through the shapes between the corners either side.");
 
         /// <summary>
         /// "Shape a new anchor makes"
