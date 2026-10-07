@@ -888,6 +888,10 @@ namespace osu.Game.Screens.Edit
             keptStableVersion.BindValueChanged(_ => updateConvertToStableFormat());
             MutationTracker.InProgress.BindValueChanged(_ => updateConvertToStableFormat(), true);
 
+            stableCompatibility.BindValueChanged(_ => updateCanMakeHitsoundDifficulty());
+            keptStableVersion.BindValueChanged(_ => updateCanMakeHitsoundDifficulty());
+            MutationTracker.InProgress.BindValueChanged(_ => updateCanMakeHitsoundDifficulty(), true);
+
             changeHandler?.CanRedo.BindValueChanged(v => redoMenuItem.Action.Disabled = !v.NewValue, true);
         }
 
@@ -1933,6 +1937,59 @@ namespace osu.Game.Screens.Edit
             })));
         }
 
+        /// <summary>
+        /// Whether <see cref="MakeHitsoundDifficulty"/> can be done: for an osu! difficulty kept in stable's format, whose
+        /// green lines are its own.
+        /// </summary>
+        public IBindable<bool> CanMakeHitsoundDifficulty => canMakeHitsoundDifficulty;
+
+        private readonly Bindable<bool> canMakeHitsoundDifficulty = new Bindable<bool>();
+
+        private void updateCanMakeHitsoundDifficulty() =>
+            canMakeHitsoundDifficulty.Value = canSave && stableCompatibility.Value && keptStableVersion.Value != null
+                                              && editorBeatmap.BeatmapInfo.Ruleset.OnlineID == 0 && !MutationTracker.InProgress.Value;
+
+        /// <summary>
+        /// Adds a difficulty to hitsound in, written from this one's file as stable has it, and switches to it.
+        /// </summary>
+        /// <param name="asHitCircles">Whether every point a sound is played becomes a circle of its own, as in a hitsound
+        /// difficulty, rather than the objects being copied as they are.</param>
+        public void MakeHitsoundDifficulty(bool asHitCircles)
+        {
+            if (!canMakeHitsoundDifficulty.Value)
+                return;
+
+            attemptMutationOperation(() =>
+            {
+                // saved first, so that unsaved changes are in the file the new difficulty is written from.
+                if (!Save())
+                    return false;
+
+                var info = beatmapManager.QueryBeatmap(b => b.ID == editorBeatmap.BeatmapInfo.ID);
+                byte[] saved = info == null ? null : readSavedFile(beatmapManager.GetWorkingBeatmap(info, true));
+
+                if (info?.BeatmapSet == null || saved == null)
+                    return false;
+
+                string name = NamingUtils.GetNextBestName(info.BeatmapSet.Beatmaps.Select(b => b.DifficultyName),
+                    asHitCircles ? @"Hitsounds" : $@"{info.DifficultyName} (copy)");
+
+                string file = Encoding.UTF8.GetString(saved);
+                string written = asHitCircles ? HitsoundDifficultyWriter.AsHitCircles(file, name) : HitsoundDifficultyWriter.CopyAs(file, name);
+
+                if (written == null)
+                {
+                    notifications?.Post(new SimpleErrorNotification { Text = LazerKaiHitsoundStrings.CouldNotReadObjects });
+                    return false;
+                }
+
+                var created = beatmapManager.AddDifficultyFromFile(info.BeatmapSet, beatmapManager.GetWorkingBeatmap(info, true), Encoding.UTF8.GetBytes(written));
+
+                SwitchToDifficulty(created.BeatmapInfo);
+                return true;
+            });
+        }
+
         private void confirmSnapAllHitObjectsToCurrentDivisor()
         {
             dialogOverlay.Push(new SnapAllNotesConfirmationDialog(SnapAllHitObjectsToCurrentDivisor));
@@ -2618,7 +2675,15 @@ namespace osu.Game.Screens.Edit
                 return;
             }
 
-            dialogOverlay.Push(new CreateNewDifficultyDialog(createCopy => switchToNewDifficulty(rulesetInfo, createCopy)));
+            dialogOverlay.Push(new CreateNewDifficultyDialog(createCopy =>
+            {
+                // kept in stable's format, a copy is written from the file as it is kept. Copied as objects, it was
+                // saved in lazer's format, with its green lines put where its objects are (2026-10-08).
+                if (createCopy && canMakeHitsoundDifficulty.Value)
+                    MakeHitsoundDifficulty(false);
+                else
+                    switchToNewDifficulty(rulesetInfo, createCopy);
+            }));
         }
 
         private void switchToNewDifficulty(RulesetInfo rulesetInfo, bool createCopy)

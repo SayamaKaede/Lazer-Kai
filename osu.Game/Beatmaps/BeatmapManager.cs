@@ -21,6 +21,7 @@ using osu.Game.Beatmaps.Formats;
 using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Extensions;
+using osu.Game.IO;
 using osu.Game.IO.Archives;
 using osu.Game.Localisation;
 using osu.Game.Models;
@@ -214,6 +215,39 @@ namespace osu.Game.Beatmaps
             newBeatmapInfo.ResetOnlineInfo();
 
             return addDifficultyToSet(targetBeatmapSet, newBeatmap, referenceWorkingBeatmap.Skin, referenceWorkingBeatmap.Storyboard);
+        }
+
+        /// <summary>
+        /// Adds a difficulty to <paramref name="targetBeatmapSet"/> whose file is <paramref name="file"/>, byte for byte.
+        /// </summary>
+        /// <remarks>
+        /// For a difficulty written as stable writes one (see <see cref="HitsoundDifficultyWriter"/>): encoded again, its
+        /// green lines would be put where its objects are. Everything else is as <see cref="CopyExistingDifficulty"/>
+        /// does it, the name coming from the file.
+        /// </remarks>
+        public virtual WorkingBeatmap AddDifficultyFromFile(BeatmapSetInfo targetBeatmapSet, WorkingBeatmap referenceWorkingBeatmap, byte[] file)
+        {
+            Beatmap newBeatmap;
+
+            using (var reader = new LineBufferedReader(new MemoryStream(file)))
+                newBeatmap = Formats.Decoder.GetDecoder<Beatmap>(reader).Decode(reader);
+
+            var newBeatmapInfo = referenceWorkingBeatmap.BeatmapInfo.Clone();
+            newBeatmapInfo.ID = Guid.NewGuid();
+            newBeatmapInfo.DifficultyName = newBeatmap.BeatmapInfo.DifficultyName;
+            // the file is found by its hash, so the clone would otherwise be saved over the difficulty it was made from.
+            newBeatmapInfo.Hash = string.Empty;
+            newBeatmapInfo.ResetOnlineInfo();
+
+            newBeatmap.BeatmapInfo = newBeatmapInfo;
+
+            targetBeatmapSet.Beatmaps.Add(newBeatmapInfo);
+            newBeatmapInfo.BeatmapSet = targetBeatmapSet;
+
+            save(newBeatmapInfo, newBeatmap, null, null, transferCollections: false, file);
+
+            workingBeatmapCache.Invalidate(targetBeatmapSet);
+            return GetWorkingBeatmap(newBeatmapInfo);
         }
 
         private WorkingBeatmap addDifficultyToSet(BeatmapSetInfo targetBeatmapSet, IBeatmap newBeatmap, ISkin beatmapSkin, Storyboard storyboard)

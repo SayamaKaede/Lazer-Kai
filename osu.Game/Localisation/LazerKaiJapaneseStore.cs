@@ -273,6 +273,36 @@ namespace osu.Game.Localisation
             [$@"{green_line_prefix}:filter_green_lines"] = @"緑線のみ",
             [$@"{green_line_prefix}:not_editable"] = @"「Stableとの互換性を強化する」がオンのとき、Stable形式（v14以前）のosu!の譜面で緑線を編集できます",
 
+            // HS モード
+            [$@"{editor_prefix}:hitsound_screen"] = @"HS",
+            [$@"{hitsound_prefix}:additions"] = @"ヒットサウンド",
+            [$@"{hitsound_prefix}:sampleset"] = @"Sampleset",
+            [$@"{hitsound_prefix}:addition_bank"] = @"Additions",
+            [$@"{hitsound_prefix}:auto_sampleset_unavailable"] = @"Autoは配置するときだけ使用できます",
+            [$@"{hitsound_prefix}:selected"] = @"選択中のノーツ {0}個",
+            [$@"{hitsound_prefix}:nothing_at_the_playhead"] = @"再生位置で鳴る音はありません",
+            [$@"{hitsound_prefix}:circle"] = @"サークル",
+            [$@"{hitsound_prefix}:slider_head"] = @"スライダーの頭",
+            [$@"{hitsound_prefix}:slider_reverse"] = @"スライダーのリバース",
+            [$@"{hitsound_prefix}:slider_tail"] = @"スライダーの尻尾",
+            [$@"{hitsound_prefix}:spinner_end"] = @"スピナーの終わり",
+            [$@"{hitsound_prefix}:copy_into_new_difficulty"] = @"ノーツをコピーして作成",
+            [$@"{hitsound_prefix}:make_hitsound_difficulty"] = @"音の位置をサークルにして作成",
+            [$@"{hitsound_prefix}:new_difficulty_unavailable"] = @"「Stableとの互換性を強化する」がオンのとき、Stable形式（v14以前）のosu!の譜面で使用できます",
+            [$@"{hitsound_prefix}:could_not_read_objects"] = @"読み取れないノーツがあったため、難易度を作成しませんでした",
+            [$@"{hitsound_prefix}:selected_suffix"] = @"（選択中）",
+            [$@"{hitsound_prefix}:slider_body"] = @"スライダーの本体",
+            [$@"{hitsound_prefix}:outline_header"] = @"上部タイムラインの選択の枠",
+            [$@"{hitsound_prefix}:outline_colour"] = @"色",
+            [$@"{hitsound_prefix}:outline_thickness"] = @"太さ",
+            [$@"{hitsound_prefix}:outline_opacity"] = @"不透明度",
+            [$@"{hitsound_prefix}:new_difficulty_header"] = @"新しい難易度",
+            [$@"{hitsound_prefix}:display_header"] = @"表示",
+            [$@"{hitsound_prefix}:panel_opacity"] = @"中央の不透明度",
+            [$@"{hitsound_prefix}:change_sound"] = @"変更したときの音",
+            [$@"{hitsound_prefix}:change_sound_menu"] = @"メニューの効果音",
+            [$@"{hitsound_prefix}:change_sound_hitsound"] = @"ヒットサウンド",
+
             // リプレイの解析設定
             [$@"{replay_prefix}:hide_hidden_effect"] = @"HDの効果を非表示",
             [$@"{replay_prefix}:hide_flashlight_effect"] = @"FLの効果を非表示",
@@ -564,6 +594,7 @@ namespace osu.Game.Localisation
         private const string stable_compatibility_prefix = @"osu.Game.Resources.Localisation.LazerKaiStableCompatibility";
         private const string saved_lines_prefix = @"osu.Game.Resources.Localisation.LazerKaiSavedLines";
         private const string green_line_prefix = @"osu.Game.Resources.Localisation.LazerKaiGreenLine";
+        private const string hitsound_prefix = @"osu.Game.Resources.Localisation.LazerKaiHitsound";
         private const string song_select_prefix = @"osu.Game.Resources.Localisation.LazerKaiSongSelect";
         private const string preset_prefix = @"osu.Game.Resources.Localisation.PlacementPreset";
         private const string combo_colour_preset_prefix = @"osu.Game.Resources.Localisation.LazerKaiComboColourPreset";
