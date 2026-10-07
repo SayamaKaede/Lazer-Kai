@@ -3,14 +3,19 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using NUnit.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Formats;
+using osu.Game.IO;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.Objects.Drawables;
 using osu.Game.Rulesets.Osu.UI;
+using osu.Game.Storyboards;
 using osu.Game.Tests.Beatmaps;
 
 namespace osu.Game.Rulesets.Osu.Tests.Editor
@@ -44,6 +49,35 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             beatmap.BeatmapInfo.EditorTimestamp = 0;
 
             return beatmap;
+        }
+
+        /// <summary>
+        /// The beatmap as the game has it: read from its file, so that the editor's objects are its own.
+        /// </summary>
+        /// <remarks>
+        /// Handed over as it was made, the objects would be the very ones the editor edits, since converting an object
+        /// that is already the ruleset's own keeps it. The editor works out what the difficulty is worth in the
+        /// background from the beatmap as saved (<see cref="Screens.Edit.EditorDifficultyTracker"/>), which in this
+        /// harness is this same beatmap, and so built the spinner's ticks again while the playfield was going through
+        /// them as it loaded: "Collection was modified", once the test had to wait its turn for a core (2026-10-05,
+        /// reproduced every time on one core at low priority). In the game, the saved beatmap is read from its file and
+        /// never shares an object with the editor.
+        /// </remarks>
+        protected override WorkingBeatmap CreateWorkingBeatmap(IBeatmap beatmap, Storyboard? storyboard = null)
+        {
+            using var stream = new MemoryStream();
+
+            using (var writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                new LegacyBeatmapEncoder(beatmap, null, null).Encode(writer);
+
+            stream.Position = 0;
+
+            using var reader = new LineBufferedReader(stream);
+
+            var read = osu.Game.Beatmaps.Formats.Decoder.GetDecoder<Beatmap>(reader).Decode(reader);
+            read.BeatmapInfo = beatmap.BeatmapInfo;
+
+            return base.CreateWorkingBeatmap(read, storyboard);
         }
 
         public override void SetUpSteps()
