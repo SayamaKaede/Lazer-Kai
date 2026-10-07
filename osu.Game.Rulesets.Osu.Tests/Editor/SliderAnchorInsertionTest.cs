@@ -21,6 +21,9 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
     ///
     /// Nothing is ever split: in stable a slider is one shape, and the only anchors dividing a path are the ones the
     /// user makes. What an added anchor does is give the part of the path it lands in the shape asked for.
+    ///
+    /// Straight parts are the exception, being divided at every corner already: only the straight piece the anchor lands
+    /// in is shaped, and the pieces either side stay as they were (2026-10-07).
     /// </remarks>
     [TestFixture]
     public class SliderAnchorInsertionTest
@@ -76,13 +79,74 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             insertAt(straight, 1, PathType.LINEAR);
             Assert.That(typesOf(straight), Is.EqualTo(new PathType?[] { PathType.LINEAR, null, null, null }));
 
-            var bezier = pathOf(PathType.LINEAR, null, null);
+            var bezier = pathOf(PathType.CATMULL, null, null);
             insertAt(bezier, 1, PathType.BEZIER);
             Assert.That(typesOf(bezier), Is.EqualTo(new PathType?[] { PathType.BEZIER, null, null, null }));
 
-            var catmull = pathOf(PathType.LINEAR, null, null);
+            var catmull = pathOf(PathType.BEZIER, null, null);
             insertAt(catmull, 1, PathType.CATMULL);
             Assert.That(typesOf(catmull), Is.EqualTo(new PathType?[] { PathType.CATMULL, null, null, null }));
+        }
+
+        /// <summary>
+        /// A straight path with a corner, added to between the corner and its end: the user's case (2026-10-07). The line
+        /// up to the corner stays as it was, and the arc runs from the corner.
+        /// </summary>
+        [Test]
+        public void TestOnlyTheStraightPieceItLandedInIsShaped()
+        {
+            var points = pathOf(PathType.LINEAR, null, null);
+
+            insertAt(points, 2, PathType.PERFECT_CURVE);
+
+            Assert.That(typesOf(points), Is.EqualTo(new PathType?[] { PathType.LINEAR, PathType.PERFECT_CURVE, null, null }));
+        }
+
+        /// <summary>
+        /// Landing in a straight piece with more of them after it, those go on being straight from the corner the shaped
+        /// piece ends at — whatever shape is asked for.
+        /// </summary>
+        [Test]
+        public void TestTheStraightPiecesAfterItStayStraight()
+        {
+            var first = pathOf(PathType.LINEAR, null, null);
+            insertAt(first, 1, PathType.PERFECT_CURVE);
+            Assert.That(typesOf(first), Is.EqualTo(new PathType?[] { PathType.PERFECT_CURVE, null, PathType.LINEAR, null }));
+
+            var middle = pathOf(PathType.LINEAR, null, null, null);
+            insertAt(middle, 2, PathType.BEZIER);
+            Assert.That(typesOf(middle), Is.EqualTo(new PathType?[] { PathType.LINEAR, PathType.BEZIER, null, PathType.LINEAR, null }));
+
+            var catmull = pathOf(PathType.LINEAR, null, null, null);
+            insertAt(catmull, 2, PathType.CATMULL);
+            Assert.That(typesOf(catmull), Is.EqualTo(new PathType?[] { PathType.LINEAR, PathType.CATMULL, null, PathType.LINEAR, null }));
+        }
+
+        /// <summary>
+        /// The last straight piece before a part of another shape: the corner it ends at already starts that part, and
+        /// is left as it is.
+        /// </summary>
+        [Test]
+        public void TestTheStraightPieceBeforeAnotherShape()
+        {
+            var points = pathOf(PathType.LINEAR, null, PathType.BEZIER, null, null);
+
+            insertAt(points, 2, PathType.PERFECT_CURVE);
+
+            Assert.That(typesOf(points), Is.EqualTo(new PathType?[] { PathType.LINEAR, PathType.PERFECT_CURVE, null, PathType.BEZIER, null, null }));
+        }
+
+        /// <summary>
+        /// Asked for a straight line, a straight piece is already one: nothing changes.
+        /// </summary>
+        [Test]
+        public void TestAStraightPieceAskedToBeStraight()
+        {
+            var points = pathOf(PathType.LINEAR, null, null);
+
+            insertAt(points, 2, PathType.LINEAR);
+
+            Assert.That(typesOf(points), Is.EqualTo(new PathType?[] { PathType.LINEAR, null, null, null }));
         }
 
         /// <summary>

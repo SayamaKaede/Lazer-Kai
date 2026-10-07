@@ -26,6 +26,10 @@ namespace osu.Game.Rulesets.Osu.Edit
         ///
         /// A perfect curve is exactly three points, so where the part being shaped holds more than that it becomes a
         /// bezier instead — the same fall-back stable makes when a curve outgrows three points.
+        ///
+        /// A straight part is divided at every corner already, so there the part being shaped is only the straight
+        /// piece the anchor landed in, and the pieces either side stay straight. Shaped as a whole, a straight path
+        /// with a corner became one bezier when the user asked for an arc between the corner and its end (2026-10-07).
         /// </remarks>
         /// <param name="controlPoints">The path's control points, with the new anchor already inserted.</param>
         /// <param name="insertedIndex">Index of the newly inserted anchor.</param>
@@ -46,6 +50,22 @@ namespace osu.Game.Rulesets.Osu.Edit
                     segmentStart = i;
                     break;
                 }
+            }
+
+            if (controlPoints[segmentStart].Type == PathType.LINEAR)
+            {
+                if (type == PathType.LINEAR)
+                    return;
+
+                // the corner after it goes on being straight, unless it ends the path or already starts a part of its own.
+                var cornerAfter = controlPoints[insertedIndex + 1];
+
+                if (insertedIndex + 1 < controlPoints.Count - 1 && cornerAfter.Type == null)
+                    cornerAfter.Type = PathType.LINEAR;
+
+                // three points: the corners either side, and the anchor between them.
+                controlPoints[insertedIndex - 1].Type = type;
+                return;
             }
 
             controlPoints[segmentStart].Type = FitToSegment(type, LengthOfSegment(controlPoints, segmentStart));
