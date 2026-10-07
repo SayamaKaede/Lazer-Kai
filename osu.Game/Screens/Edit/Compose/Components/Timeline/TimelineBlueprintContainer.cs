@@ -26,6 +26,7 @@ using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
 using osuTK;
 using osuTK.Graphics;
+using osuTK.Input;
 
 namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 {
@@ -79,6 +80,74 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         [Resolved(CanBeNull = true)]
         private EditorReferenceDifficulty referenceDifficulty { get; set; }
+
+        [Resolved(CanBeNull = true)]
+        private Editor editor { get; set; }
+
+        /// <summary>
+        /// The points selected as the mouse went down on the hitsound screen, which the object under it is then selected
+        /// over as a whole, before it is known whether this is a click or the start of a drag.
+        /// </summary>
+        private HashSet<(HitObject hitObject, int point)> pointsBeforeClick;
+
+        protected override bool OnMouseDown(MouseDownEvent e)
+        {
+            pointsBeforeClick = editor?.Mode.Value == EditorScreenMode.Hitsounds && e.Button == MouseButton.Left ? SamplePoints.All.ToHashSet() : null;
+            return base.OnMouseDown(e);
+        }
+
+        /// <remarks>
+        /// On the hitsound screen, a click on an object selects the point of it clicked: the head, a reverse or the tail of
+        /// a slider where its circle is, and its body between them, as un!stable's timeline does (2026-10-08). A drag
+        /// still moves the whole object.
+        /// </remarks>
+        protected override bool OnClick(ClickEvent e)
+        {
+            var before = pointsBeforeClick;
+            pointsBeforeClick = null;
+
+            bool handled = base.OnClick(e);
+
+            if (before == null || e.Button != MouseButton.Left)
+                return handled;
+
+            return selectClickedPoint(e, before) || handled;
+        }
+
+        /// <remarks>
+        /// A second click soon after the first is a double click, which on a selected object goes to its start and takes
+        /// the place of the click. On the hitsound screen, where the head and the tail of one slider are clicked one after
+        /// the other, it selects the point clicked as well.
+        /// </remarks>
+        protected override bool OnDoubleClick(DoubleClickEvent e)
+        {
+            // the double click comes here, where the first click went, even when the second went down on the handle at an
+            // object's end, which leaves the selection as it was.
+            var before = pointsBeforeClick ?? (editor?.Mode.Value == EditorScreenMode.Hitsounds ? SamplePoints.All.ToHashSet() : null);
+            bool handled = base.OnDoubleClick(e);
+
+            if (handled && before != null)
+            {
+                pointsBeforeClick = null;
+                selectClickedPoint(e, before);
+            }
+
+            return handled;
+        }
+
+        private bool selectClickedPoint(MouseButtonEvent e, IEnumerable<(HitObject hitObject, int point)> before)
+        {
+            var clicked = SelectionBlueprints.AliveChildren.OfType<TimelineHitObjectBlueprint>()
+                                             .Where(b => b.IsHovered)
+                                             .OrderByDescending(b => b.IsSelected)
+                                             .FirstOrDefault();
+
+            if (clicked == null)
+                return false;
+
+            SamplePoints.SelectPoint(clicked.Item, clicked.SamplePointAt(e.ScreenSpaceMousePosition), e.ControlPressed, before);
+            return true;
+        }
 
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)

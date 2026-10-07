@@ -131,6 +131,11 @@ namespace osu.Game.Localisation
         public static LocalisableString VerifyScreen => new TranslatableString(getKey(@"verify_screen"), @"verify");
 
         /// <summary>
+        /// "hitsounds"
+        /// </summary>
+        public static LocalisableString HitsoundScreen => new TranslatableString(getKey(@"hitsound_screen"), @"hitsounds");
+
+        /// <summary>
         /// "Playback speed"
         /// </summary>
         public static LocalisableString PlaybackSpeed => new TranslatableString(getKey(@"playback_speed"), @"Playback speed");

@@ -286,6 +286,12 @@ namespace osu.Game.Localisation
             new TranslatableString(getKey(@"editor_toggle_volume_graph"), @"Toggle the volume graph");
 
         /// <summary>
+        /// "Hitsound mode"
+        /// </summary>
+        public static LocalisableString EditorHitsoundMode =>
+            new TranslatableString(getKey(@"editor_hitsound_mode"), @"Hitsound mode");
+
+        /// <summary>
         /// "Toggle the miss timeline"
         /// </summary>
         public static LocalisableString ToggleReplayMissTimeline =>

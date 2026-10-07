@@ -80,6 +80,36 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             Changed?.Invoke();
         }
 
+        /// <summary>
+        /// Selects a point on its own, or adds it to the points selected or takes it out of them, with the objects they
+        /// belong to.
+        /// </summary>
+        /// <param name="hitObject">The object the point belongs to.</param>
+        /// <param name="point">The point.</param>
+        /// <param name="add">Whether to add it to the points selected, or take it out if it is already one of them.</param>
+        public void SelectPoint(HitObject hitObject, int point, bool add) => SelectPoint(hitObject, point, add, All);
+
+        /// <param name="hitObject">The object the point belongs to.</param>
+        /// <param name="point">The point.</param>
+        /// <param name="add">Whether to add it to <paramref name="selected"/> or take it out, rather than select it alone.</param>
+        /// <param name="selected">The points selected before: a click on an object selects all of it as the mouse goes
+        /// down, before it is known to be a click.</param>
+        public void SelectPoint(HitObject hitObject, int point, bool add, IEnumerable<(HitObject hitObject, int point)> selected)
+        {
+            var points = add ? selected.ToHashSet() : new HashSet<(HitObject hitObject, int point)>();
+
+            if (!points.Remove((hitObject, point)))
+                points.Add((hitObject, point));
+
+            SelectFromBox(points, () =>
+            {
+                var objects = points.Select(p => p.hitObject).Distinct().ToList();
+
+                beatmap.SelectedHitObjects.RemoveAll(h => !objects.Contains(h));
+                beatmap.SelectedHitObjects.AddRange(objects.Except(beatmap.SelectedHitObjects).ToList());
+            });
+        }
+
         public bool Contains(HitObject hitObject, int point) => boxed?.Contains((hitObject, point)) ?? beatmap.SelectedHitObjects.Contains(hitObject);
 
         /// <summary>

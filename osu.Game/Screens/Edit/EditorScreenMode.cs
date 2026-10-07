@@ -22,5 +22,12 @@ namespace osu.Game.Screens.Edit
 
         [LocalisableDescription(typeof(EditorStrings), nameof(EditorStrings.VerifyScreen))]
         Verify,
+
+        /// <summary>
+        /// The compose screen with the playfield given over to the hitsounds of what is selected, or of what sounds at
+        /// the playhead.
+        /// </summary>
+        [LocalisableDescription(typeof(EditorStrings), nameof(EditorStrings.HitsoundScreen))]
+        Hitsounds,
     }
 }

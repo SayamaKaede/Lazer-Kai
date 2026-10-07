@@ -78,6 +78,18 @@ namespace osu.Game.Screens.Edit
         public float ObjectOpacity => get<float>(OsuSetting.EditorObjectOutlineOpacity).Value;
 
         /// <summary>
+        /// The outline around what is selected on the timeline while the hitsound screen is showing, which is what that
+        /// screen's buttons change, set apart from the outline everywhere else.
+        /// </summary>
+        /// <param name="fallback">The colour to use while the user has not chosen an override.</param>
+        public Color4 GetHitsoundOutlineColour(Color4 fallback) => get<EditorSelectionColour>(OsuSetting.EditorHitsoundOutlineColour).Value.ToColour() ?? fallback;
+
+        /// <param name="baseThickness">The piece's stock border thickness, which the user's setting scales.</param>
+        public float GetHitsoundOutlineThickness(float baseThickness) => baseThickness * get<float>(OsuSetting.EditorHitsoundOutlineThickness).Value;
+
+        public float HitsoundOutlineOpacity => get<float>(OsuSetting.EditorHitsoundOutlineOpacity).Value;
+
+        /// <summary>
         /// The colour of the drag handles on the selection box, which the user sets separately from the outline.
         /// </summary>
         /// <param name="fallback">The colour to use while the user has not chosen an override.</param>

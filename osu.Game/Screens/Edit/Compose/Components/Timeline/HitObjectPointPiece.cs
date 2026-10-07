@@ -68,10 +68,15 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         /// <summary>
         /// Outlines the label, for a point that a change made through another will also go to.
         /// </summary>
-        protected void SetHighlighted(bool highlighted)
+        protected void SetHighlighted(bool highlighted) => SetHighlighted(highlighted, Color4.White, 2);
+
+        /// <param name="highlighted">Whether to outline the label.</param>
+        /// <param name="colour">The outline's colour, opacity included.</param>
+        /// <param name="thickness">The outline's thickness.</param>
+        protected void SetHighlighted(bool highlighted, Color4 colour, float thickness)
         {
-            LabelContainer.BorderColour = Color4.White;
-            LabelContainer.BorderThickness = highlighted ? 2 : 0;
+            LabelContainer.BorderColour = colour;
+            LabelContainer.BorderThickness = highlighted ? thickness : 0;
         }
     }
 }

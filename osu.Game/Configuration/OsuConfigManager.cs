@@ -24,6 +24,7 @@ using osu.Game.Rulesets.Scoring;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
 using osu.Game.Screens.Edit.Compose.Components;
+using osu.Game.Screens.Edit.Hitsounds;
 using osu.Game.Screens.OnlinePlay.Lounge.Components;
 using osu.Game.Screens.Select;
 using osu.Game.Screens.Select.Filter;
@@ -363,6 +364,14 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSliderEndDragMarkerColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerScale, 1f, 0.5f, 2f, 0.01f);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerOpacity, 1f, 0.1f, 1f, 0.01f);
+
+            // the hitsound screen's own: what is placed shows faintly through it, and what is selected on the timeline is
+            // what it changes, so its outline can be made to stand out there more than everywhere else.
+            SetDefault(OsuSetting.EditorHitsoundPanelOpacity, 0.85f, 0.3f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorHitsoundOutlineColour, EditorSelectionColour.Default);
+            SetDefault(OsuSetting.EditorHitsoundOutlineThickness, 1f, 0.25f, 3f, 0.01f);
+            SetDefault(OsuSetting.EditorHitsoundOutlineOpacity, 1f, 0.1f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorHitsoundChangeSound, HitsoundChangeSound.Menu);
             SetDefault(OsuSetting.EditorStreamSnapSpacingWhole, true);
             SetDefault(OsuSetting.EditorStreamSnapSpacingLastOfSeveral, false);
             SetDefault(OsuSetting.EditorAutoGenerateBreaks, true);
@@ -1271,5 +1280,30 @@ namespace osu.Game.Configuration
         /// Whether a timeline of what a replay missed is shown along the bottom as it is watched.
         /// </summary>
         ReplayShowMissTimeline,
+
+        /// <summary>
+        /// How opaque the hitsound screen is over the playfield, which shows through it.
+        /// </summary>
+        EditorHitsoundPanelOpacity,
+
+        /// <summary>
+        /// The colour of the outline around what is selected on the timeline, while the hitsound screen is showing.
+        /// </summary>
+        EditorHitsoundOutlineColour,
+
+        /// <summary>
+        /// The thickness of that outline, scaling the stock one.
+        /// </summary>
+        EditorHitsoundOutlineThickness,
+
+        /// <summary>
+        /// The opacity of that outline.
+        /// </summary>
+        EditorHitsoundOutlineOpacity,
+
+        /// <summary>
+        /// What the hitsound screen plays as a change is made.
+        /// </summary>
+        EditorHitsoundChangeSound,
     }
 }

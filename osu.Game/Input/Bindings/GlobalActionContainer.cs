@@ -123,6 +123,7 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(InputKey.None, GlobalAction.EditorTogglePlacementPresets),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleAutoCursor),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleVolumeGraph),
+            new KeyBinding(InputKey.None, GlobalAction.EditorHitsoundMode),
         };
 
         private static IEnumerable<KeyBinding> globalKeyBindings => new[]
@@ -752,6 +753,9 @@ namespace osu.Game.Input.Bindings
         // upstream's, from after Lazer-Kai's own block had been appended: it goes after that block for the same reason.
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.TakeAndUploadScreenshot))]
         TakeAndUploadScreeshot,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorHitsoundMode))]
+        EditorHitsoundMode,
     }
 
     public enum GlobalActionCategory

@@ -8,6 +8,7 @@ using Humanizer;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
+using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -95,15 +96,32 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         /// </summary>
         protected virtual bool HasVolume => HitObject is not IHasRepeats;
 
+        /// <summary>
+        /// The outline a selected point is given on the hitsound screen, which has one of its own (2026-10-08).
+        /// </summary>
+        private EditorSelectionAppearance? appearance;
+
+        private IBindable<EditorScreenMode>? editorMode;
+
+        private bool onHitsoundScreen => editorMode?.Value == EditorScreenMode.Hitsounds;
+
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
             Label.AllowMultiline = false;
             LabelContainer.AutoSizeAxes = Axes.None;
             updateText();
 
+            appearance = new EditorSelectionAppearance(config);
+            appearance.Changed += updateSelected;
+
             if (editor != null)
+            {
                 editor.ShowSampleEditPopoverRequested += onShowSampleEditPopoverRequested;
+
+                editorMode = editor.Mode.GetBoundCopy();
+                editorMode.BindValueChanged(_ => updateSelected());
+            }
         }
 
         private readonly Bindable<bool> contracted = new Bindable<bool>();
@@ -141,7 +159,16 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             FinishTransforms();
         }
 
-        private void updateSelected() => SetHighlighted(IsSelected);
+        private void updateSelected()
+        {
+            if (onHitsoundScreen && appearance != null)
+            {
+                SetHighlighted(IsSelected, appearance.GetHitsoundOutlineColour(Color4.White).Opacity(appearance.HitsoundOutlineOpacity),
+                    appearance.GetHitsoundOutlineThickness(2));
+            }
+            else
+                SetHighlighted(IsSelected);
+        }
 
         private void onDefaultsApplied(HitObject hitObject)
         {
@@ -183,6 +210,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         protected override bool OnClick(ClickEvent e)
         {
+            // on the hitsound screen, a point is chosen for the screen's buttons to change: a slider's tail or a reverse can
+            // be chosen on its own that way, where clicking the object takes all of it (2026-10-08).
+            if (onHitsoundScreen && selection != null)
+            {
+                selection.SelectPoint(HitObject, Point, e.ControlPressed);
+                return true;
+            }
+
             this.ShowPopover();
             return true;
         }

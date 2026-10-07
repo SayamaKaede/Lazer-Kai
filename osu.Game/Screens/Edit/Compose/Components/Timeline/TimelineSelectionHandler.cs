@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using JetBrains.Annotations;
+using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Input.Events;
 using osu.Game.Input.Bindings;
 using osu.Game.Rulesets.Edit;
@@ -20,6 +22,35 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
     {
         // for now we always allow movement. snapping is provided by the Timeline's "distance" snap implementation
         public override bool HandleMovement(MoveSelectionEvent<HitObject> moveEvent) => true;
+
+        [Resolved(CanBeNull = true)]
+        private Editor editor { get; set; }
+
+        private IBindable<EditorScreenMode> editorMode;
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            if (editor != null)
+            {
+                editorMode = editor.Mode.GetBoundCopy();
+                editorMode.BindValueChanged(_ => updateBox());
+            }
+        }
+
+        protected override void OnSelectionChanged()
+        {
+            base.OnSelectionChanged();
+            updateBox();
+        }
+
+        /// <summary>
+        /// Leaves out the box around the selection on the hitsound screen, where what is selected is points rather than
+        /// objects: the box goes around whole objects, which selecting a slider's tail or a spinner's end is not
+        /// (2026-10-08). The objects outline the points selected of them instead.
+        /// </summary>
+        private void updateBox() => SelectionBox.Shown = SelectedItems.Count > 0 && editorMode?.Value != EditorScreenMode.Hitsounds;
 
         public override bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
         {

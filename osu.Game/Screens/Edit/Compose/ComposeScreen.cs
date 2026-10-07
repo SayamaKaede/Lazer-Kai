@@ -19,6 +19,7 @@ using osu.Game.IO.Serialization;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Screens.Edit.Compose.Components.Timeline;
+using osu.Game.Screens.Edit.Hitsounds;
 
 namespace osu.Game.Screens.Edit.Compose
 {
@@ -66,7 +67,52 @@ namespace osu.Game.Screens.Edit.Compose
             if (ruleset == null || composer == null)
                 return new ScreenWhiteBox.UnderConstructionMessage(ruleset == null ? "This beatmap" : $"{ruleset.Description}'s composer");
 
-            return wrapSkinnableContent(composer);
+            return wrapSkinnableContent(new Container
+            {
+                RelativeSizeAxes = Axes.Both,
+                Children = new Drawable[]
+                {
+                    new ComposerHolder(showingHitsounds)
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Child = composer,
+                    },
+                    HitsoundPanel = new HitsoundPanel(showingHitsounds),
+                }
+            });
+        }
+
+        /// <summary>
+        /// What takes the playfield's place on the hitsound screen.
+        /// </summary>
+        public HitsoundPanel HitsoundPanel { get; private set; }
+
+        /// <summary>
+        /// Whether this screen is standing in for the hitsound screen, which it is the compose screen of.
+        /// </summary>
+        private readonly BindableBool showingHitsounds = new BindableBool();
+
+        [Resolved(canBeNull: true)]
+        private Editor editor { get; set; }
+
+        private IBindable<EditorScreenMode> editorMode;
+
+        /// <summary>
+        /// Keeps the composer from being clicked or keyed while the hitsound screen is over it. It goes on running all the
+        /// same, for the timeline and the selection.
+        /// </summary>
+        private partial class ComposerHolder : Container
+        {
+            private readonly IBindable<bool> blocked;
+
+            public ComposerHolder(IBindable<bool> blocked)
+            {
+                this.blocked = blocked.GetBoundCopy();
+            }
+
+            public override bool PropagatePositionalInputSubTree => !blocked.Value && base.PropagatePositionalInputSubTree;
+
+            public override bool PropagateNonPositionalInputSubTree => !blocked.Value && base.PropagateNonPositionalInputSubTree;
         }
 
         protected override Drawable CreateTimelineContent()
@@ -90,10 +136,24 @@ namespace osu.Game.Screens.Edit.Compose
                     // We want to display this below hitobjects to better expose placement objects visually.
                     // It needs to be above the blueprint container to handle drags on breaks though.
                     breakDisplay.CreateProxy(),
-                    new TimelineBlueprintContainer(composer),
+                    createTimelineBlueprints(),
                     breakDisplay
                 }
             });
+        }
+
+        /// <summary>
+        /// The timeline's objects, whose selection of sound points the hitsound screen changes: a slider's tail or a
+        /// reverse can be selected on its own there.
+        /// </summary>
+        private TimelineBlueprintContainer createTimelineBlueprints()
+        {
+            var blueprints = new TimelineBlueprintContainer(composer);
+
+            if (HitsoundPanel != null)
+                HitsoundPanel.SamplePoints = blueprints.SamplePoints;
+
+            return blueprints;
         }
 
         private Drawable wrapSkinnableContent(Drawable content)
@@ -116,6 +176,12 @@ namespace osu.Game.Screens.Edit.Compose
             // May be null in the case of a ruleset that doesn't have editor support, see CreateMainContent().
             if (composer == null)
                 return;
+
+            if (editor != null)
+            {
+                editorMode = editor.Mode.GetBoundCopy();
+                editorMode.BindValueChanged(mode => showingHitsounds.Value = mode.NewValue == EditorScreenMode.Hitsounds, true);
+            }
 
             EditorBeatmap.SelectedHitObjects.CollectionChanged += selectionChanged;
             clipboard.BindValueChanged(_ => updateClipboardActionAvailability());

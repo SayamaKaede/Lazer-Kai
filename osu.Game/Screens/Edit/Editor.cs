@@ -1419,6 +1419,10 @@ namespace osu.Game.Screens.Edit
                     screenSwitcher.SelectItem(EditorScreenMode.Verify);
                     return true;
 
+                case GlobalAction.EditorHitsoundMode:
+                    screenSwitcher.SelectItem(EditorScreenMode.Hitsounds);
+                    return true;
+
                 case GlobalAction.EditorTestGameplay:
                     bottomBar.TestGameplayButton.TriggerClick();
                     return true;
@@ -2167,7 +2171,7 @@ namespace osu.Game.Screens.Edit
             screenContainer.Remove(existing, true);
 
             if (wasCurrent)
-                onModeChanged(new ValueChangedEvent<EditorScreenMode>(EditorScreenMode.Compose, EditorScreenMode.Compose));
+                onModeChanged(new ValueChangedEvent<EditorScreenMode>(Mode.Value, Mode.Value));
         }
 
         private void onModeChanged(ValueChangedEvent<EditorScreenMode> e)
@@ -2189,19 +2193,27 @@ namespace osu.Game.Screens.Edit
 
             var lastScreen = currentScreen;
 
-            lastScreen?.Hide();
+            // the hitsound screen is the compose screen with the playfield given over to the hitsounds, so that there is
+            // one composer to keep the timeline, the selection and the previewed mods.
+            var screenType = e.NewValue == EditorScreenMode.Hitsounds ? EditorScreenMode.Compose : e.NewValue;
 
             try
             {
-                if ((currentScreen = screenContainer.SingleOrDefault(s => s.Type == e.NewValue)) != null)
+                if ((currentScreen = screenContainer.SingleOrDefault(s => s.Type == screenType)) != null)
                 {
-                    screenContainer.ChangeChildDepth(currentScreen, lastScreen?.Depth + 1 ?? 0);
+                    if (lastScreen != currentScreen)
+                    {
+                        lastScreen?.Hide();
+                        screenContainer.ChangeChildDepth(currentScreen, lastScreen?.Depth + 1 ?? 0);
+                    }
 
                     currentScreen.Show();
                     return;
                 }
 
-                switch (e.NewValue)
+                lastScreen?.Hide();
+
+                switch (screenType)
                 {
                     case EditorScreenMode.SongSetup:
                         currentScreen = new SetupScreen();
@@ -2257,7 +2269,7 @@ namespace osu.Game.Screens.Edit
 
             // If not currently on compose screen, the reload will happen on next mode change.
             // That said, control points *can* change on compose screen (e.g. via undo), so we have to handle that case too.
-            if (Mode.Value == EditorScreenMode.Compose)
+            if (Mode.Value is EditorScreenMode.Compose or EditorScreenMode.Hitsounds)
                 Mode.TriggerChange();
         }
 

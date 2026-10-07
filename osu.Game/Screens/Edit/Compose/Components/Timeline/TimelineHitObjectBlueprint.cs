@@ -130,6 +130,157 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         [Resolved]
         private EditorBeatmap editorBeatmap { get; set; } = null!;
 
+        [Resolved(CanBeNull = true)]
+        private SamplePointSelection? samplePoints { get; set; }
+
+        [Resolved(CanBeNull = true)]
+        private Editor? editor { get; set; }
+
+        private IBindable<EditorScreenMode>? editorMode;
+
+        /// <summary>
+        /// The sound point under a position on screen, as the hitsound screen selects one by clicking: a node where its
+        /// circle is — the head, a reverse, the tail — and otherwise the object's own sounds, which for a slider is its
+        /// body (2026-10-08, as un!stable's timeline does).
+        /// </summary>
+        public int SamplePointAt(Vector2 screenSpacePosition)
+        {
+            if (Item is not IHasRepeats repeats || repeats.NodeSamples.Count == 0)
+                return SamplePointSelection.Body;
+
+            float x = ToLocalSpace(screenSpacePosition).X;
+            int spans = repeats.SpanCount();
+
+            // the nearest node, so that the ends of a slider too short for its circles to keep apart still go to one.
+            int nearest = Enumerable.Range(0, repeats.NodeSamples.Count).MinBy(node => Math.Abs(x - DrawWidth * node / spans));
+
+            return Math.Abs(x - DrawWidth * nearest / spans) <= DrawHeight / 2 ? nearest : SamplePointSelection.Body;
+        }
+
+        private bool onHitsoundScreen => editorMode?.Value == EditorScreenMode.Hitsounds && samplePoints != null;
+
+        private bool allPointsSelected => SamplePointSelection.PointsOf(Item).All(p => samplePoints!.Contains(p.hitObject, p.point));
+
+        /// <summary>
+        /// Whether the object is outlined as a whole. On the hitsound screen, where some of an object can be selected,
+        /// a slider is so only for its body or all of it, the ends selected of one being ringed instead, and a spinner,
+        /// which sounds only as it ends, never: its end is ringed (2026-10-08).
+        /// </summary>
+        public bool OutlinedWhole
+        {
+            get
+            {
+                if (!IsSelected)
+                    return false;
+
+                if (!onHitsoundScreen)
+                    return true;
+
+                if (isSpinner)
+                    return false;
+
+                if (Item is IHasRepeats repeats && repeats.NodeSamples.Count > 0)
+                    return allPointsSelected || samplePoints!.Contains(Item, SamplePointSelection.Body);
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Where along the object the points selected of it are ringed on the hitsound screen, as fractions of its length.
+        /// </summary>
+        public IEnumerable<float> OutlinedPoints => pointOutlines.Select(o => o.Fraction);
+
+        private readonly Container<PointOutline> pointOutlines;
+
+        private EditorSelectionAppearance? pointAppearance;
+
+        private IEnumerable<float> pointsToOutline()
+        {
+            if (!IsSelected || !onHitsoundScreen)
+                yield break;
+
+            if (isSpinner)
+            {
+                if (samplePoints!.Contains(Item, SamplePointSelection.Body))
+                    yield return 1;
+
+                yield break;
+            }
+
+            if (Item is not IHasRepeats repeats || repeats.NodeSamples.Count == 0 || allPointsSelected)
+                yield break;
+
+            int spans = repeats.SpanCount();
+
+            for (int node = 0; node < repeats.NodeSamples.Count; node++)
+            {
+                if (samplePoints!.Contains(Item, node))
+                    yield return (float)node / spans;
+            }
+        }
+
+        private void updatePointOutlines()
+        {
+            float[] fractions = pointsToOutline().ToArray();
+
+            if (!pointOutlines.Select(o => o.Fraction).SequenceEqual(fractions))
+            {
+                pointOutlines.Clear();
+
+                foreach (float fraction in fractions)
+                    pointOutlines.Add(new PointOutline(fraction));
+            }
+
+            if (pointAppearance == null)
+                return;
+
+            foreach (var outline in pointOutlines)
+            {
+                outline.BorderColour = pointAppearance.GetHitsoundOutlineColour(colours.Yellow);
+                outline.BorderThickness = pointAppearance.GetHitsoundOutlineThickness(4);
+                outline.Alpha = pointAppearance.HitsoundOutlineOpacity;
+            }
+        }
+
+        private void samplePointsChanged() => Scheduler.AddOnce(updateColour);
+
+        /// <summary>
+        /// A ring around one of an object's circles: the head, a reverse or the tail.
+        /// </summary>
+        private partial class PointOutline : CircularContainer
+        {
+            public readonly float Fraction;
+
+            public PointOutline(float fraction)
+            {
+                Fraction = fraction;
+
+                RelativePositionAxes = Axes.X;
+                X = fraction;
+                RelativeSizeAxes = Axes.Y;
+                Height = 1;
+                Anchor = Anchor.CentreLeft;
+                Origin = Anchor.Centre;
+                Masking = true;
+
+                Child = new Box
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Alpha = 0,
+                    AlwaysPresent = true,
+                };
+            }
+
+            protected override void Update()
+            {
+                base.Update();
+
+                // as round as the circles it goes around, however tall the timeline makes them.
+                Width = DrawHeight;
+            }
+        }
+
         public TimelineHitObjectBlueprint(HitObject item)
             : base(item)
         {
@@ -161,6 +312,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                     Origin = Anchor.CentreLeft,
                 },
                 border = new Border
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Anchor = Anchor.CentreLeft,
+                    Origin = Anchor.CentreLeft,
+                },
+                pointOutlines = new Container<PointOutline>
                 {
                     RelativeSizeAxes = Axes.Both,
                     Anchor = Anchor.CentreLeft,
@@ -249,9 +406,17 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             }
         }
 
+        private OsuColour colours = null!;
+
         [BackgroundDependencyLoader]
-        private void load(OsuConfigManager config)
+        private void load(OsuConfigManager config, OsuColour colours)
         {
+            this.colours = colours;
+
+            // the hitsound screen's own outline, which the rings around the points selected are drawn with as well.
+            pointAppearance = new EditorSelectionAppearance(config);
+            pointAppearance.Changed += updatePointOutlines;
+
             config.BindWith(OsuSetting.EditorHideTimelinePoints, hideTimelinePoints);
             config.BindWith(OsuSetting.EditorHideTimelineVolume, hideTimelineVolume);
             config.BindWith(OsuSetting.EditorTimelineStyle, timelineStyle);
@@ -416,6 +581,15 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         {
             base.LoadComplete();
 
+            if (samplePoints != null)
+                samplePoints.Changed += samplePointsChanged;
+
+            if (editor != null)
+            {
+                editorMode = editor.Mode.GetBoundCopy();
+                editorMode.BindValueChanged(_ => samplePointsChanged());
+            }
+
             switch (Item)
             {
                 case IHasDisplayColour displayColour:
@@ -550,10 +724,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                     break;
             }
 
-            if (IsSelected)
+            if (OutlinedWhole)
                 border.Show();
             else
                 border.Hide();
+
+            updatePointOutlines();
 
             // stable's timeline lets the waveform through the objects, which is how a moment is read against the
             // sound it belongs to. Only the colour is thinned: the ring, the number and the arrow stay solid, or
@@ -688,6 +864,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             if (skin.IsNotNull())
                 skin.SourceChanged -= updateSkinPieces;
+
+            if (samplePoints != null)
+                samplePoints.Changed -= samplePointsChanged;
         }
 
         private partial class Tick : Circle
@@ -896,6 +1075,17 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
             private bool hasMouseDown;
 
+            [Resolved(canBeNull: true)]
+            private SamplePointSelection? samplePoints { get; set; }
+
+            [Resolved(canBeNull: true)]
+            private Editor? editor { get; set; }
+
+            /// <summary>
+            /// The points selected as the mouse went down on the hitsound screen, before this selects the object as a whole.
+            /// </summary>
+            private HashSet<(HitObject hitObject, int point)>? pointsBeforeClick;
+
             protected override bool OnMouseDown(MouseDownEvent e)
             {
                 // only the button that drags an end takes hold of it. Everything else a button does here is about the
@@ -903,6 +1093,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 // menu -- and has to reach the blueprint underneath, which is where those are handled.
                 if (e.Button != MouseButton.Left)
                     return false;
+
+                pointsBeforeClick = editor?.Mode.Value == EditorScreenMode.Hitsounds ? samplePoints?.All.ToHashSet() : null;
 
                 hasMouseDown = true;
 
@@ -924,6 +1116,33 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 hasMouseDown = false;
                 updateState();
                 base.OnMouseUp(e);
+            }
+
+            /// <remarks>
+            /// On the hitsound screen, clicking the end of an object without dragging it selects that end alone: a slider's
+            /// tail, or what a spinner sounds as it ends. The handle lies over the tail's circle, so a click there would
+            /// otherwise only ever take the whole slider (2026-10-08).
+            /// </remarks>
+            protected override bool OnClick(ClickEvent e) => selectEnd(e) || base.OnClick(e);
+
+            /// <remarks>
+            /// Clicked soon after another click, this is a double click rather than a click, which would otherwise go on
+            /// to the timeline and take the object's start instead.
+            /// </remarks>
+            protected override bool OnDoubleClick(DoubleClickEvent e) => selectEnd(e) || base.OnDoubleClick(e);
+
+            private bool selectEnd(MouseButtonEvent e)
+            {
+                var before = pointsBeforeClick;
+                pointsBeforeClick = null;
+
+                if (before == null || samplePoints == null || hitObject == null || e.Button != MouseButton.Left)
+                    return false;
+
+                int end = hitObject is IHasRepeats repeats && repeats.NodeSamples.Count > 0 ? repeats.NodeSamples.Count - 1 : SamplePointSelection.Body;
+
+                samplePoints.SelectPoint(hitObject, end, e.ControlPressed, before);
+                return true;
             }
 
             private void updateState()
@@ -1085,6 +1304,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 updateAppearance();
             }
 
+            [Resolved(canBeNull: true)]
+            private Editor? editor { get; set; }
+
+            /// <summary>
+            /// Which screen the editor shows: the hitsound screen has an outline of its own (2026-10-08).
+            /// </summary>
+            private IBindable<EditorScreenMode>? editorMode;
+
             [BackgroundDependencyLoader]
             private void load(OsuColour colours, OsuConfigManager config)
             {
@@ -1098,6 +1325,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 appearance = new EditorSelectionAppearance(config);
                 appearance.Changed += updateAppearance;
 
+                if (editor != null)
+                {
+                    editorMode = editor.Mode.GetBoundCopy();
+                    editorMode.BindValueChanged(_ => updateAppearance());
+                }
+
                 updateAppearance();
             }
 
@@ -1106,6 +1339,14 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 // the selection state can be set before this has loaded, in which case the loading method applies it.
                 if (appearance == null)
                     return;
+
+                if (editorMode?.Value == EditorScreenMode.Hitsounds)
+                {
+                    Content.BorderColour = appearance.GetHitsoundOutlineColour(colours.Yellow);
+                    Content.BorderThickness = appearance.GetHitsoundOutlineThickness(default_border_thickness);
+                    Alpha = shown ? appearance.HitsoundOutlineOpacity : 0;
+                    return;
+                }
 
                 Content.BorderColour = appearance.GetObjectColour(colours.Yellow);
                 Content.BorderThickness = appearance.GetObjectThickness(default_border_thickness);

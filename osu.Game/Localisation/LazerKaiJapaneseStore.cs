@@ -472,6 +472,7 @@ namespace osu.Game.Localisation
             [$@"{binding_prefix}:editor_previous_reference_difficulty"] = @"ゴーストを一つ下の難易度に",
             [$@"{binding_prefix}:editor_toggle_difficulty_graph"] = @"難易度グラフの表示を切り替え",
             [$@"{binding_prefix}:editor_toggle_volume_graph"] = @"音量のグラフの表示を切り替え",
+            [$@"{binding_prefix}:editor_hitsound_mode"] = @"HSモード",
             [$@"{binding_prefix}:toggle_replay_miss_timeline"] = @"ミスのタイムラインの表示を切り替え",
             [$@"{binding_prefix}:editor_toggle_play_area_border"] = @"プレイ画面の枠の表示を切り替え",
             [$@"{binding_prefix}:editor_toggle_offscreen_detection"] = @"Offscreen検知を切り替え",
