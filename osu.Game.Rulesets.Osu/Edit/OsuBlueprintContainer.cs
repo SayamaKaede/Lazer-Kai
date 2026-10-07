@@ -132,12 +132,25 @@ namespace osu.Game.Rulesets.Osu.Edit
             // Retrieve a snapped position.
             var result = Composer.TrySnapToNearbyObjects(movePosition);
             result ??= Composer.TrySnapToDistanceGrid(movePosition, limitedDistanceSnap.Value ? referenceBlueprint.Item.StartTime : null);
-            if (Composer.TrySnapToPositionGrid(result?.ScreenSpacePosition ?? movePosition, result?.Time) is SnapResult gridSnapResult)
+
+            Vector2 delta;
+
+            // the grid's points are where objects are stored, as in stable, rather than where they are drawn. Aimed
+            // with where it is drawn, the earliest of a stack was stored a stack's worth off the grid, and everything
+            // moved with it (2026-10-05). The aim is moved by the stack as it was when the movement began, so that a
+            // stack coming apart on the way does not move it.
+            if (Composer.TrySnapToPositionGrid(unstackedAsAtStart(referenceBlueprint, result?.ScreenSpacePosition ?? movePosition), result?.Time) is SnapResult gridSnapResult)
+            {
                 result = gridSnapResult;
+                delta = result.ScreenSpacePosition - unstacked(referenceBlueprint, referenceBlueprint.ScreenSpaceSelectionPoint);
+            }
+            else
+            {
+                result ??= new SnapResult(movePosition, null);
+                delta = result.ScreenSpacePosition - referenceBlueprint.ScreenSpaceSelectionPoint;
+            }
 
-            result ??= new SnapResult(movePosition, null);
-
-            bool moved = SelectionHandler.HandleMovement(new MoveSelectionEvent<HitObject>(referenceBlueprint, result.ScreenSpacePosition - referenceBlueprint.ScreenSpaceSelectionPoint));
+            bool moved = SelectionHandler.HandleMovement(new MoveSelectionEvent<HitObject>(referenceBlueprint, delta));
             if (moved)
                 ApplySnapResultTime(result, referenceBlueprint.Item.StartTime);
             return moved;
@@ -195,6 +208,22 @@ namespace osu.Game.Rulesets.Osu.Edit
         private static Vector2 unstacked(SelectionBlueprint<HitObject> blueprint, Vector2 screenSpacePosition) =>
             blueprint.Item is OsuHitObject osuObject && osuObject.StackOffset != Vector2.Zero
                 ? blueprint.ToScreenSpace(blueprint.ToLocalSpace(screenSpacePosition) - osuObject.StackOffset)
+                : screenSpacePosition;
+
+        /// <summary>
+        /// How far the object a movement is carried out with was drawn from where it is stored, when the movement began.
+        /// </summary>
+        private Vector2 movementStackOffset;
+
+        protected override void OnMovementBlueprintsChanged(IReadOnlyList<HitObject> items)
+        {
+            base.OnMovementBlueprintsChanged(items);
+            movementStackOffset = items.FirstOrDefault() is OsuHitObject first ? first.StackOffset : Vector2.Zero;
+        }
+
+        private Vector2 unstackedAsAtStart(SelectionBlueprint<HitObject> blueprint, Vector2 screenSpacePosition) =>
+            movementStackOffset != Vector2.Zero
+                ? blueprint.ToScreenSpace(blueprint.ToLocalSpace(screenSpacePosition) - movementStackOffset)
                 : screenSpacePosition;
     }
 }
