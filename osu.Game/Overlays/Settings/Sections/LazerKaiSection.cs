@@ -45,14 +45,15 @@ namespace osu.Game.Overlays.Settings.Sections
 
             var groups = new List<Drawable>();
 
-            // the manual is only beside the executable in a build that was published, and a row that opens nothing
-            // is worse than no row at all. Decided here rather than inside the group: a subsection takes its alpha
-            // from the settings search, so one that faded itself out would be faded back in the moment the panel
-            // filtered anything.
+            // the manual and the changelogs are only beside the executable in a build that was published, and a row
+            // that opens nothing is worse than no row at all. Decided here rather than inside the group: a subsection
+            // takes its alpha from the settings search, so one that faded itself out would be faded back in the moment
+            // the panel filtered anything.
             string? manual = LazerKaiManual.Find(RuntimeInfo.StartupDirectory);
+            var changelog = LazerKaiChangelog.Read(RuntimeInfo.StartupDirectory);
 
-            if (manual != null)
-                groups.Add(new ManualSettings(manual));
+            if (manual != null || changelog.Count > 0)
+                groups.Add(new ManualSettings(manual, changelog));
 
             groups.AddRange(new Drawable[]
             {

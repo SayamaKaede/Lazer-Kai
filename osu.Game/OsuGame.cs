@@ -155,6 +155,8 @@ namespace osu.Game
 
         private ChangelogOverlay changelogOverlay;
 
+        private LazerKaiChangelogOverlay lazerKaiChangelogOverlay;
+
         private SkinEditorOverlay skinEditor;
 
         private Container overlayContent;
@@ -1279,6 +1281,7 @@ namespace osu.Game
             loadComponentSingleFile(new MessageNotifier(), Add, true);
             loadComponentSingleFile(Settings = new SettingsOverlay(), leftFloatingOverlayContent.Add, true);
             loadComponentSingleFile(changelogOverlay = new ChangelogOverlay(), overlayContent.Add, true);
+            loadComponentSingleFile(lazerKaiChangelogOverlay = new LazerKaiChangelogOverlay(), overlayContent.Add, true);
             loadComponentSingleFile(userProfile = new UserProfileOverlay(), overlayContent.Add, true);
             loadComponentSingleFile(beatmapSetOverlay = new BeatmapSetOverlay(), overlayContent.Add, true);
             loadComponentSingleFile(wikiOverlay = new WikiOverlay(), overlayContent.Add, true);
@@ -1335,7 +1338,7 @@ namespace osu.Game
             }
 
             // ensure only one of these overlays are open at once.
-            var singleDisplayOverlays = new OverlayContainer[] { chatOverlay, news, dashboard, beatmapListing, changelogOverlay, rankingsOverlay, wikiOverlay };
+            var singleDisplayOverlays = new OverlayContainer[] { chatOverlay, news, dashboard, beatmapListing, changelogOverlay, lazerKaiChangelogOverlay, rankingsOverlay, wikiOverlay };
 
             foreach (var overlay in singleDisplayOverlays)
             {
@@ -1366,11 +1369,22 @@ namespace osu.Game
             if (IsDeployedBuild && !string.IsNullOrEmpty(lastVersion) && version != lastVersion)
                 Notifications.Post(new UpdateCompleteNotification(version));
 
+            // what changed since the version run last, shown once the main menu is reached, as the first-run setup is.
+            var unseen = LazerKaiChangelog.Unseen(ReadLazerKaiChangelog(), lastVersion, version);
+
+            if (unseen.Count > 0)
+                PerformFromScreen(_ => lazerKaiChangelogOverlay.ShowReleases(unseen), new[] { typeof(MainMenu) });
+
             // finally, update the version stored to the configuration.
             // this MUST happen after `applyConfigMigrations()` call, as it relies on comparing the previous version.
             // debug / local compilations will reset to a non-release string.
             LocalConfig.SetValue(OsuSetting.Version, version);
         }
+
+        /// <summary>
+        /// Every release's changelog, as shipped beside the game.
+        /// </summary>
+        protected virtual IReadOnlyList<LazerKaiChangelog.Release> ReadLazerKaiChangelog() => LazerKaiChangelog.Read(RuntimeInfo.StartupDirectory);
 
         /// <summary>
         /// Apply any migrations to configuration.

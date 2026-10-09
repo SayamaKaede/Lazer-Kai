@@ -37,13 +37,17 @@ namespace osu.Game.Updater
         /// </remarks>
         public bool IsNewerThan(string running)
         {
-            if (!tryRead(Version, out var mine) || !tryRead(running, out var theirs))
+            if (!TryReadVersion(Version, out var mine) || !TryReadVersion(running, out var theirs))
                 return false;
 
             return mine.CompareTo(theirs) > 0;
         }
 
-        private static bool tryRead(string version, out (int Day, int Revision) parsed)
+        /// <summary>
+        /// Reads a distributed version, <c>yyyyMMdd.N</c>, as a pair that sorts in release order.
+        /// </summary>
+        /// <returns>False for anything else, a portable build's version among them.</returns>
+        public static bool TryReadVersion(string version, out (int Day, int Revision) parsed)
         {
             parsed = default;
 

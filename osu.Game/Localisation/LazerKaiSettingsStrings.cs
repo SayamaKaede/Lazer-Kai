@@ -22,9 +22,9 @@ namespace osu.Game.Localisation
         public static LocalisableString SectionHeader => new TranslatableString(getKey(@"section_header"), @"Lazer-Kai");
 
         /// <summary>
-        /// "Manual"
+        /// "Manual and changelog"
         /// </summary>
-        public static LocalisableString ManualHeader => new TranslatableString(getKey(@"manual_header"), @"Manual");
+        public static LocalisableString ManualHeader => new TranslatableString(getKey(@"manual_header"), @"Manual and changelog");
 
         /// <summary>
         /// "Open the manual"
@@ -36,6 +36,16 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString OpenManualDescription => new TranslatableString(getKey(@"open_manual_description"),
             @"Opens the page that ships with this build, in whatever reads a web page.");
+
+        /// <summary>
+        /// "Show the changelog"
+        /// </summary>
+        public static LocalisableString ShowChangelog => new TranslatableString(getKey(@"show_changelog"), @"Show the changelog");
+
+        /// <summary>
+        /// "changelog"
+        /// </summary>
+        public static LocalisableString ChangelogTitle => new TranslatableString(getKey(@"changelog_title"), @"changelog");
 
         /// <summary>
         /// "Beatmap"

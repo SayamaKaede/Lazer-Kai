@@ -415,10 +415,12 @@ namespace osu.Game.Localisation
             // than as a string nobody got to.
             [$@"{settings_prefix}:section_header"] = @"Lazer-Kai",
 
-            // the manual that ships beside the game
-            [$@"{settings_prefix}:manual_header"] = @"説明書",
+            // the manual and the changelogs that ship beside the game
+            [$@"{settings_prefix}:manual_header"] = @"説明書・Changelog",
             [$@"{settings_prefix}:open_manual"] = @"説明書を開く",
             [$@"{settings_prefix}:open_manual_description"] = @"このビルドに同梱されている説明書を、ブラウザで表示します",
+            [$@"{settings_prefix}:show_changelog"] = @"Changelogを表示",
+            [$@"{settings_prefix}:changelog_title"] = @"Changelog",
 
             // the look the game wears.
             [$@"{settings_prefix}:appearance_header"] = @"見た目",
