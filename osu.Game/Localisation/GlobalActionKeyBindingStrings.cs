@@ -292,6 +292,30 @@ namespace osu.Game.Localisation
             new TranslatableString(getKey(@"editor_hitsound_mode"), @"Hitsound mode");
 
         /// <summary>
+        /// "Hitsounds: copy the previous hitsounds"
+        /// </summary>
+        public static LocalisableString EditorHitsoundSameAsPrevious =>
+            new TranslatableString(getKey(@"editor_hitsound_same_as_previous"), @"Hitsounds: copy the previous hitsounds");
+
+        /// <summary>
+        /// "Hitsounds: place a circle"
+        /// </summary>
+        public static LocalisableString EditorHitsoundPlaceCircle =>
+            new TranslatableString(getKey(@"editor_hitsound_place_circle"), @"Hitsounds: place a circle");
+
+        /// <summary>
+        /// "Hitsounds: place a circle with the previous hitsounds"
+        /// </summary>
+        public static LocalisableString EditorHitsoundPlaceCircleWithPrevious =>
+            new TranslatableString(getKey(@"editor_hitsound_place_circle_with_previous"), @"Hitsounds: place a circle with the previous hitsounds");
+
+        /// <summary>
+        /// "Hitsounds: paste hitsounds only"
+        /// </summary>
+        public static LocalisableString EditorHitsoundPasteOnly =>
+            new TranslatableString(getKey(@"editor_hitsound_paste_only"), @"Hitsounds: paste hitsounds only");
+
+        /// <summary>
         /// "Toggle the miss timeline"
         /// </summary>
         public static LocalisableString ToggleReplayMissTimeline =>

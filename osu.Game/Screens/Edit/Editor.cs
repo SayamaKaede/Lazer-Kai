@@ -1044,7 +1044,8 @@ namespace osu.Game.Screens.Edit
         {
             Mode = Mode.Value,
             Time = clock.CurrentTimeAccurate,
-            ClipboardContent = nextRuleset == null || editorBeatmap.BeatmapInfo.Ruleset.ShortName == nextRuleset.ShortName ? Clipboard.Content.Value : string.Empty
+            ClipboardContent = nextRuleset == null || editorBeatmap.BeatmapInfo.Ruleset.ShortName == nextRuleset.ShortName ? Clipboard.Content.Value : string.Empty,
+            HitsoundClipboard = Clipboard.Hitsounds.Value,
         };
 
         /// <summary>
@@ -1056,6 +1057,7 @@ namespace osu.Game.Screens.Edit
             Mode.Value = state.Mode;
             clock.Seek(state.Time);
             Clipboard.Content.Value = state.ClipboardContent;
+            Clipboard.Hitsounds.Value = state.HitsoundClipboard;
         });
 
         public void TestGameplay()
@@ -1233,9 +1235,15 @@ namespace osu.Game.Screens.Edit
         /// The difficulty's file as it is stored now, or null if it has none.
         /// </summary>
         [CanBeNull]
-        private byte[] readStoredFile()
+        private byte[] readStoredFile() => ReadStoredFileOf(editorBeatmap.BeatmapInfo);
+
+        /// <summary>
+        /// A difficulty's file as it is stored now, or null if it has none: this one's, or another of the set's.
+        /// </summary>
+        [CanBeNull]
+        public byte[] ReadStoredFileOf(BeatmapInfo beatmapInfo)
         {
-            var info = beatmapManager.QueryBeatmap(b => b.ID == editorBeatmap.BeatmapInfo.ID);
+            var info = beatmapManager.QueryBeatmap(b => b.ID == beatmapInfo.ID);
             return info == null ? null : readSavedFile(beatmapManager.GetWorkingBeatmap(info, true));
         }
 

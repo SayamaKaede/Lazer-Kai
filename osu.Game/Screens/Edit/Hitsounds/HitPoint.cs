@@ -111,5 +111,19 @@ namespace osu.Game.Screens.Edit.Hitsounds
             double latest = passed.Max(p => p.Time);
             return passed.Where(p => Math.Abs(p.Time - latest) < 1).ToArray();
         }
+
+        /// <summary>
+        /// The points heard last before <paramref name="time"/>, leaving out any heard with what is at it.
+        /// </summary>
+        public static IReadOnlyList<HitPoint> LastBefore(IEnumerable<HitObject> hitObjects, double time, bool durationSoundsAtEnd)
+        {
+            var before = hitObjects.SelectMany(h => Of(h, durationSoundsAtEnd)).Where(p => p.Time <= time - 1).ToArray();
+
+            if (before.Length == 0)
+                return Array.Empty<HitPoint>();
+
+            double latest = before.Max(p => p.Time);
+            return before.Where(p => Math.Abs(p.Time - latest) < 1).ToArray();
+        }
     }
 }

@@ -372,6 +372,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorHitsoundOutlineThickness, 1f, 0.25f, 3f, 0.01f);
             SetDefault(OsuSetting.EditorHitsoundOutlineOpacity, 1f, 0.1f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorHitsoundChangeSound, HitsoundChangeSound.Menu);
+            SetDefault(OsuSetting.EditorHitsoundAdvanceByPreviousSpacing, false);
+            SetDefault(OsuSetting.EditorHitsoundShowHarmlessUnsnaps, false);
             SetDefault(OsuSetting.EditorStreamSnapSpacingWhole, true);
             SetDefault(OsuSetting.EditorStreamSnapSpacingLastOfSeveral, false);
             SetDefault(OsuSetting.EditorAutoGenerateBreaks, true);
@@ -1305,5 +1307,16 @@ namespace osu.Game.Configuration
         /// What the hitsound screen plays as a change is made.
         /// </summary>
         EditorHitsoundChangeSound,
+
+        /// <summary>
+        /// Whether the playhead moves on by the gap before a circle the hitsound screen places, as
+        /// <see cref="EditorAdvanceByPreviousSpacingOnPlacement"/> does on the compose screen.
+        /// </summary>
+        EditorHitsoundAdvanceByPreviousSpacing,
+
+        /// <summary>
+        /// Whether the hitsound screen also lists the green lines off a sound that the sound takes all the same.
+        /// </summary>
+        EditorHitsoundShowHarmlessUnsnaps,
     }
 }

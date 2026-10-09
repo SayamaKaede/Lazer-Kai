@@ -25,19 +25,9 @@ namespace osu.Game.Localisation
         public static LocalisableString AdditionBank => new TranslatableString(getKey(@"addition_bank"), @"Additions");
 
         /// <summary>
-        /// "Auto only applies to objects as they are placed"
-        /// </summary>
-        public static LocalisableString AutoSamplesetUnavailable => new TranslatableString(getKey(@"auto_sampleset_unavailable"), @"Auto only applies to objects as they are placed");
-
-        /// <summary>
         /// "{0} selected objects"
         /// </summary>
         public static LocalisableString Selected(int count) => new TranslatableString(getKey(@"selected"), @"{0} selected objects", count);
-
-        /// <summary>
-        /// "Nothing sounds at the playhead"
-        /// </summary>
-        public static LocalisableString NothingAtThePlayhead => new TranslatableString(getKey(@"nothing_at_the_playhead"), @"Nothing sounds at the playhead");
 
         /// <summary>
         /// "circle"
@@ -95,24 +85,19 @@ namespace osu.Game.Localisation
         public static LocalisableString SliderBody => new TranslatableString(getKey(@"slider_body"), @"slider body");
 
         /// <summary>
-        /// "Selection outline on the timeline"
+        /// "Selection outline colour"
         /// </summary>
-        public static LocalisableString OutlineHeader => new TranslatableString(getKey(@"outline_header"), @"Selection outline on the timeline");
+        public static LocalisableString OutlineColour => new TranslatableString(getKey(@"outline_colour"), @"Selection outline colour");
 
         /// <summary>
-        /// "Colour"
+        /// "Selection outline thickness"
         /// </summary>
-        public static LocalisableString OutlineColour => new TranslatableString(getKey(@"outline_colour"), @"Colour");
+        public static LocalisableString OutlineThickness => new TranslatableString(getKey(@"outline_thickness"), @"Selection outline thickness");
 
         /// <summary>
-        /// "Thickness"
+        /// "Selection outline opacity"
         /// </summary>
-        public static LocalisableString OutlineThickness => new TranslatableString(getKey(@"outline_thickness"), @"Thickness");
-
-        /// <summary>
-        /// "Opacity"
-        /// </summary>
-        public static LocalisableString OutlineOpacity => new TranslatableString(getKey(@"outline_opacity"), @"Opacity");
+        public static LocalisableString OutlineOpacity => new TranslatableString(getKey(@"outline_opacity"), @"Selection outline opacity");
 
         /// <summary>
         /// "New difficulty"
@@ -120,9 +105,19 @@ namespace osu.Game.Localisation
         public static LocalisableString NewDifficultyHeader => new TranslatableString(getKey(@"new_difficulty_header"), @"New difficulty");
 
         /// <summary>
-        /// "Display"
+        /// "Settings"
         /// </summary>
-        public static LocalisableString DisplayHeader => new TranslatableString(getKey(@"display_header"), @"Display");
+        public static LocalisableString DisplayHeader => new TranslatableString(getKey(@"display_header"), @"Settings");
+
+        /// <summary>
+        /// "Seek on by the previous gap after placing"
+        /// </summary>
+        public static LocalisableString AdvanceByPreviousSpacing => new TranslatableString(getKey(@"advance_by_previous_spacing"), @"Seek on by the previous gap after placing");
+
+        /// <summary>
+        /// "Paste hitsounds only"
+        /// </summary>
+        public static LocalisableString PasteHitsoundsOnly => new TranslatableString(getKey(@"paste_hitsounds_only"), @"Paste hitsounds only");
 
         /// <summary>
         /// "Opacity of the middle"
@@ -143,6 +138,159 @@ namespace osu.Game.Localisation
         /// "The hitsound"
         /// </summary>
         public static LocalisableString ChangeSoundHitsound => new TranslatableString(getKey(@"change_sound_hitsound"), @"The hitsound");
+
+        /// <summary>
+        /// "Copy the previous hitsounds"
+        /// </summary>
+        public static LocalisableString SameAsPrevious => new TranslatableString(getKey(@"same_as_previous"), @"Copy the previous hitsounds");
+
+        /// <summary>
+        /// "Copy hitsounds"
+        /// </summary>
+        public static LocalisableString CopyHitsounds => new TranslatableString(getKey(@"copy_hitsounds"), @"Copy hitsounds");
+
+        /// <summary>
+        /// "Paste hitsounds"
+        /// </summary>
+        public static LocalisableString PasteHitsounds => new TranslatableString(getKey(@"paste_hitsounds"), @"Paste hitsounds");
+
+        /// <summary>
+        /// "Copy hitsounds from another difficulty"
+        /// </summary>
+        public static LocalisableString CopyFromHeader => new TranslatableString(getKey(@"copy_from_header"), @"Copy hitsounds from another difficulty");
+
+        /// <summary>
+        /// "Copy from"
+        /// </summary>
+        public static LocalisableString CopyFromSource => new TranslatableString(getKey(@"copy_from_source"), @"Copy from");
+
+        /// <summary>
+        /// "Copy onto this difficulty"
+        /// </summary>
+        public static LocalisableString CopyFromButton => new TranslatableString(getKey(@"copy_from_button"), @"Copy onto this difficulty");
+
+        /// <summary>
+        /// "For an osu! beatmap in v14 format, while improved stable compatibility is on, with another osu! difficulty in the set"
+        /// </summary>
+        public static LocalisableString CopyFromUnavailable => new TranslatableString(getKey(@"copy_from_unavailable"),
+            @"For an osu! beatmap in v14 format, while improved stable compatibility is on, with another osu! difficulty in the set");
+
+        /// <summary>
+        /// "Could not read the file of the difficulty to copy from"
+        /// </summary>
+        public static LocalisableString CouldNotReadDifficulty => new TranslatableString(getKey(@"could_not_read_difficulty"), @"Could not read the file of the difficulty to copy from");
+
+        /// <summary>
+        /// "Green lines that may be unsnapped"
+        /// </summary>
+        public static LocalisableString NearLinesHeader => new TranslatableString(getKey(@"near_lines_header"), @"Green lines that may be unsnapped");
+
+        /// <summary>
+        /// "Also show unsnaps that change nothing"
+        /// </summary>
+        public static LocalisableString ShowHarmlessUnsnaps => new TranslatableString(getKey(@"show_harmless_unsnaps"), @"Also show unsnaps that change nothing");
+
+        /// <summary>
+        /// "Keep"
+        /// </summary>
+        public static LocalisableString Keep => new TranslatableString(getKey(@"keep"), @"Keep");
+
+        /// <summary>
+        /// "Kept after placing"
+        /// </summary>
+        public static LocalisableString KeepTooltip => new TranslatableString(getKey(@"keep_tooltip"), @"Kept after placing");
+
+        /// <summary>
+        /// "None"
+        /// </summary>
+        public static LocalisableString NoNearLines => new TranslatableString(getKey(@"no_near_lines"), @"None");
+
+        /// <summary>
+        /// "{1} ms after the {0} (applies)"
+        /// </summary>
+        public static LocalisableString LineAfterTaken(LocalisableString kind, int distance) =>
+            new TranslatableString(getKey(@"line_after_taken"), @"{1} ms after the {0} (applies)", kind, distance);
+
+        /// <summary>
+        /// "{1} ms after the {0} (does not apply)"
+        /// </summary>
+        public static LocalisableString LineAfterNotTaken(LocalisableString kind, int distance) =>
+            new TranslatableString(getKey(@"line_after_not_taken"), @"{1} ms after the {0} (does not apply)", kind, distance);
+
+        /// <summary>
+        /// "{1} ms before the {0} (applies)"
+        /// </summary>
+        public static LocalisableString LineBeforeTaken(LocalisableString kind, int distance) =>
+            new TranslatableString(getKey(@"line_before_taken"), @"{1} ms before the {0} (applies)", kind, distance);
+
+        /// <summary>
+        /// "{1} ms before the {0} (does not apply)"
+        /// </summary>
+        public static LocalisableString LineBeforeNotTaken(LocalisableString kind, int distance) =>
+            new TranslatableString(getKey(@"line_before_not_taken"), @"{1} ms before the {0} (does not apply)", kind, distance);
+
+        /// <summary>
+        /// "Green line at {0}"
+        /// </summary>
+        public static LocalisableString LineAt(string time) => new TranslatableString(getKey(@"line_at"), @"Green line at {0}", time);
+
+        /// <summary>
+        /// "Green line at {0} (new)"
+        /// </summary>
+        public static LocalisableString LineToAdd(string time) => new TranslatableString(getKey(@"line_to_add"), @"Green line at {0} (new)", time);
+
+        /// <summary>
+        /// "Place a circle"
+        /// </summary>
+        public static LocalisableString PlaceCircle => new TranslatableString(getKey(@"place_circle"), @"Place a circle");
+
+        /// <summary>
+        /// "Place with the previous"
+        /// </summary>
+        public static LocalisableString PlaceCircleWithPrevious => new TranslatableString(getKey(@"place_circle_with_previous"), @"Place with the previous");
+
+        /// <summary>
+        /// "Copied hitsounds ({0}, {1} points)"
+        /// </summary>
+        public static LocalisableString StatusCopied(string times, int count) =>
+            new TranslatableString(getKey(@"status_copied"), @"Copied hitsounds ({0}, {1} points)", times, count);
+
+        /// <summary>
+        /// "Copied hitsounds (nothing sounds there)"
+        /// </summary>
+        public static LocalisableString StatusNothingToCopy => new TranslatableString(getKey(@"status_nothing_to_copy"), @"Copied hitsounds (nothing sounds there)");
+
+        /// <summary>
+        /// "Pasted hitsounds ({0}, {1} points)"
+        /// </summary>
+        public static LocalisableString StatusPasted(string times, int count) =>
+            new TranslatableString(getKey(@"status_pasted"), @"Pasted hitsounds ({0}, {1} points)", times, count);
+
+        /// <summary>
+        /// "Pasted hitsounds (nothing sounds there)"
+        /// </summary>
+        public static LocalisableString StatusNothingToPasteOnto => new TranslatableString(getKey(@"status_nothing_to_paste_onto"), @"Pasted hitsounds (nothing sounds there)");
+
+        /// <summary>
+        /// "Pasted hitsounds (none copied)"
+        /// </summary>
+        public static LocalisableString StatusNothingCopied => new TranslatableString(getKey(@"status_nothing_copied"), @"Pasted hitsounds (none copied)");
+
+        /// <summary>
+        /// "Copied the previous hitsounds ({0} → {1}, {2} points)"
+        /// </summary>
+        public static LocalisableString StatusCopiedPrevious(string from, string times, int count) =>
+            new TranslatableString(getKey(@"status_copied_previous"), @"Copied the previous hitsounds ({0} → {1}, {2} points)", from, times, count);
+
+        /// <summary>
+        /// "Copied the previous hitsounds (nothing sounds there)"
+        /// </summary>
+        public static LocalisableString StatusNothingToCopyOnto => new TranslatableString(getKey(@"status_nothing_to_copy_onto"), @"Copied the previous hitsounds (nothing sounds there)");
+
+        /// <summary>
+        /// "Copied the previous hitsounds (nothing before)"
+        /// </summary>
+        public static LocalisableString StatusNothingBefore => new TranslatableString(getKey(@"status_nothing_before"), @"Copied the previous hitsounds (nothing before)");
 
         private static string getKey(string key) => $@"{prefix}:{key}";
     }

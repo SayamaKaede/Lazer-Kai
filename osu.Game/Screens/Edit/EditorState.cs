@@ -1,6 +1,10 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
+using System.Collections.Generic;
+using osu.Game.Screens.Edit.Hitsounds;
+
 namespace osu.Game.Screens.Edit
 {
     /// <summary>
@@ -22,5 +26,11 @@ namespace osu.Game.Screens.Edit
         /// The editor clipboard content.
         /// </summary>
         public string ClipboardContent { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The hitsounds copied on the hitsound screen, kept as the objects are when switching difficulty: those of the
+        /// hitsound difficulty can be pasted into another.
+        /// </summary>
+        public IReadOnlyList<CopiedHitsound> HitsoundClipboard { get; set; } = Array.Empty<CopiedHitsound>();
     }
 }

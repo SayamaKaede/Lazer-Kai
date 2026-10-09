@@ -323,6 +323,22 @@ namespace osu.Game.Screens.Edit.GreenLines
         }
 
         /// <summary>
+        /// Puts <paramref name="edited"/> in the place of every line at once, going over the objects once for all of them:
+        /// for a change that puts lines in throughout, which one at a time would go over them once a line.
+        /// </summary>
+        public void SetAll(IReadOnlyList<SavedTimingLine> edited)
+        {
+            if (edited.SequenceEqual(lines.Lines))
+                return;
+
+            change(() =>
+            {
+                lines.Lines.Clear();
+                lines.Lines.AddRange(edited);
+            });
+        }
+
+        /// <summary>
         /// Takes out several green lines at once, going over the objects once for all of them. Red lines among them stay.
         /// </summary>
         public void RemoveAll(IEnumerable<SavedTimingLine> toRemove)

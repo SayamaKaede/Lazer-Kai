@@ -124,6 +124,12 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleAutoCursor),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleVolumeGraph),
             new KeyBinding(InputKey.None, GlobalAction.EditorHitsoundMode),
+            // next to Q, W, E and R, which the hitsound screen's other keys are, and free in the editor.
+            new KeyBinding(new[] { InputKey.A }, GlobalAction.EditorHitsoundSameAsPrevious),
+            // the compose screen's circle tool's key, which the hitsound screen has no tools for (2026-10-10).
+            new KeyBinding(new[] { InputKey.Number2 }, GlobalAction.EditorHitsoundPlaceCircle),
+            new KeyBinding(new[] { InputKey.Shift, InputKey.Number2 }, GlobalAction.EditorHitsoundPlaceCircleWithPrevious),
+            new KeyBinding(new[] { InputKey.Control, InputKey.Shift, InputKey.V }, GlobalAction.EditorHitsoundPasteOnly),
         };
 
         private static IEnumerable<KeyBinding> globalKeyBindings => new[]
@@ -756,6 +762,18 @@ namespace osu.Game.Input.Bindings
 
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorHitsoundMode))]
         EditorHitsoundMode,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorHitsoundSameAsPrevious))]
+        EditorHitsoundSameAsPrevious,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorHitsoundPlaceCircle))]
+        EditorHitsoundPlaceCircle,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorHitsoundPlaceCircleWithPrevious))]
+        EditorHitsoundPlaceCircleWithPrevious,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorHitsoundPasteOnly))]
+        EditorHitsoundPasteOnly,
     }
 
     public enum GlobalActionCategory

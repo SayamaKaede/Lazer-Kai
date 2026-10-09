@@ -3,6 +3,7 @@
 
 #nullable disable
 
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
@@ -167,7 +168,10 @@ namespace osu.Game.Screens.Edit.Compose
         private void load(EditorClipboard clipboard)
         {
             this.clipboard = clipboard.Content.GetBoundCopy();
+            copiedHitsounds = clipboard.Hitsounds.GetBoundCopy();
         }
+
+        private IBindable<IReadOnlyList<CopiedHitsound>> copiedHitsounds;
 
         protected override void LoadComplete()
         {
@@ -183,8 +187,12 @@ namespace osu.Game.Screens.Edit.Compose
                 editorMode.BindValueChanged(mode => showingHitsounds.Value = mode.NewValue == EditorScreenMode.Hitsounds, true);
             }
 
+            showingHitsounds.BindValueChanged(s => composer.ToolboxesShown.Value = !s.NewValue, true);
+
             EditorBeatmap.SelectedHitObjects.CollectionChanged += selectionChanged;
             clipboard.BindValueChanged(_ => updateClipboardActionAvailability());
+            copiedHitsounds.BindValueChanged(_ => updateClipboardActionAvailability());
+            showingHitsounds.BindValueChanged(_ => updateClipboardActionAvailability());
             composer.OnLoadComplete += _ => updateClipboardActionAvailability();
             updateClipboardActionAvailability();
         }
@@ -203,9 +211,11 @@ namespace osu.Game.Screens.Edit.Compose
 
         #region Clipboard operations
 
+        // on the hitsound screen, the hitsounds are what is copied and pasted, and nothing is cut (2026-10-08).
+
         public override void Cut()
         {
-            if (!CanCut.Value)
+            if (!CanCut.Value || showingHitsounds.Value)
                 return;
 
             Copy();
@@ -214,6 +224,13 @@ namespace osu.Game.Screens.Edit.Compose
 
         public override void Copy()
         {
+            if (showingHitsounds.Value)
+            {
+                hostClipboard.SetText(getTimestamp());
+                HitsoundPanel?.CopyHitsounds();
+                return;
+            }
+
             // on stable, pressing Ctrl-C would copy the current timestamp to system clipboard
             // regardless of whether anything was even selected at all.
             // UX-wise this is generally strange and unexpected, but make it work anyways to preserve muscle memory.
@@ -228,6 +245,13 @@ namespace osu.Game.Screens.Edit.Compose
 
         public override void Paste()
         {
+            // with nothing copied too, which the hitsound screen says.
+            if (showingHitsounds.Value)
+            {
+                HitsoundPanel?.PasteHitsounds(true);
+                return;
+            }
+
             if (!CanPaste.Value)
                 return;
 
@@ -252,6 +276,15 @@ namespace osu.Game.Screens.Edit.Compose
 
         private void updateClipboardActionAvailability()
         {
+            if (showingHitsounds.Value)
+            {
+                // what is at the playhead is copied with nothing selected.
+                CanCut.Value = false;
+                CanCopy.Value = true;
+                CanPaste.Value = copiedHitsounds.Value.Count > 0;
+                return;
+            }
+
             CanCut.Value = CanCopy.Value = EditorBeatmap.SelectedHitObjects.Any();
             CanPaste.Value = composer.IsLoaded && !composer.EditingLocked && !string.IsNullOrEmpty(clipboard.Value);
         }

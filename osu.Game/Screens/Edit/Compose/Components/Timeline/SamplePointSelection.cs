@@ -101,9 +101,19 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             if (!points.Remove((hitObject, point)))
                 points.Add((hitObject, point));
 
-            SelectFromBox(points, () =>
+            SelectPoints(points);
+        }
+
+        /// <summary>
+        /// Selects <paramref name="points"/> and nothing else, with the objects they belong to.
+        /// </summary>
+        public void SelectPoints(IEnumerable<(HitObject hitObject, int point)> points)
+        {
+            var selecting = points.ToHashSet();
+
+            SelectFromBox(selecting, () =>
             {
-                var objects = points.Select(p => p.hitObject).Distinct().ToList();
+                var objects = selecting.Select(p => p.hitObject).Distinct().ToList();
 
                 beatmap.SelectedHitObjects.RemoveAll(h => !objects.Contains(h));
                 beatmap.SelectedHitObjects.AddRange(objects.Except(beatmap.SelectedHitObjects).ToList());

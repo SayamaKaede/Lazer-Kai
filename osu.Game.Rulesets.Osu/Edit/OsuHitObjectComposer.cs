@@ -397,6 +397,16 @@ namespace osu.Game.Rulesets.Osu.Edit
                 hasSliderVelocity.SliderVelocityMultiplier = sliderVelocityToolboxGroup.SliderVelocity.Value;
         }
 
+        /// <remarks>
+        /// As a hitsound difficulty has its circles: in the middle, each starting a combo, so that the numbers stay at 1.
+        /// </remarks>
+        public override HitObject CreateObjectToHear(double time) => new HitCircle
+        {
+            StartTime = time,
+            Position = OsuPlayfield.BASE_SIZE / 2,
+            NewCombo = true,
+        };
+
         public override string ConvertSelectionToString()
             => string.Join(',', selectedHitObjects.Cast<OsuHitObject>().OrderBy(h => h.StartTime)
                                                   .Select(h => (h.IndexInCurrentCombo + 1).ToString(CultureInfo.InvariantCulture)));

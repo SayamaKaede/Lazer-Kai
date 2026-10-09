@@ -222,10 +222,27 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             return true;
         }
 
+        /// <remarks>
+        /// With the additions after the bank, and their bank after a slash where it is another: "S/D WC 80" for a whistle
+        /// and a clap from drum over soft (2026-10-08).
+        /// </remarks>
         private void updateText()
         {
-            string sound = $"{AbbreviateBank(GetBankValue(GetSamples()))}{GetSuffix(GetSamples())}";
-            Label.Text = HasVolume ? $"{sound} {GetVolumeValue(GetSamples())}" : sound;
+            var samples = GetSamples();
+
+            string bank = AbbreviateBank(GetBankValue(samples)) ?? string.Empty;
+            string? additionBank = samples.FirstOrDefault(s => HitSampleInfo.ALL_ADDITIONS.Contains(s.Name))?.Bank;
+
+            if (additionBank != null && additionBank != GetBankValue(samples))
+                bank += $@"/{AbbreviateBank(additionBank)}";
+
+            string sound = $"{bank}{GetSuffix(samples)}";
+            string additions = AbbreviateAdditions(samples);
+
+            if (additions.Length > 0)
+                sound += $@" {additions}";
+
+            Label.Text = HasVolume ? $"{sound} {GetVolumeValue(samples)}" : sound;
 
             if (!contracted.Value)
                 LabelContainer.ResizeWidthTo(Label.Width, 200, Easing.OutQuint);
@@ -247,6 +264,21 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 HitSampleInfo.BANK_DRUM => @"D",
                 _ => bank
             };
+        }
+
+        /// <summary>
+        /// The additions there are as a letter each, in stable's order: "WC" for a whistle and a clap.
+        /// </summary>
+        public static string AbbreviateAdditions(IEnumerable<HitSampleInfo> samples)
+        {
+            var names = samples.Select(s => s.Name).ToHashSet();
+
+            return string.Concat(HitSampleInfo.ALL_ADDITIONS.Where(names.Contains).Select(name => name switch
+            {
+                HitSampleInfo.HIT_WHISTLE => @"W",
+                HitSampleInfo.HIT_FINISH => @"F",
+                _ => @"C",
+            }));
         }
 
         public static string? GetBankValue(IEnumerable<HitSampleInfo> samples)

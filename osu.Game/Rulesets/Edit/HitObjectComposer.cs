@@ -106,6 +106,9 @@ namespace osu.Game.Rulesets.Edit
         private Box leftToolboxBackground = null!;
         private Box rightToolboxBackground = null!;
 
+        private Container leftToolboxArea = null!;
+        private Container rightToolboxArea = null!;
+
         private EditorRadioButtonCollection toolboxCollection = null!;
         private FillFlowContainer togglesCollection = null!;
         private FillFlowContainer<SampleBankTernaryButton> sampleBankTogglesCollection = null!;
@@ -237,7 +240,7 @@ namespace osu.Game.Rulesets.Edit
                                                   .WithChild(blueprintContainer = CreateBlueprintContainer())
                         }
                     },
-                    new Container
+                    leftToolboxArea = new Container
                     {
                         RelativeSizeAxes = Axes.Y,
                         AutoSizeAxes = Axes.X,
@@ -320,7 +323,7 @@ namespace osu.Game.Rulesets.Edit
                             },
                         }
                     },
-                    new Container
+                    rightToolboxArea = new Container
                     {
                         Anchor = Anchor.TopRight,
                         Origin = Anchor.TopRight,
@@ -436,6 +439,12 @@ namespace osu.Game.Rulesets.Edit
 
             leftToolboxWidth.BindValueChanged(width => LeftToolbox.ExpandedWidth = width.NewValue, true);
             rightToolboxWidth.BindValueChanged(width => RightToolbox.ExpandedWidth = width.NewValue, true);
+
+            ToolboxesShown.BindValueChanged(shown =>
+            {
+                leftToolboxArea.FadeTo(shown.NewValue ? 1 : 0, 200, Easing.OutQuint);
+                rightToolboxArea.FadeTo(shown.NewValue ? 1 : 0, 200, Easing.OutQuint);
+            }, true);
 
             if (referenceDifficulty != null)
             {
@@ -930,30 +939,8 @@ namespace osu.Game.Rulesets.Edit
         /// </summary>
         private void advanceByPreviousSpacing(HitObject placed)
         {
-            // deliberately compares against start times only: a constant rhythm is defined by when objects begin, not when they end.
-            HitObject? precedingObject = null;
-
-            foreach (var h in EditorBeatmap.HitObjects)
-            {
-                if (h.StartTime >= placed.StartTime || h == placed)
-                    continue;
-
-                if (precedingObject == null || h.StartTime > precedingObject.StartTime)
-                    precedingObject = h;
-            }
-
-            // nothing to infer a spacing from yet.
-            if (precedingObject == null)
-                return;
-
-            // measured from the end of the preceding object rather than its start, so that a slider's length doesn't
-            // get counted as part of the gap (which would overshoot when placing after one).
-            double spacing = placed.StartTime - precedingObject.GetEndTime();
-
-            if (spacing <= 0)
-                return;
-
-            EditorClock.SeekSmoothlyTo(BeatSnapProvider.SnapTime(placed.GetEndTime() + spacing));
+            if (TimeAfterPreviousSpacing(EditorBeatmap.HitObjects, placed, BeatSnapProvider) is double time)
+                EditorClock.SeekSmoothlyTo(time);
         }
 
         public void Delete(HitObject hitObject) => EditorBeatmap.Remove(hitObject);
@@ -1154,5 +1141,49 @@ namespace osu.Game.Rulesets.Edit
         /// so that placing a preset and drawing the same shape by hand arrive at the same object.
         /// </remarks>
         public virtual void ApplyPlacementDefaults(HitObject hitObject) { }
+
+        /// <summary>
+        /// Whether the toolboxes either side show. The hitsound screen hides them: it lets the playfield show through it,
+        /// and they cannot be used under it (2026-10-10).
+        /// </summary>
+        public readonly BindableBool ToolboxesShown = new BindableBool(true);
+
+        /// <summary>
+        /// An object to be heard at <paramref name="time"/>, as the hitsound screen puts one in, or null for a ruleset
+        /// that has none. Its sounds are the hitsound screen's to give it.
+        /// </summary>
+        public virtual HitObject? CreateObjectToHear(double time) => null;
+
+        /// <summary>
+        /// Where an object continuing the rhythm of <paramref name="placed"/> and the one before it would go: as far
+        /// after it as it is after the one before. Null where there is no gap to go by.
+        /// </summary>
+        public static double? TimeAfterPreviousSpacing(IEnumerable<HitObject> hitObjects, HitObject placed, IBeatSnapProvider beatSnapProvider)
+        {
+            // deliberately compares against start times only: a constant rhythm is defined by when objects begin, not when they end.
+            HitObject? precedingObject = null;
+
+            foreach (var h in hitObjects)
+            {
+                if (h.StartTime >= placed.StartTime || h == placed)
+                    continue;
+
+                if (precedingObject == null || h.StartTime > precedingObject.StartTime)
+                    precedingObject = h;
+            }
+
+            // nothing to infer a spacing from yet.
+            if (precedingObject == null)
+                return null;
+
+            // measured from the end of the preceding object rather than its start, so that a slider's length doesn't
+            // get counted as part of the gap (which would overshoot when placing after one).
+            double spacing = placed.StartTime - precedingObject.GetEndTime();
+
+            if (spacing <= 0)
+                return null;
+
+            return beatSnapProvider.SnapTime(placed.GetEndTime() + spacing);
+        }
     }
 }
