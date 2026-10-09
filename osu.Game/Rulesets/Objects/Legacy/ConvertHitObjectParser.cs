@@ -549,7 +549,11 @@ namespace osu.Game.Rulesets.Objects.Legacy
                 soundTypes.Add(new LegacyHitSampleInfo(HitSampleInfo.HIT_NORMAL, bankInfo.BankForNormal, bankInfo.Volume, true, bankInfo.CustomSampleBank,
                     // if the sound type doesn't have the Normal flag set, attach it anyway as a layered sample.
                     // None also counts as a normal non-layered sample: https://osu.ppy.sh/help/wiki/osu!_File_Formats/Osu_(file_format)#hitsounds
-                    type != LegacyHitSoundType.None && !type.HasFlag(LegacyHitSoundType.Normal)));
+                    type != LegacyHitSoundType.None && !type.HasFlag(LegacyHitSoundType.Normal))
+                {
+                    // a sampleset of 0, the green line's.
+                    FollowsLine = string.IsNullOrEmpty(bankInfo.BankForNormal),
+                });
             }
             else
             {
@@ -636,6 +640,15 @@ namespace osu.Game.Rulesets.Objects.Legacy
             /// </summary>
             public bool BankSpecified;
 
+            /// <summary>
+            /// Whether this normal sound's bank is the green line's, as a sampleset of 0 has it in stable: it is written as
+            /// 0 again, and goes with the line when the line's sampleset changes (2026-10-10).
+            /// </summary>
+            /// <remarks>
+            /// <see cref="BankSpecified"/> says the same as the file is read, but goes once the line's bank is put in.
+            /// </remarks>
+            public bool FollowsLine { get; init; }
+
             public LegacyHitSampleInfo(string name, string? bank = null, int volume = 0, bool editorAutoBank = false, int customSampleBank = 0, bool isLayered = false)
                 : base(
                     name,
@@ -648,6 +661,12 @@ namespace osu.Game.Rulesets.Objects.Legacy
                 BankSpecified = !string.IsNullOrEmpty(bank);
                 IsLayered = isLayered;
             }
+
+            /// <summary>
+            /// This sample, following the green line's bank or keeping its own.
+            /// </summary>
+            public LegacyHitSampleInfo WithFollowingLine(bool followsLine) =>
+                new LegacyHitSampleInfo(Name, Bank, Volume, EditorAutoBank, CustomSampleBank, IsLayered) { FollowsLine = followsLine };
 
             public sealed override HitSampleInfo With(Optional<string> newName = default, Optional<string> newBank = default, Optional<string?> newSuffix = default, Optional<int> newVolume = default,
                                                       Optional<bool> newEditorAutoBank = default, Optional<bool> newUseBeatmapSamples = default)
@@ -668,18 +687,19 @@ namespace osu.Game.Rulesets.Objects.Legacy
             public virtual LegacyHitSampleInfo With(Optional<string> newName = default, Optional<string> newBank = default, Optional<int> newVolume = default,
                                                     Optional<bool> newEditorAutoBank = default, Optional<int> newCustomSampleBank = default, Optional<bool> newIsLayered = default)
                 => new LegacyHitSampleInfo(newName.GetOr(Name), newBank.GetOr(Bank), newVolume.GetOr(Volume), newEditorAutoBank.GetOr(EditorAutoBank), newCustomSampleBank.GetOr(CustomSampleBank),
-                    newIsLayered.GetOr(IsLayered));
+                    newIsLayered.GetOr(IsLayered)) { FollowsLine = FollowsLine };
 
             public bool Equals(LegacyHitSampleInfo? other)
                 // The additions to equality checks here are *required* to ensure that pooling works correctly.
                 // Of note, `IsLayered` may cause the usage of `SampleVirtual` instead of an actual sample (in cases playback is not required).
                 // Removing it would cause samples which may actually require playback to potentially source for a `SampleVirtual` sample pool.
-                => base.Equals(other) && CustomSampleBank == other.CustomSampleBank && IsLayered == other.IsLayered;
+                // `FollowsLine` is there for the editor, where a sound changed to follow its line would otherwise be the same one.
+                => base.Equals(other) && CustomSampleBank == other.CustomSampleBank && IsLayered == other.IsLayered && FollowsLine == other.FollowsLine;
 
             public override bool Equals(object? obj)
                 => obj is LegacyHitSampleInfo other && Equals(other);
 
-            public override int GetHashCode() => HashCode.Combine(base.GetHashCode(), CustomSampleBank, IsLayered);
+            public override int GetHashCode() => HashCode.Combine(base.GetHashCode(), CustomSampleBank, IsLayered, FollowsLine);
         }
 
         public class FileHitSampleInfo : LegacyHitSampleInfo, IEquatable<FileHitSampleInfo>

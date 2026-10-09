@@ -9,6 +9,7 @@ using osu.Game.Audio;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Beatmaps.Formats;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.Objects.Types;
 
 namespace osu.Game.Screens.Edit.GreenLines
@@ -598,6 +599,10 @@ namespace osu.Game.Screens.Edit.GreenLines
             if (w.Volume == n.Volume && w.SampleIndex == n.SampleIndex && w.SampleSet == n.SampleSet)
                 return false;
 
+            // a sound with a sampleset of its own keeps it, the way it does in stable: only one following its line takes the
+            // line's, with the additions following it (2026-10-10).
+            bool followsLine = samples.FirstOrDefault(s => s.Name == HitSampleInfo.HIT_NORMAL) is ConvertHitObjectParser.LegacyHitSampleInfo { FollowsLine: true };
+
             for (int i = 0; i < samples.Count; i++)
             {
                 var sample = samples[i];
@@ -609,7 +614,7 @@ namespace osu.Game.Screens.Edit.GreenLines
                     sample = sample.With(newSuffix: n.SampleIndex >= 2 ? n.SampleIndex.ToString(CultureInfo.InvariantCulture) : null, newUseBeatmapSamples: n.SampleIndex >= 1);
 
                 // an addition with a bank of its own keeps it, the way it keeps it in stable.
-                if (w.SampleSet != n.SampleSet && bankOf(n.SampleSet) is string bank && (sample.Name == HitSampleInfo.HIT_NORMAL || sample.EditorAutoBank))
+                if (followsLine && w.SampleSet != n.SampleSet && bankOf(n.SampleSet) is string bank && (sample.Name == HitSampleInfo.HIT_NORMAL || sample.EditorAutoBank))
                     sample = sample.With(newBank: bank);
 
                 samples[i] = sample;

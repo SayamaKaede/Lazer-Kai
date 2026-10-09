@@ -86,7 +86,9 @@ namespace osu.Game.Tests.Visual.Editing
             });
             saveAndWait();
 
-            AddAssert("one line differs", () => differingLines(), () => Is.EqualTo(new[] { ("248,192,1285,1,8,0:0:0:0:", "258,192,1285,1,8,2:0:0:0:") }));
+            // its sampleset stays 0, the line's: until 2026-10-10 it came out as 2, the line's bank written as its own,
+            // since a sound following its line could not be written as one.
+            AddAssert("one line differs", () => differingLines(), () => Is.EqualTo(new[] { ("248,192,1285,1,8,0:0:0:0:", "258,192,1285,1,8,0:0:0:0:") }));
         }
 
         [Test]

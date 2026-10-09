@@ -13,6 +13,7 @@ using osu.Game.Beatmaps.Legacy;
 using osu.Game.Database;
 using osu.Game.IO;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.Objects.Types;
 
 namespace osu.Game.Beatmaps.Formats
@@ -713,12 +714,17 @@ namespace osu.Game.Beatmaps.Formats
         /// <returns>Whether they are ones a green line can put right, if they differ.</returns>
         private bool add(List<Moment> moments, IList<HitSampleInfo> want, IList<HitSampleInfo> have, double at, double lookupTime, double? wantVelocity, double? haveVelocity)
         {
+            // a sound following its line, and the additions following it, have the line's bank in the file whatever bank
+            // they were last given here: one moved across lines was not given the new line's (2026-10-10).
+            bool followsLine = want.FirstOrDefault(s => s.Name == HitSampleInfo.HIT_NORMAL) is ConvertHitObjectParser.LegacyHitSampleInfo { FollowsLine: true };
+
             // the banks and which sounds play are written on the object, so they have to agree already.
             foreach (var sample in want)
             {
                 var match = have.FirstOrDefault(h => h.Name == sample.Name);
+                bool bankIsTheLines = followsLine && (sample.Name == HitSampleInfo.HIT_NORMAL || sample.EditorAutoBank);
 
-                if (match == null || match.Bank != sample.Bank || want.Count != have.Count)
+                if (match == null || (match.Bank != sample.Bank && !bankIsTheLines) || want.Count != have.Count)
                 {
                     Failure = FormattableString.Invariant(
                         $@"at {at} the beatmap has [{string.Join(@", ", want.Select(describe))}] and the file reads back [{string.Join(@", ", have.Select(describe))}]");

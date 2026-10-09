@@ -258,7 +258,7 @@ namespace osu.Game.Beatmaps.Formats
             foreach (var group in legacyControlPoints.Groups)
             {
                 var groupTimingPoint = group.ControlPoints.OfType<TimingControlPoint>().FirstOrDefault();
-                var controlPointProperties = getLegacyControlPointProperties(group, groupTimingPoint != null);
+                var controlPointProperties = getLegacyControlPointProperties(group);
 
                 // If the group contains a timing control point, it needs to be output separately.
                 if (groupTimingPoint != null)
@@ -305,7 +305,7 @@ namespace osu.Game.Beatmaps.Formats
                 lastControlPointProperties = controlPointProperties;
             }
 
-            LegacyControlPointProperties getLegacyControlPointProperties(ControlPointGroup group, bool updateSampleBank)
+            LegacyControlPointProperties getLegacyControlPointProperties(ControlPointGroup group)
             {
                 var timingPoint = legacyControlPoints.TimingPointAt(group.Time);
                 var difficultyPoint = legacyControlPoints.DifficultyPointAt(group.Time);
@@ -327,7 +327,9 @@ namespace osu.Game.Beatmaps.Formats
                 {
                     SliderVelocity = difficultyPoint.SliderVelocity,
                     TimingSignature = timingPoint.TimeSignature.Numerator,
-                    SampleBank = updateSampleBank ? (int)toLegacySampleBank(tempHitSample.Bank) : lastControlPointProperties.SampleBank,
+                    // every line says its bank, and not only a red one: an object following its line, written with a
+                    // sampleset of 0, reads its bank from there, where one with a bank of its own never did (2026-10-10).
+                    SampleBank = (int)toLegacySampleBank(tempHitSample.Bank),
                     // Inherit the previous custom sample bank if the current custom sample bank is not set
                     CustomSampleBank = customSampleBank >= 0 ? customSampleBank : lastControlPointProperties.CustomSampleBank,
                     SampleVolume = tempHitSample.Volume,
@@ -685,7 +687,12 @@ namespace osu.Game.Beatmaps.Formats
 
         private string getSampleBank(IList<HitSampleInfo> samples, bool banksOnly = false)
         {
-            LegacySampleBank normalBank = toLegacySampleBank(samples.SingleOrDefault(s => s.Name == HitSampleInfo.HIT_NORMAL)?.Bank);
+            var normal = samples.SingleOrDefault(s => s.Name == HitSampleInfo.HIT_NORMAL);
+
+            // one following its green line is written as stable has it, with no bank of its own (2026-10-10).
+            LegacySampleBank normalBank = normal is ConvertHitObjectParser.LegacyHitSampleInfo { FollowsLine: true }
+                ? LegacySampleBank.None
+                : toLegacySampleBank(normal?.Bank);
             LegacySampleBank addBank = toLegacySampleBank(samples.FirstOrDefault(s => !string.IsNullOrEmpty(s.Name) && s.Name != HitSampleInfo.HIT_NORMAL && !s.EditorAutoBank)?.Bank);
 
             StringBuilder sb = new StringBuilder();
