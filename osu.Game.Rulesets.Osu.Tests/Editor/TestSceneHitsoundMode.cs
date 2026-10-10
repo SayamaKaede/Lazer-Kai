@@ -266,6 +266,100 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddAssert("the slider is not outlined as a whole", () => blueprintOf(slider).OutlinedWhole, () => Is.False);
         }
 
+        /// <summary>
+        /// The part of a slider pressed is selected as the mouse goes down, not as it comes up: with the drag threshold
+        /// removed, which the timeline asks for, a press that moves at all is a drag and never a click, and a hand is
+        /// seldom that still (2026-10-11).
+        /// </summary>
+        [TestCase(0)]
+        [TestCase(2)]
+        public void TestPressingAnEndOfASliderSelectsThatEnd(int node)
+        {
+            switchToHitsounds();
+            seekTo(() => slider.StartTime);
+
+            AddStep("press on that end", () => pressSlider(node == 0 ? 0 : 1));
+            AddUntilStep("that end alone is what the buttons are for", () => panel.Target.Count == 1 && panel.Target[0].HitObject == slider && panel.Target[0].Node == node);
+            AddStep("release", () => InputManager.ReleaseButton(MouseButton.Left));
+            AddUntilStep("as it still is", () => panel.Target.Count == 1 && panel.Target[0].HitObject == slider && panel.Target[0].Node == node);
+        }
+
+        /// <summary>
+        /// The same press, moved before it is released: a drag, after which no click comes.
+        /// </summary>
+        [TestCase(0)]
+        [TestCase(2)]
+        public void TestAPressThatBecomesADragStillSelectsThatEnd(int node)
+        {
+            switchToHitsounds();
+            seekTo(() => slider.StartTime);
+
+            AddStep("press on that end, move, release", () =>
+            {
+                var at = pressSlider(node == 0 ? 0 : 1);
+
+                // past the distance a test's input manager waits before a drag (10), which the game's does not wait for
+                // over the timeline. Into the slider, so that the pointer stays on it.
+                InputManager.MoveMouseTo(at + new Vector2(node == 0 ? 12 : -12, 0));
+                InputManager.ReleaseButton(MouseButton.Left);
+            });
+
+            AddUntilStep("that end alone is what the buttons are for", () => panel.Target.Count == 1 && panel.Target[0].HitObject == slider && panel.Target[0].Node == node);
+        }
+
+        /// <summary>
+        /// A press on one of several objects selected may be the start of a drag of them all, so it leaves them selected
+        /// until it is known to be a click, as it does everywhere else in the editor.
+        /// </summary>
+        [Test]
+        public void TestPressingOneOfSeveralSelectedKeepsThemUntilReleased()
+        {
+            switchToHitsounds();
+            seekTo(() => slider.StartTime);
+
+            AddStep("select the slider and the last circle", () => EditorBeatmap.SelectedHitObjects.AddRange(new HitObject[] { slider, last }));
+            AddStep("press on the slider's head", () => pressSlider(0));
+            AddAssert("both are still selected", () => EditorBeatmap.SelectedHitObjects, () => Is.EquivalentTo(new HitObject[] { slider, last }));
+
+            AddStep("release", () => InputManager.ReleaseButton(MouseButton.Left));
+            AddWaitStep("let the click land", 3);
+            AddAssert("the head alone is what the buttons are for",
+                () => string.Join(" ", panel.Target.Select(p => $"{p.HitObject.GetType().Name}:{p.Node?.ToString() ?? "body"}")),
+                () => Is.EqualTo("Slider:0"));
+        }
+
+        /// <summary>
+        /// A mark is as easily pressed with a hand that moves.
+        /// </summary>
+        [Test]
+        public void TestPressingAMarkSelectsItsPoint()
+        {
+            switchToHitsounds();
+            seekTo(() => slider.StartTime);
+
+            AddStep("press on the tail's mark, move a little, release", () =>
+            {
+                var piece = Editor.ChildrenOfType<NodeSamplePointPiece>().Single(p => p.HitObject == slider && p.NodeIndex == 2);
+
+                InputManager.MoveMouseTo(piece);
+                InputManager.PressButton(MouseButton.Left);
+                InputManager.MoveMouseTo(piece.ScreenSpaceDrawQuad.Centre + new Vector2(0, -12));
+                InputManager.ReleaseButton(MouseButton.Left);
+            });
+
+            AddUntilStep("the tail alone is what the buttons are for", () => panel.Target.Count == 1 && panel.Target[0].HitObject == slider && panel.Target[0].Node == 2);
+        }
+
+        private Vector2 pressSlider(float fraction)
+        {
+            var blueprint = blueprintOf(slider);
+            var at = blueprint.ToScreenSpace(new Vector2(blueprint.DrawWidth * fraction, blueprint.DrawHeight / 2));
+
+            InputManager.MoveMouseTo(at);
+            InputManager.PressButton(MouseButton.Left);
+            return at;
+        }
+
         [Test]
         public void TestClickingTheBodyOfASliderSelectsTheBody()
         {

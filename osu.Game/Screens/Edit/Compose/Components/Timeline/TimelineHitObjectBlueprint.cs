@@ -1081,11 +1081,6 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             [Resolved(canBeNull: true)]
             private Editor? editor { get; set; }
 
-            /// <summary>
-            /// The points selected as the mouse went down on the hitsound screen, before this selects the object as a whole.
-            /// </summary>
-            private HashSet<(HitObject hitObject, int point)>? pointsBeforeClick;
-
             protected override bool OnMouseDown(MouseDownEvent e)
             {
                 // only the button that drags an end takes hold of it. Everything else a button does here is about the
@@ -1094,7 +1089,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 if (e.Button != MouseButton.Left)
                     return false;
 
-                pointsBeforeClick = editor?.Mode.Value == EditorScreenMode.Hitsounds ? samplePoints?.All.ToHashSet() : null;
+                // the points selected on the hitsound screen, before this selects the object as a whole.
+                if (samplePoints != null)
+                    samplePoints.PointsBeforePress = editor?.Mode.Value == EditorScreenMode.Hitsounds ? samplePoints.All.ToHashSet() : null;
 
                 hasMouseDown = true;
 
@@ -1106,6 +1103,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                     beatmap.SelectedHitObjects.Clear();
                     beatmap.SelectedHitObjects.Add(hitObject);
                 }
+
+                selectEnd(e, isThePress: true);
 
                 updateState();
                 return true;
@@ -1119,27 +1118,35 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             }
 
             /// <remarks>
-            /// On the hitsound screen, clicking the end of an object without dragging it selects that end alone: a slider's
-            /// tail, or what a spinner sounds as it ends. The handle lies over the tail's circle, so a click there would
-            /// otherwise only ever take the whole slider (2026-10-08).
+            /// On the hitsound screen, pressing the end of an object selects that end alone: a slider's tail, or what a
+            /// spinner sounds as it ends. The handle lies over the tail's circle, so a press there would otherwise only
+            /// ever take the whole slider (2026-10-08).
+            ///
+            /// It is selected as the mouse goes down, as the rest of an object is on the timeline, and here again for what
+            /// the press could not do (2026-10-11, see <see cref="TimelineBlueprintContainer"/>).
             /// </remarks>
             protected override bool OnClick(ClickEvent e) => selectEnd(e) || base.OnClick(e);
 
             /// <remarks>
-            /// Clicked soon after another click, this is a double click rather than a click, which would otherwise go on
-            /// to the timeline and take the object's start instead.
+            /// Pressed soon after a click here, this is a double click rather than a click, which would otherwise go on to
+            /// the timeline and take the object's start instead. One whose second press was anywhere else is not this
+            /// end's to answer.
             /// </remarks>
-            protected override bool OnDoubleClick(DoubleClickEvent e) => selectEnd(e) || base.OnDoubleClick(e);
+            protected override bool OnDoubleClick(DoubleClickEvent e) => (hasMouseDown && selectEnd(e)) || base.OnDoubleClick(e);
 
-            private bool selectEnd(MouseButtonEvent e)
+            /// <param name="e">The press, or the click or double click it became.</param>
+            /// <param name="isThePress">Whether the mouse has only gone down, when it may yet be the start of a drag.</param>
+            private bool selectEnd(MouseButtonEvent e, bool isThePress = false)
             {
-                var before = pointsBeforeClick;
-                pointsBeforeClick = null;
+                var before = samplePoints?.PointsBeforePress;
 
                 if (before == null || samplePoints == null || hitObject == null || e.Button != MouseButton.Left)
                     return false;
 
                 int end = hitObject is IHasRepeats repeats && repeats.NodeSamples.Count > 0 ? repeats.NodeSamples.Count - 1 : SamplePointSelection.Body;
+
+                if (isThePress && samplePoints.WouldDeselectAnObject(hitObject, end, e.ControlPressed, before))
+                    return false;
 
                 samplePoints.SelectPoint(hitObject, end, e.ControlPressed, before);
                 return true;

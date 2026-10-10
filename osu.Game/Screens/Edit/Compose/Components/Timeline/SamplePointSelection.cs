@@ -94,14 +94,43 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         /// <param name="add">Whether to add it to <paramref name="selected"/> or take it out, rather than select it alone.</param>
         /// <param name="selected">The points selected before: a click on an object selects all of it as the mouse goes
         /// down, before it is known to be a click.</param>
-        public void SelectPoint(HitObject hitObject, int point, bool add, IEnumerable<(HitObject hitObject, int point)> selected)
+        public void SelectPoint(HitObject hitObject, int point, bool add, IEnumerable<(HitObject hitObject, int point)> selected) =>
+            SelectPoints(pointsAfter(hitObject, point, add, selected));
+
+        /// <summary>
+        /// The points selected as the mouse last went down on the timeline on the hitsound screen; null for a press made
+        /// anywhere else.
+        /// </summary>
+        /// <remarks>
+        /// The point pressed is selected at once, and again when the press turns out to be a click or a double click, by
+        /// whichever of the timeline and an object's end handle that reaches. Counted from these each time, a later one
+        /// changes nothing an earlier one did (2026-10-11).
+        /// </remarks>
+        public HashSet<(HitObject hitObject, int point)>? PointsBeforePress { get; set; }
+
+        /// <summary>
+        /// Whether selecting a point the same way would leave an object that is selected now with none of its points
+        /// selected, which deselects it.
+        /// </summary>
+        /// <remarks>
+        /// A press on the timeline may be the start of a drag of everything selected, so it is not what deselects any of
+        /// it: that waits for the press to be a click, as it does everywhere else in the editor.
+        /// </remarks>
+        public bool WouldDeselectAnObject(HitObject hitObject, int point, bool add, IEnumerable<(HitObject hitObject, int point)> selected)
+        {
+            var kept = pointsAfter(hitObject, point, add, selected).Select(p => p.hitObject).ToHashSet();
+
+            return beatmap.SelectedHitObjects.Any(h => !kept.Contains(h));
+        }
+
+        private static HashSet<(HitObject hitObject, int point)> pointsAfter(HitObject hitObject, int point, bool add, IEnumerable<(HitObject hitObject, int point)> selected)
         {
             var points = add ? selected.ToHashSet() : new HashSet<(HitObject hitObject, int point)>();
 
             if (!points.Remove((hitObject, point)))
                 points.Add((hitObject, point));
 
-            SelectPoints(points);
+            return points;
         }
 
         /// <summary>

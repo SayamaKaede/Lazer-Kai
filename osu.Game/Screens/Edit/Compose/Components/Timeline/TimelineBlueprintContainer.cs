@@ -84,68 +84,76 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         [Resolved(CanBeNull = true)]
         private Editor editor { get; set; }
 
-        /// <summary>
-        /// The points selected as the mouse went down on the hitsound screen, which the object under it is then selected
-        /// over as a whole, before it is known whether this is a click or the start of a drag.
-        /// </summary>
-        private HashSet<(HitObject hitObject, int point)> pointsBeforeClick;
-
-        protected override bool OnMouseDown(MouseDownEvent e)
-        {
-            pointsBeforeClick = editor?.Mode.Value == EditorScreenMode.Hitsounds && e.Button == MouseButton.Left ? SamplePoints.All.ToHashSet() : null;
-            return base.OnMouseDown(e);
-        }
-
         /// <remarks>
-        /// On the hitsound screen, a click on an object selects the point of it clicked: the head, a reverse or the tail of
+        /// On the hitsound screen, a press on an object selects the point of it pressed: the head, a reverse or the tail of
         /// a slider where its circle is, and its body between them, as un!stable's timeline does (2026-10-08). A drag
         /// still moves the whole object.
+        ///
+        /// It is selected as the mouse goes down rather than as it comes up. A click is a press released where it was
+        /// made, and with the drag threshold removed, which the timeline asks for, hardly any are: the press had become
+        /// a drag by the time it was released, and the point was never selected (2026-10-11).
         /// </remarks>
-        protected override bool OnClick(ClickEvent e)
+        protected override bool OnMouseDown(MouseDownEvent e)
         {
-            var before = pointsBeforeClick;
-            pointsBeforeClick = null;
+            // taken before the object under the mouse is selected as a whole, which is what the press does everywhere.
+            var before = SamplePoints.PointsBeforePress = editor?.Mode.Value == EditorScreenMode.Hitsounds && e.Button == MouseButton.Left ? SamplePoints.All.ToHashSet() : null;
 
-            bool handled = base.OnClick(e);
+            bool handled = base.OnMouseDown(e);
 
-            if (before == null || e.Button != MouseButton.Left)
-                return handled;
-
-            return selectClickedPoint(e, before) || handled;
-        }
-
-        /// <remarks>
-        /// A second click soon after the first is a double click, which on a selected object goes to its start and takes
-        /// the place of the click. On the hitsound screen, where the head and the tail of one slider are clicked one after
-        /// the other, it selects the point clicked as well.
-        /// </remarks>
-        protected override bool OnDoubleClick(DoubleClickEvent e)
-        {
-            // the double click comes here, where the first click went, even when the second went down on the handle at an
-            // object's end, which leaves the selection as it was.
-            var before = pointsBeforeClick ?? (editor?.Mode.Value == EditorScreenMode.Hitsounds ? SamplePoints.All.ToHashSet() : null);
-            bool handled = base.OnDoubleClick(e);
-
-            if (handled && before != null)
-            {
-                pointsBeforeClick = null;
-                selectClickedPoint(e, before);
-            }
+            if (before != null)
+                selectPressedPoint(e, before, isThePress: true);
 
             return handled;
         }
 
-        private bool selectClickedPoint(MouseButtonEvent e, IEnumerable<(HitObject hitObject, int point)> before)
+        /// <remarks>
+        /// What the press could not do is done here: taking an object out of the selection, and going on to another
+        /// object under the mouse on a second click. Anything else is selected a second time, to no effect.
+        /// </remarks>
+        protected override bool OnClick(ClickEvent e)
         {
-            var clicked = SelectionBlueprints.AliveChildren.OfType<TimelineHitObjectBlueprint>()
+            bool handled = base.OnClick(e);
+
+            if (SamplePoints.PointsBeforePress == null || e.Button != MouseButton.Left)
+                return handled;
+
+            return selectPressedPoint(e, SamplePoints.PointsBeforePress) || handled;
+        }
+
+        /// <remarks>
+        /// A second click soon after the first is a double click, which on a selected object goes to its start and takes
+        /// the place of the click. It comes here, where the first click went, even when the second press was on the handle
+        /// at an object's end.
+        /// </remarks>
+        protected override bool OnDoubleClick(DoubleClickEvent e)
+        {
+            bool handled = base.OnDoubleClick(e);
+
+            if (handled && SamplePoints.PointsBeforePress != null)
+                selectPressedPoint(e, SamplePoints.PointsBeforePress);
+
+            return handled;
+        }
+
+        /// <param name="e">The press, or the click or double click it became.</param>
+        /// <param name="before">The points selected before the press.</param>
+        /// <param name="isThePress">Whether the mouse has only gone down, when it may yet be the start of a drag.</param>
+        private bool selectPressedPoint(MouseButtonEvent e, IEnumerable<(HitObject hitObject, int point)> before, bool isThePress = false)
+        {
+            var pressed = SelectionBlueprints.AliveChildren.OfType<TimelineHitObjectBlueprint>()
                                              .Where(b => b.IsHovered)
                                              .OrderByDescending(b => b.IsSelected)
                                              .FirstOrDefault();
 
-            if (clicked == null)
+            if (pressed == null)
                 return false;
 
-            SamplePoints.SelectPoint(clicked.Item, clicked.SamplePointAt(e.ScreenSpaceMousePosition), e.ControlPressed, before);
+            int point = pressed.SamplePointAt(e.ScreenSpaceMousePosition);
+
+            if (isThePress && SamplePoints.WouldDeselectAnObject(pressed.Item, point, e.ControlPressed, before))
+                return false;
+
+            SamplePoints.SelectPoint(pressed.Item, point, e.ControlPressed, before);
             return true;
         }
 
