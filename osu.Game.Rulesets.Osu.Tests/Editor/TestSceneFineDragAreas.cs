@@ -6,6 +6,7 @@ using NUnit.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
+using osu.Game.Graphics.UserInterface;
 using osu.Game.Input;
 using osu.Game.Screens.Edit.Components.Timelines.Summary;
 using osu.Game.Screens.Edit.Compose.Components;
@@ -19,7 +20,7 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
     /// </summary>
     /// <remarks>
     /// The threshold is applied by the game's input manager, which a test scene replaces, so what is checked here is
-    /// that the three areas ask for it and that nothing else in the editor does.
+    /// that the three areas ask for it and that nothing else in the editor does, apart from its slider bars.
     /// </remarks>
     public partial class TestSceneFineDragAreas : TestSceneOsuEditor
     {
@@ -43,8 +44,13 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddAssert($"{typeof(T).Name} is under the pointer", () => InputManager.PositionalInputQueue.OfType<IFineDragArea>().OfType<T>().Any(), () => Is.True);
         }
 
+        /// <remarks>
+        /// The slider bars a number is set with ask for it too, since 2026-10-11: the user found a value could not be
+        /// changed by a step or two while the handle waited ten pixels before it followed the mouse. Buttons, menus and
+        /// scroll bars still do not.
+        /// </remarks>
         [Test]
-        public void TestOnlyTheComposerAndTimelinesAskForIt()
+        public void TestOnlyTheComposerTheTimelinesAndSliderBarsAskForIt()
         {
             AddUntilStep("composer asks for it", () => Editor.ChildrenOfType<ComposeBlueprintContainer>().Any(c => c is IFineDragArea), () => Is.True);
             AddAssert("top timeline asks for it", () => Editor.ChildrenOfType<Timeline>().Any(t => t is IFineDragArea), () => Is.True);
@@ -52,9 +58,22 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
             AddAssert("nothing else does", () => Editor.ChildrenOfType<IFineDragArea>()
                                                        .Select(a => a.GetType())
-                                                       .All(t => t.IsAssignableTo(typeof(ComposeBlueprintContainer))
-                                                                 || t.IsAssignableTo(typeof(Timeline))
-                                                                 || t.IsAssignableTo(typeof(SummaryTimeline))), () => Is.True);
+                                                       .Where(t => !(t.IsAssignableTo(typeof(ComposeBlueprintContainer))
+                                                                     || t.IsAssignableTo(typeof(Timeline))
+                                                                     || t.IsAssignableTo(typeof(SummaryTimeline))
+                                                                     || isSliderBar(t)))
+                                                       .Select(t => t.Name), () => Is.Empty);
+        }
+
+        private static bool isSliderBar(System.Type type)
+        {
+            for (System.Type? t = type; t != null; t = t.BaseType)
+            {
+                if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(OsuSliderBar<>))
+                    return true;
+            }
+
+            return false;
         }
     }
 }

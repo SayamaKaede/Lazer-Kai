@@ -11,8 +11,8 @@ namespace osu.Game.Input
     /// </summary>
     /// <remarks>
     /// Nudging an object, or a slider control point, a couple of pixels is impossible while a drag has to travel ten
-    /// first. Everywhere else — buttons, scroll bars, menus — keeps the usual threshold, so a click made with an
-    /// unsteady hand is still a click.
+    /// first, and so is moving the handle of a slider bar by a step or two. Everywhere else — buttons, scroll bars,
+    /// menus — keeps the usual threshold, so a click made with an unsteady hand is still a click.
     ///
     /// Only has an effect while the user has asked for it; see <see cref="OsuUserInputManager.RemoveDragThreshold"/>.
     /// </remarks>

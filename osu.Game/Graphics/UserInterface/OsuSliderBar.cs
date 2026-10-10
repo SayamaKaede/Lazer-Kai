@@ -10,10 +10,16 @@ using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
 using osu.Framework.Utils;
 using osu.Game.Extensions;
+using osu.Game.Input;
 
 namespace osu.Game.Graphics.UserInterface
 {
-    public abstract partial class OsuSliderBar<T> : SliderBar<T>, IHasTooltip
+    /// <remarks>
+    /// An <see cref="IFineDragArea"/>: with the drag threshold removed, the handle follows the mouse from the first pixel.
+    /// Waiting for ten made a change of a step or two impossible to drag, the handle staying put and then jumping
+    /// (2026-10-11).
+    /// </remarks>
+    public abstract partial class OsuSliderBar<T> : SliderBar<T>, IHasTooltip, IFineDragArea
         where T : struct, INumber<T>, IMinMaxValue<T>
     {
         public override bool AcceptsFocus => !Current.Disabled;

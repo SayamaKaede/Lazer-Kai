@@ -25,9 +25,10 @@ namespace osu.Game.Input
         /// The framework waits for the mouse to travel a set distance first, which makes nudging an object (or a
         /// slider control point) by a few pixels in the editor impossible, since the drag never starts.
         ///
-        /// Applies only over the areas which ask for it by implementing <see cref="IFineDragArea"/> — the composer and
-        /// the two timelines. Everything else, buttons included, keeps the normal threshold, so nothing else in the
-        /// game has to work around a click that turned into a drag.
+        /// Applies only over the areas which ask for it by implementing <see cref="IFineDragArea"/> — the composer, the
+        /// two timelines, and the slider bars a number is set with, wherever they are. Everything else, buttons
+        /// included, keeps the normal threshold, so nothing else in the game has to work around a click that turned
+        /// into a drag.
         ///
         /// This is a field initialiser rather than assigned in the constructor because <see cref="InputManager"/>'s
         /// constructor creates the button event managers before any constructor body here would run. It is bound by
