@@ -2397,25 +2397,59 @@ namespace osu.Game.Screens.Edit
             ShowSampleEditPopoverRequested?.Invoke(clock.CurrentTimeAccurate);
         }
 
+        /// <summary>
+        /// The white tick the last seek back made while playing went to, for a held key to go on from.
+        /// </summary>
+        private double? whiteTickSoughtBackTo;
+
+        /// <summary>
+        /// Seeks as the wheel and the arrow keys do: a tick while stopped, and a white tick while playing.
+        /// </summary>
+        /// <remarks>
+        /// While playing it is from white tick to white tick, as stable's editor has it: back to the one before, and
+        /// forward to the next (2026-10-11, see <see cref="WhiteTickSeeking"/>). Lazer took it half a second whatever the
+        /// tempo, a beat and a half at 180 BPM, to wherever that came to: nowhere a tick is, and with the left key held,
+        /// little further back than had been played since its last repeat.
+        /// </remarks>
+        /// <param name="e">What asked for it, for the keys held with it.</param>
+        /// <param name="direction">Backwards below 1, forwards otherwise.</param>
         private void seek(UIEvent e, int direction)
         {
             double amount = e.ShiftPressed ? 4 : 1;
 
-            bool trackPlaying = clock.IsRunning;
-
-            if (trackPlaying)
+            if (!clock.IsRunning)
             {
-                // generally users are not looking to perform tiny seeks when the track is playing.
-                // this multiplication undoes the division that will be applied in the underlying seek operation.
-                // scale by BPM to keep the seek amount constant across all BPMs.
-                var timingPoint = editorBeatmap.ControlPointInfo.TimingPointAt(clock.CurrentTimeAccurate);
-                amount *= beatDivisor.Value * (timingPoint.BPM / 120);
+                whiteTickSoughtBackTo = null;
+
+                if (direction < 1)
+                    clock.SeekBackward(true, amount);
+                else
+                    clock.SeekForward(true, amount);
+
+                return;
             }
 
-            if (direction < 1)
-                clock.SeekBackward(!trackPlaying, amount);
-            else
-                clock.SeekForward(!trackPlaying, amount);
+            var timing = editorBeatmap.ControlPointInfo;
+            double current = clock.CurrentTimeAccurate;
+
+            // as many more at a fast tempo as stable takes, which `EditorClock.seek` has from it.
+            int count = (int)amount * (1 + 250 / (int)timing.TimingPointAt(current).BeatLength);
+
+            if (direction >= 1)
+            {
+                whiteTickSoughtBackTo = null;
+                clock.SeekSmoothlyTo(WhiteTickSeeking.After(timing, current, count));
+                return;
+            }
+
+            // a held key goes on from the white tick its last repeat went to rather than from the playhead. Going by the
+            // playhead, a repeat finds the first tick after that white tick already gone by wherever ticks are shorter
+            // than the time between two repeats, and goes back to the same white tick over and over.
+            if (e is KeyBindingPressEvent<GlobalAction> { Repeat: true } && whiteTickSoughtBackTo is double last)
+                current = last;
+
+            whiteTickSoughtBackTo = WhiteTickSeeking.Before(timing, current, beatDivisor.Value, count);
+            clock.SeekSmoothlyTo(whiteTickSoughtBackTo.Value);
         }
 
         private void updateLastSavedHash()
