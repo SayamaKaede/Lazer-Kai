@@ -191,6 +191,11 @@ namespace osu.Game.Localisation
         public static LocalisableString ShowHarmlessUnsnaps => new TranslatableString(getKey(@"show_harmless_unsnaps"), @"Also show unsnaps that change nothing");
 
         /// <summary>
+        /// "Default"
+        /// </summary>
+        public static LocalisableString DefaultIndex => new TranslatableString(getKey(@"default_index"), @"Default");
+
+        /// <summary>
         /// "Keep"
         /// </summary>
         public static LocalisableString Keep => new TranslatableString(getKey(@"keep"), @"Keep");

@@ -182,6 +182,62 @@ namespace osu.Game.Tests.Visual.Editing
         }
 
         /// <summary>
+        /// The custom index goes up and down by the arrows at the end of its box, and 0 is shown as "Default", which is
+        /// what stable calls it: in the box, and on its button, which stays first (2026-10-11).
+        /// </summary>
+        [Test]
+        public void TestTheCustomIndexGoesUpAndDownAndZeroIsDefault()
+        {
+            HitObject target = null!;
+
+            AddStep("switch to the hitsound screen", () => Editor.Mode.Value = EditorScreenMode.Hitsounds);
+            AddStep("seek to an object", () =>
+            {
+                target = EditorBeatmap.HitObjects.OfType<HitCircle>().ElementAt(10);
+                ((EditorClock)Editor.Dependencies.Get(typeof(EditorClock))).Seek(target.StartTime);
+            });
+            AddUntilStep("the line's volume is shown", () => panel.LineVolume.Value, () => Is.EqualTo(lineAt(target.StartTime + 5).Volume));
+
+            AddAssert("its custom index is 0", () => lineAt(target.StartTime + 5).SampleIndex, () => Is.Zero);
+            AddAssert("shown as Default", () => (indexBox.Current.Value, indexBox.PlaceholderText.ToString()), () => Is.EqualTo((string.Empty, @"Default")));
+
+            step(1);
+            AddAssert("up: a green line where the object is says 1", () => indexAt(target.StartTime), () => Is.EqualTo(1));
+            AddUntilStep("and so does the box", () => indexBox.Current.Value, () => Is.EqualTo(@"1"));
+
+            step(1);
+            AddAssert("up again: 2", () => indexAt(target.StartTime), () => Is.EqualTo(2));
+
+            step(-1);
+            step(-1);
+            AddAssert("down twice: 0", () => indexAt(target.StartTime), () => Is.Zero);
+            AddUntilStep("shown as Default again", () => indexBox.Current.Value, () => Is.Empty);
+
+            step(-1);
+            AddAssert("no lower than that", () => indexAt(target.StartTime), () => Is.Zero);
+
+            AddStep("type 7 as the custom index", () =>
+            {
+                InputManager.MoveMouseTo(indexBox);
+                InputManager.Click(MouseButton.Left);
+                indexBox.Current.Value = "7";
+                InputManager.Key(Key.Enter);
+            });
+
+            AddUntilStep("7 is among the buttons", () => panel.IndexPresets.Any(b => b.Value == 7));
+            AddAssert("which are in the order of their numbers", () => panel.IndexPresets.Select(b => b.Value), () => Is.Ordered.And.Unique);
+            AddAssert("Default first", () => (panel.IndexPresets.First().Value, panel.IndexPresets.First().Label), () => Is.EqualTo((0, @"Default")));
+            AddAssert("the rest as their numbers", () => panel.IndexPresets.Skip(1).Select(b => b.Label), () => Is.EqualTo(panel.IndexPresets.Skip(1).Select(b => b.Value.ToString())));
+
+            void step(int by) => AddStep(by > 0 ? "press the up arrow" : "press the down arrow",
+                () => panel.ChildrenOfType<HitsoundPanel.IndexStepButton>().Single(b => b.Step == by).TriggerClick());
+        }
+
+        private FormNumberBox indexBox => panel.ChildrenOfType<FormNumberBox>().Single();
+
+        private int indexAt(double time) => lines().Last(l => l.Time <= time + 5).SampleIndex;
+
+        /// <summary>
         /// The hitsounds of the hitsound difficulty are copied onto this one from its file, its green lines first: where
         /// that one plays nothing, a sound here is given what its line says and loses its additions, rather than keeping
         /// what it had (2026-10-08).

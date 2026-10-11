@@ -488,9 +488,35 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                                         Current = lineSampleSet,
                                                     }),
                                                     // typed rather than dragged: a custom index is a number to say, not an amount.
-                                                    ofWidth(165, lineIndexBox = new FormNumberBox
+                                                    // The arrows at its end take it one up or down, for the next set
+                                                    // along (2026-10-11).
+                                                    ofWidth(165, new Container
                                                     {
-                                                        Caption = LazerKaiGreenLineStrings.CustomIndex,
+                                                        RelativeSizeAxes = Axes.X,
+                                                        AutoSizeAxes = Axes.Y,
+                                                        Children = new Drawable[]
+                                                        {
+                                                            lineIndexBox = new IndexBox
+                                                            {
+                                                                Caption = LazerKaiGreenLineStrings.CustomIndex,
+                                                                // 0 is no custom set, which stable calls "Default": the box is left
+                                                                // empty for it, and says so.
+                                                                PlaceholderText = LazerKaiHitsoundStrings.DefaultIndex,
+                                                            },
+                                                            new FillFlowContainer
+                                                            {
+                                                                Anchor = Anchor.CentreRight,
+                                                                Origin = Anchor.CentreRight,
+                                                                AutoSizeAxes = Axes.Both,
+                                                                Direction = FillDirection.Vertical,
+                                                                Margin = new MarginPadding { Right = 6 },
+                                                                Children = new Drawable[]
+                                                                {
+                                                                    new IndexStepButton(1) { Action = () => stepLineIndex(1) },
+                                                                    new IndexStepButton(-1) { Action = () => stepLineIndex(-1) },
+                                                                }
+                                                            },
+                                                        }
                                                     }, new PresetStrip(indexPresets = presetFlow())),
                                                     ofWidth(block_width - 200 - 165 - 20, new FormSliderBar<int>
                                                     {
@@ -651,7 +677,11 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
             lineIndexBox.OnCommit += (_, _) =>
             {
-                if (int.TryParse(lineIndexBox.Current.Value, out int index) && index >= 0)
+                // left empty it is 0, which is what an empty box stands for.
+                string typed = lineIndexBox.Current.Value;
+                int index = 0;
+
+                if (string.IsNullOrWhiteSpace(typed) || (int.TryParse(typed, out index) && index >= 0))
                     changeLine(line => line.WithSampleIndex(index));
 
                 // what was typed and not taken goes back to what the line says.
@@ -771,7 +801,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 if (Enum.IsDefined(typeof(GreenLineSampleSet), line.Value.SampleSet))
                     lineSampleSet.Value = (GreenLineSampleSet)line.Value.SampleSet;
 
-                lineIndexBox.Current.Value = line.Value.SampleIndex.ToString(CultureInfo.InvariantCulture);
+                lineIndexBox.Current.Value = line.Value.SampleIndex == 0 ? string.Empty : line.Value.SampleIndex.ToString(CultureInfo.InvariantCulture);
                 lineVolume.Value = line.Value.Volume;
 
                 double place = linePlace();
@@ -781,7 +811,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
                 var lines = savedTimingLines!.Lines;
 
-                refreshPresets(indexPresets, lines.Select(l => l.SampleIndex), line.Value.SampleIndex, i => i.ToString(CultureInfo.InvariantCulture),
+                // in the order of their numbers whatever they are called, so that Default stays first.
+                refreshPresets(indexPresets, lines.Select(l => l.SampleIndex), line.Value.SampleIndex,
+                    i => i == 0 ? LazerKaiHitsoundStrings.DefaultIndex : i.ToString(CultureInfo.InvariantCulture),
                     i => changeLine(l => l.WithSampleIndex(i)));
                 refreshPresets(volumePresets, lines.Select(l => l.Volume), line.Value.Volume, v => $@"{v}%",
                     v => changeLine(l => l.WithVolume(v)));
@@ -821,6 +853,24 @@ namespace osu.Game.Screens.Edit.Hitsounds
         /// Changes the green line at the playhead, putting one in there first if there is none, the way stable's timing
         /// panel does. What it changes is carried over to the objects that follow it, up to the next line.
         /// </summary>
+        /// <summary>
+        /// The buttons for the custom indices the beatmap's lines use, in the order of their numbers.
+        /// </summary>
+        public IEnumerable<PresetButton> IndexPresets => indexPresets;
+
+        /// <summary>
+        /// Takes the custom index of the line at the playhead one up or down, no lower than 0.
+        /// </summary>
+        private void stepLineIndex(int by)
+        {
+            if (lineAtThePlayhead() is not SavedTimingLine line)
+                return;
+
+            int index = Math.Max(0, line.SampleIndex + by);
+
+            changeLine(l => l.WithSampleIndex(index));
+        }
+
         private void changeLine(Func<SavedTimingLine, SavedTimingLine> change)
         {
             if (refreshing || !linesEditable)
@@ -1724,7 +1774,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
         /// The values the beatmap's lines use, a button each, as the slider velocity presets are: what has been used once
         /// is there to be used again (2026-10-08).
         /// </summary>
-        private void refreshPresets(FillFlowContainer<PresetButton> flow, IEnumerable<int> used, int? current, Func<int, string> label, Action<int> apply)
+        private void refreshPresets(FillFlowContainer<PresetButton> flow, IEnumerable<int> used, int? current, Func<int, LocalisableString> label, Action<int> apply)
         {
             int[] values = used.Distinct().OrderBy(v => v).ToArray();
 
@@ -1754,18 +1804,71 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 button.Current.Value = button.Value == current ? TernaryState.True : TernaryState.False;
         }
 
+        /// <summary>
+        /// The custom index's box. Left empty it says "Default", and says it as what it holds rather than as a hint of
+        /// what to type: upright, and in the colour of what is typed.
+        /// </summary>
+        private partial class IndexBox : FormNumberBox
+        {
+            internal override InnerTextBox CreateTextBox() => new InnerIndexBox { SelectAllOnFocus = true };
+
+            private partial class InnerIndexBox : InnerNumberBox
+            {
+                public InnerIndexBox()
+                    : base(false)
+                {
+                }
+
+                protected override SpriteText CreatePlaceholder() => base.CreatePlaceholder().With(t => t.Font = t.Font.With(italics: false));
+
+                protected override void LoadComplete()
+                {
+                    base.LoadComplete();
+
+                    // after the colour a hint is given as the box loads.
+                    Placeholder.Colour = Colour4.White;
+                }
+            }
+        }
+
+        /// <summary>
+        /// One of the two arrows at the end of the custom index's box, which take it one up or down.
+        /// </summary>
+        public partial class IndexStepButton : IconButton
+        {
+            /// <summary>
+            /// What a press adds to the custom index: 1 or -1.
+            /// </summary>
+            public readonly int Step;
+
+            public IndexStepButton(int step)
+            {
+                Step = step;
+
+                Icon = step > 0 ? FontAwesome.Solid.ChevronUp : FontAwesome.Solid.ChevronDown;
+                Size = new Vector2(22, 16);
+                IconScale = new Vector2(0.55f);
+            }
+        }
+
         public partial class PresetButton : DrawableTernaryButton
         {
             public readonly int Value;
+
+            /// <summary>
+            /// What the button says, which for a custom index of 0 is not its number.
+            /// </summary>
+            public readonly string Label;
 
             protected override OsuSetting SquarenessSetting => OsuSetting.EditorSliderVelocityPresetSquareness;
 
             protected override float StockHeight => 25;
 
             [SetsRequiredMembers]
-            public PresetButton(int value, string label)
+            public PresetButton(int value, LocalisableString label)
             {
                 Value = value;
+                Label = label.ToString();
                 Description = default;
                 CreateIcon = () => new Container
                 {
@@ -1779,7 +1882,8 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 };
 
                 RelativeSizeAxes = Axes.None;
-                Width = 50;
+                // a number, or a volume, fits in 50. A word does not.
+                Width = Label.Length > 4 ? 70 : 50;
                 Height = 25;
             }
 

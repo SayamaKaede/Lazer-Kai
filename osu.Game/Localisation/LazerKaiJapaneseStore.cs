@@ -310,6 +310,8 @@ namespace osu.Game.Localisation
             [$@"{hitsound_prefix}:could_not_read_difficulty"] = @"コピー元の難易度のファイルを読み取れませんでした",
             [$@"{hitsound_prefix}:near_lines_header"] = @"Unsnapかもしれない緑線",
             [$@"{hitsound_prefix}:show_harmless_unsnaps"] = @"影響がないUnsnapも表示",
+            // a custom index of 0, as stable names it; the same in Japanese, as Sampleset and Additions are.
+            [$@"{hitsound_prefix}:default_index"] = @"Default",
             [$@"{hitsound_prefix}:keep"] = @"固定",
             [$@"{hitsound_prefix}:keep_tooltip"] = @"置いたあとも残す",
             [$@"{hitsound_prefix}:no_near_lines"] = @"なし",
