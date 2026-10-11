@@ -54,6 +54,12 @@ namespace osu.Game.Localisation
             @"This edit cannot be kept in stable's format yet, so the beatmap was saved in lazer's.");
 
         /// <summary>
+        /// "The dropped file "{0}" could not be kept in stable's format, so it was saved in lazer's."
+        /// </summary>
+        public static LocalisableString DroppedFileSavedInLazerFormat(string name) => new TranslatableString(getKey(@"dropped_file_saved_in_lazer_format"),
+            @"The dropped file ""{0}"" could not be kept in stable's format, so it was saved in lazer's.", name);
+
+        /// <summary>
         /// "Convert"
         /// </summary>
         public static LocalisableString Convert => new TranslatableString(getKey(@"convert"), @"Convert");

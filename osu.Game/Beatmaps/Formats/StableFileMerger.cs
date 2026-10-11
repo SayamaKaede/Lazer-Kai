@@ -322,7 +322,15 @@ namespace osu.Game.Beatmaps.Formats
                 b.TryGetValue(key, out string? oldValue);
 
                 if (!a.TryGetValue(key, out string? value))
-                    return false;
+                {
+                    // a difficulty that stops being the one it was online, as a file dropped into another set as a new
+                    // difficulty does: this game leaves the line out, where stable writes that there is no number
+                    // (2026-10-11). Any other line going missing is not something to guess at.
+                    value = name == @"Metadata" ? stableValueWithoutOnlineNumber(key) : null;
+
+                    if (value == null)
+                        return false;
+                }
 
                 if (oldValue == value)
                     continue;
@@ -338,6 +346,24 @@ namespace osu.Game.Beatmaps.Formats
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// What stable writes on the lines for a difficulty's and a set's online numbers when they have none.
+        /// </summary>
+        private static string? stableValueWithoutOnlineNumber(string key)
+        {
+            switch (key)
+            {
+                case @"BeatmapID":
+                    return @"0";
+
+                case @"BeatmapSetID":
+                    return @"-1";
+
+                default:
+                    return null;
+            }
         }
 
         private bool mergeColours(SourceFile sections, List<string> before, List<string> after)

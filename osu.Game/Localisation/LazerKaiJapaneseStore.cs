@@ -229,6 +229,7 @@ namespace osu.Game.Localisation
             [$@"{stable_compatibility_prefix}:notice_warning"] = @"・もしStable形式で保存に失敗した場合は警告が出ます。エラーは自動で送信されるので、不具合の修正をお待ちください。",
             [$@"{stable_compatibility_prefix}:notice_ok"] = @"OK",
             [$@"{stable_compatibility_prefix}:saved_in_lazer_format"] = @"この編集はまだStable形式のまま保存できないため、Lazer形式で保存しました",
+            [$@"{stable_compatibility_prefix}:dropped_file_saved_in_lazer_format"] = @"ドロップした「{0}」はStable形式のまま保存できなかったため、Lazer形式で保存しました",
             [$@"{stable_compatibility_prefix}:cannot_stay_stable_header"] = @"この編集はまだStable形式のまま保存できません",
             [$@"{stable_compatibility_prefix}:cannot_stay_stable_body"] = @"保存すると、この難易度はLazer形式になり、以後もLazer形式で扱われます。保存する前に、今のファイルを控えとしてバックアップのフォルダに残します。原因はログに記録しました。",
             [$@"{stable_compatibility_prefix}:save_in_lazer_format"] = @"Lazer形式で保存する",

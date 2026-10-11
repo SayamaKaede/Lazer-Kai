@@ -17,6 +17,8 @@ using osu.Framework.Logging;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Formats;
+using osu.Game.Configuration;
+using osu.Game.Extensions;
 using osu.Game.IO;
 using osu.Game.Localisation;
 using osu.Game.Overlays.Notifications;
@@ -144,11 +146,17 @@ namespace osu.Game.Screens.Edit
 
             storyboard.Beatmap = beatmap;
 
+            var skin = new DroppedFileSkin(configuration);
+            byte[] file = File.ReadAllBytes(path);
+
             return new DroppedFile
             {
                 Beatmap = beatmap,
-                Skin = new DroppedFileSkin(configuration),
+                Skin = skin,
                 Storyboard = storyboard,
+                // taken now, of the file as it arrived: what is then done to it on its way into the set is what gets
+                // rewritten in it, and nothing else.
+                Keeper = StableFileKeeper.IsStableFile(file) ? new StableFileKeeper(file, beatmap, skin, storyboard) : null,
             };
         }
 
@@ -157,6 +165,11 @@ namespace osu.Game.Screens.Edit
             public IBeatmap Beatmap;
             public ISkin Skin;
             public Storyboard Storyboard;
+
+            /// <summary>
+            /// The file itself, for one in stable's format, to be saved as it is; null for one in lazer's.
+            /// </summary>
+            public StableFileKeeper Keeper;
         }
 
         /// <summary>
@@ -212,7 +225,7 @@ namespace osu.Game.Screens.Edit
             // be the one being written rather than the one the file arrived describing.
             dropped.Storyboard.BeatmapInfo = info;
 
-            beatmapManager.Save(info, dropped.Beatmap, dropped.Skin, dropped.Storyboard);
+            save(info, dropped);
             ((IWorkingBeatmapCache)beatmapManager).Invalidate(set);
         }
 
@@ -223,8 +236,41 @@ namespace osu.Game.Screens.Edit
             // `Save` does exactly this given the difficulty already there and the contents to put in it.
             dropped.Storyboard.BeatmapInfo = target;
 
-            beatmapManager.Save(target, dropped.Beatmap, dropped.Skin, dropped.Storyboard);
+            save(target, dropped);
             ((IWorkingBeatmapCache)beatmapManager).Invalidate(target);
+        }
+
+        /// <summary>
+        /// Saves a dropped file as the difficulty it has been made out to be.
+        /// </summary>
+        /// <remarks>
+        /// Where stable compatibility is on, a file in stable's format is kept as it is, with only the lines rewritten
+        /// that being this difficulty of this set changes: its metadata, where the set's is different. Written out
+        /// again by this game it came out in lazer's format, its green lines put where its objects are, and dropping a
+        /// backup in is how a difficulty that happened to is put back (2026-10-11).
+        /// </remarks>
+        private void save(BeatmapInfo info, DroppedFile dropped)
+        {
+            if (dropped.Keeper != null && osuConfig.Get<bool>(OsuSetting.StableCompatibility))
+            {
+                // what a save does to the contents before it writes them, done here so that the file is compared with it.
+                dropped.Beatmap.Difficulty.CopyTo(info.Difficulty);
+                dropped.Beatmap.BeatmapInfo = info;
+
+                byte[] file = dropped.Keeper.Write(dropped.Beatmap, dropped.Skin, dropped.Storyboard, null, out _);
+
+                if (file != null)
+                {
+                    beatmapManager.SaveFile(info, dropped.Beatmap, file);
+                    return;
+                }
+
+                // said rather than only logged: the file does not come back from lazer's format.
+                Logger.Log($@"{info.GetDisplayTitle()} could not be kept in stable's format: {dropped.Keeper.LastFailure ?? @"no reason given"}");
+                post(LazerKaiStableCompatibilityStrings.DroppedFileSavedInLazerFormat(info.DifficultyName), failed: true);
+            }
+
+            beatmapManager.Save(info, dropped.Beatmap, dropped.Skin, dropped.Storyboard);
         }
 
         private void confirmReplacingCurrent(BeatmapInfo target, DroppedFile dropped)

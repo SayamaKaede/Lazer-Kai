@@ -23,7 +23,13 @@ using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Framework.Testing;
+using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Localisation;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Dialog;
+using osu.Game.Resources.Localisation.Web;
 using osu.Game.Screens.Edit;
+using osu.Game.Screens.Edit.Setup;
 using osu.Game.Tests.Resources;
 using osuTK;
 
@@ -349,6 +355,154 @@ namespace osu.Game.Tests.Visual.Editing
                 return original.Length == saved.Length ? original.Zip(saved).Where(p => p.First != p.Second).ToArray() : new[] { ("line counts", $"{original.Length} and {saved.Length}") };
             }, () => Has.Length.EqualTo(1).And.All.Matches<(string, string)>(p => p.Item2 == "Bookmarks: 1000,2000"));
         }
+
+        /// <summary>
+        /// The setup screen's "sync metadata with all difficulties" saves every other difficulty of the set. One still in
+        /// stable's format stays in it, with only the lines of its metadata rewritten.
+        /// </summary>
+        /// <remarks>
+        /// 2026-10-11: they were saved in lazer's format without a word, and a hitsound difficulty came out with a green
+        /// line on every object. Everything else that reaches the other difficulties from the one being edited already
+        /// went through <see cref="StableFileSaving"/>; this was the one that did not.
+        /// </remarks>
+        [TestCase(@"Soleily - Renatus (Gamu) [Insane].osu")]
+        [TestCase(@"Soleily - Renatus (ExPew) [Normal].osu")]
+        public void TestSyncingMetadataKeepsAnotherDifficultyInItsFormat(string otherFile)
+        {
+            AddStep("to the setup screen", () => Editor.Mode.Value = EditorScreenMode.SongSetup);
+            AddUntilStep("the metadata is there", () => Editor.ChildrenOfType<MetadataSection>().Any(s => s.IsLoaded));
+
+            AddStep("give it a source", () => Editor.ChildrenOfType<MetadataSection>().Single().ChildrenOfType<FormTextBox>()
+                                                    .Single(t => t.Caption == BeatmapsetsStrings.ShowInfoSource).Current.Value = @"a new source");
+
+            AddStep("sync the metadata", () => Editor.ChildrenOfType<MetadataSection>().Single().ChildrenOfType<RoundedButton>()
+                                                     .Single(b => b.Text == EditorSetupStrings.SyncMetadataWithAllDifficulties).TriggerClick());
+            AddUntilStep("asked first", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog is SyncMetadataConfirmationDialog);
+            AddStep("go ahead", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog!.PerformAction<PopupDialogDangerousButton>());
+
+            AddUntilStep("the other difficulty was saved", () => savedText(otherFile), () => Is.Not.EqualTo(originalText(otherFile)));
+
+            AddAssert("only its source changed", () =>
+            {
+                string[] original = originalText(otherFile).Split("\r\n");
+                string[] saved = savedText(otherFile).Split("\r\n");
+                return original.Length == saved.Length ? original.Zip(saved).Where(p => p.First != p.Second).ToArray() : new[] { ("line counts", $"{original.Length} and {saved.Length}") };
+            }, () => Has.Length.EqualTo(1).And.All.Matches<(string, string)>(p => p.Item2 == "Source:a new source"));
+
+            AddAssert("the game knows its source too", () => Game.Realm.Run(r => r.Find<BeatmapInfo>(imported.ID)!.BeatmapSet!.Beatmaps.Single(b => b.Path == otherFile).Metadata.Source),
+                () => Is.EqualTo(@"a new source"));
+        }
+
+        /// <summary>
+        /// A `.osu` dropped onto the editor replaces the difficulty of its name, which is how a backup is put back. One
+        /// in stable's format is kept as it is rather than written out again in lazer's (2026-10-11).
+        /// </summary>
+        [Test]
+        public void TestADroppedStableFileReplacesAnotherDifficultyAsItIs()
+        {
+            const string other = @"Soleily - Renatus (Gamu) [Insane].osu";
+
+            string dropped = string.Empty;
+            string path = string.Empty;
+
+            AddStep("write its file with an object less", () => path = writeToDrop(dropped = withoutLastObject(originalText(other))));
+            AddStep("drop it", () => Editor.ImportDroppedDifficulties(new[] { path }));
+
+            AddUntilStep("saved", () => savedText(other), () => Is.Not.EqualTo(originalText(other)));
+            AddAssert("as the file dropped", () => differingLines(dropped, savedText(other)), () => Is.Empty);
+        }
+
+        [Test]
+        public void TestADroppedStableFileReplacesTheOpenDifficultyAsItIs()
+        {
+            string dropped = string.Empty;
+            string path = string.Empty;
+            int objects = 0;
+
+            AddStep("write its file with an object less", () =>
+            {
+                objects = EditorBeatmap.HitObjects.Count;
+                path = writeToDrop(dropped = withoutLastObject(originalText()));
+            });
+            AddStep("drop it", () => Editor.ImportDroppedDifficulties(new[] { path }));
+
+            AddUntilStep("asked first", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog is OverwriteCurrentDifficultyDialog);
+            AddStep("go ahead", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog!.PerformAction<PopupDialogDangerousButton>());
+
+            AddUntilStep("the editor reopens on it", () => Editor?.ReadyForUse == true && EditorBeatmap.HitObjects.Count == objects - 1);
+            AddAssert("saved as the file dropped", () => differingLines(dropped, savedText()), () => Is.Empty);
+        }
+
+        /// <summary>
+        /// Under a name the set does not have it is a new difficulty, which is nobody's online: the line with the number
+        /// it had there is the one line that is not the file's.
+        /// </summary>
+        [Test]
+        public void TestADroppedStableFileIsAddedAsItIs()
+        {
+            string dropped = string.Empty;
+            string path = string.Empty;
+
+            AddStep("write another difficulty's file under a new name", () =>
+                path = writeToDrop(dropped = originalText(@"Soleily - Renatus (Gamu) [Insane].osu").Replace("Version:Insane", "Version:Dropped")));
+            AddStep("drop it", () => Editor.ImportDroppedDifficulties(new[] { path }));
+
+            AddUntilStep("added", () => savedTextNamed(@"Dropped"), () => Is.Not.Null);
+            AddAssert("as the file dropped", () => differingLines(dropped, savedTextNamed(@"Dropped")!).Where(p => !p.Item1.StartsWith(@"BeatmapID:", System.StringComparison.Ordinal)), () => Is.Empty);
+        }
+
+        private string dropDirectory = string.Empty;
+
+        private string writeToDrop(string text)
+        {
+            if (dropDirectory.Length == 0)
+                Directory.CreateDirectory(dropDirectory = Path.Combine(Path.GetTempPath(), $"lazer-kai-drop-{System.Guid.NewGuid()}"));
+
+            string path = Path.Combine(dropDirectory, @"dropped.osu");
+            File.WriteAllText(path, text, new UTF8Encoding(false));
+            return path;
+        }
+
+        [TearDownSteps]
+        public void CleanUpDropDirectory() => AddStep("remove what was dropped", () =>
+        {
+            if (dropDirectory.Length > 0 && Directory.Exists(dropDirectory))
+                Directory.Delete(dropDirectory, true);
+
+            dropDirectory = string.Empty;
+        });
+
+        private static string withoutLastObject(string text)
+        {
+            var lines = text.Split("\r\n").ToList();
+            lines.RemoveAt(lines.FindLastIndex(l => l.Length > 0));
+            return string.Join("\r\n", lines);
+        }
+
+        private static (string, string)[] differingLines(string expected, string actual)
+        {
+            string[] expectedLines = expected.Split("\r\n");
+            string[] actualLines = actual.Split("\r\n");
+
+            if (expectedLines.Length != actualLines.Length)
+                return new[] { ("different line counts", $"{expectedLines.Length} and {actualLines.Length}") };
+
+            return expectedLines.Zip(actualLines).Where(p => p.First != p.Second).ToArray();
+        }
+
+        private string? savedTextNamed(string difficultyName) => Game.Realm.Run(r =>
+        {
+            var set = r.Find<BeatmapInfo>(imported.ID)!.BeatmapSet!;
+            var beatmap = set.Beatmaps.SingleOrDefault(b => b.DifficultyName == difficultyName);
+
+            if (beatmap == null)
+                return null;
+
+            var file = set.Files.Single(f => f.File.Hash == beatmap.Hash);
+
+            using (var stream = Game.Storage.GetStorageForDirectory(@"files").GetStream(file.File.GetStoragePath()))
+                return Encoding.UTF8.GetString(stream.ReadAllRemainingBytesToArray());
+        });
 
         private SavedTimingLines timingLines => Editor.ChildrenOfType<SavedTimingLines>().Single();
 

@@ -10,6 +10,7 @@ using osu.Framework.Input;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
 using osu.Game.Overlays;
@@ -46,6 +47,9 @@ namespace osu.Game.Screens.Edit.Setup
 
         [Resolved]
         private IDialogOverlay? dialogOverlay { get; set; }
+
+        [Resolved]
+        private OsuConfigManager config { get; set; } = null!;
 
         [BackgroundDependencyLoader]
         private void load(SetupScreen? setupScreen)
@@ -92,23 +96,39 @@ namespace osu.Game.Screens.Edit.Setup
                 if (b.Equals(current))
                     continue;
 
-                b.Metadata.ArtistUnicode = source.ArtistUnicode;
-                b.Metadata.Artist = source.Artist;
-                b.Metadata.TitleUnicode = source.TitleUnicode;
-                b.Metadata.Title = source.Title;
-                b.Metadata.Source = source.Source;
-                b.Metadata.Tags = source.Tags;
-
                 try
                 {
                     var targetWorking = beatmaps.GetWorkingBeatmap(b);
-                    beatmaps.Save(b, targetWorking.GetPlayableBeatmap(b.Ruleset), targetWorking.GetSkin(), targetWorking.Storyboard);
+
+                    // a difficulty still in stable's format stays in it, with only the lines of its metadata rewritten.
+                    // Saved as any other, it was written in lazer's format without a word, its green lines put where its
+                    // objects are: a hitsound difficulty came out with one on every object (2026-10-11).
+                    //
+                    // The metadata is changed in there, after what the difficulty was has been taken note of, and on each
+                    // of the three that may or may not be one: what is written to the file, what is saved to the database,
+                    // and the set the editor holds.
+                    StableFileSaving.Save(beatmaps, targetWorking, config.Get<bool>(OsuSetting.StableCompatibility), playable =>
+                    {
+                        copyTo(playable.BeatmapInfo.Metadata);
+                        copyTo(targetWorking.BeatmapInfo.Metadata);
+                        copyTo(b.Metadata);
+                    });
                 }
                 catch (Exception e)
                 {
                     Logger.Error(e, $@"Failed to sync metadata to {b.GetDisplayTitle()}");
                     return;
                 }
+            }
+
+            void copyTo(BeatmapMetadata target)
+            {
+                target.ArtistUnicode = source.ArtistUnicode;
+                target.Artist = source.Artist;
+                target.TitleUnicode = source.TitleUnicode;
+                target.Title = source.Title;
+                target.Source = source.Source;
+                target.Tags = source.Tags;
             }
 
             // Persist the current difficulty and align with how resource changes re-save the current beatmap.
