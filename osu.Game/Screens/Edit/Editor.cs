@@ -134,6 +134,10 @@ namespace osu.Game.Screens.Edit
 
         [Resolved(canBeNull: true)]
         [CanBeNull]
+        private VolumeOverlay volumeOverlay { get; set; }
+
+        [Resolved(canBeNull: true)]
+        [CanBeNull]
         private LoginOverlay loginOverlay { get; set; }
 
         [Resolved]
@@ -1317,6 +1321,12 @@ namespace osu.Game.Screens.Edit
 
         protected override bool OnScroll(ScrollEvent e)
         {
+            // alt and the wheel change the volume, as on every other screen: there a wheel nothing took goes to the volume
+            // (`GlobalScrollAdjustsVolume`), which the editor cannot have, seeking with the wheel as it does. Over the
+            // timeline they are taken before this, to zoom it (2026-10-11).
+            if (e.AltPressed && !e.ControlPressed && !e.SuperPressed && !e.ShiftPressed && e.ScrollDelta.Y != 0)
+                return volumeOverlay?.Adjust(GlobalAction.IncreaseVolume, e.ScrollDelta.Y, e.IsPrecise) ?? false;
+
             if (e.ControlPressed || e.AltPressed || e.SuperPressed)
                 return false;
 
