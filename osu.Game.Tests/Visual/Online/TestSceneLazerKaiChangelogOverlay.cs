@@ -3,10 +3,13 @@
 
 using System.Linq;
 using NUnit.Framework;
+using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Testing;
 using osu.Game.IO;
+using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Changelog;
 using osu.Game.Overlays.Settings;
@@ -42,6 +45,9 @@ namespace osu.Game.Tests.Visual.Online
 
         private LazerKaiChangelogOverlay overlay = null!;
 
+        [Resolved]
+        private OsuGameBase game { get; set; } = null!;
+
         [SetUpSteps]
         public void SetUpSteps()
         {
@@ -62,6 +68,34 @@ namespace osu.Game.Tests.Visual.Online
             AddAssert("the older one is gone",
                 () => overlay.ChildrenOfType<LazerKaiChangelogRelease>().Select(r => r.Release.Version),
                 () => Is.EqualTo(new[] { @"20261008.0" }));
+        }
+
+        /// <summary>
+        /// In any language but Japanese, a release with an English changelog is shown in English.
+        /// </summary>
+        [Test]
+        public void TestTheLanguageOfTheGameDecidesTheLanguageShown()
+        {
+            var withEnglish = releases[0] with { EnglishLines = LazerKaiChangelog.Parse(@"20261008.0", "**Lazer-Kai 20261008.0**\n\n**Fixes**\n- Fixed a thing\n").Lines };
+
+            AddStep("the game in Japanese", () => game.CurrentLanguage.Value = Language.ja);
+            AddStep("show a release with English and one without", () => overlay.ShowReleases(new[] { withEnglish, releases[1] }));
+            AddAssert("both from the Japanese", () => shownInJapanese(), () => Is.EqualTo(new[] { true, true }));
+            AddAssert("in Japanese", () => textShown(), () => Does.Contain(@"修正").And.Not.Contain(@"Fixes"));
+
+            AddStep("the game in English", () => game.CurrentLanguage.Value = Language.en);
+            AddAssert("in English where there is one", () => textShown(), () => Does.Contain(@"Fixes"));
+            AddAssert("and in Japanese where there is not", () => textShown(), () => Does.Contain(@"機能追加"));
+
+            AddStep("the game in German", () => game.CurrentLanguage.Value = Language.de);
+            AddAssert("English still", () => textShown(), () => Does.Contain(@"Fixes"));
+
+            AddStep("back to English", () => game.CurrentLanguage.Value = Language.en);
+
+            bool[] shownInJapanese() => overlay.ChildrenOfType<LazerKaiChangelogRelease>().Select(r => r.InJapanese).ToArray();
+
+            // the flow cuts a line into words, and Japanese into characters, so they are put back together.
+            string textShown() => string.Concat(overlay.ChildrenOfType<LazerKaiChangelogRelease>().SelectMany(r => r.ChildrenOfType<SpriteText>()).Select(t => t.Text.ToString()));
         }
 
         [Test]

@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
@@ -23,9 +24,18 @@ namespace osu.Game.Overlays.Changelog
     {
         public readonly LazerKaiChangelog.Release Release;
 
-        public LazerKaiChangelogRelease(LazerKaiChangelog.Release release)
+        /// <summary>
+        /// Whether this is drawn from the release's Japanese changelog, rather than its English one.
+        /// </summary>
+        public readonly bool InJapanese;
+
+        /// <param name="release">The release.</param>
+        /// <param name="inJapanese">Whether the game is being read in Japanese. In any other language it is the
+        /// release's English changelog that is shown, where it has one.</param>
+        public LazerKaiChangelogRelease(LazerKaiChangelog.Release release, bool inJapanese)
         {
             Release = release;
+            InJapanese = inJapanese;
 
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
@@ -61,7 +71,7 @@ namespace osu.Game.Overlays.Changelog
 
             var icon = FontAwesome.Regular.Circle;
 
-            foreach (var line in Release.Lines)
+            foreach (var line in Release.LinesFor(InJapanese))
             {
                 switch (line.Kind)
                 {
@@ -95,13 +105,13 @@ namespace osu.Game.Overlays.Changelog
         }
 
         // osu!'s changelog marks an addition with a plus and a fix with a tick, from the kind of change it is told.
-        // The fork's changelogs say the kind in their headings.
+        // The fork's changelogs say the kind in their headings: 機能追加 and 修正, or Additions and Fixes.
         private static IconUsage iconUnder(string heading)
         {
-            if (heading.Contains(@"修正"))
+            if (heading.Contains(@"修正") || heading.Contains(@"fix", StringComparison.OrdinalIgnoreCase))
                 return FontAwesome.Solid.Check;
 
-            if (heading.Contains(@"追加"))
+            if (heading.Contains(@"追加") || heading.Contains(@"add", StringComparison.OrdinalIgnoreCase))
                 return FontAwesome.Solid.Plus;
 
             return FontAwesome.Regular.Circle;

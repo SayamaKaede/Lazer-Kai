@@ -94,6 +94,40 @@ namespace osu.Game.Tests.NonVisual
                 Is.EqualTo(new[] { @"20261008.10", @"20261008.9", @"20261008.0", @"20260916.0" }));
         }
 
+        /// <summary>
+        /// From 2026-10-11 a release has its changelog in English beside the Japanese one, shown to whoever reads the
+        /// game in another language. The releases before that have none, and are shown in Japanese rather than not at
+        /// all.
+        /// </summary>
+        [Test]
+        public void TestEnglishBesideTheJapanese()
+        {
+            File.WriteAllText(Path.Combine(directory, LazerKaiChangelog.DIRECTORY, @"20261012-0.txt"), "**Lazer-Kai 20261012.0**\n\n**修正**\n- 直しました\n");
+            File.WriteAllText(Path.Combine(directory, LazerKaiChangelog.DIRECTORY, @"20261012-0.en.txt"), "**Lazer-Kai 20261012.0**\n\n**Fixes**\n- Fixed it\n");
+            File.WriteAllText(Path.Combine(directory, LazerKaiChangelog.DIRECTORY, @"20261008-0.txt"), "**Lazer-Kai 20261008.0**\n\n**修正**\n- 前の版\n");
+
+            var releases = LazerKaiChangelog.Read(directory);
+
+            Assert.That(releases.Select(r => r.Version), Is.EqualTo(new[] { @"20261012.0", @"20261008.0" }));
+
+            Assert.That(releases[0].LinesFor(japanese: true).Select(l => l.Text), Is.EqualTo(new[] { @"修正", @"直しました" }));
+            Assert.That(releases[0].LinesFor(japanese: false).Select(l => l.Text), Is.EqualTo(new[] { @"Fixes", @"Fixed it" }));
+
+            Assert.That(releases[1].EnglishLines, Is.Null);
+            Assert.That(releases[1].LinesFor(japanese: false).Select(l => l.Text), Is.EqualTo(new[] { @"修正", @"前の版" }));
+        }
+
+        /// <summary>
+        /// The Japanese one is what a release is known by: publish.ps1 does not build one without it.
+        /// </summary>
+        [Test]
+        public void TestEnglishAloneIsNotARelease()
+        {
+            write(@"20261012-0.en.txt");
+
+            Assert.That(LazerKaiChangelog.Read(directory), Is.Empty);
+        }
+
         [Test]
         public void TestNothingToRead()
         {

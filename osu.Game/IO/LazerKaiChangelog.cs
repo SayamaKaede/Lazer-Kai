@@ -19,14 +19,18 @@ namespace osu.Game.IO
     /// publish.ps1 copies them into <see cref="DIRECTORY"/> beside the executable, as it does the manual, and refuses
     /// a distributed build whose own is not there. That folder is replaced with the rest of the build on every update,
     /// so it holds the changelogs as they were when the running build was made.
+    ///
+    /// They are written in Japanese. From 2026-10-11 a release has the same in English beside it, for whoever reads
+    /// the game in another language; the releases before that do not.
     /// </remarks>
     public static class LazerKaiChangelog
     {
         /// <summary>The folder beside the executable the changelogs are shipped in.</summary>
         public const string DIRECTORY = @"changelog";
 
-        // `20261008-0.txt` is 20261008.0's. Anything else in the folder is not a release's.
-        private static readonly Regex file_name = new Regex(@"^(\d{8})-(\d+)\.txt$");
+        // `20261008-0.txt` is 20261008.0's, and `20261008-0.en.txt` the same in English. Anything else in the folder is
+        // not a release's.
+        private static readonly Regex file_name = new Regex(@"^(\d{8})-(\d+)(\.en)?\.txt$");
 
         private static readonly Regex bold_line = new Regex(@"^\*\*(.+)\*\*$");
 
@@ -47,7 +51,8 @@ namespace osu.Game.IO
             if (!Directory.Exists(folder))
                 return Array.Empty<Release>();
 
-            var releases = new List<Release>();
+            var japanese = new Dictionary<string, IReadOnlyList<Line>>();
+            var english = new Dictionary<string, IReadOnlyList<Line>>();
 
             foreach (string path in Directory.GetFiles(folder))
             {
@@ -60,7 +65,7 @@ namespace osu.Game.IO
 
                 try
                 {
-                    releases.Add(Parse(version, File.ReadAllText(path)));
+                    (match.Groups[3].Success ? english : japanese)[version] = Parse(version, File.ReadAllText(path)).Lines;
                 }
                 catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                 {
@@ -69,7 +74,8 @@ namespace osu.Game.IO
                 }
             }
 
-            return newestFirst(releases);
+            // the Japanese one is what makes a release: every release has it, and publish.ps1 sees to that.
+            return newestFirst(japanese.Select(j => new Release(j.Key, j.Value, english.GetValueOrDefault(j.Key))));
         }
 
         /// <summary>
@@ -152,7 +158,17 @@ namespace osu.Game.IO
         private static IReadOnlyList<Release> newestFirst(IEnumerable<Release> releases) =>
             releases.OrderByDescending(r => LazerKaiRelease.TryReadVersion(r.Version, out var order) ? order : default).ToArray();
 
-        public record Release(string Version, IReadOnlyList<Line> Lines);
+        /// <param name="Version">The release, as <c>yyyyMMdd.N</c>.</param>
+        /// <param name="Lines">Its changelog, in Japanese.</param>
+        /// <param name="EnglishLines">The same in English; null for a release that was only written in Japanese.</param>
+        public record Release(string Version, IReadOnlyList<Line> Lines, IReadOnlyList<Line>? EnglishLines = null)
+        {
+            /// <summary>
+            /// The changelog as someone reading the game in Japanese, or in any other language, is shown it: in English
+            /// where the release has that, and in Japanese where it does not, rather than not at all.
+            /// </summary>
+            public IReadOnlyList<Line> LinesFor(bool japanese) => japanese ? Lines : EnglishLines ?? Lines;
+        }
 
         /// <param name="Kind">What the line is.</param>
         /// <param name="Text">The line, without the marks that say what it is.</param>
