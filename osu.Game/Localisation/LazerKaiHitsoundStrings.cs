@@ -297,6 +297,61 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString StatusNothingBefore => new TranslatableString(getKey(@"status_nothing_before"), @"Copied the previous hitsounds (nothing before)");
 
+        /// <summary>
+        /// "Empty osu!mania difficulty to hitsound in"
+        /// </summary>
+        public static LocalisableString MakeManiaHitsoundDifficulty => new TranslatableString(getKey(@"make_mania_hitsound_difficulty"), @"Empty osu!mania difficulty to hitsound in");
+
+        /// <summary>
+        /// "For an osu! beatmap"
+        /// </summary>
+        public static LocalisableString ManiaDifficultyUnavailable => new TranslatableString(getKey(@"mania_difficulty_unavailable"), @"For an osu! beatmap");
+
+        /// <summary>
+        /// "Lane sounds"
+        /// </summary>
+        public static LocalisableString LaneSoundsHeader => new TranslatableString(getKey(@"lane_sounds_header"), @"Lane sounds");
+
+        /// <summary>
+        /// "A note sounds as the lane it is placed in."
+        /// </summary>
+        public static LocalisableString LaneSoundsHint => new TranslatableString(getKey(@"lane_sounds_hint"), @"A note sounds as the lane it is placed in.");
+
+        /// <summary>
+        /// "Open the hitsound folder"
+        /// </summary>
+        public static LocalisableString OpenSoundFolder => new TranslatableString(getKey(@"open_sound_folder"), @"Open the hitsound folder");
+
+        /// <summary>
+        /// "Reload the hitsound folder"
+        /// </summary>
+        public static LocalisableString ReloadSoundFolder => new TranslatableString(getKey(@"reload_sound_folder"), @"Reload the hitsound folder");
+
+        /// <summary>
+        /// "The hitsound folder is empty. Put wav, ogg or mp3 files in it."
+        /// </summary>
+        public static LocalisableString SoundFolderEmpty => new TranslatableString(getKey(@"sound_folder_empty"), @"The hitsound folder is empty. Put wav, ogg or mp3 files in it.");
+
+        /// <summary>
+        /// "Lane {0}"
+        /// </summary>
+        public static LocalisableString Lane(int number) => new TranslatableString(getKey(@"lane"), @"Lane {0}", number);
+
+        /// <summary>
+        /// "Sample set"
+        /// </summary>
+        public static LocalisableString LaneBank => new TranslatableString(getKey(@"lane_bank"), @"Sample set");
+
+        /// <summary>
+        /// "Hitsound"
+        /// </summary>
+        public static LocalisableString LaneKind => new TranslatableString(getKey(@"lane_kind"), @"Hitsound");
+
+        /// <summary>
+        /// "Play"
+        /// </summary>
+        public static LocalisableString PlayLaneSound => new TranslatableString(getKey(@"play_lane_sound"), @"Play");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

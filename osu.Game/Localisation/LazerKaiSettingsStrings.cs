@@ -368,6 +368,48 @@ namespace osu.Game.Localisation
         public static LocalisableString RulesetSkinDescription => new TranslatableString(getKey(@"ruleset_skin_description"),
             @"Used while this mode is selected. When not set, the skin chosen in the skin settings is used.");
 
+        /// <summary>
+        /// "osu!mania"
+        /// </summary>
+        public static LocalisableString ManiaHeader => new TranslatableString(getKey(@"mania_header"), @"osu!mania");
+
+        /// <summary>
+        /// "Hide the keys at the bottom in the editor"
+        /// </summary>
+        public static LocalisableString ManiaHideKeys => new TranslatableString(getKey(@"mania_hide_keys"), @"Hide the keys at the bottom in the editor");
+
+        /// <summary>
+        /// "The lanes go on under the judgement line, where notes that have gone by are shown and notes can be placed"
+        /// </summary>
+        public static LocalisableString ManiaHideKeysDescription => new TranslatableString(getKey(@"mania_hide_keys_description"),
+            @"The lanes go on under the judgement line, where notes that have gone by are shown and notes can be placed");
+
+        /// <summary>
+        /// "Gap between stages in the editor"
+        /// </summary>
+        public static LocalisableString ManiaStageSpacing => new TranslatableString(getKey(@"mania_stage_spacing"), @"Gap between stages in the editor");
+
+        /// <summary>
+        /// "For a beatmap with dual stages. The stages are placed side by side in the middle, this far apart"
+        /// </summary>
+        public static LocalisableString ManiaStageSpacingDescription => new TranslatableString(getKey(@"mania_stage_spacing_description"),
+            @"For a beatmap with dual stages. The stages are placed side by side in the middle, this far apart");
+
+        /// <summary>
+        /// "Thickness of the beat snap grid lines in the editor"
+        /// </summary>
+        public static LocalisableString ManiaTickThickness => new TranslatableString(getKey(@"mania_tick_thickness"), @"Thickness of the beat snap grid lines in the editor");
+
+        /// <summary>
+        /// "Opacity of the beat snap grid lines in the editor"
+        /// </summary>
+        public static LocalisableString ManiaTickOpacity => new TranslatableString(getKey(@"mania_tick_opacity"), @"Opacity of the beat snap grid lines in the editor");
+
+        /// <summary>
+        /// "The lines drawn across the lanes, not those of the timeline"
+        /// </summary>
+        public static LocalisableString ManiaTickDescription => new TranslatableString(getKey(@"mania_tick_description"), @"The lines drawn across the lanes, not those of the timeline");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

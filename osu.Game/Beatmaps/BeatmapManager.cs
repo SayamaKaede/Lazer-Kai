@@ -187,6 +187,32 @@ namespace osu.Game.Beatmaps
         }
 
         /// <summary>
+        /// Adds an empty difficulty of <paramref name="rulesetInfo"/> to hitsound in: named <paramref name="name"/>, with
+        /// <paramref name="keyCount"/> lanes and the red lines of <paramref name="referenceWorkingBeatmap"/>.
+        /// </summary>
+        /// <remarks>
+        /// As <see cref="CreateNewDifficulty"/> makes one, but for the name and the lanes, which are known here and would
+        /// otherwise have to be set in the editor afterwards (2026-10-11).
+        /// </remarks>
+        public virtual WorkingBeatmap CreateHitsoundCanvas(BeatmapSetInfo targetBeatmapSet, WorkingBeatmap referenceWorkingBeatmap, RulesetInfo rulesetInfo, string name, int keyCount)
+        {
+            var newBeatmapInfo = new BeatmapInfo(rulesetInfo, new BeatmapDifficulty { CircleSize = keyCount }, referenceWorkingBeatmap.Metadata.DeepClone())
+            {
+                DifficultyName = name,
+            };
+            var newBeatmap = new Beatmap
+            {
+                BeatmapInfo = newBeatmapInfo,
+                Bookmarks = referenceWorkingBeatmap.Beatmap.Bookmarks.ToArray()
+            };
+
+            foreach (var timingPoint in referenceWorkingBeatmap.Beatmap.ControlPointInfo.TimingPoints)
+                newBeatmap.ControlPointInfo.Add(timingPoint.Time, timingPoint.DeepClone());
+
+            return addDifficultyToSet(targetBeatmapSet, newBeatmap, referenceWorkingBeatmap.Skin, referenceWorkingBeatmap.Storyboard);
+        }
+
+        /// <summary>
         /// Add a copy of the provided <paramref name="referenceWorkingBeatmap"/> to the provided <paramref name="targetBeatmapSet"/>.
         /// The new difficulty will be backed by a <see cref="BeatmapInfo"/> model
         /// and represented by the returned <see cref="WorkingBeatmap"/>.

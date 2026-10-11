@@ -45,6 +45,11 @@ namespace osu.Game.Rulesets.Mania.UI
 
         internal readonly Container TopLevelContainer = new Container { RelativeSizeAxes = Axes.Both };
 
+        /// <summary>
+        /// The keys under the judgement line, which the editor can leave out.
+        /// </summary>
+        public Drawable KeyArea { get; private set; } = null!;
+
         private DrawablePool<PoolableHitExplosion> hitExplosionPool = null!;
         private readonly OrderedHitPolicy hitPolicy;
         public Container UnderlayElements => HitObjectArea.UnderlayElements;
@@ -95,7 +100,7 @@ namespace osu.Game.Rulesets.Mania.UI
                 hitExplosionPool = new DrawablePool<PoolableHitExplosion>(5),
                 sampleTriggerSource = new GameplaySampleTriggerSource(HitObjectContainer),
                 HitObjectArea,
-                keyArea = new SkinnableDrawable(new ManiaSkinComponentLookup(ManiaSkinComponents.KeyArea), _ => new DefaultKeyArea())
+                KeyArea = keyArea = new SkinnableDrawable(new ManiaSkinComponentLookup(ManiaSkinComponents.KeyArea), _ => new DefaultKeyArea())
                 {
                     RelativeSizeAxes = Axes.Both,
                 },

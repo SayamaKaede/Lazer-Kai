@@ -38,8 +38,79 @@ namespace osu.Game.Screens.Edit.Compose.Components
                     return;
 
                 selectionTimeRange = value;
+
+                // drawn all the way along at all times, the lines do not depend on it.
+                if (AlwaysShownTimeSpan == null)
+                    lineCache.Invalidate();
+            }
+        }
+
+        /// <summary>
+        /// How much time is on screen from one end of the playfield to the other, for a grid whose lines are drawn all
+        /// the way along it at all times, as stable's editor draws them; null for one that draws them near the selection
+        /// or the cursor only.
+        /// </summary>
+        protected virtual double? AlwaysShownTimeSpan => null;
+
+        /// <summary>
+        /// How thick the lines are, in pixels.
+        /// </summary>
+        public float LineThickness
+        {
+            get => lineThickness;
+            set
+            {
+                if (value == lineThickness)
+                    return;
+
+                lineThickness = value;
                 lineCache.Invalidate();
             }
+        }
+
+        private float lineThickness = DrawableGridLine.DEFAULT_THICKNESS;
+
+        /// <summary>
+        /// How opaque the lines of a grid that is always shown are. One that draws them near the selection or the cursor
+        /// fades them by how far from it they are.
+        /// </summary>
+        public float LineOpacity
+        {
+            get => lineOpacity;
+            set
+            {
+                if (value == lineOpacity)
+                    return;
+
+                lineOpacity = value;
+                lineCache.Invalidate();
+            }
+        }
+
+        private float lineOpacity = 1;
+
+        /// <summary>
+        /// The times the lines were last made for when they are always shown, and the time span they were made with.
+        /// </summary>
+        private (double start, double end, double span)? shown;
+
+        [Resolved]
+        private EditorClock editorClock { get; set; } = null!;
+
+        /// <summary>
+        /// Makes the lines anew as the playhead nears an end of what they were made for. Making them is a pooled object a
+        /// line, which is not for every frame the playhead moves.
+        /// </summary>
+        private void updateAlwaysShown(double span)
+        {
+            double now = editorClock.CurrentTime;
+
+            // what is on screen is within the span either side of the playhead.
+            if (shown is (double start, double end, double madeWith) && madeWith == span && now - span >= start && now + span <= end)
+                return;
+
+            shown = (now - span * 2, now + span * 3, span);
+            lineCache.Invalidate();
         }
 
         [Resolved]
@@ -81,6 +152,9 @@ namespace osu.Game.Screens.Edit.Compose.Components
         {
             base.Update();
 
+            if (AlwaysShownTimeSpan is double span)
+                updateAlwaysShown(span);
+
             if (!lineCache.IsValid)
             {
                 lineCache.Validate();
@@ -93,10 +167,14 @@ namespace osu.Game.Screens.Edit.Compose.Components
             foreach (var grid in grids)
                 grid.Clear();
 
-            if (selectionTimeRange == null)
+            bool alwaysShown = AlwaysShownTimeSpan != null;
+
+            (double start, double end)? made = alwaysShown ? shown == null ? null : (shown.Value.start, shown.Value.end) : selectionTimeRange;
+
+            if (made == null)
                 return;
 
-            var range = selectionTimeRange.Value;
+            var range = made.Value;
 
             var timingPoint = beatmap.ControlPointInfo.TimingPointAt(range.start - visible_range);
 
@@ -129,12 +207,20 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 {
                     var line = linesPool.Get();
 
+                    // kept until it has gone off the far end, which is less than the playfield's length past the playhead.
+                    line.ShownFor = alwaysShown ? shown!.Value.span : visible_range;
+
                     line.Apply(new HitObject
                     {
                         StartTime = time
                     });
 
                     line.Colour = colour;
+                    line.Thickness = lineThickness;
+
+                    // a line taken from the pool is as faded as it last was.
+                    if (alwaysShown)
+                        line.Alpha = lineOpacity;
 
                     grid.Add(line);
                 }
@@ -147,6 +233,10 @@ namespace osu.Game.Screens.Edit.Compose.Components
             {
                 // required to update ScrollingHitObjectContainer's cache.
                 grid.UpdateSubTree();
+
+                // always shown, none of them fades.
+                if (alwaysShown)
+                    continue;
 
                 foreach (var line in grid.Objects.OfType<DrawableGridLine>())
                 {
@@ -169,6 +259,40 @@ namespace osu.Game.Screens.Edit.Compose.Components
             private IScrollingInfo scrollingInfo { get; set; } = null!;
 
             private readonly IBindable<ScrollingDirection> direction = new Bindable<ScrollingDirection>();
+
+            public const float DEFAULT_THICKNESS = 2;
+
+            /// <summary>
+            /// How long after its time the line is kept.
+            /// </summary>
+            public double ShownFor = visible_range;
+
+            /// <summary>
+            /// How thick the line is, in pixels.
+            /// </summary>
+            public float Thickness
+            {
+                get => thickness;
+                set
+                {
+                    thickness = value;
+
+                    // which way it is thick depends on the way it scrolls, which is known once its dependencies are in:
+                    // a line of the pool has those, and has been made as thick as it was then, before it is first shown.
+                    if (LoadState >= LoadState.Ready)
+                        applyThickness();
+                }
+            }
+
+            private float thickness = DEFAULT_THICKNESS;
+
+            private void applyThickness()
+            {
+                if (RelativeSizeAxes == Axes.Y)
+                    Width = thickness;
+                else
+                    Height = thickness;
+            }
 
             public DrawableGridLine()
                 : base(new HitObject())
@@ -213,19 +337,19 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 if (isHorizontal)
                 {
                     RelativeSizeAxes = Axes.Y;
-                    Width = 2;
+                    Width = thickness;
                 }
                 else
                 {
                     RelativeSizeAxes = Axes.X;
-                    Height = 2;
+                    Height = thickness;
                 }
             }
 
             protected override void UpdateInitialTransforms()
             {
                 // don't perform any fading – we are handling that ourselves.
-                LifetimeEnd = HitObject.StartTime + visible_range;
+                LifetimeEnd = HitObject.StartTime + ShownFor;
             }
         }
     }

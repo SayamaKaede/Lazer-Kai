@@ -374,6 +374,11 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorHitsoundChangeSound, HitsoundChangeSound.Menu);
             SetDefault(OsuSetting.EditorHitsoundAdvanceByPreviousSpacing, false);
             SetDefault(OsuSetting.EditorHitsoundShowHarmlessUnsnaps, false);
+            SetDefault(OsuSetting.EditorManiaHideKeys, true);
+            // as the user set them with the three of them to try (2026-10-12).
+            SetDefault(OsuSetting.EditorManiaStageSpacing, 0f, 0f, 300f, 1f);
+            SetDefault(OsuSetting.EditorManiaTickThickness, 1f, 1f, 8f, 0.5f);
+            SetDefault(OsuSetting.EditorManiaTickOpacity, 0.5f, 0.05f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorStreamSnapSpacingWhole, true);
             SetDefault(OsuSetting.EditorStreamSnapSpacingLastOfSeveral, false);
             SetDefault(OsuSetting.EditorAutoGenerateBreaks, true);
@@ -1318,5 +1323,27 @@ namespace osu.Game.Configuration
         /// Whether the hitsound screen also lists the green lines off a sound that the sound takes all the same.
         /// </summary>
         EditorHitsoundShowHarmlessUnsnaps,
+
+        /// <summary>
+        /// Whether the osu!mania editor leaves out the keys under the judgement line, and shows the lanes going on
+        /// there with the notes that have gone by, as stable's editor does.
+        /// </summary>
+        EditorManiaHideKeys,
+
+        /// <summary>
+        /// How far apart, in pixels of the playfield, the osu!mania editor puts the stages of a difficulty with more
+        /// than one. Left where the game puts them, each is in the middle of its own half, however far that is.
+        /// </summary>
+        EditorManiaStageSpacing,
+
+        /// <summary>
+        /// How thick the osu!mania editor draws the lines of the ticks across the lanes, in pixels.
+        /// </summary>
+        EditorManiaTickThickness,
+
+        /// <summary>
+        /// How opaque the osu!mania editor draws the lines of the ticks across the lanes.
+        /// </summary>
+        EditorManiaTickOpacity,
     }
 }

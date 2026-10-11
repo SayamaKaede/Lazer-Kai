@@ -627,6 +627,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                 heading(LazerKaiHitsoundStrings.NewDifficultyHeader),
                                 newDifficultyButton(LazerKaiHitsoundStrings.CopyIntoNewDifficulty, false),
                                 newDifficultyButton(LazerKaiHitsoundStrings.MakeHitsoundDifficulty, true),
+                                newManiaDifficultyButton(),
                                 heading(LazerKaiHitsoundStrings.CopyFromHeader),
                                 copySource = new FormDropdown<string>
                                 {
@@ -2132,6 +2133,37 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 {
                     button.Enabled.Value = c.NewValue;
                     button.TooltipText = c.NewValue ? default : LazerKaiHitsoundStrings.NewDifficultyUnavailable;
+                }, true);
+
+                canMakeHitsoundDifficulty.Add(can);
+            }
+            else
+                button.Enabled.Value = false;
+
+            return button;
+        }
+
+        /// <summary>
+        /// The button for an empty osu!mania difficulty to hitsound in, which any osu! difficulty can be given.
+        /// </summary>
+        private Drawable newManiaDifficultyButton()
+        {
+            var button = new RoundedButton
+            {
+                Text = LazerKaiHitsoundStrings.MakeManiaHitsoundDifficulty,
+                RelativeSizeAxes = Axes.X,
+                Height = 40,
+                Action = () => editor?.MakeManiaHitsoundDifficulty(),
+            };
+
+            if (editor != null)
+            {
+                var can = editor.CanMakeManiaHitsoundDifficulty.GetBoundCopy();
+
+                can.BindValueChanged(c =>
+                {
+                    button.Enabled.Value = c.NewValue;
+                    button.TooltipText = c.NewValue ? default : LazerKaiHitsoundStrings.ManiaDifficultyUnavailable;
                 }, true);
 
                 canMakeHitsoundDifficulty.Add(can);

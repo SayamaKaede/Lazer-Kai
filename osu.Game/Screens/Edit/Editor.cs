@@ -67,6 +67,7 @@ using osu.Game.Screens.Edit.GameplayTest;
 using osu.Game.Screens.Edit.Setup;
 using osu.Game.Screens.Edit.Submission;
 using osu.Game.Screens.Edit.GreenLines;
+using osu.Game.Screens.Edit.Hitsounds;
 using osu.Game.Screens.Edit.Timing;
 using osu.Game.Screens.Edit.Verify;
 using osu.Game.Screens.OnlinePlay;
@@ -478,6 +479,14 @@ namespace osu.Game.Screens.Edit
             AddInternal(savedTimingLines);
             dependencies.Cache(savedTimingLines);
             dependencies.CacheAs<ILineVolumes>(savedTimingLines);
+
+            // a difficulty made to hitsound in, whose lanes are its sounds: one that has lanes kept for it.
+            if (canSave && editorBeatmap.BeatmapInfo.Ruleset.OnlineID == mania_ruleset_id
+                        && new LaneSoundProjectStore(storage).Load(editorBeatmap.BeatmapInfo) is LaneSoundProject lanes)
+            {
+                AddInternal(laneSounds = new LaneSounds(lanes));
+                dependencies.Cache(laneSounds);
+            }
 
             // before the first state is taken, which the lines are a part of.
             if (savedFile != null)
@@ -1967,9 +1976,74 @@ namespace osu.Game.Screens.Edit
 
         private readonly Bindable<bool> canMakeHitsoundDifficulty = new Bindable<bool>();
 
-        private void updateCanMakeHitsoundDifficulty() =>
+        private void updateCanMakeHitsoundDifficulty()
+        {
             canMakeHitsoundDifficulty.Value = canSave && stableCompatibility.Value && keptStableVersion.Value != null
                                               && editorBeatmap.BeatmapInfo.Ruleset.OnlineID == 0 && !MutationTracker.InProgress.Value;
+
+            canMakeManiaHitsoundDifficulty.Value = canSave && editorBeatmap.BeatmapInfo.Ruleset.OnlineID == 0 && !MutationTracker.InProgress.Value
+                                                   && rulesets.GetRuleset(mania_ruleset_id) != null;
+        }
+
+        private const int mania_ruleset_id = 3;
+
+        /// <summary>
+        /// How many lanes a difficulty made to hitsound in has: two stages of nine, which is as many as osu!mania has,
+        /// since each lane is a sound and there is no knowing how many will be wanted (2026-10-12).
+        /// </summary>
+        public const int HITSOUND_CANVAS_LANES = 18;
+
+        /// <summary>
+        /// The sounds of this difficulty's lanes, if it is one made to hitsound in.
+        /// </summary>
+        [CanBeNull]
+        private LaneSounds laneSounds;
+
+        /// <summary>
+        /// Whether <see cref="MakeManiaHitsoundDifficulty"/> can be done: for an osu! difficulty, whatever format it is
+        /// kept in, since nothing of its file is carried over but its red lines.
+        /// </summary>
+        public IBindable<bool> CanMakeManiaHitsoundDifficulty => canMakeManiaHitsoundDifficulty;
+
+        private readonly Bindable<bool> canMakeManiaHitsoundDifficulty = new Bindable<bool>();
+
+        /// <summary>
+        /// Adds an empty osu!mania difficulty to hitsound in, with this one's red lines, and switches to it.
+        /// </summary>
+        /// <remarks>
+        /// Hitsounds for osu! are worked out in osu!mania, where any number of sounds can be played at one time, and
+        /// turned into a hitsound difficulty afterwards. Each lane is a sound there (see <see cref="LaneSounds"/>).
+        /// </remarks>
+        public void MakeManiaHitsoundDifficulty()
+        {
+            if (!canMakeManiaHitsoundDifficulty.Value)
+                return;
+
+            attemptMutationOperation(() =>
+            {
+                // saved first, so that red lines not yet saved are in the new difficulty.
+                if (!Save())
+                    return false;
+
+                var info = beatmapManager.QueryBeatmap(b => b.ID == editorBeatmap.BeatmapInfo.ID);
+                var mania = rulesets.GetRuleset(mania_ruleset_id);
+
+                if (info?.BeatmapSet == null || mania == null)
+                    return false;
+
+                string name = NamingUtils.GetNextBestName(info.BeatmapSet.Beatmaps.Select(b => b.DifficultyName), @"Hitsounds (mania)");
+
+                var created = beatmapManager.CreateHitsoundCanvas(info.BeatmapSet, beatmapManager.GetWorkingBeatmap(info, true), mania, name, HITSOUND_CANVAS_LANES);
+
+                // having lanes kept for it is what makes it a difficulty to hitsound in.
+                var lanes = new LaneSoundProject();
+                lanes.EnsureLanes(HITSOUND_CANVAS_LANES);
+                new LaneSoundProjectStore(storage).Save(created.BeatmapInfo, lanes);
+
+                SwitchToDifficulty(created.BeatmapInfo);
+                return true;
+            });
+        }
 
         /// <summary>
         /// Adds a difficulty to hitsound in, written from this one's file as stable has it, and switches to it.

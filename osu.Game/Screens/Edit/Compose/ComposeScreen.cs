@@ -55,6 +55,7 @@ namespace osu.Game.Screens.Edit.Compose
 
             ruleset = parent.Get<IBindable<WorkingBeatmap>>().Value.BeatmapInfo.Ruleset.CreateInstance();
             composer = ruleset?.CreateHitObjectComposer();
+            laneSounds = parent.Get<LaneSounds>();
 
             // make the composer available to the timeline and other components in this screen.
             if (composer != null)
@@ -78,15 +79,23 @@ namespace osu.Game.Screens.Edit.Compose
                         RelativeSizeAxes = Axes.Both,
                         Child = composer,
                     },
-                    HitsoundPanel = new HitsoundPanel(showingHitsounds),
+                    // a difficulty made to hitsound in has its lanes to set up there instead.
+                    laneSounds != null ? new LaneSoundPanel(showingHitsounds) : (Drawable)(HitsoundPanel = new HitsoundPanel(showingHitsounds)),
                 }
             });
         }
 
         /// <summary>
-        /// What takes the playfield's place on the hitsound screen.
+        /// What takes the playfield's place on the hitsound screen. Null on a difficulty made to hitsound in, which has
+        /// a <see cref="LaneSoundPanel"/> there.
         /// </summary>
         public HitsoundPanel HitsoundPanel { get; private set; }
+
+        /// <summary>
+        /// The sounds of the lanes, on a difficulty made to hitsound in. Taken as the dependencies are made: the content
+        /// is made by the class this is of, before anything of this one's is resolved.
+        /// </summary>
+        private LaneSounds laneSounds;
 
         /// <summary>
         /// Whether this screen is standing in for the hitsound screen, which it is the compose screen of.
