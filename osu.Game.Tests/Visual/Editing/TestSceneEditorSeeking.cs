@@ -268,6 +268,47 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("at the white tick before the one the press went to", () => EditorClock.CurrentTime, () => Is.InRange(120000, 122000));
         }
 
+        /// <summary>
+        /// Held while playing, ctrl and left go back an object a repeat, going on from the object the last went to as
+        /// left alone goes on from its white tick (2026-10-11).
+        /// </summary>
+        /// <remarks>
+        /// Going by the playhead, a repeat found the object the one before it had gone to: it had played on past its start
+        /// since. So the key held went back to one object over and over, for as long as it was held.
+        ///
+        /// The press and its repeat are handed over rather than typed, as above. Repeats come 70ms apart.
+        /// </remarks>
+        [Test]
+        public void TestARepeatGoesOnFromTheObjectTheLastWentTo()
+        {
+            AddStep("add objects", () =>
+            {
+                EditorBeatmap.Clear();
+                EditorBeatmap.AddRange(new[]
+                {
+                    new HitCircle { StartTime = 1000, },
+                    new HitCircle { StartTime = 2250, },
+                    new HitCircle { StartTime = 3600, },
+                });
+            });
+            AddStep("seek to 3700", () => EditorClock.Seek(3700));
+
+            AddStep("play", () => EditorClock.Start());
+            AddUntilStep("playing", () => EditorClock.IsRunning);
+
+            AddStep("press ctrl+left, play on, and repeat", () =>
+            {
+                Editor.OnPressed(new KeyBindingPressEvent<GlobalAction>(InputManager.CurrentState, GlobalAction.EditorSeekToPreviousHitObject));
+
+                EditorClock.Seek(3670);
+                Editor.OnPressed(new KeyBindingPressEvent<GlobalAction>(InputManager.CurrentState, GlobalAction.EditorSeekToPreviousHitObject, true));
+
+                EditorClock.Stop();
+            });
+
+            AddAssert("at the object before the one the press went to", () => EditorClock.CurrentTime, () => Is.InRange(2250, 2450));
+        }
+
         private void holdLeftWhilePlaying()
         {
             AddStep("play", () => EditorClock.Start());

@@ -5,11 +5,13 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Input.Events;
 using osu.Framework.Testing;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Extensions;
+using osu.Game.Input.Bindings;
 using osu.Game.Localisation;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Objects;
@@ -822,6 +824,40 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             pressArrow(Key.Right, () => slider.StartTime + slider.SpanDuration);
             pressArrow(Key.Right, () => slider.EndTime);
             pressArrow(Key.Left, () => slider.StartTime + slider.SpanDuration);
+        }
+
+        /// <summary>
+        /// Held while playing, the left key goes back a point a repeat, going on from the point the last went to
+        /// (2026-10-11).
+        /// </summary>
+        /// <remarks>
+        /// Going by the playhead, a repeat found the point the one before it had gone to: it had played on past it since.
+        /// So the key held went back to one point over and over, for as long as it was held.
+        ///
+        /// The press and its repeat are handed over rather than typed, with the time between them put in by a seek: how
+        /// far a test plays on between two repeats is not something it can count on. Repeats come 70ms apart.
+        /// </remarks>
+        [Test]
+        public void TestARepeatOfLeftGoesOnFromThePointTheLastWentTo()
+        {
+            switchToHitsounds();
+            seekTo(() => slider.EndTime + 50);
+
+            AddStep("play", () => EditorClock.Start());
+            AddUntilStep("playing", () => EditorClock.IsRunning);
+
+            AddStep("press left, play on, and repeat", () =>
+            {
+                panel.OnPressed(new KeyBindingPressEvent<GlobalAction>(InputManager.CurrentState, GlobalAction.EditorSeekBackwards));
+
+                EditorClock.Seek(slider.EndTime + 70);
+                panel.OnPressed(new KeyBindingPressEvent<GlobalAction>(InputManager.CurrentState, GlobalAction.EditorSeekBackwards, true));
+
+                EditorClock.Stop();
+            });
+
+            AddAssert("at the reverse, the point before the one the press went to", () => EditorClock.CurrentTime,
+                () => Is.InRange(slider.StartTime + slider.SpanDuration - 1, slider.StartTime + slider.SpanDuration + 200));
         }
 
         private void pressArrow(Key key, System.Func<double> expected)

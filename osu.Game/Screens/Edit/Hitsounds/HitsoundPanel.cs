@@ -1610,9 +1610,18 @@ namespace osu.Game.Screens.Edit.Hitsounds
         /// Moves the playhead to the next point a sound is played in <paramref name="direction"/>: the end of a slider and
         /// each reverse are stopped at as well.
         /// </summary>
-        private void seekToNextPoint(int direction)
+        /// <param name="direction">Forwards above 0, backwards otherwise.</param>
+        /// <param name="repeat">Whether this is a repeat of a key held.</param>
+        private void seekToNextPoint(int direction, bool repeat)
         {
             double current = clock.CurrentTime;
+
+            // held while playing, it goes back a point a repeat rather than to the one point the playhead has just gone
+            // by again.
+            if (direction > 0)
+                heldSeekBack.Reset();
+            else
+                current = heldSeekBack.From(current, clock.IsRunning, repeat);
 
             var times = editorBeatmap.HitObjects.SelectMany(h => HitPoints.Of(h, durationSoundsAtEnd)).Select(p => p.Time);
 
@@ -1620,9 +1629,16 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 ? times.Where(t => t > current + 1).DefaultIfEmpty(double.NaN).Min()
                 : times.Where(t => t < current - 1).DefaultIfEmpty(double.NaN).Max();
 
-            if (next is double time && !double.IsNaN(time))
-                clock.SeekSmoothlyTo(time);
+            if (next is not double time || double.IsNaN(time))
+                return;
+
+            if (direction <= 0)
+                heldSeekBack.WentTo(time);
+
+            clock.SeekSmoothlyTo(time);
         }
+
+        private readonly HeldSeekBack heldSeekBack = new HeldSeekBack();
 
         protected override bool OnClick(ClickEvent e)
         {
@@ -1637,11 +1653,11 @@ namespace osu.Game.Screens.Edit.Hitsounds
             switch (e.Action)
             {
                 case GlobalAction.EditorSeekBackwards:
-                    seekToNextPoint(-1);
+                    seekToNextPoint(-1, e.Repeat);
                     return true;
 
                 case GlobalAction.EditorSeekForwards:
-                    seekToNextPoint(1);
+                    seekToNextPoint(1, e.Repeat);
                     return true;
             }
 

@@ -1383,14 +1383,14 @@ namespace osu.Game.Screens.Edit
                     if (editorBeatmap.SelectedHitObjects.Any())
                         return false;
 
-                    seekHitObject(-1);
+                    seekHitObject(-1, e.Repeat);
                     return true;
 
                 case GlobalAction.EditorSeekToNextHitObject:
                     if (editorBeatmap.SelectedHitObjects.Any())
                         return false;
 
-                    seekHitObject(1);
+                    seekHitObject(1, e.Repeat);
                     return true;
 
                 case GlobalAction.EditorSeekToPreviousSamplePoint:
@@ -2332,14 +2332,30 @@ namespace osu.Game.Screens.Edit
                 clock.Seek(found.Time);
         }
 
-        private void seekHitObject(int direction)
+        /// <param name="direction">Backwards below 1, forwards otherwise.</param>
+        /// <param name="repeat">Whether this is a repeat of a key held.</param>
+        private void seekHitObject(int direction, bool repeat)
         {
-            var found = direction < 1
-                ? editorBeatmap.HitObjects.LastOrDefault(p => p.StartTime < clock.CurrentTimeAccurate)
-                : editorBeatmap.HitObjects.FirstOrDefault(p => p.StartTime > clock.CurrentTimeAccurate);
+            double current = clock.CurrentTimeAccurate;
 
-            if (found != null)
-                clock.SeekSmoothlyTo(found.StartTime);
+            // held while playing, it goes back an object a repeat rather than to the one object the playhead has just
+            // gone by again, as the left key alone does with white ticks.
+            if (direction < 1)
+                current = heldSeekBack.From(current, clock.IsRunning, repeat);
+            else
+                heldSeekBack.Reset();
+
+            var found = direction < 1
+                ? editorBeatmap.HitObjects.LastOrDefault(p => p.StartTime < current)
+                : editorBeatmap.HitObjects.FirstOrDefault(p => p.StartTime > current);
+
+            if (found == null)
+                return;
+
+            if (direction < 1)
+                heldSeekBack.WentTo(found.StartTime);
+
+            clock.SeekSmoothlyTo(found.StartTime);
         }
 
         private void seekSamplePoint(int direction)
@@ -2398,9 +2414,9 @@ namespace osu.Game.Screens.Edit
         }
 
         /// <summary>
-        /// The white tick the last seek back made while playing went to, for a held key to go on from.
+        /// Where the last seek back made while playing went to, for a held key to go on from.
         /// </summary>
-        private double? whiteTickSoughtBackTo;
+        private readonly HeldSeekBack heldSeekBack = new HeldSeekBack();
 
         /// <summary>
         /// Seeks as the wheel and the arrow keys do: a tick while stopped, and a white tick while playing.
@@ -2419,7 +2435,7 @@ namespace osu.Game.Screens.Edit
 
             if (!clock.IsRunning)
             {
-                whiteTickSoughtBackTo = null;
+                heldSeekBack.Reset();
 
                 if (direction < 1)
                     clock.SeekBackward(true, amount);
@@ -2437,7 +2453,7 @@ namespace osu.Game.Screens.Edit
 
             if (direction >= 1)
             {
-                whiteTickSoughtBackTo = null;
+                heldSeekBack.Reset();
                 clock.SeekSmoothlyTo(WhiteTickSeeking.After(timing, current, count));
                 return;
             }
@@ -2445,11 +2461,12 @@ namespace osu.Game.Screens.Edit
             // a held key goes on from the white tick its last repeat went to rather than from the playhead. Going by the
             // playhead, a repeat finds the first tick after that white tick already gone by wherever ticks are shorter
             // than the time between two repeats, and goes back to the same white tick over and over.
-            if (e is KeyBindingPressEvent<GlobalAction> { Repeat: true } && whiteTickSoughtBackTo is double last)
-                current = last;
+            current = heldSeekBack.From(current, true, e is KeyBindingPressEvent<GlobalAction> { Repeat: true });
 
-            whiteTickSoughtBackTo = WhiteTickSeeking.Before(timing, current, beatDivisor.Value, count);
-            clock.SeekSmoothlyTo(whiteTickSoughtBackTo.Value);
+            double whiteTick = WhiteTickSeeking.Before(timing, current, beatDivisor.Value, count);
+
+            heldSeekBack.WentTo(whiteTick);
+            clock.SeekSmoothlyTo(whiteTick);
         }
 
         private void updateLastSavedHash()
