@@ -3,10 +3,12 @@
 
 #nullable disable
 
+using System;
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
+using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Edit;
@@ -338,6 +340,279 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             });
 
             AddAssert("the panel came up at 1/8", () => panel.Divisor.Value, () => Is.EqualTo(8));
+        }
+
+        /// <summary>
+        /// One circle deleted from the run of a converted slider is put back, and that is all. The rest of the run was
+        /// forgotten along with it and left in the beatmap, so a whole run more was laid over it at every delete
+        /// (2026-10-12).
+        /// </summary>
+        [Test]
+        public void TestOneCircleDeletedFromTheRunIsPutBackAlone()
+        {
+            int before = 0;
+
+            AddStep("convert one that is in the beatmap", () =>
+            {
+                var slider = shape();
+                EditorBeatmap.Add(slider);
+                panel.Open(slider);
+            });
+
+            AddUntilStep("circles are shown", () => circles().Length, () => Is.GreaterThan(2));
+            AddStep("count them", () => before = circles().Length);
+
+            AddStep("delete one of them", () => EditorBeatmap.Remove(circles()[1]));
+
+            AddUntilStep("it is put back", () => circles().Length, () => Is.GreaterThanOrEqualTo(before));
+            AddAssert("and nothing besides", () => circles().Length, () => Is.EqualTo(before));
+        }
+
+        /// <summary>
+        /// Changing the zigzag leaves the shape where it is. The circles are put on whole coordinates, and how far that
+        /// cut the first of them from where the shape has it was read as the run having been dragged: the shape went up
+        /// and to the left by a fraction at every change (2026-10-12).
+        /// </summary>
+        [Test]
+        public void TestChangingTheZigzagLeavesTheShapeWhereItIs()
+        {
+            Slider drawn = null;
+            Vector2 wasAt = Vector2.Zero;
+
+            AddStep("hand a slanted shape over", () => panel.Open(drawn = slantedShape(), fromTheBeatmap: false));
+            AddUntilStep("circles are shown", () => circles().Length, () => Is.GreaterThan(1));
+            AddStep("remember where the shape is", () => wasAt = drawn.Position);
+
+            for (int reach = 1; reach <= 8; reach++)
+            {
+                int to = reach;
+
+                AddStep($"a zigzag of {to}", () => zigzag.Current.Value = to);
+                AddWaitStep("let the run follow", 3);
+            }
+
+            AddAssert("the shape is where it was", () => drawn.Position, () => Is.EqualTo(wasAt));
+        }
+
+        /// <summary>
+        /// A run with a zigzag is dragged and reshaped as any other is: the shape goes as far as the run was dragged, and
+        /// stays where it is while an anchor of it is pulled.
+        /// </summary>
+        [Test]
+        public void TestAZigzaggedRunIsDraggedAndReshapedAsAnyOther()
+        {
+            Slider drawn = null;
+            Vector2 wasAt = Vector2.Zero;
+
+            AddStep("hand a slanted shape over", () => panel.Open(drawn = slantedShape(), fromTheBeatmap: false));
+            AddUntilStep("circles are shown", () => circles().Length, () => Is.GreaterThan(1));
+
+            AddStep("a zigzag of 7", () => zigzag.Current.Value = 7);
+            AddWaitStep("let the run follow", 3);
+            AddStep("remember where the shape is", () => wasAt = drawn.Position);
+
+            AddStep("drag the run to the right", () =>
+            {
+                foreach (var circle in circles())
+                    circle.Position += new Vector2(50, 0);
+            });
+
+            AddWaitStep("let the shape follow", 3);
+            AddAssert("the shape came as far", () => drawn.Position, () => Is.EqualTo(wasAt + new Vector2(50, 0)));
+
+            AddStep("pull the far anchor about", () => drawn.Path.ControlPoints[^1].Position = new Vector2(170, 160));
+            AddWaitStep("let the run follow", 3);
+            AddAssert("the shape stayed there", () => drawn.Position, () => Is.EqualTo(wasAt + new Vector2(50, 0)));
+        }
+
+        /// <summary>
+        /// Turning the run turns the shape it is laid along. Only how far the first circle went was taken to the shape,
+        /// so the run was laid along it again as it had been, somewhere else (2026-10-12).
+        /// </summary>
+        [Test]
+        public void TestTurningTheRunTurnsTheShape()
+        {
+            Slider drawn = null;
+            Vector2[] wereAt = null;
+
+            // lying flat, from (150, 200) to (350, 200).
+            AddStep("hand a shape over", () => panel.Open(drawn = shape(), fromTheBeatmap: false));
+            AddUntilStep("circles are shown", () => circles().Length, () => Is.GreaterThan(1));
+            AddStep("remember where the circles are", () => wereAt = circles().Select(c => c.Position).ToArray());
+
+            turnClockwise();
+
+            AddUntilStep("the run stands upright", () => circles().Max(c => c.Position.X) - circles().Min(c => c.Position.X), () => Is.LessThan(1));
+            AddAssert("as long as it was", () => circles().Max(c => c.Position.Y) - circles().Min(c => c.Position.Y), () => Is.EqualTo(200).Within(1));
+            AddAssert("the shape stands upright too", () => MathF.Abs(drawn.Path.ControlPoints[^1].Position.X), () => Is.LessThan(0.01f));
+            AddAssert("as long as it was", () => MathF.Abs(drawn.Path.ControlPoints[^1].Position.Y), () => Is.EqualTo(200).Within(0.01f));
+
+            turnClockwise();
+            turnClockwise();
+            turnClockwise();
+
+            AddUntilStep("a whole turn brings the shape back", () => drawn.Path.ControlPoints[^1].Position, () => Is.EqualTo(new Vector2(200, 0)));
+            AddAssert("to where it was", () => drawn.Position, () => Is.EqualTo(new Vector2(150, 200)));
+            AddUntilStep("and the circles with it", () => circles().Select(c => c.Position).ToArray(), () => Is.EqualTo(wereAt));
+        }
+
+        private void turnClockwise()
+        {
+            AddStep("ctrl and >", () =>
+            {
+                InputManager.PressKey(Key.ControlLeft);
+                InputManager.Key(Key.Period);
+                InputManager.ReleaseKey(Key.ControlLeft);
+            });
+
+            AddWaitStep("let the run follow", 3);
+        }
+
+        /// <summary>
+        /// Flipping the run flips the shape it is laid along.
+        /// </summary>
+        [Test]
+        public void TestFlippingTheRunFlipsTheShape()
+        {
+            Slider drawn = null;
+
+            // from (150, 100) down and to the right, to (350, 230).
+            AddStep("hand a slanted shape over", () => panel.Open(drawn = slantedShape(), fromTheBeatmap: false));
+            AddUntilStep("circles are shown", () => circles().Length, () => Is.GreaterThan(1));
+
+            AddStep("ctrl and h", () =>
+            {
+                InputManager.PressKey(Key.ControlLeft);
+                InputManager.Key(Key.H);
+                InputManager.ReleaseKey(Key.ControlLeft);
+            });
+
+            // over the middle of the grid, which is at 256 across.
+            AddUntilStep("the shape runs to the left", () => drawn.Path.ControlPoints[^1].Position, () => Is.EqualTo(new Vector2(-200, 130)));
+            AddAssert("from across the middle", () => drawn.Position, () => Is.EqualTo(new Vector2(362, 100)));
+            AddUntilStep("and the run with it", () => circles().OrderBy(c => c.StartTime).Last().Position, () => Is.EqualTo(new Vector2(162, 230)));
+        }
+
+        /// <summary>
+        /// Reversing the run reverses the shape it is laid along, and leaves it when it was. The circles' order was turned
+        /// round and the shape's was not, so the first of them was at the last one's time, which was read as the run having
+        /// been dragged its whole length along the timeline: it went that much later at every press (2026-10-12).
+        /// </summary>
+        [Test]
+        public void TestReversingTheRunReversesTheShape()
+        {
+            Slider drawn = null;
+            double startedAt = 0;
+            Vector2[] wereAt = null;
+
+            // from (150, 100) down and to the right, to (350, 230).
+            AddStep("hand a slanted shape over", () => panel.Open(drawn = slantedShape(), fromTheBeatmap: false));
+            AddUntilStep("circles are shown", () => circles().Length, () => Is.GreaterThan(1));
+
+            AddStep("remember when and where the run is", () =>
+            {
+                startedAt = drawn.StartTime;
+                wereAt = inOrder().Select(c => c.Position).ToArray();
+            });
+
+            reverse();
+
+            AddAssert("the shape starts when it did", () => drawn.StartTime, () => Is.EqualTo(startedAt));
+            AddAssert("and so does the run", () => inOrder().First().StartTime, () => Is.EqualTo(startedAt));
+            AddAssert("the shape starts where it ended", () => drawn.Position, () => Is.EqualTo(new Vector2(350, 230)));
+            AddUntilStep("and the run goes the other way", () => inOrder().Select(c => c.Position).ToArray(), () => Is.EqualTo(wereAt.Reverse().ToArray()));
+
+            reverse();
+
+            AddUntilStep("reversed again it is as it was", () => inOrder().Select(c => c.Position).ToArray(), () => Is.EqualTo(wereAt));
+            AddAssert("when it was", () => inOrder().First().StartTime, () => Is.EqualTo(startedAt));
+        }
+
+        /// <summary>
+        /// What each stretch was told goes with it when the shape is reversed: its last stretch is its first then.
+        /// </summary>
+        [Test]
+        public void TestReversingTheRunKeepsWhatEachStretchWasTold()
+        {
+            AddStep("hand a shape with a corner over", () => panel.Open(shapeThatTurnsACorner(), fromTheBeatmap: false));
+            AddUntilStep("two stretches", () => panel.Selector.Count.Value, () => Is.EqualTo(2));
+
+            AddStep("four on the first", () => panel.NoteCount.Value = 4);
+            AddStep("look at the second", () => panel.Selector.Current.Value = 1);
+            AddStep("seven on the second", () => panel.NoteCount.Value = 7);
+            AddUntilStep("ten circles", () => circles().Length, () => Is.EqualTo(10));
+
+            reverse();
+
+            AddAssert("the one looked at is the first now, and still says seven", () => (panel.Selector.Current.Value, panel.NoteCount.Value), () => Is.EqualTo((0, 7)));
+            AddStep("look at the second", () => panel.Selector.Current.Value = 1);
+            AddAssert("which says four", () => panel.NoteCount.Value, () => Is.EqualTo(4));
+            AddAssert("ten circles still", () => circles().Length, () => Is.EqualTo(10));
+        }
+
+        private HitCircle[] inOrder() => circles().OrderBy(c => c.StartTime).ToArray();
+
+        private void reverse()
+        {
+            AddStep("ctrl and g", () =>
+            {
+                InputManager.PressKey(Key.ControlLeft);
+                InputManager.Key(Key.G);
+                InputManager.ReleaseKey(Key.ControlLeft);
+            });
+
+            AddWaitStep("let the run follow", 3);
+        }
+
+        /// <summary>
+        /// Stretching the run stretches the shape it is laid along.
+        /// </summary>
+        [Test]
+        public void TestStretchingTheRunStretchesTheShape()
+        {
+            Slider drawn = null;
+
+            // lying flat, from (150, 200) to (350, 200).
+            AddStep("hand a shape over", () => panel.Open(drawn = shape(), fromTheBeatmap: false));
+            AddUntilStep("circles are shown", () => circles().Length, () => Is.GreaterThan(1));
+
+            AddStep("stretch it to half as wide from its start", () =>
+            {
+                var handler = Editor.ChildrenOfType<OsuSelectionScaleHandler>().First();
+
+                handler.Begin();
+                handler.Update(new Vector2(0.5f, 1), new Vector2(150, 200));
+                handler.Commit();
+            });
+
+            AddUntilStep("the shape is half as long", () => drawn.Path.ControlPoints[^1].Position, () => Is.EqualTo(new Vector2(100, 0)));
+            AddAssert("from where it started", () => drawn.Position, () => Is.EqualTo(new Vector2(150, 200)));
+            AddUntilStep("and so is the run", () => furthestCircle(), () => Is.EqualTo(250).Within(1));
+        }
+
+        private HitCircle[] circles() => EditorBeatmap.HitObjects.OfType<HitCircle>().ToArray();
+
+        // the two float sliders are acceleration then the zigzag's reach, in that order down the panel.
+        private FormSliderBar<float> zigzag => panel.ChildrenOfType<FormSliderBar<float>>().Last();
+
+        /// <summary>
+        /// A shape across which the zigzag pushes circles onto fractions: nothing of it lies along an axis.
+        /// </summary>
+        private Slider slantedShape()
+        {
+            var slider = new Slider
+            {
+                StartTime = EditorClock.CurrentTime,
+                Position = new Vector2(150, 100),
+                Path = new SliderPath(new[]
+                {
+                    new PathControlPoint(Vector2.Zero, PathType.LINEAR),
+                    new PathControlPoint(new Vector2(200, 130)),
+                }),
+            };
+
+            slider.ApplyDefaults(EditorBeatmap.ControlPointInfo, EditorBeatmap.Difficulty);
+            return slider;
         }
 
         /// <summary>

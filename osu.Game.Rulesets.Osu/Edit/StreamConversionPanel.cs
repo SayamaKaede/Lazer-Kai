@@ -177,11 +177,11 @@ namespace osu.Game.Rulesets.Osu.Edit
         /// </summary>
         private bool showing;
 
-        /// <summary>Where the circles were last put, which is how far they have since been dragged.</summary>
-        private IReadOnlyList<StreamConversion.Note> planned = Array.Empty<StreamConversion.Note>();
-
         /// <summary>Ticks over whenever the shape is reshaped, which the stream is rebuilt from.</summary>
         private IBindable<int>? pathVersion;
+
+        /// <summary>Where the shape is, which the stream is rebuilt from as well: a shape can be moved without being reshaped.</summary>
+        private IBindable<Vector2>? shapePosition;
 
         /// <summary>
         /// The drawn shape whose anchors are to be shown, or null when there is nothing being shaped.
@@ -450,6 +450,10 @@ namespace osu.Game.Rulesets.Osu.Edit
             pathVersion = slider.Path.Version.GetBoundCopy();
             pathVersion.BindValueChanged(_ => Scheduler.AddOnce(rebuild));
 
+            shapePosition?.UnbindAll();
+            shapePosition = slider.PositionBindable.GetBoundCopy();
+            shapePosition.BindValueChanged(_ => Scheduler.AddOnce(rebuild));
+
             // only the first time: after that it opens where it was last put, which is the point of being able
             // to move it. Measured from the top because the panel's height is not known until it has been laid
             // out — taking it off the bottom on the first open put the panel through the floor.
@@ -570,11 +574,15 @@ namespace osu.Game.Rulesets.Osu.Edit
         /// </remarks>
         private void followTheCircles()
         {
-            if (source == null || shapeCameFromTheBeatmap || planned.Count == 0 || preview.Circles.Count != planned.Count)
+            // from where the circles were put, which is on whole coordinates while those are kept and so not where the
+            // shape has them.
+            var placed = preview.Placed;
+
+            if (source == null || shapeCameFromTheBeatmap || placed.Count == 0 || preview.Circles.Count != placed.Count)
                 return;
 
-            var moved = preview.Circles[0].Position - planned[0].Position;
-            double waited = preview.Circles[0].StartTime - planned[0].Time;
+            var moved = preview.Circles[0].Position - placed[0].Position;
+            double waited = preview.Circles[0].StartTime - placed[0].Time;
 
             if (moved == Vector2.Zero && Precision.AlmostEquals(waited, 0, 0.01))
                 return;
@@ -582,6 +590,56 @@ namespace osu.Game.Rulesets.Osu.Edit
             source.Position += moved;
             source.StartTime += waited;
 
+            Scheduler.AddOnce(rebuild);
+        }
+
+        /// <summary>
+        /// The shape to turn, flip or stretch in place of what is selected, when what is selected is the run laid
+        /// along it.
+        /// </summary>
+        /// <remarks>
+        /// The run is laid along the shape again whenever either changes, so what is done to the circles alone does not
+        /// last. Only how far the first of them had gone was taken to the shape, which is right for a drag and wrong
+        /// for anything else: a run turned or flipped came back as it had been, somewhere else (2026-10-12).
+        ///
+        /// Only of a shape drawn with the Streams tool. A slider converted from the beatmap goes back into it as it was
+        /// when the conversion is not taken, and its run is not kept selected.
+        /// </remarks>
+        /// <returns>Null when what is selected is anything but that run.</returns>
+        public Slider? ShapeBehind(IReadOnlyCollection<HitObject> selection)
+        {
+            if (!changing || shapeCameFromTheBeatmap || source == null)
+                return null;
+
+            if (selection.Count == 0 || selection.Count != preview.Circles.Count)
+                return null;
+
+            return selection.All(h => h is HitCircle circle && preview.Circles.Contains(circle)) ? source : null;
+        }
+
+        /// <summary>
+        /// Turns what the stretches were told round with the shape, once the shape is reversed: its last stretch is its
+        /// first then, and is still told what it was.
+        /// </summary>
+        /// <remarks>
+        /// Each stretch is told the same and laid the other way along, so one that opens out still opens out, from the
+        /// end the run now starts at. Whether the shape's end is dragged to whole ticks stays the answer for the end,
+        /// whichever stretch that now is.
+        /// </remarks>
+        public void ShapeReversed()
+        {
+            if (!changing || stretches.Count == 0)
+                return;
+
+            int shown = Selector.Current.Value;
+
+            stretches.Reverse();
+
+            // the stretch being looked at is the same piece of the shape, counted from the other end.
+            if (shown < stretches.Count)
+                Selector.Current.Value = stretches.Count - 1 - shown;
+
+            showStretch();
             Scheduler.AddOnce(rebuild);
         }
 
@@ -710,7 +768,6 @@ namespace osu.Game.Rulesets.Osu.Edit
             var plan = StreamConversion.PlanStretches(source, spacing, stretches,
                 drawnCurve.Value ? StreamCurve.Build(curveEditor.Points) : null);
 
-            planned = plan;
             preview.Update(source, plan, NewComboEvery.Value);
 
             // the whole run stays selected while the panel is up, so it can be dragged about as one.
@@ -728,6 +785,7 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             Shape.Value = null;
             pathVersion?.UnbindAll();
+            shapePosition?.UnbindAll();
 
             changeHandler?.EndChange();
             changing = false;
@@ -749,6 +807,7 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             Shape.Value = null;
             pathVersion?.UnbindAll();
+            shapePosition?.UnbindAll();
 
             changeHandler?.EndChange();
             changing = false;

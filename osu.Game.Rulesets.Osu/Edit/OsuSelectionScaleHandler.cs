@@ -48,6 +48,9 @@ namespace osu.Game.Rulesets.Osu.Edit
         [Resolved(CanBeNull = true)]
         private OsuHitObjectComposer? composer { get; set; }
 
+        [Resolved(CanBeNull = true)]
+        private StreamConversionPanel? streamPanel { get; set; }
+
         private BindableList<HitObject> selectedItems { get; } = new BindableList<HitObject>();
 
         private readonly Bindable<bool> allowOutsidePlayArea = new Bindable<bool>();
@@ -169,8 +172,11 @@ namespace osu.Game.Rulesets.Osu.Edit
             defaultOrigin = null;
         }
 
-        private IEnumerable<OsuHitObject> selectedMovableObjects => selectedItems.Cast<OsuHitObject>()
-                                                                                 .Where(h => h is not Spinner);
+        // the shape a run of circles is being laid along is what is stretched when the run is, and the run follows it.
+        private IEnumerable<OsuHitObject> selectedMovableObjects => streamPanel?.ShapeBehind(selectedItems) is Slider shape
+            ? new OsuHitObject[] { shape }
+            : selectedItems.Cast<OsuHitObject>()
+                           .Where(h => h is not Spinner);
 
         private Vector2 clampScaleToAdjustAxis(Vector2 scale, Axes adjustAxis)
         {
@@ -205,9 +211,14 @@ namespace osu.Game.Rulesets.Osu.Edit
                 slider.Path.ControlPoints[i].Type = originalInfo.PathControlPointTypes[i];
             }
 
+            // the shape a stream is laid along is as long as it is drawn. It has no length of its own to snap, and being
+            // given one would leave the run short of the shape's end.
+            bool hasLengthOfItsOwn = !ReferenceEquals(slider, streamPanel?.ShapeBehind(selectedItems));
+
             // Snap the slider's length to the current beat divisor
             // to calculate the final resulting duration / bounding box before the final checks.
-            slider.SnapTo(snapProvider);
+            if (hasLengthOfItsOwn)
+                slider.SnapTo(snapProvider);
 
             slider.Position = GeometryUtils.GetScaledPosition(scale, origin, originalInfo.Position, axisRotation);
 
@@ -216,7 +227,7 @@ namespace osu.Game.Rulesets.Osu.Edit
             (bool xInBounds, bool yInBounds) = isQuadInBounds(scaledQuad);
 
             // a slider allowed outside the play area is only put back for a length the game cannot place.
-            if ((allowOutsidePlayArea.Value || (xInBounds && yInBounds)) && slider.Path.HasValidLengthForPlacement)
+            if ((allowOutsidePlayArea.Value || (xInBounds && yInBounds)) && (!hasLengthOfItsOwn || slider.Path.HasValidLengthForPlacement))
                 return;
 
             for (int i = 0; i < slider.Path.ControlPoints.Count; i++)
@@ -225,7 +236,8 @@ namespace osu.Game.Rulesets.Osu.Edit
             slider.Position = originalInfo.Position;
 
             // Snap the slider's length again to undo the potentially-invalid length applied by the previous snap.
-            slider.SnapTo(snapProvider);
+            if (hasLengthOfItsOwn)
+                slider.SnapTo(snapProvider);
         }
 
         private (bool X, bool Y) isQuadInBounds(Quad quad)

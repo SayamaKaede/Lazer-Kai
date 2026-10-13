@@ -25,6 +25,9 @@ namespace osu.Game.Rulesets.Osu.Edit
         [Resolved(CanBeNull = true)]
         private OsuHitObjectComposer? composer { get; set; }
 
+        [Resolved(CanBeNull = true)]
+        private StreamConversionPanel? streamPanel { get; set; }
+
         private BindableList<HitObject> selectedItems { get; } = new BindableList<HitObject>();
 
         [BackgroundDependencyLoader]
@@ -117,7 +120,10 @@ namespace osu.Game.Rulesets.Osu.Edit
             DefaultOrigin = null;
         }
 
-        private IEnumerable<OsuHitObject> selectedMovableObjects => selectedItems.Cast<OsuHitObject>()
-                                                                                 .Where(h => h is not Spinner);
+        // the shape a run of circles is being laid along is what is turned when the run is, and the run follows it.
+        private IEnumerable<OsuHitObject> selectedMovableObjects => streamPanel?.ShapeBehind(selectedItems) is Slider shape
+            ? new OsuHitObject[] { shape }
+            : selectedItems.Cast<OsuHitObject>()
+                           .Where(h => h is not Spinner);
     }
 }

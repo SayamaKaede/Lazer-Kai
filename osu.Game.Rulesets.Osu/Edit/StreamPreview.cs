@@ -30,6 +30,18 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         public IReadOnlyList<HitCircle> Circles => circles;
 
+        private readonly List<StreamConversion.Note> placed = new List<StreamConversion.Note>();
+
+        /// <summary>
+        /// When and where each circle was last put, which is what says how far it has been moved since.
+        /// </summary>
+        /// <remarks>
+        /// Not where the plan had it: the circles are put on whole coordinates while those are kept. Measured from the
+        /// plan, every circle that was cut to a whole coordinate had been moved by what was cut off, with nobody having
+        /// touched it (2026-10-12).
+        /// </remarks>
+        public IReadOnlyList<StreamConversion.Note> Placed => placed;
+
         public StreamPreview(EditorBeatmap beatmap, HitObjectComposer? composer)
         {
             this.beatmap = beatmap;
@@ -61,19 +73,25 @@ namespace osu.Game.Rulesets.Osu.Edit
             // on whole coordinates, as every other position is (2026-10-05): a stream laid along a curve lands on fractions.
             Vector2 whole(Vector2 position) => (composer as OsuHitObjectComposer)?.RoundPositionIfAsked(position) ?? position;
 
+            placed.Clear();
+
             for (int i = 0; i < plan.Count; i++)
             {
+                var put = new StreamConversion.Note(plan[i].Time, whole(plan[i].Position));
+
+                placed.Add(put);
+
                 if (i < circles.Count)
                 {
-                    circles[i].StartTime = plan[i].Time;
-                    circles[i].Position = whole(plan[i].Position);
+                    circles[i].StartTime = put.Time;
+                    circles[i].Position = put.Position;
                     continue;
                 }
 
                 added.Add(new HitCircle
                 {
-                    StartTime = plan[i].Time,
-                    Position = whole(plan[i].Position),
+                    StartTime = put.Time,
+                    Position = put.Position,
                     Samples = source.HeadCircle.Samples.Select(s => s.With()).ToList(),
                 });
             }
@@ -106,9 +124,14 @@ namespace osu.Game.Rulesets.Osu.Edit
         public bool AnythingWasTakenAway() => circles.Any(c => !beatmap.HitObjects.Contains(c));
 
         /// <summary>
-        /// Forgets the circles without touching the beatmap, so that the next pass builds them again.
+        /// Forgets the circles the beatmap no longer holds, so that the next pass builds them again.
         /// </summary>
-        public void Forget() => circles.Clear();
+        /// <remarks>
+        /// Only those. The ones it still holds are moved to where they belong by the next pass, as they are on any other.
+        /// Forgetting all of them left those in the beatmap with nothing holding them, and the next pass laid a whole
+        /// run down over them: one circle deleted from a run of six left eleven (2026-10-12).
+        /// </remarks>
+        public void Forget() => circles.RemoveAll(c => !beatmap.HitObjects.Contains(c));
 
         /// <summary>
         /// Says again that every circle is to stay drawn.
@@ -130,6 +153,7 @@ namespace osu.Game.Rulesets.Osu.Edit
         {
             remove(circles);
             circles.Clear();
+            placed.Clear();
         }
 
         /// <summary>
@@ -142,6 +166,7 @@ namespace osu.Game.Rulesets.Osu.Edit
                 composer?.KeepAlive(circle, false);
 
             circles.Clear();
+            placed.Clear();
         }
 
         private void remove(List<HitCircle> toRemove)

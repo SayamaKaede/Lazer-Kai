@@ -36,6 +36,9 @@ namespace osu.Game.Rulesets.Osu.Edit
         [Resolved(CanBeNull = true)]
         private OsuHitObjectComposer? composer { get; set; }
 
+        [Resolved(CanBeNull = true)]
+        private StreamConversionPanel? streamPanel { get; set; }
+
         /// <summary>
         /// Puts the selection on whole coordinates, as one piece.
         /// </summary>
@@ -256,6 +259,19 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         public override bool HandleReverse()
         {
+            // the shape a run of circles is being laid along is what is reversed when the run is, and the run follows it.
+            // The circles' times are counted from the shape's start: with only their order turned round, the first of them
+            // was at the last one's time, and the run was taken to have been dragged that far along the timeline.
+            if (streamPanel?.ShapeBehind(SelectedItems) is Slider shape)
+            {
+                shape.Path.Reverse(out Vector2 shapeOffset);
+                shape.Position += shapeOffset;
+                composer?.PutPathOnWholeCoordinatesIfAsked(shape);
+
+                streamPanel.ShapeReversed();
+                return true;
+            }
+
             var hitObjects = EditorBeatmap.SelectedHitObjects
                                           .OfType<OsuHitObject>()
                                           .OrderBy(obj => obj.StartTime)
@@ -298,7 +314,8 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         public override bool HandleFlip(Direction direction, bool flipOverOrigin)
         {
-            var hitObjects = selectedMovableObjects;
+            // the shape a run of circles is being laid along is what is flipped when the run is, and the run follows it.
+            var hitObjects = streamPanel?.ShapeBehind(SelectedItems) is Slider shape ? new OsuHitObject[] { shape } : selectedMovableObjects;
 
             // If we're flipping over the origin, we take the grid origin position from the grid toolbox.
             var flipQuad = flipOverOrigin ? new Quad(gridToolbox.StartPositionX.Value, gridToolbox.StartPositionY.Value, 0, 0) : GeometryUtils.GetSurroundingQuad(hitObjects);
