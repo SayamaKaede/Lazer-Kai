@@ -1589,9 +1589,9 @@ namespace osu.Game.Localisation
         public static LocalisableString SliderEndDragMarkerOpacityDescription => new TranslatableString(getKey(@"slider_end_drag_marker_opacity_description"), @"How solid the half circle on a slider's end is.");
 
         /// <summary>
-        /// "After an object is placed the playhead moves on by the gap before it, so the wheel is not needed between placements."
+        /// "After an object is placed the playhead moves on by the gap before it, so the wheel is not needed between placements. osu!mania has a setting of its own, off unless it is turned on from the editor's Edit menu."
         /// </summary>
-        public static LocalisableString AdvanceByPreviousSpacingOnPlacementDescription => new TranslatableString(getKey(@"advance_by_previous_spacing_on_placement_description"), @"After an object is placed the playhead moves on by the gap before it, so the wheel is not needed between placements.");
+        public static LocalisableString AdvanceByPreviousSpacingOnPlacementDescription => new TranslatableString(getKey(@"advance_by_previous_spacing_on_placement_description"), @"After an object is placed the playhead moves on by the gap before it, so the wheel is not needed between placements. osu!mania has a setting of its own, off unless it is turned on from the editor's Edit menu.");
 
         /// <summary>
         /// "Turn it off if placing a slider keeps drawing one by accident."

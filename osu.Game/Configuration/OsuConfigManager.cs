@@ -238,6 +238,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorApplyTestPlayModsToComposer, false);
             SetDefault(OsuSetting.EditorLiveModPreview, true);
             SetDefault(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement, false);
+            SetDefault(OsuSetting.EditorManiaAdvanceByPreviousSpacingOnPlacement, false);
             SetDefault(OsuSetting.EditorFreehandSliderPlacement, true);
             SetDefault(OsuSetting.EditorAlwaysExpandTimelinePointLabels, false);
             SetDefault(OsuSetting.EditorSelectionColour, EditorSelectionColour.Default);
@@ -1345,5 +1346,12 @@ namespace osu.Game.Configuration
         /// How opaque the osu!mania editor draws the lines of the ticks across the lanes.
         /// </summary>
         EditorManiaTickOpacity,
+
+        /// <summary>
+        /// What <see cref="EditorAdvanceByPreviousSpacingOnPlacement"/> is in the osu!mania editor, which has its own:
+        /// notes are put down side by side at one time there, and seeking on after the first of them takes the
+        /// playhead away from the rest. Off unless it is turned on (2026-10-14).
+        /// </summary>
+        EditorManiaAdvanceByPreviousSpacingOnPlacement,
     }
 }

@@ -578,7 +578,8 @@ namespace osu.Game.Screens.Edit
             editorTimelineShowBreaks = config.GetBindable<bool>(OsuSetting.EditorTimelineShowBreaks);
             editorTimelineShowTicks = config.GetBindable<bool>(OsuSetting.EditorTimelineShowTicks);
             editorContractSidebars = config.GetBindable<bool>(OsuSetting.EditorContractSidebars);
-            editorAdvanceByPreviousSpacing = config.GetBindable<bool>(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement);
+            // the one of the ruleset being edited, which is the one the menu turns on and off.
+            editorAdvanceByPreviousSpacing = config.GetBindable<bool>(HitObjectComposer.AdvanceByPreviousSpacingSettingFor(Beatmap.Value.BeatmapInfo.Ruleset));
             editorFreehandSliderPlacement = config.GetBindable<bool>(OsuSetting.EditorFreehandSliderPlacement);
             editorApplyTestPlayModsToComposer = config.GetBindable<bool>(OsuSetting.EditorApplyTestPlayModsToComposer);
             editorLiveModPreview = config.GetBindable<bool>(OsuSetting.EditorLiveModPreview);

@@ -154,7 +154,7 @@ namespace osu.Game.Rulesets.Edit
             this.changeHandler = changeHandler;
 
             autoSeekOnPlacement = config.GetBindable<bool>(OsuSetting.EditorAutoSeekOnPlacement);
-            advanceByPreviousSpacingOnPlacement = config.GetBindable<bool>(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement);
+            advanceByPreviousSpacingOnPlacement = config.GetBindable<bool>(AdvanceByPreviousSpacingSettingFor(Ruleset.RulesetInfo));
             autoNewCombo = config.GetBindable<bool>(OsuSetting.EditorAutoNewCombo);
             autoNewComboInterval = config.GetBindable<AutoNewComboInterval>(OsuSetting.EditorAutoNewComboInterval);
             liveModPreview = config.GetBindable<bool>(OsuSetting.EditorLiveModPreview);
@@ -1153,6 +1153,16 @@ namespace osu.Game.Rulesets.Edit
         /// that has none. Its sounds are the hitsound screen's to give it.
         /// </summary>
         public virtual HitObject? CreateObjectToHear(double time) => null;
+
+        /// <summary>
+        /// The setting that says whether the editor of <paramref name="ruleset"/> seeks on by the spacing before an object
+        /// that was just placed. osu!mania has one of its own, off unless it is turned on: notes are put down side by side
+        /// at one time there, and seeking on after the first of them takes the playhead away from the rest (2026-10-14).
+        /// </summary>
+        public static OsuSetting AdvanceByPreviousSpacingSettingFor(IRulesetInfo ruleset) =>
+            ruleset.OnlineID == mania_ruleset_id ? OsuSetting.EditorManiaAdvanceByPreviousSpacingOnPlacement : OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement;
+
+        private const int mania_ruleset_id = 3;
 
         /// <summary>
         /// Where an object continuing the rhythm of <paramref name="placed"/> and the one before it would go: as far
