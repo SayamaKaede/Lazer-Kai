@@ -132,6 +132,22 @@ namespace osu.Game.Screens.Edit.Hitsounds
             while (Lanes.Count < count)
                 Lanes.Add(new LaneSound());
         }
+
+        /// <summary>
+        /// Makes lanes kept while their sounds were copied into the beatmap set the sounds of the library the copies
+        /// were made of. The copies are left where they are.
+        /// </summary>
+        public void NameSoundsAsTheLibraryDoes()
+        {
+            foreach (var sound in Lanes.Append(Fallback))
+            {
+                if (sound.Source.Length == 0)
+                    continue;
+
+                sound.File = sound.Source;
+                sound.Source = string.Empty;
+            }
+        }
     }
 
     /// <summary>
@@ -171,16 +187,26 @@ namespace osu.Game.Screens.Edit.Hitsounds
     public class LaneSound
     {
         /// <summary>
-        /// The file played, by its name in the beatmap set. Empty for a lane with no sound of its own.
+        /// The file played. Empty for a lane with no sound of its own.
         /// </summary>
+        /// <remarks>
+        /// For a lane, a sound of the library as <see cref="HitsoundLibrary.Files"/> names it: the lanes sound as the
+        /// files of the mapper's own folder, and nothing is put in the beatmap for them (2026-10-13). For a note of a
+        /// difficulty hitsounded in stable, which is turned into a hitsound difficulty by the same means, a file of
+        /// the beatmap set by its name there.
+        /// </remarks>
         [JsonProperty("file")]
         public string File { get; set; } = string.Empty;
 
         /// <summary>
-        /// Where in the library the file was copied from, as <see cref="HitsoundLibrary.Files"/> names it.
+        /// Where in the library <see cref="File"/> was copied from, while a lane's sound was copied into the beatmap set
+        /// and the lane was kept as the copy. Read from lanes kept then, for
+        /// <see cref="LaneSoundProject.NameSoundsAsTheLibraryDoes"/> to make them lanes as they are now; not written.
         /// </summary>
         [JsonProperty("source")]
         public string Source { get; set; } = string.Empty;
+
+        public bool ShouldSerializeSource() => false;
 
         /// <summary>
         /// The sample set it is to be in once turned into an osu! hitsound difficulty.

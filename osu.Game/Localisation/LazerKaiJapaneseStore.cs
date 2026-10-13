@@ -337,6 +337,7 @@ namespace osu.Game.Localisation
             [$@"{hitsound_prefix}:overwrite_lane_preset"] = @"上書き",
             [$@"{hitsound_prefix}:no_lane_sounds_to_save"] = @"音を割り当てたレーンがありません",
             [$@"{hitsound_prefix}:lane_preset_sounds_missing"] = @"ヒットサウンドのフォルダーにない音は割り当てていません: {0}",
+            [$@"{hitsound_prefix}:lane_sounds_missing"] = @"ヒットサウンドのフォルダーにない音があります: {0}",
             [$@"{hitsound_prefix}:new_difficulty_unavailable"] = @"「Stableとの互換性を強化する」がオンのとき、Stable形式（v14以前）のosu!の譜面で使用できます",
             [$@"{hitsound_prefix}:could_not_read_objects"] = @"読み取れないノーツがあったため、難易度を作成しませんでした",
             [$@"{hitsound_prefix}:selected_suffix"] = @"（選択中）",

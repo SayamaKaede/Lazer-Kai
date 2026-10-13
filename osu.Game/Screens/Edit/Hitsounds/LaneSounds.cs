@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using osu.Framework.Allocation;
@@ -20,7 +19,6 @@ using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Formats;
 using osu.Game.Extensions;
 using osu.Game.Localisation;
-using osu.Game.Models;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Dialog;
 using osu.Game.Overlays.Notifications;
@@ -42,14 +40,15 @@ namespace osu.Game.Screens.Edit.Hitsounds
     ///
     /// The lanes are not a part of what is undone. A note put back by an undo as it sounded before its lane was given
     /// another sound is made to sound as its lane does now, without that being an edit of its own.
+    ///
+    /// The sounds are the files of the library themselves, and a note is kept as the name of one. Nothing is put in
+    /// the beatmap for them until the difficulty is turned into a hitsound difficulty, whose circles are to find their
+    /// sounds there. They were copied into it as a lane was given one until 2026-10-13, for the difficulty to sound in
+    /// stable too: a folder of sounds that appeared in the beatmap for no more than a lane given a sound, and that was
+    /// not wanted there.
     /// </remarks>
     public partial class LaneSounds : Component
     {
-        /// <summary>
-        /// The folder of the beatmap set the sounds given to lanes are copied into.
-        /// </summary>
-        public const string SET_DIRECTORY = @"HS";
-
         private readonly LaneSoundProject project;
 
         [Resolved]
@@ -83,7 +82,22 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
         private LaneSoundProjectStore store = null!;
 
+        [Resolved]
+        private Storage storage { get; set; } = null!;
+
+        [Resolved]
+        private AudioManager audio { get; set; } = null!;
+
+        /// <summary>
+        /// The sounds of the library as they were when it was last read.
+        /// </summary>
         private ISampleStore librarySamples = null!;
+
+        /// <summary>
+        /// What the library was read into before it was read again. Notes may still be playing out of these, so they are
+        /// kept until nothing can be.
+        /// </summary>
+        private readonly List<ISampleStore> staleSamples = new List<ISampleStore>();
 
         /// <summary>
         /// A lane was given another sound, or told what it is to be in an osu! difficulty.
@@ -96,13 +110,14 @@ namespace osu.Game.Screens.Edit.Hitsounds
         }
 
         [BackgroundDependencyLoader]
-        private void load(Storage storage, AudioManager audio)
+        private void load()
         {
             Library = new HitsoundLibrary(storage);
             store = new LaneSoundProjectStore(storage);
             Presets = new LaneSoundPresetStore(storage);
-            librarySamples = audio.GetSampleStore(new StorageBackedResourceStore(storage.GetStorageForDirectory(HitsoundLibrary.DIRECTORY)));
+            librarySamples = readLibrary();
 
+            project.NameSoundsAsTheLibraryDoes();
             project.EnsureLanes(LaneCount);
         }
 
@@ -112,6 +127,10 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
             foreach (var hitObject in editorBeatmap.HitObjects)
                 apply(hitObject);
+
+            // a lane whose sound has been taken out of the library is silent from here on, which is otherwise only found
+            // out by listening for it.
+            sayWhichAreMissing(lanes().Append(project.Fallback));
 
             editorBeatmap.HitObjectAdded += added;
             editorBeatmap.HitObjectUpdated += updated;
@@ -174,8 +193,11 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
             mixesStaleSince = null;
 
-            var set = working.Value.BeatmapSetInfo;
-            var mixes = LaneSoundConversion.Mixes(notes(), lanes(), project.Fallback, f => set.GetFile(f) != null);
+            var sounds = lanes();
+
+            // looked for once each, rather than once for every note.
+            var there = sounds.Append(project.Fallback).Select(s => s.File).Where(Library.Exists).ToHashSet();
+            var mixes = LaneSoundConversion.Mixes(notes(), sounds, project.Fallback, there.Contains);
 
             if (mixes.Count == Mixes.Count && mixes.Zip(Mixes).All(m => m.First.SequenceEqual(m.Second)))
                 return;
@@ -202,27 +224,18 @@ namespace osu.Game.Screens.Edit.Hitsounds
         public LaneSound this[int lane] => project[lane];
 
         /// <summary>
-        /// Gives <paramref name="lane"/> a sound from the library, copying it into the beatmap set; every note in the
-        /// lane sounds as it from then on.
+        /// Gives <paramref name="lane"/> a sound of the library; every note in the lane sounds as it from then on.
         /// </summary>
         /// <param name="lane">The lane.</param>
         /// <param name="libraryFile">The sound, as <see cref="HitsoundLibrary.Files"/> names it; null to take the lane's sound away.</param>
         /// <returns>Whether it was given: a sound no longer in the library is not.</returns>
         public bool Give(int lane, string? libraryFile)
         {
-            string file = string.Empty;
-
-            if (libraryFile != null)
-            {
-                file = copyIntoSet(libraryFile);
-
-                if (file.Length == 0)
-                    return false;
-            }
+            if (libraryFile != null && !Library.Exists(libraryFile))
+                return false;
 
             project.EnsureLanes(lane + 1);
-            project.Lanes[lane].File = file;
-            project.Lanes[lane].Source = libraryFile ?? string.Empty;
+            project.Lanes[lane].File = libraryFile ?? string.Empty;
 
             keep();
 
@@ -266,8 +279,58 @@ namespace osu.Game.Screens.Edit.Hitsounds
             var sound = project[lane];
 
             if (sound.HasFile)
-                editorBeatmap.BeatmapSkin?.GetSample(sampleOf(sound, project.VolumeAt(clock.CurrentTime)))?.Play();
+                librarySamples.Get(sound.File)?.Play();
         }
+
+        #region The library
+
+        /// <summary>
+        /// The library was read again: a sound of it may be another than it was, or there where it was not.
+        /// </summary>
+        public event Action? LibraryReloaded;
+
+        /// <summary>
+        /// The sound a note of this difficulty plays, for what looks up the sounds of notes: it is a file of the
+        /// library, which no skin knows of. Null for any other sound, and for one that is no longer in the library.
+        /// </summary>
+        public ISample? SampleFor(ISampleInfo sampleInfo) =>
+            sampleInfo is ConvertHitObjectParser.FileHitSampleInfo file ? librarySamples.Get(file.Filename) : null;
+
+        /// <summary>
+        /// Reads the library again, for sounds put in it or put in place of others since it was read to be heard.
+        /// </summary>
+        public void ReloadLibrary()
+        {
+            staleSamples.Add(librarySamples);
+            librarySamples = readLibrary();
+
+            LibraryReloaded?.Invoke();
+
+            // which lanes are mixed depends on which have a sound to mix.
+            Changed?.Invoke();
+        }
+
+        /// <remarks>
+        /// A sound is read once and kept, and so is its not being there: reading the library again is making this anew.
+        /// </remarks>
+        private ISampleStore readLibrary() => audio.GetSampleStore(new StorageBackedResourceStore(storage.GetStorageForDirectory(HitsoundLibrary.DIRECTORY)));
+
+        /// <summary>
+        /// Tells the mapper which of <paramref name="sounds"/> are no longer in the library.
+        /// </summary>
+        /// <returns>Whether any is not.</returns>
+        private bool sayWhichAreMissing(IEnumerable<LaneSound> sounds)
+        {
+            string[] missing = sounds.Where(s => s.HasFile && !Library.Exists(s.File)).Select(s => s.File).Distinct().ToArray();
+
+            if (missing.Length == 0)
+                return false;
+
+            notifications?.Post(new SimpleErrorNotification { Text = LazerKaiHitsoundStrings.LaneSoundsMissing(string.Join(@", ", missing)) });
+            return true;
+        }
+
+        #endregion
 
         #region Volume
 
@@ -333,18 +396,10 @@ namespace osu.Game.Screens.Edit.Hitsounds
         /// <returns>Whether it was given: a sound no longer in the library is not.</returns>
         public bool GiveFallback(string? libraryFile)
         {
-            string file = string.Empty;
+            if (libraryFile != null && !Library.Exists(libraryFile))
+                return false;
 
-            if (libraryFile != null)
-            {
-                file = copyIntoSet(libraryFile);
-
-                if (file.Length == 0)
-                    return false;
-            }
-
-            project.Fallback.File = file;
-            project.Fallback.Source = libraryFile ?? string.Empty;
+            project.Fallback.File = libraryFile ?? string.Empty;
 
             keep();
             Changed?.Invoke();
@@ -401,7 +456,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
         /// </summary>
         public BeatmapInfo? Converted => converter.Converted;
 
-        private HitsoundDifficultyConverter converter => new HitsoundDifficultyConverter(beatmaps, working.Value, project, keep, notifications, dialogOverlay);
+        private HitsoundDifficultyConverter converter => new HitsoundDifficultyConverter(beatmaps, working.Value, project, keep, notifications, dialogOverlay, Library.Read);
 
         /// <summary>
         /// Turns the difficulty into an osu! hitsound difficulty of the same beatmap set: a circle wherever lanes sound,
@@ -418,6 +473,13 @@ namespace osu.Game.Screens.Edit.Hitsounds
             var osu = rulesets.GetRuleset(0);
 
             if (osu == null)
+                return;
+
+            // the skin's sound is what a lane whose sound is gone would be turned into, without a word: the circles
+            // would sound as something the mapper never put there.
+            var sounding = notes().Select(n => n.Lane).Distinct().Select(lane => project[lane]);
+
+            if (sayWhichAreMissing(sounding.Append(project.Fallback)))
                 return;
 
             // written from a difficulty with nothing in it: this one is not kept as stable has it, and has no file of
@@ -441,14 +503,13 @@ namespace osu.Game.Screens.Edit.Hitsounds
         public LaneSoundPreset AsPreset(string name) => LaneSoundPreset.From(name, lanes(), project.Fallback);
 
         /// <summary>
-        /// Puts the sounds of <paramref name="preset"/> on the lanes in place of every sound they have, copying them
-        /// into the beatmap set; every note sounds as its lane does from then on.
+        /// Puts the sounds of <paramref name="preset"/> on the lanes in place of every sound they have; every note
+        /// sounds as its lane does from then on.
         /// </summary>
         /// <remarks>
         /// The lanes are the preset's afterwards and nothing of what they were, as the combo colours are after a preset
         /// of those. So a sound that is no longer in the library leaves its lane with none, and the mapper is told
-        /// which. A lane the difficulty does not have is left out, for no sound to be brought into the beatmap that
-        /// nothing in it plays.
+        /// which; and nothing is kept of a lane the difficulty does not have.
         /// </remarks>
         public void ApplyPreset(LaneSoundPreset preset)
         {
@@ -476,7 +537,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
         }
 
         /// <summary>
-        /// A sound of a preset as a lane has one, copied into the beatmap set.
+        /// A sound of a preset as a lane has one.
         /// </summary>
         /// <param name="sound">The sound.</param>
         /// <param name="missing">Added to if it is no longer in the library.</param>
@@ -487,16 +548,13 @@ namespace osu.Game.Screens.Edit.Hitsounds
             if (!sound.HasSound)
                 return result;
 
-            string file = copyIntoSet(sound.Source);
-
-            if (file.Length == 0)
+            if (!Library.Exists(sound.Source))
             {
                 missing.Add(sound.Source);
                 return result;
             }
 
-            result.File = file;
-            result.Source = sound.Source;
+            result.File = sound.Source;
             return result;
         }
 
@@ -524,40 +582,6 @@ namespace osu.Game.Screens.Edit.Hitsounds
         public void PlayFromLibrary(string libraryFile) => librarySamples.Get(libraryFile)?.Play();
 
         private void keep() => store.Save(editorBeatmap.BeatmapInfo, project);
-
-        /// <summary>
-        /// Copies a sound of the library into the beatmap set.
-        /// </summary>
-        /// <returns>Its name in the set, or nothing if it is not in the library.</returns>
-        private string copyIntoSet(string libraryFile)
-        {
-            using var stream = Library.Open(libraryFile);
-
-            if (stream == null)
-                return string.Empty;
-
-            var set = working.Value.BeatmapSetInfo;
-
-            string hash = stream.ComputeSHA2Hash();
-            stream.Seek(0, SeekOrigin.Begin);
-
-            string extension = Path.GetExtension(libraryFile);
-            string baseName = $@"{SET_DIRECTORY}/{Path.GetFileNameWithoutExtension(libraryFile)}";
-            string name = baseName + extension;
-
-            // the very sound, already in the set, is used as it is. Another sound of the same name, from another folder
-            // of the library, is given a name of its own.
-            for (int number = 2; set.GetFile(name) is RealmNamedFileUsage existing; number++)
-            {
-                if (existing.File.Hash == hash)
-                    return name;
-
-                name = $@"{baseName}-{number}{extension}";
-            }
-
-            beatmaps.AddFile(set, stream, name);
-            return name;
-        }
 
         /// <summary>
         /// Notes added one at a time this frame, to be heard: one put down is, a paste of many is not.
@@ -656,6 +680,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 editor.Saved -= keep;
 
             librarySamples?.Dispose();
+
+            foreach (var samples in staleSamples)
+                samples.Dispose();
         }
     }
 }

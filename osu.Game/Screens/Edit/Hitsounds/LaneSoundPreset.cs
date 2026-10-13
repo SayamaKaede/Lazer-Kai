@@ -84,8 +84,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
         public static LaneSoundPresetSound From(LaneSound sound) => new LaneSoundPresetSound
         {
-            // a lane sounds as the file it has in the beatmap; where that came from is all a preset can name it by.
-            Source = sound.HasFile ? sound.Source : string.Empty,
+            Source = sound.File,
             Bank = sound.Bank,
             Sound = sound.Sound,
         };

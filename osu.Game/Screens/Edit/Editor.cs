@@ -2082,7 +2082,9 @@ namespace osu.Game.Screens.Edit
 
                 var read = StableManiaHitsounds.From(file, name => HitsoundDifficultyConverter.FileOf(working.BeatmapSetInfo, name));
 
-                new HitsoundDifficultyConverter(beatmapManager, working, project, () => store.Save(editorBeatmap.BeatmapInfo, project), notifications, dialogOverlay)
+                // its notes sound as files of the beatmap, where stable has them.
+                new HitsoundDifficultyConverter(beatmapManager, working, project, () => store.Save(editorBeatmap.BeatmapInfo, project), notifications, dialogOverlay,
+                        HitsoundDifficultyConverter.FromSet(working))
                     .Convert(read.Notes, read.Sounds, read.Fallback, () => file, read.Volumes);
 
                 return true;

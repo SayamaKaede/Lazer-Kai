@@ -43,6 +43,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
         private readonly Action keep;
         private readonly INotificationOverlay? notifications;
         private readonly IDialogOverlay? dialogOverlay;
+        private readonly Func<string, byte[]?> read;
 
         /// <param name="beatmaps">What the difficulty and its files are written with.</param>
         /// <param name="working">The difficulty that is turned into one.</param>
@@ -50,8 +51,13 @@ namespace osu.Game.Screens.Edit.Hitsounds
         /// <param name="keep">Keeps <paramref name="project"/>, once what it was turned into has been noted in it.</param>
         /// <param name="notifications">Where it is said what was done.</param>
         /// <param name="dialogOverlay">Where it is asked before a file of the mapper's own is written over.</param>
+        /// <param name="read">
+        /// What is in a sound, by what the lanes name it as, or null if it is not there: the lanes of a difficulty made
+        /// to hitsound in are sounds of the library, and the notes of one hitsounded in stable are files of the beatmap
+        /// set (<see cref="FromSet"/>).
+        /// </param>
         public HitsoundDifficultyConverter(BeatmapManager beatmaps, WorkingBeatmap working, LaneSoundProject project, Action keep, INotificationOverlay? notifications,
-                                           IDialogOverlay? dialogOverlay)
+                                           IDialogOverlay? dialogOverlay, Func<string, byte[]?> read)
         {
             this.beatmaps = beatmaps;
             this.working = working;
@@ -59,7 +65,24 @@ namespace osu.Game.Screens.Edit.Hitsounds
             this.keep = keep;
             this.notifications = notifications;
             this.dialogOverlay = dialogOverlay;
+            this.read = read;
         }
+
+        /// <summary>
+        /// Reads the sounds of a difficulty hitsounded in stable, which are files of its beatmap set.
+        /// </summary>
+        public static Func<string, byte[]?> FromSet(WorkingBeatmap working) => name =>
+        {
+            if (working.BeatmapSetInfo.GetFile(name) is not RealmNamedFileUsage file)
+                return null;
+
+            using (var stream = working.GetStream(file.File.GetStoragePath()))
+            using (var memory = new MemoryStream())
+            {
+                stream.CopyTo(memory);
+                return memory.ToArray();
+            }
+        };
 
         private BeatmapSetInfo set => working.BeatmapSetInfo;
 
@@ -79,7 +102,18 @@ namespace osu.Game.Screens.Edit.Hitsounds
         public void Convert(IEnumerable<LaneSoundConversion.Note> notes, IReadOnlyList<LaneSound> sounds, LaneSound fallback, Func<string> file,
                             IReadOnlyList<(double Time, int Volume)> volumes)
         {
-            var result = LaneSoundConversion.Convert(notes, sounds, fallback, f => set.GetFile(f) != null);
+            // each sound is read once, however many notes ask whether it is there.
+            var sources = new Dictionary<string, byte[]?>();
+
+            byte[]? bytesOf(string name)
+            {
+                if (!sources.TryGetValue(name, out byte[]? bytes))
+                    sources[name] = bytes = read(name);
+
+                return bytes;
+            }
+
+            var result = LaneSoundConversion.Convert(notes, sounds, fallback, f => bytesOf(f) != null);
 
             if (result.Circles.Count == 0)
             {
@@ -93,14 +127,16 @@ namespace osu.Game.Screens.Edit.Hitsounds
             {
                 if (sound.Sources.Count == 1)
                 {
-                    var source = set.GetFile(sound.Sources[0])!;
+                    byte[] source = bytesOf(sound.Sources[0])!;
 
-                    files.Add(new SoundToWrite(sound.Name + Path.GetExtension(source.Filename), source.File.Hash, () => working.GetStream(source.File.GetStoragePath())));
+                    using (var stream = new MemoryStream(source))
+                        files.Add(new SoundToWrite(sound.Name + Path.GetExtension(sound.Sources[0]), stream.ComputeSHA2Hash(), () => new MemoryStream(source)));
+
                     continue;
                 }
 
                 // lanes that come to the one sound of a circle at the one time are heard together in one file.
-                byte[]? mixed = SoundMixing.Mix(sound.Sources.Select(bytesOf).ToArray());
+                byte[]? mixed = SoundMixing.Mix(sound.Sources.Select(s => bytesOf(s)!).ToArray());
 
                 if (mixed == null)
                 {
@@ -139,16 +175,6 @@ namespace osu.Game.Screens.Edit.Hitsounds
         /// <param name="Hash">The hash of what is in it, as the files of a beatmap set are told apart.</param>
         /// <param name="Open">What is in it.</param>
         private record SoundToWrite(string Name, string Hash, Func<Stream> Open);
-
-        private byte[] bytesOf(string filename)
-        {
-            using (var stream = working.GetStream(set.GetFile(filename)!.File.GetStoragePath()))
-            using (var memory = new MemoryStream())
-            {
-                stream.CopyTo(memory);
-                return memory.ToArray();
-            }
-        }
 
         private void write(LaneSoundConversion.Result result, IReadOnlyList<SoundToWrite> files, Func<string> file, IReadOnlyList<(double Time, int Volume)> volumes)
         {

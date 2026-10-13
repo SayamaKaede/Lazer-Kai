@@ -155,7 +155,13 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                                     Text = LazerKaiHitsoundStrings.ReloadSoundFolder,
                                                     Width = 240,
                                                     Height = 36,
-                                                    Action = rebuild,
+                                                    // the sounds themselves as well as which there are: the lanes
+                                                    // sound as the files of the folder.
+                                                    Action = () =>
+                                                    {
+                                                        laneSounds.ReloadLibrary();
+                                                        rebuild();
+                                                    },
                                                 },
                                                 // the rows are made anew for a preset as they are for the folder:
                                                 // each says what its lane sounds as from when it was made.
@@ -410,10 +416,10 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 var none = new SoundChoice((string?)null);
                 var choices = files.Select(f => new SoundChoice(f)).Prepend(none).ToList();
 
-                var current = !sound.HasFile ? none : choices.FirstOrDefault(c => c.Path == sound.Source);
+                var current = !sound.HasFile ? none : choices.FirstOrDefault(c => c.Path == sound.File);
 
                 if (current == null)
-                    choices.Add(current = new SoundChoice(sound.Source.Length > 0 ? sound.Source : sound.File));
+                    choices.Add(current = new SoundChoice(sound.File));
 
                 InternalChild = new GridContainer
                 {
@@ -492,11 +498,12 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 var none = new SoundChoice((string?)null);
                 var choices = files.Select(f => new SoundChoice(f)).Prepend(none).ToList();
 
-                // a sound no longer in the folder is still the lane's, having been copied into the beatmap.
-                var current = !sound.HasFile ? none : choices.FirstOrDefault(c => c.Path == sound.Source);
+                // a sound no longer in the folder is still what the lane is said to be, for it to be seen which sound is
+                // missing rather than a lane that was never given one.
+                var current = !sound.HasFile ? none : choices.FirstOrDefault(c => c.Path == sound.File);
 
                 if (current == null)
-                    choices.Add(current = new SoundChoice(sound.Source.Length > 0 ? sound.Source : sound.File));
+                    choices.Add(current = new SoundChoice(sound.File));
 
                 // down the left edge of the row, over the corner of its first box.
                 AddInternal(new LaneMixMarks(Lane, Direction.Vertical)

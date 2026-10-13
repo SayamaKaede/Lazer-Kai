@@ -16,12 +16,11 @@ namespace osu.Game.Tests.Editing
     [TestFixture]
     public class LaneSoundPresetListTest
     {
-        private static readonly LaneSound kick = new LaneSound { File = @"HS/kick.wav", Source = @"kick.wav" };
+        private static readonly LaneSound kick = new LaneSound { File = @"kick.wav" };
 
         private static readonly LaneSound snare = new LaneSound
         {
-            File = @"HS/snare.wav",
-            Source = @"drums/snare.wav",
+            File = @"drums/snare.wav",
             Bank = HitSampleInfo.BANK_DRUM,
             Sound = HitSampleInfo.HIT_CLAP,
         };
@@ -50,7 +49,7 @@ namespace osu.Game.Tests.Editing
         [Test]
         public void TestTheHitSoundOfACircleWithNoneIsKeptToo()
         {
-            var made = LaneSoundPreset.From("kit", new[] { none }, new LaneSound { File = @"HS/kick.wav", Source = @"kick.wav", Bank = HitSampleInfo.BANK_DRUM });
+            var made = LaneSoundPreset.From("kit", new[] { none }, new LaneSound { File = @"kick.wav", Bank = HitSampleInfo.BANK_DRUM });
 
             Assert.That((made.Fallback.Source, made.Fallback.Bank), Is.EqualTo((@"kick.wav", HitSampleInfo.BANK_DRUM)));
             Assert.That(made.HasSounds);

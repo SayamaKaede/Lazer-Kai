@@ -478,6 +478,12 @@ namespace osu.Game.Localisation
         public static LocalisableString LanePresetSoundsMissing(string sounds) => new TranslatableString(getKey(@"lane_preset_sounds_missing"),
             @"These sounds are no longer in the hitsound folder, and were left out: {0}", sounds);
 
+        /// <summary>
+        /// "These sounds are no longer in the hitsound folder: {0}"
+        /// </summary>
+        public static LocalisableString LaneSoundsMissing(string sounds) => new TranslatableString(getKey(@"lane_sounds_missing"),
+            @"These sounds are no longer in the hitsound folder: {0}", sounds);
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

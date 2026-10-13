@@ -32,9 +32,11 @@ using osu.Game.Rulesets.Mania.Edit;
 using osu.Game.Rulesets.Mania.Objects;
 using osu.Game.Rulesets.Mania.UI;
 using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Hitsounds;
+using osu.Game.Skinning;
 using osu.Game.Tests.Resources;
 using osuTK.Input;
 
@@ -117,8 +119,10 @@ namespace osu.Game.Tests.Visual.Editing
 
             give(0, @"kick.wav");
 
-            AddAssert("the sound is copied into the beatmap", () => EditorBeatmap.BeatmapInfo.BeatmapSet!.GetFile(@"HS/kick.wav"), () => Is.Not.Null);
-            AddAssert("and can be played from it", () => EditorBeatmap.BeatmapSkin!.GetSample(new ConvertHitObjectParser.FileHitSampleInfo(@"HS/kick.wav", 100)), () => Is.Not.Null);
+            // the lanes sound as the files of the folder themselves. They were copied into the beatmap until 2026-10-13,
+            // under a folder of their own, which a mapper who had only given a lane a sound then found in the beatmap.
+            AddAssert("nothing is put in the beatmap for it", beatmapFiles, () => Is.EqualTo(filesAtFirst));
+            AddAssert("the lane is the sound of the folder", () => lanes[0].File, () => Is.EqualTo(@"kick.wav"));
             AddAssert("the lane says what it sounds as", () => Editor.ChildrenOfType<EditorColumn>().Single(c => c.Index == 0).SoundLabel!.Text.ToString(), () => Is.EqualTo(@"kick"));
 
             AddStep("put a note in that lane and one in the next", () =>
@@ -133,7 +137,7 @@ namespace osu.Game.Tests.Visual.Editing
                 });
             });
 
-            AddAssert("the first sounds as its lane", () => fileOf(first), () => Is.EqualTo(@"HS/kick.wav"));
+            AddAssert("the first sounds as its lane", () => fileOf(first), () => Is.EqualTo(@"kick.wav"));
             AddAssert("the second as a plain hit", () => second.Samples.Select(s => s.Name), () => Is.EqualTo(new[] { HitSampleInfo.HIT_NORMAL }));
 
             AddStep("move the second into the first lane", () =>
@@ -141,10 +145,16 @@ namespace osu.Game.Tests.Visual.Editing
                 second.Column = 0;
                 EditorBeatmap.Update(second);
             });
-            AddUntilStep("it sounds as that lane", () => fileOf(second), () => Is.EqualTo(@"HS/kick.wav"));
+            AddUntilStep("it sounds as that lane", () => fileOf(second), () => Is.EqualTo(@"kick.wav"));
 
             give(0, @"drums/snare.wav");
-            AddAssert("given another sound, the lane's notes have it", () => new[] { fileOf(first), fileOf(second) }, () => Is.All.EqualTo(@"HS/snare.wav"));
+            AddAssert("given another sound, the lane's notes have it", () => new[] { fileOf(first), fileOf(second) }, () => Is.All.EqualTo(@"drums/snare.wav"));
+
+            // looked for under a name nothing in the beatmap has: the beatmap these tests are run on has a kick of its
+            // own, which would be found under the name of the folder's.
+            AddStep("seek to the first", () => clock.Seek(first.StartTime));
+            AddUntilStep("what it has found to play is the sound of the folder", () => soundsFoundFor(first), () => Is.EqualTo(new[] { @"drums/snare.wav" }));
+            AddAssert("with nothing put in the beatmap for it", beatmapFiles, () => Is.EqualTo(filesAtFirst));
 
             give(0, null);
             AddAssert("with its sound taken away, they are plain hits",
@@ -173,13 +183,13 @@ namespace osu.Game.Tests.Visual.Editing
             reopen();
 
             AddAssert("the lane has its sound", () => (lanes[2].File, lanes[2].Bank, lanes[2].Sound),
-                () => Is.EqualTo((@"HS/kick.wav", HitSampleInfo.BANK_DRUM, HitSampleInfo.HIT_CLAP)));
+                () => Is.EqualTo((@"kick.wav", HitSampleInfo.BANK_DRUM, HitSampleInfo.HIT_CLAP)));
             AddAssert("and its row says so", () =>
             {
                 var row = Editor.ChildrenOfType<LaneSoundPanel.LaneRow>().Single(r => r.Lane == 2);
                 return (row.Sound.Current.Value.Path, row.Bank.Current.Value, row.Kind.Current.Value);
             }, () => Is.EqualTo((@"kick.wav", LaneSoundPanel.LaneBank.Drum, LaneSoundPanel.LaneKind.Clap)));
-            AddAssert("the note sounds as it", () => fileOf(EditorBeatmap.HitObjects.Single()), () => Is.EqualTo(@"HS/kick.wav"));
+            AddAssert("the note sounds as it", () => fileOf(EditorBeatmap.HitObjects.Single()), () => Is.EqualTo(@"kick.wav"));
         }
 
         /// <summary>
@@ -235,7 +245,7 @@ namespace osu.Game.Tests.Visual.Editing
                 Samples = { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) },
             }));
 
-            AddAssert("it sounds as its lane", () => fileOf(note), () => Is.EqualTo(@"HS/kick.wav"));
+            AddAssert("it sounds as its lane", () => fileOf(note), () => Is.EqualTo(@"kick.wav"));
             AddAssert("which says what it sounds as", () => Editor.ChildrenOfType<EditorColumn>().Single(c => c.Index == 17).SoundLabel!.Text.ToString(), () => Is.EqualTo(@"kick"));
         }
 
@@ -260,7 +270,7 @@ namespace osu.Game.Tests.Visual.Editing
                 Samples = { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) },
             }));
 
-            AddUntilStep("its head sounds as the lane", () => fileOf(hold.Head), () => Is.EqualTo(@"HS/kick.wav"));
+            AddUntilStep("its head sounds as the lane", () => fileOf(hold.Head), () => Is.EqualTo(@"kick.wav"));
         }
 
         /// <summary>
@@ -302,8 +312,8 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("the red lines say the custom index the sounds are under, with no green line for it",
                 () => lines().Select(l => (l.red, l.index, l.volume)), () => Is.All.EqualTo((true, 1, 100)));
 
-            AddAssert("the kick is the normal hit sound of the beatmap", () => hashOf(@"normal-hitnormal.wav"), () => Is.EqualTo(hashOf(@"HS/kick.wav")));
-            AddAssert("the snare its soft clap", () => hashOf(@"soft-hitclap.wav"), () => Is.EqualTo(hashOf(@"HS/snare.wav")));
+            AddAssert("the kick is the normal hit sound of the beatmap", () => hashOf(@"normal-hitnormal.wav"), () => Is.EqualTo(hashInFolder(@"kick.wav")));
+            AddAssert("the snare its soft clap", () => hashOf(@"soft-hitclap.wav"), () => Is.EqualTo(hashInFolder(@"drums/snare.wav")));
             AddAssert("and nothing is written for the skin's sound", () => hashOf(@"soft-hitnormal.wav"), () => Is.Null);
 
             AddAssert("still in the difficulty hitsounded in", () => EditorBeatmap.BeatmapInfo.DifficultyName, () => Is.EqualTo(@"Hitsounds (mania)"));
@@ -347,11 +357,11 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddAssert("under a custom index each", () => new[] { indexAt(beat(0)), indexAt(beat(1)), indexAt(beat(2)) }, () => Is.Unique);
 
-            AddAssert("the kick alone is the kick", () => hashOf(hitNormalUnder(indexAt(beat(0)))), () => Is.EqualTo(hashOf(@"HS/kick.wav")));
-            AddAssert("the snare alone the snare", () => hashOf(hitNormalUnder(indexAt(beat(1)))), () => Is.EqualTo(hashOf(@"HS/snare.wav")));
+            AddAssert("the kick alone is the kick", () => hashOf(hitNormalUnder(indexAt(beat(0)))), () => Is.EqualTo(hashInFolder(@"kick.wav")));
+            AddAssert("the snare alone the snare", () => hashOf(hitNormalUnder(indexAt(beat(1)))), () => Is.EqualTo(hashInFolder(@"drums/snare.wav")));
 
             AddAssert("the two at once are a file of their own", () => hashOf(hitNormalUnder(indexAt(beat(2)))),
-                () => Is.Not.Null.And.Not.EqualTo(hashOf(@"HS/kick.wav")).And.Not.EqualTo(hashOf(@"HS/snare.wav")));
+                () => Is.Not.Null.And.Not.EqualTo(hashInFolder(@"kick.wav")).And.Not.EqualTo(hashInFolder(@"drums/snare.wav")));
             AddAssert("which is a wave file", () => Encoding.ASCII.GetString(bytesOf(hitNormalUnder(indexAt(beat(2)))), 0, 4), () => Is.EqualTo(@"RIFF"));
 
             string? mixed = null;
@@ -410,7 +420,7 @@ namespace osu.Game.Tests.Visual.Editing
             AddStep("ask for it again", () => panel.MuteSliderBodies.Current.Value = true);
             convert();
             AddAssert("the mapper's is left, and the other written", () => slideFiles(), () => Is.EquivalentTo(new[] { Path.ChangeExtension(slides[0], @".ogg"), slides[1] }));
-            AddAssert("as it was", () => hashOf(Path.ChangeExtension(slides[0], @".ogg")), () => Is.EqualTo(hashOf(@"HS/snare.wav")));
+            AddAssert("as it was", () => hashOf(Path.ChangeExtension(slides[0], @".ogg")), () => Is.EqualTo(hashInFolder(@"drums/snare.wav")));
 
             AddStep("save", () => Editor.Save());
             reopen();
@@ -568,7 +578,7 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("and the only one made", () => EditorBeatmap.BeatmapInfo.BeatmapSet!.Beatmaps.Count(b => b.DifficultyName.StartsWith(@"Hitsounds", StringComparison.Ordinal) && b.Ruleset.ShortName == @"osu"),
                 () => Is.EqualTo(1));
             AddAssert("with both circles", () => section(@"[HitObjects]"), () => Has.Length.EqualTo(2));
-            AddAssert("and the sound the lane has now", () => hashOf(@"normal-hitnormal.wav"), () => Is.EqualTo(hashOf(@"HS/snare.wav")));
+            AddAssert("and the sound the lane has now", () => hashOf(@"normal-hitnormal.wav"), () => Is.EqualTo(hashInFolder(@"drums/snare.wav")));
         }
 
         /// <summary>
@@ -593,12 +603,12 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddUntilStep("asked first", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog, () => Is.InstanceOf<ConfirmDialog>());
             AddAssert("with nothing made yet", () => lanes.Converted, () => Is.Null);
-            AddAssert("nor written", () => hashOf(@"normal-hitnormal.wav"), () => Is.Not.EqualTo(hashOf(@"HS/kick.wav")));
+            AddAssert("nor written", () => hashOf(@"normal-hitnormal.wav"), () => Is.Not.EqualTo(hashInFolder(@"kick.wav")));
 
             AddStep("say yes", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog!.PerformOkAction());
 
             AddUntilStep("made", () => lanes.Converted, () => Is.Not.Null);
-            AddAssert("and written", () => hashOf(@"normal-hitnormal.wav"), () => Is.EqualTo(hashOf(@"HS/kick.wav")));
+            AddAssert("and written", () => hashOf(@"normal-hitnormal.wav"), () => Is.EqualTo(hashInFolder(@"kick.wav")));
         }
 
         /// <summary>
@@ -676,6 +686,121 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("with them, it is as loud as is said here", () => greenLines(), () => Is.EqualTo(new[] { (whole(beat(1)), 1, 30) }));
         }
 
+        #region The sounds of the folder
+
+        /// <summary>
+        /// Until 2026-10-13 a sound a lane was given was copied into the beatmap under a folder of its own, and the
+        /// lane was kept as the copy. Lanes kept so are the sounds of the folder the copies were made of. The copies
+        /// are left where they are: nothing plays them now, and they are the mapper's to take out.
+        /// </summary>
+        [Test]
+        public void TestLanesKeptAsCopiesInTheBeatmapAreTheSoundsOfTheFolder()
+        {
+            make();
+
+            AddStep("put a note in the first lane", () => EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(0), Samples = { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) } }));
+            AddStep("save", () => Editor.Save());
+
+            AddStep("a copy of the kick in the beatmap, as one was made then", () =>
+            {
+                using (var sound = TestResources.OpenResource(@"Samples/hitsound-no-delay.wav"))
+                    Game.BeatmapManager.AddFile(EditorBeatmap.BeatmapInfo.BeatmapSet!, sound, @"HS/kick.wav");
+            });
+            AddStep("its lanes kept as they were then", () =>
+            {
+                string path = Path.Combine(LaneSoundProjectStore.DIRECTORY, LaneSoundProjectStore.FolderNameFor(EditorBeatmap.BeatmapInfo), @"lanes.json");
+
+                using (var stream = Game.Storage.CreateFileSafely(path))
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.Write(@"{ ""lanes"": [ { ""file"": ""HS/kick.wav"", ""source"": ""kick.wav"", ""bank"": ""drum"", ""sound"": ""hitclap"" } ],"
+                                 + @" ""fallback"": { ""file"": ""HS/snare.wav"", ""source"": ""drums/snare.wav"", ""bank"": ""soft"", ""sound"": ""hitnormal"" } }");
+                }
+            });
+
+            reopen();
+
+            AddAssert("the first lane is the sound of the folder, and what it was to be", () => (lanes[0].File, lanes[0].Bank, lanes[0].Sound),
+                () => Is.EqualTo((@"kick.wav", HitSampleInfo.BANK_DRUM, HitSampleInfo.HIT_CLAP)));
+            AddAssert("so is the hit sound of a circle with none", () => (lanes.Fallback.File, lanes.Fallback.Bank), () => Is.EqualTo((@"drums/snare.wav", HitSampleInfo.BANK_SOFT)));
+            AddAssert("its row says so", () => Editor.ChildrenOfType<LaneSoundPanel.LaneRow>().Single(r => r.Lane == 0).Sound.Current.Value.Path, () => Is.EqualTo(@"kick.wav"));
+            AddAssert("its note sounds as it", () => fileOf(EditorBeatmap.HitObjects.Single()), () => Is.EqualTo(@"kick.wav"));
+            AddAssert("the copy is left in the beatmap", () => EditorBeatmap.BeatmapInfo.BeatmapSet!.GetFile(@"HS/kick.wav"), () => Is.Not.Null);
+        }
+
+        /// <summary>
+        /// A lane is a sound of the folder, so a sound taken out of the folder is a lane that no longer sounds. The
+        /// mapper is told which as the difficulty is opened, and it is not turned into a hitsound difficulty with the
+        /// skin's sound where that one was to be.
+        /// </summary>
+        [Test]
+        public void TestASoundTakenOutOfTheFolderIsSaidToBeMissing()
+        {
+            const string said = @"These sounds are no longer in the hitsound folder: kick.wav";
+
+            make();
+
+            give(0, @"kick.wav");
+            give(1, @"drums/snare.wav");
+            AddStep("put a note in each", () =>
+            {
+                EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(0), Samples = { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) } });
+                EditorBeatmap.Add(new Note { Column = 1, StartTime = beat(1), Samples = { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) } });
+            });
+            AddStep("save", () => Editor.Save());
+
+            AddStep("take the kick out of the folder", () => Game.Storage.GetStorageForDirectory(HitsoundLibrary.DIRECTORY).Delete(@"kick.wav"));
+
+            reopen();
+
+            AddUntilStep("it is said to be missing", () => timesSaid(said), () => Is.EqualTo(1));
+            AddAssert("the lane is still said to be it", () => lanes[0].File, () => Is.EqualTo(@"kick.wav"));
+
+            AddStep("turn it into a hitsound difficulty", () => lanes.ConvertToHitsoundDifficulty());
+
+            AddUntilStep("it is said again", () => timesSaid(said), () => Is.EqualTo(2));
+            AddAssert("and nothing is made", () => lanes.Converted, () => Is.Null);
+
+            AddAssert("another lane cannot be given it", () => lanes.Give(2, @"kick.wav"), () => Is.False);
+            AddAssert("and is left with none", () => lanes[2].HasFile, () => Is.False);
+        }
+
+        private int timesSaid(string text) => Game.ChildrenOfType<SimpleErrorNotification>().Count(n => n.Text.ToString() == text);
+
+        /// <summary>
+        /// Reading the folder again is hearing it again: a sound put back in it, or put in it under the name of
+        /// another, is what the notes play from then on, rather than what was read under that name before.
+        /// </summary>
+        [Test]
+        public void TestTheFolderReadAgainIsHeardAgain()
+        {
+            HitObject note = null!;
+
+            // a sound of a name nothing in the beatmap has, to be found in the folder or not at all.
+            AddStep("put a tom in the sound folder", () => put(Game.Storage.GetStorageForDirectory(HitsoundLibrary.DIRECTORY), @"tom.wav", @"Samples/hitsound-no-delay.wav"));
+
+            make();
+
+            give(0, @"tom.wav");
+            AddStep("put a note in the lane", () => EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(0), Samples = { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) } }));
+            AddStep("save", () => Editor.Save());
+
+            AddStep("take the tom out of the folder", () => Game.Storage.GetStorageForDirectory(HitsoundLibrary.DIRECTORY).Delete(@"tom.wav"));
+
+            reopen();
+
+            AddStep("seek to the note", () => clock.Seek((note = EditorBeatmap.HitObjects.Single()).StartTime));
+            AddUntilStep("it is on screen", () => Editor.ChildrenOfType<DrawableHitObject>().Any(d => d.HitObject == note && d.IsLoaded));
+            AddAssert("with no tom to play", () => soundsFoundFor(note), () => Does.Not.Contain(@"tom.wav"));
+
+            AddStep("put the tom back", () => put(Game.Storage.GetStorageForDirectory(HitsoundLibrary.DIRECTORY), @"tom.wav", @"Samples/hitsound-no-delay.wav"));
+            AddStep("read the folder again", () => panel.ChildrenOfType<RoundedButton>().Single(b => b.Text.ToString() == @"Reload the hitsound folder").TriggerClick());
+
+            AddUntilStep("the note has the tom to play", () => soundsFoundFor(note), () => Is.EqualTo(new[] { @"tom.wav" }));
+        }
+
+        #endregion
+
         #region Presets
 
         /// <summary>
@@ -731,18 +856,18 @@ namespace osu.Game.Tests.Visual.Editing
                 lanes.GiveFallback(null);
                 lanes.SetFallbackBank(HitSampleInfo.BANK_SOFT);
             });
-            AddAssert("the second note sounds as its lane", () => fileOf(inTheSecond), () => Is.EqualTo(@"HS/snare.wav"));
+            AddAssert("the second note sounds as its lane", () => fileOf(inTheSecond), () => Is.EqualTo(@"drums/snare.wav"));
 
             AddStep("click the preset", () => row(@"kit").TriggerClick());
 
             AddAssert("the lanes are the preset's", () => Enumerable.Range(0, 4).Select(l => (lanes[l].File, lanes[l].Bank, lanes[l].Sound)).ToArray(), () => Is.EqualTo(new[]
             {
-                (@"HS/kick.wav", HitSampleInfo.BANK_NORMAL, HitSampleInfo.HIT_NORMAL),
+                (@"kick.wav", HitSampleInfo.BANK_NORMAL, HitSampleInfo.HIT_NORMAL),
                 (string.Empty, HitSampleInfo.BANK_NORMAL, HitSampleInfo.HIT_NORMAL),
                 (string.Empty, HitSampleInfo.BANK_NORMAL, HitSampleInfo.HIT_NORMAL),
-                (@"HS/snare.wav", HitSampleInfo.BANK_DRUM, HitSampleInfo.HIT_CLAP),
+                (@"drums/snare.wav", HitSampleInfo.BANK_DRUM, HitSampleInfo.HIT_CLAP),
             }));
-            AddAssert("so is the hit sound of a circle with none", () => (lanes.Fallback.File, lanes.Fallback.Bank), () => Is.EqualTo((@"HS/kick.wav", HitSampleInfo.BANK_DRUM)));
+            AddAssert("so is the hit sound of a circle with none", () => (lanes.Fallback.File, lanes.Fallback.Bank), () => Is.EqualTo((@"kick.wav", HitSampleInfo.BANK_DRUM)));
             AddUntilStep("the rows say so", () => new[] { 0, 1, 3 }.Select(lane =>
             {
                 var laneRow = Editor.ChildrenOfType<LaneSoundPanel.LaneRow>().SingleOrDefault(r => r.Lane == lane && r.IsLoaded);
@@ -753,7 +878,7 @@ namespace osu.Game.Tests.Visual.Editing
                 (null, LaneSoundPanel.LaneBank.Normal, LaneSoundPanel.LaneKind.Normal),
                 (@"drums/snare.wav", LaneSoundPanel.LaneBank.Drum, LaneSoundPanel.LaneKind.Clap),
             }));
-            AddUntilStep("the first note sounds as its lane again", () => fileOf(inTheFirst), () => Is.EqualTo(@"HS/kick.wav"));
+            AddUntilStep("the first note sounds as its lane again", () => fileOf(inTheFirst), () => Is.EqualTo(@"kick.wav"));
             AddAssert("the second is a plain hit", () => inTheSecond.Samples.Select(s => (s.Name, s is ConvertHitObjectParser.FileHitSampleInfo)),
                 () => Is.EqualTo(new[] { (HitSampleInfo.HIT_NORMAL, false) }));
             AddUntilStep("the presets are closed", () => popover?.State.Value != Visibility.Visible);
@@ -762,15 +887,15 @@ namespace osu.Game.Tests.Visual.Editing
             reopen();
 
             AddAssert("the lanes are the preset's through a save and a reload", () => (lanes[0].File, lanes[1].File, lanes[3].File),
-                () => Is.EqualTo((@"HS/kick.wav", string.Empty, @"HS/snare.wav")));
+                () => Is.EqualTo((@"kick.wav", string.Empty, @"drums/snare.wav")));
         }
 
         /// <summary>
-        /// A preset is of the sounds of the folder, not of a beatmap: put on a beatmap that has none of them, it brings
-        /// them into it.
+        /// A preset is of the sounds of the folder, not of a beatmap: one kept from any beatmap is offered in every
+        /// other, and puts nothing in the beatmap it is put on.
         /// </summary>
         [Test]
-        public void TestAPresetKeptElsewhereBringsItsSoundsIntoTheBeatmap()
+        public void TestAPresetKeptElsewhereIsPutOnTheLanes()
         {
             Note note = null!;
 
@@ -785,19 +910,18 @@ namespace osu.Game.Tests.Visual.Editing
                     new LaneSoundPresetSound { Source = @"drums/snare.wav", Bank = HitSampleInfo.BANK_SOFT, Sound = HitSampleInfo.HIT_WHISTLE },
                 },
             }));
-            AddAssert("the beatmap has not its sound", () => EditorBeatmap.BeatmapInfo.BeatmapSet!.GetFile(@"HS/snare.wav"), () => Is.Null);
 
             openPresets();
             AddAssert("it is offered", rowNames, () => Is.EqualTo(new[] { @"elsewhere" }));
 
             AddStep("click it", () => row(@"elsewhere").TriggerClick());
 
-            AddAssert("its sound is copied into the beatmap", () => EditorBeatmap.BeatmapInfo.BeatmapSet!.GetFile(@"HS/snare.wav"), () => Is.Not.Null);
-            AddAssert("the second lane is it", () => (lanes[1].File, lanes[1].Source, lanes[1].Bank, lanes[1].Sound),
-                () => Is.EqualTo((@"HS/snare.wav", @"drums/snare.wav", HitSampleInfo.BANK_SOFT, HitSampleInfo.HIT_WHISTLE)));
+            AddAssert("nothing is put in the beatmap for it", beatmapFiles, () => Is.EqualTo(filesAtFirst));
+            AddAssert("the second lane is it", () => (lanes[1].File, lanes[1].Bank, lanes[1].Sound),
+                () => Is.EqualTo((@"drums/snare.wav", HitSampleInfo.BANK_SOFT, HitSampleInfo.HIT_WHISTLE)));
 
             AddStep("put a note in that lane", () => EditorBeatmap.Add(note = new Note { Column = 1, StartTime = beat(0), Samples = { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) } }));
-            AddAssert("it sounds as it", () => fileOf(note), () => Is.EqualTo(@"HS/snare.wav"));
+            AddAssert("it sounds as it", () => fileOf(note), () => Is.EqualTo(@"drums/snare.wav"));
         }
 
         /// <summary>
@@ -813,7 +937,7 @@ namespace osu.Game.Tests.Visual.Editing
 
             give(0, @"kick.wav");
             AddStep("put a note in the first lane", () => EditorBeatmap.Add(note = new Note { Column = 0, StartTime = beat(0), Samples = { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) } }));
-            AddAssert("it sounds as it", () => fileOf(note), () => Is.EqualTo(@"HS/kick.wav"));
+            AddAssert("it sounds as it", () => fileOf(note), () => Is.EqualTo(@"kick.wav"));
 
             AddStep("put on a preset of a sound that is gone and one that is not", () => lanes.ApplyPreset(new LaneSoundPreset
             {
@@ -825,19 +949,18 @@ namespace osu.Game.Tests.Visual.Editing
                 },
             }));
 
-            AddAssert("the first lane has no sound, and is otherwise as the preset says", () => (lanes[0].File, lanes[0].Source, lanes[0].Bank, lanes[0].Sound),
-                () => Is.EqualTo((string.Empty, string.Empty, HitSampleInfo.BANK_DRUM, HitSampleInfo.HIT_FINISH)));
+            AddAssert("the first lane has no sound, and is otherwise as the preset says", () => (lanes[0].File, lanes[0].Bank, lanes[0].Sound),
+                () => Is.EqualTo((string.Empty, HitSampleInfo.BANK_DRUM, HitSampleInfo.HIT_FINISH)));
             AddUntilStep("its note is a plain hit", () => note.Samples.Select(s => (s.Name, s is ConvertHitObjectParser.FileHitSampleInfo)),
                 () => Is.EqualTo(new[] { (HitSampleInfo.HIT_NORMAL, false) }));
-            AddAssert("the second lane has its sound", () => lanes[1].File, () => Is.EqualTo(@"HS/kick.wav"));
+            AddAssert("the second lane has its sound", () => lanes[1].File, () => Is.EqualTo(@"kick.wav"));
             AddUntilStep("which sound was left out is said", () => Game.ChildrenOfType<SimpleErrorNotification>()
                                                                      .Any(n => n.Text.ToString() == @"These sounds are no longer in the hitsound folder, and were left out: gone.wav"));
         }
 
         /// <summary>
-        /// A preset kept from more lanes than the difficulty has is put on the lanes there are, and the sounds of the
-        /// others are not brought into the beatmap, where nothing would play them. No lane is left as it was either,
-        /// one that is not there now included.
+        /// A preset kept from more lanes than the difficulty has is put on the lanes there are, and nothing is kept of
+        /// the others. No lane is left as it was either, one that is not there now included.
         /// </summary>
         [Test]
         public void TestLanesTheDifficultyDoesNotHaveAreLeftOut()
@@ -853,8 +976,7 @@ namespace osu.Game.Tests.Visual.Editing
                 Lanes = Enumerable.Range(0, 12).Select(lane => new LaneSoundPresetSound { Source = lane == 11 ? @"drums/snare.wav" : lane == 1 ? @"kick.wav" : string.Empty }).ToList(),
             }));
 
-            AddAssert("the second lane has its sound", () => lanes[1].File, () => Is.EqualTo(@"HS/kick.wav"));
-            AddAssert("the sound of the twelfth is not in the beatmap", () => EditorBeatmap.BeatmapInfo.BeatmapSet!.GetFile(@"HS/snare.wav"), () => Is.Null);
+            AddAssert("the second lane has its sound", () => lanes[1].File, () => Is.EqualTo(@"kick.wav"));
 
             AddStep("say it has eighteen again", () => EditorBeatmap.Difficulty.CircleSize = 18);
             AddAssert("the twelfth has no sound", () => lanes[11].HasFile, () => Is.False);
@@ -932,7 +1054,7 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("only the other is left", rowNames, () => Is.EqualTo(new[] { @"kept" }));
             AddAssert("only the other is on disk", () => presets.Load().Presets.Select(p => p.Name), () => Is.EqualTo(new[] { @"kept" }));
             AddAssert("the presets are still open", () => popover?.State.Value, () => Is.EqualTo(Visibility.Visible));
-            AddAssert("the lanes are left alone", () => lanes[0].File, () => Is.EqualTo(@"HS/kick.wav"));
+            AddAssert("the lanes are left alone", () => lanes[0].File, () => Is.EqualTo(@"kick.wav"));
         }
 
         private LaneSoundPresetPopover? popover => Editor.ChildrenOfType<LaneSoundPresetPopover>().SingleOrDefault();
@@ -1033,6 +1155,32 @@ namespace osu.Game.Tests.Visual.Editing
 
         private string? hashOf(string file) => EditorBeatmap.BeatmapInfo.BeatmapSet!.GetFile(file)?.File.Hash;
 
+        /// <summary>
+        /// What tells a sound of the folder from another, as <see cref="hashOf"/> does a file of the beatmap.
+        /// </summary>
+        private string hashInFolder(string sound)
+        {
+            using (var stream = Game.Storage.GetStorageForDirectory(HitsoundLibrary.DIRECTORY).GetStream(sound))
+                return stream.ComputeSHA2Hash();
+        }
+
+        /// <summary>
+        /// The files of the beatmap as the difficulty to hitsound in was made, before any lane was given a sound.
+        /// </summary>
+        private string[] filesAtFirst = null!;
+
+        private string[] beatmapFiles() => EditorBeatmap.BeatmapInfo.BeatmapSet!.Files.Select(f => f.Filename).OrderBy(f => f, StringComparer.Ordinal).ToArray();
+
+        /// <summary>
+        /// The names of the sounds a note on screen has found to play, as what it found them in names them.
+        /// </summary>
+        private string[] soundsFoundFor(HitObject hitObject) =>
+            Editor.ChildrenOfType<DrawableHitObject>().Where(d => d.HitObject == hitObject)
+                  .SelectMany(d => d.ChildrenOfType<PoolableSkinnableSample>())
+                  .Where(s => s.Sample != null)
+                  .Select(s => s.Sample.Name)
+                  .ToArray();
+
         private void reopen()
         {
             Editor? before = null;
@@ -1056,6 +1204,7 @@ namespace osu.Game.Tests.Visual.Editing
             AddStep("make an osu!mania difficulty to hitsound in", () => (before = Editor).MakeManiaHitsoundDifficulty());
             AddUntilStep("the editor opens it", () => Editor != before && Editor?.ReadyForUse == true);
             AddUntilStep("its lanes are up", () => Editor.ChildrenOfType<LaneSoundPanel>().SingleOrDefault()?.IsLoaded == true);
+            AddStep("note the files of the beatmap", () => filesAtFirst = beatmapFiles());
         }
     }
 }

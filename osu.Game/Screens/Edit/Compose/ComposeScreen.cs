@@ -170,6 +170,11 @@ namespace osu.Game.Screens.Edit.Compose
         {
             Debug.Assert(ruleset != null);
 
+            // the lanes of a difficulty made to hitsound in are files of the hitsound folder, which its notes are to find
+            // before anything the beatmap or a skin has.
+            if (laneSounds != null)
+                content = new LaneSoundSkinProvidingContainer(laneSounds).WithChild(content);
+
             return new EditorSkinProvidingContainer(EditorBeatmap).WithChild(content);
         }
 
