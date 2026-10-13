@@ -666,6 +666,11 @@ namespace osu.Game.Screens.Select
             if (beatmap.BeatmapSet.Protected || beatmap.BeatmapSet.DeletePending)
                 return false;
 
+            // a difficulty deleted alone is gone from the database at once, where a set is only marked as deleted. What
+            // there still is of it here says nothing of that, and it is not there to be read by what shows the selection.
+            if (!realm.Run(r => r.Find<BeatmapInfo>(beatmap.ID) != null))
+                return false;
+
             return true;
         }
 
