@@ -924,6 +924,22 @@ namespace osu.Game.Beatmaps.Formats
                     return false;
                 }
 
+                // a line standing between there and where the moment is looked up is the one read for it, so what the
+                // moment wants is said from that line on: an object a millisecond before a red line follows the red
+                // line, as it does in stable, and a line put in at the object would say nothing to it (DOTNET-H).
+                if ((wantVolume != null || wantIndex != null) && lines.LastOrDefault(l => l.Time > time && l.Time <= moment.LookupTime) is TimingLine readInstead)
+                {
+                    // the velocity is taken from the line at the head itself, which is not that one.
+                    if (wantVelocity != null && !TimingLine.Set(lines, Math.Floor(moment.At), wantVelocity, null, null))
+                    {
+                        Failure = FormattableString.Invariant($@"there is no line before {moment.At} to carry on from");
+                        return false;
+                    }
+
+                    wantVelocity = null;
+                    time = readInstead.Time;
+                }
+
                 if (!TimingLine.Set(lines, time, wantVelocity, wantVolume, wantIndex))
                 {
                     Failure = FormattableString.Invariant($@"there is no line before {moment.At} to carry on from");
