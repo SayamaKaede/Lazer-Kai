@@ -249,7 +249,7 @@ namespace osu.Game.Tests.Visual.Editing
             Editor? before = null;
 
             AddStep("open the difficulty again", () => (before = Editor).SwitchToDifficulty(EditorBeatmap.BeatmapInfo));
-            AddUntilStep("opened", () => Editor != before && Editor?.IsLoaded == true);
+            AddUntilStep("opened", () => Editor != before && Editor?.ReadyForUse == true);
             AddUntilStep("its lanes are up", () => Editor.ChildrenOfType<LaneSoundPanel>().SingleOrDefault()?.IsLoaded == true);
         }
 
@@ -265,7 +265,7 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddStep("switch to the hitsound screen", () => Editor.Mode.Value = EditorScreenMode.Hitsounds);
             AddStep("make an osu!mania difficulty to hitsound in", () => (before = Editor).MakeManiaHitsoundDifficulty());
-            AddUntilStep("the editor opens it", () => Editor != before && Editor?.IsLoaded == true);
+            AddUntilStep("the editor opens it", () => Editor != before && Editor?.ReadyForUse == true);
             AddUntilStep("its lanes are up", () => Editor.ChildrenOfType<LaneSoundPanel>().SingleOrDefault()?.IsLoaded == true);
         }
     }

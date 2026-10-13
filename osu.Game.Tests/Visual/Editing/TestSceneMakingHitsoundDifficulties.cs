@@ -102,7 +102,7 @@ namespace osu.Game.Tests.Visual.Editing
             AddUntilStep("the dialog is up", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog is CreateNewDifficultyDialog);
             AddStep("make a copy", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog!.ChildrenOfType<PopupDialogButton>()
                                              .Single(b => b.Text == EditorDialogsStrings.CreateCopy).TriggerClick());
-            AddUntilStep("the editor opens it", () => Editor != before && Editor?.IsLoaded == true);
+            AddUntilStep("the editor opens it", () => Editor != before && Editor?.ReadyForUse == true);
 
             AddAssert("the file is stable's", () => FirstLine(SavedFile()), () => Is.EqualTo(FirstLine(original)));
             AddAssert("the red and green lines are as they were", () => timingPointsOf(SavedFile()), () => Is.EqualTo(timingPointsOf(original)));
@@ -274,7 +274,7 @@ namespace osu.Game.Tests.Visual.Editing
             AddStep("save", () => Editor.Save());
 
             AddStep("switch back", () => Editor.SwitchToDifficulty(Game.BeatmapManager.QueryBeatmap(b => b.ID == imported.ID)!));
-            AddUntilStep("the editor opens it", () => Editor?.IsLoaded == true && EditorBeatmap.BeatmapInfo.ID == imported.ID);
+            AddUntilStep("the editor opens it", () => Editor?.ReadyForUse == true && EditorBeatmap.BeatmapInfo.ID == imported.ID);
             AddStep("switch to the hitsound screen", () => Editor.Mode.Value = EditorScreenMode.Hitsounds);
             waitForPanel();
 
@@ -446,7 +446,11 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddStep("switch to the hitsound screen", () => Editor.Mode.Value = EditorScreenMode.Hitsounds);
             AddStep(asHitCircles ? "make a hitsound difficulty" : "copy into a new difficulty", () => (before = Editor).MakeHitsoundDifficulty(asHitCircles));
-            AddUntilStep("the editor opens it", () => Editor != before && Editor?.IsLoaded == true);
+
+            // ready for use, not just loaded: the editor is loaded before its compose screen is, which goes through the
+            // objects on another thread as it loads. A step that changed them meanwhile failed whichever test it was in
+            // with "Collection was modified", in some runs of everything and in none of the fixture alone (2026-10-12).
+            AddUntilStep("the editor opens it", () => Editor != before && Editor?.ReadyForUse == true);
         }
 
         private static string[] timingPointsOf(byte[] file) => section(file, "[TimingPoints]");

@@ -165,7 +165,8 @@ namespace osu.Game.Tests.Visual.Editing
             AddStep("ask to convert", () => (before = Editor).ConfirmConvertToStableFormat());
             AddUntilStep("the dialog is up", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog is DangerousActionDialog);
             AddStep("confirm", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog!.PerformAction<PopupDialogDangerousButton>());
-            AddUntilStep("the editor opens the file again", () => Editor != before && Editor?.IsLoaded == true);
+            // ready for use, not just loaded: an editor left with its compose screen still loading fails the next test.
+            AddUntilStep("the editor opens the file again", () => Editor != before && Editor?.ReadyForUse == true);
         }
 
         /// <summary>
