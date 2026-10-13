@@ -21,9 +21,9 @@ namespace osu.Game.Localisation
             @"Drop .wav, .mp3 or .ogg files on this screen to add them to the beatmap (shorter than 15 seconds).");
 
         /// <summary>
-        /// "Added {0} sound files."
+        /// "Added {0} hitsounds."
         /// </summary>
-        public static LocalisableString SoundsAdded(int count) => new TranslatableString(getKey(@"sounds_added"), @"Added {0} sound files.", count);
+        public static LocalisableString SoundsAdded(int count) => new TranslatableString(getKey(@"sounds_added"), @"Added {0} hitsounds.", count);
 
         /// <summary>
         /// "Files of 15 seconds or longer cannot be added: {0}"
@@ -78,14 +78,14 @@ namespace osu.Game.Localisation
         public static LocalisableString Difficulties => new TranslatableString(getKey(@"difficulties"), @"Difficulties");
 
         /// <summary>
-        /// "Sound files"
+        /// "Hitsounds"
         /// </summary>
-        public static LocalisableString Sounds => new TranslatableString(getKey(@"sounds"), @"Sound files");
+        public static LocalisableString Sounds => new TranslatableString(getKey(@"sounds"), @"Hitsounds");
 
         /// <summary>
-        /// "This beatmap has no sound files."
+        /// "This beatmap has no hitsounds."
         /// </summary>
-        public static LocalisableString NoSounds => new TranslatableString(getKey(@"no_sounds"), @"This beatmap has no sound files.");
+        public static LocalisableString NoSounds => new TranslatableString(getKey(@"no_sounds"), @"This beatmap has no hitsounds.");
 
         /// <summary>
         /// "Select all"
@@ -103,14 +103,14 @@ namespace osu.Game.Localisation
         public static LocalisableString PlaySound => new TranslatableString(getKey(@"play_sound"), @"Play");
 
         /// <summary>
-        /// "Already in this beatmap"
+        /// "The same file is in this beatmap"
         /// </summary>
-        public static LocalisableString ThereAlready => new TranslatableString(getKey(@"there_already"), @"Already in this beatmap");
+        public static LocalisableString ThereAlready => new TranslatableString(getKey(@"there_already"), @"The same file is in this beatmap");
 
         /// <summary>
-        /// "Another sound has this name. Tick to overwrite it."
+        /// "Another hitsound has this name. Tick to overwrite it."
         /// </summary>
-        public static LocalisableString InPlaceOfAnother => new TranslatableString(getKey(@"in_place_of_another"), @"Another sound has this name. Tick to overwrite it.");
+        public static LocalisableString InPlaceOfAnother => new TranslatableString(getKey(@"in_place_of_another"), @"Another hitsound has this name. Tick to overwrite it.");
 
         /// <summary>
         /// "Has the name of this beatmap's song, and cannot be imported"
@@ -118,25 +118,25 @@ namespace osu.Game.Localisation
         public static LocalisableString NameOfTheSong => new TranslatableString(getKey(@"name_of_the_song"), @"Has the name of this beatmap's song, and cannot be imported");
 
         /// <summary>
-        /// "Import ({0} difficulties, {1} sounds)"
+        /// "Import ({0} difficulties, {1} hitsounds)"
         /// </summary>
-        public static LocalisableString Import(int difficulties, int sounds) => new TranslatableString(getKey(@"import"), @"Import ({0} difficulties, {1} sounds)", difficulties, sounds);
+        public static LocalisableString Import(int difficulties, int sounds) => new TranslatableString(getKey(@"import"), @"Import ({0} difficulties, {1} hitsounds)", difficulties, sounds);
 
         /// <summary>
-        /// "These sounds of this beatmap will be overwritten: {0}. Continue?"
+        /// "These hitsounds of this beatmap will be overwritten: {0}. Continue?"
         /// </summary>
         public static LocalisableString OverwriteSounds(string sounds) => new TranslatableString(getKey(@"overwrite_sounds"),
-            @"These sounds of this beatmap will be overwritten: {0}. Continue?", sounds);
+            @"These hitsounds of this beatmap will be overwritten: {0}. Continue?", sounds);
 
         /// <summary>
-        /// "Imported {0} difficulties and {1} sounds."
+        /// "Imported {0} difficulties and {1} hitsounds."
         /// </summary>
-        public static LocalisableString Imported(int difficulties, int sounds) => new TranslatableString(getKey(@"imported"), @"Imported {0} difficulties and {1} sounds.", difficulties, sounds);
+        public static LocalisableString Imported(int difficulties, int sounds) => new TranslatableString(getKey(@"imported"), @"Imported {0} difficulties and {1} hitsounds.", difficulties, sounds);
 
         /// <summary>
-        /// "Choose a sound on the left."
+        /// "Choose a hitsound on the left."
         /// </summary>
-        public static LocalisableString ChooseASound => new TranslatableString(getKey(@"choose_a_sound"), @"Choose a sound on the left.");
+        public static LocalisableString ChooseASound => new TranslatableString(getKey(@"choose_a_sound"), @"Choose a hitsound on the left.");
 
         /// <summary>
         /// "Sample set"
@@ -149,9 +149,9 @@ namespace osu.Game.Localisation
         public static LocalisableString SoundKind => new TranslatableString(getKey(@"sound_kind"), @"Sound");
 
         /// <summary>
-        /// "Number"
+        /// "Custom index"
         /// </summary>
-        public static LocalisableString CustomIndex => new TranslatableString(getKey(@"custom_index"), @"Number");
+        public static LocalisableString CustomIndex => new TranslatableString(getKey(@"custom_index"), @"Custom index");
 
         /// <summary>
         /// "1 is the name with no number."

@@ -180,20 +180,20 @@ namespace osu.Game.Localisation
         public static LocalisableString WholeOffsetPending => new TranslatableString(getKey(@"whole_offset_pending"), @"Confirm or cancel the changes to the green lines first.");
 
         /// <summary>
-        /// "Copy red lines..."
+        /// "Copy timing..."
         /// </summary>
-        public static LocalisableString CopyRedLines => new TranslatableString(getKey(@"copy_red_lines"), @"Copy red lines...");
+        public static LocalisableString CopyRedLines => new TranslatableString(getKey(@"copy_red_lines"), @"Copy timing...");
 
         /// <summary>
-        /// "Copy red lines"
+        /// "Copy timing"
         /// </summary>
-        public static LocalisableString CopyRedLinesHeader => new TranslatableString(getKey(@"copy_red_lines_header"), @"Copy red lines");
+        public static LocalisableString CopyRedLinesHeader => new TranslatableString(getKey(@"copy_red_lines_header"), @"Copy timing");
 
         /// <summary>
-        /// "Puts the red lines of one difficulty in the place of another's: where they are, the BPM and the time signature. Objects, green lines and bookmarks no further from a tick of the new lines than the number of milliseconds below are put on it."
+        /// "Puts the timing of one difficulty in the place of another's: where its red lines are, the BPM and the time signature."
         /// </summary>
         public static LocalisableString CopyRedLinesBody => new TranslatableString(getKey(@"copy_red_lines_body"),
-            @"Puts the red lines of one difficulty in the place of another's: where they are, the BPM and the time signature. Objects, green lines and bookmarks no further from a tick of the new lines than the number of milliseconds below are put on it.");
+            @"Puts the timing of one difficulty in the place of another's: where its red lines are, the BPM and the time signature.");
 
         /// <summary>
         /// "Direction"
@@ -227,15 +227,15 @@ namespace osu.Game.Localisation
             @"The difficulties ticked are written to at once. This cannot be undone.");
 
         /// <summary>
-        /// "Move everything with its beat"
+        /// "Move the objects with the timing"
         /// </summary>
-        public static LocalisableString CopyRedLinesKeepBeats => new TranslatableString(getKey(@"copy_red_lines_keep_beats"), @"Move everything with its beat");
+        public static LocalisableString CopyRedLinesKeepBeats => new TranslatableString(getKey(@"copy_red_lines_keep_beats"), @"Move the objects with the timing");
 
         /// <summary>
-        /// "Objects, green lines, bookmarks and breaks go to where their beat is under the new red lines: as far on as the red lines are, and as much further apart as the BPM is slower. Off, only what is within the milliseconds below of a tick is moved."
+        /// "Objects, green lines, bookmarks and breaks go to the same tick of the same bar under the new timing: as far on as the offset is, and further apart where the BPM is slower. Off, only what is within the milliseconds below of a tick is moved."
         /// </summary>
         public static LocalisableString CopyRedLinesKeepBeatsHint => new TranslatableString(getKey(@"copy_red_lines_keep_beats_hint"),
-            @"Objects, green lines, bookmarks and breaks go to where their beat is under the new red lines: as far on as the red lines are, and as much further apart as the BPM is slower. Off, only what is within the milliseconds below of a tick is moved.");
+            @"Objects, green lines, bookmarks and breaks go to the same tick of the same bar under the new timing: as far on as the offset is, and further apart where the BPM is slower. Off, only what is within the milliseconds below of a tick is moved.");
 
         /// <summary>
         /// "Snap what is within (ms)"
@@ -243,9 +243,9 @@ namespace osu.Game.Localisation
         public static LocalisableString CopyRedLinesWithin => new TranslatableString(getKey(@"copy_red_lines_within"), @"Snap what is within (ms)");
 
         /// <summary>
-        /// "Nothing is snapped for 0."
+        /// "Once the timing is replaced, objects, green lines and bookmarks within this many milliseconds of a tick are put on it. Nothing is snapped for 0."
         /// </summary>
-        public static LocalisableString CopyRedLinesWithinHint => new TranslatableString(getKey(@"copy_red_lines_within_hint"), @"Nothing is snapped for 0.");
+        public static LocalisableString CopyRedLinesWithinHint => new TranslatableString(getKey(@"copy_red_lines_within_hint"), @"Once the timing is replaced, objects, green lines and bookmarks within this many milliseconds of a tick are put on it. Nothing is snapped for 0.");
 
         /// <summary>
         /// "Copy"
@@ -258,16 +258,16 @@ namespace osu.Game.Localisation
         public static LocalisableString CopyRedLinesNone => new TranslatableString(getKey(@"copy_red_lines_none"), @"The difficulty to copy from has no red lines.");
 
         /// <summary>
-        /// "Copied {0} red lines. Put on a tick: {1} objects, {2} green lines. Objects off every tick: {3}"
+        /// "Copied the timing ({0} red lines). Put on a tick: {1} objects, {2} green lines. Objects off every tick: {3}"
         /// </summary>
         public static LocalisableString CopyRedLinesDone(int redLines, int objects, int lines, int offTicks) => new TranslatableString(getKey(@"copy_red_lines_done"),
-            @"Copied {0} red lines. Put on a tick: {1} objects, {2} green lines. Objects off every tick: {3}", redLines, objects, lines, offTicks);
+            @"Copied the timing ({0} red lines). Put on a tick: {1} objects, {2} green lines. Objects off every tick: {3}", redLines, objects, lines, offTicks);
 
         /// <summary>
-        /// "Copied the red lines to {0} difficulties. Put on a tick: {1} objects, {2} green lines."
+        /// "Copied the timing to {0} difficulties. Put on a tick: {1} objects, {2} green lines."
         /// </summary>
         public static LocalisableString CopyRedLinesDoneToOthers(int difficulties, int objects, int lines) => new TranslatableString(getKey(@"copy_red_lines_done_to_others"),
-            @"Copied the red lines to {0} difficulties. Put on a tick: {1} objects, {2} green lines.", difficulties, objects, lines);
+            @"Copied the timing to {0} difficulties. Put on a tick: {1} objects, {2} green lines.", difficulties, objects, lines);
 
         /// <summary>
         /// "Objects off every tick remain in: {0}"
