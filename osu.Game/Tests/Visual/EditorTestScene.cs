@@ -3,6 +3,8 @@
 
 #nullable disable
 
+using System;
+using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using osu.Framework.Allocation;
@@ -12,7 +14,9 @@ using osu.Framework.Platform;
 using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Formats;
 using osu.Game.Database;
+using osu.Game.IO;
 using osu.Game.Online.API;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Dialog;
@@ -140,7 +144,67 @@ namespace osu.Game.Tests.Visual
 
         private class TestBeatmapManager : BeatmapManager
         {
-            public WorkingBeatmap TestBeatmap;
+            /// <summary>
+            /// The beatmap of the test, which the editor is opened on.
+            /// </summary>
+            public WorkingBeatmap TestBeatmap
+            {
+                get => testBeatmap;
+                set
+                {
+                    testBeatmap = value;
+                    ruleset = value.BeatmapInfo.Ruleset;
+                    editedOn = Environment.CurrentManagedThreadId;
+
+                    using var stream = new MemoryStream();
+
+                    using (var writer = new StreamWriter(stream, System.Text.Encoding.UTF8, 1024, true))
+                        new LegacyBeatmapEncoder(value.Beatmap, null, null).Encode(writer);
+
+                    saved = stream.ToArray();
+                }
+            }
+
+            private WorkingBeatmap testBeatmap;
+
+            private RulesetInfo ruleset;
+
+            /// <summary>
+            /// The thread the test is run on, which is the one the editor is edited on.
+            /// </summary>
+            private int editedOn;
+
+            /// <summary>
+            /// <see cref="TestBeatmap"/> as a file of it would be, as it was when the editor was opened on it.
+            /// </summary>
+            private byte[] saved;
+
+            /// <summary>
+            /// <see cref="TestBeatmap"/> to the editor, and to anything that asks from another thread the beatmap read
+            /// back from what was written of it, which is made of objects of its own.
+            /// </summary>
+            /// <remarks>
+            /// In the game a beatmap is read from its file, and what is read is made into the ruleset's objects anew
+            /// each time it is asked for: what the editor edits is the editor's alone. A test's beatmap made of the
+            /// ruleset's own objects is handed over as it is instead, so whatever read the saved beatmap in the
+            /// background was given the very objects being edited. The editor works out what the difficulty is worth
+            /// that way (<see cref="EditorDifficultyTracker"/>), and gave the editor's objects their nested objects
+            /// again from another thread while the playfield was going through them as it loaded ("Collection was
+            /// modified", every test of a fixture at once, 2026-09-08 and 2026-10-13).
+            /// </remarks>
+            public WorkingBeatmap BeatmapForWhoeverAsks()
+            {
+                if (testBeatmap == null || Environment.CurrentManagedThreadId == editedOn)
+                    return testBeatmap;
+
+                using var stream = new MemoryStream(saved);
+                using var reader = new LineBufferedReader(stream);
+
+                var read = Decoder.GetDecoder<Beatmap>(reader).Decode(reader);
+                read.BeatmapInfo.Ruleset = ruleset;
+
+                return new FlatWorkingBeatmap(read);
+            }
 
             public TestBeatmapManager(Storage storage, RealmAccess realm, RulesetStore rulesets, IAPIProvider api, [NotNull] AudioManager audioManager, IResourceStore<byte[]> resources, GameHost host, WorkingBeatmap defaultBeatmap)
                 : base(storage, realm, api, audioManager, resources, host, defaultBeatmap)
@@ -175,7 +239,7 @@ namespace osu.Game.Tests.Visual
                 }
 
                 public override WorkingBeatmap GetWorkingBeatmap(BeatmapInfo beatmapInfo)
-                    => testBeatmapManager.TestBeatmap;
+                    => testBeatmapManager.BeatmapForWhoeverAsks();
             }
 
             public override void Save(BeatmapInfo info, IBeatmap beatmapContent, ISkin beatmapSkin = null, Storyboard storyboard = null)
