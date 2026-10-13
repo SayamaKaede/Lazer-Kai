@@ -93,6 +93,10 @@ namespace osu.Game.Rulesets.Mania.Edit.Blueprints
                 return;
 
             base.OnMouseUp(e);
+
+            if (WentDownOnLaneLabel)
+                return;
+
             EndPlacement(true);
         }
 

@@ -46,6 +46,24 @@ namespace osu.Game.Rulesets.Mania.Edit
 
         public IScrollingInfo ScrollingInfo => drawableRuleset.ScrollingInfo;
 
+        /// <summary>
+        /// The lane whose sound is written at <paramref name="screenSpacePosition"/>, at its top, on a difficulty made to
+        /// hitsound in: a click there selects the notes of the lane rather than putting one down or starting a box.
+        /// </summary>
+        public int? LaneLabelAt(Vector2 screenSpacePosition) =>
+            editorColumns.FirstOrDefault(column => column.SoundLabelArea?.ScreenSpaceDrawQuad.Contains(screenSpacePosition) == true)?.Index;
+
+        /// <summary>
+        /// Lights what <paramref name="lane"/> sounds as, at its top, and no other: the mouse is on it.
+        /// </summary>
+        public void LightLaneLabel(int? lane)
+        {
+            foreach (var column in editorColumns)
+                column.SoundLabelLit = column.Index == lane;
+        }
+
+        private IEnumerable<EditorColumn> editorColumns => Playfield.Stages.SelectMany(stage => stage.Columns).OfType<EditorColumn>();
+
         protected override Playfield PlayfieldAtScreenSpacePosition(Vector2 screenSpacePosition) =>
             Playfield.GetColumnByPosition(screenSpacePosition);
 

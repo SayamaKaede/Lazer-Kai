@@ -2255,6 +2255,12 @@ namespace osu.Game.Screens.Edit.Hitsounds
         public FormCheckBox ConvertManiaVolumes { get; private set; } = null!;
 
         /// <summary>
+        /// Whether sliders are made silent as they are followed where the hitsounds of that hitsound difficulty are
+        /// copied to.
+        /// </summary>
+        public FormCheckBox ConvertManiaMuteSliderBodies { get; private set; } = null!;
+
+        /// <summary>
         /// Turns an osu!mania difficulty hitsounded in stable into an osu! hitsound difficulty.
         /// </summary>
         public RoundedButton ConvertManiaButton { get; private set; } = null!;
@@ -2273,12 +2279,19 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 Current = { Value = editor?.ManiaVolumesAreConverted ?? true },
             };
 
+            ConvertManiaMuteSliderBodies = new FormCheckBox
+            {
+                Caption = LazerKaiHitsoundStrings.MuteSliderBodies,
+                HintText = LazerKaiHitsoundStrings.MuteSliderBodiesHint,
+                Current = { Value = editor?.ManiaSliderBodiesAreMuted ?? false },
+            };
+
             ConvertManiaButton = new RoundedButton
             {
                 Text = LazerKaiHitsoundStrings.ConvertToHitsoundDifficulty,
                 RelativeSizeAxes = Axes.X,
                 Height = 40,
-                Action = () => editor?.ConvertManiaToHitsoundDifficulty(ConvertManiaVolumes.Current.Value),
+                Action = () => editor?.ConvertManiaToHitsoundDifficulty(ConvertManiaVolumes.Current.Value, ConvertManiaMuteSliderBodies.Current.Value),
             };
 
             if (editor != null)
@@ -2307,6 +2320,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 Children = new Drawable[]
                 {
                     ConvertManiaVolumes,
+                    ConvertManiaMuteSliderBodies,
                     ConvertManiaButton,
                 },
             };

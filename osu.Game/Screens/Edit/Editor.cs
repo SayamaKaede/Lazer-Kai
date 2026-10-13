@@ -2037,6 +2037,12 @@ namespace osu.Game.Screens.Edit
         public bool ManiaVolumesAreConverted => notesOwnSounds().ConvertVolumes;
 
         /// <summary>
+        /// Whether sliders were made silent as they are followed the last time this difficulty was turned into a
+        /// hitsound difficulty.
+        /// </summary>
+        public bool ManiaSliderBodiesAreMuted => notesOwnSounds().MuteSliderBodies;
+
+        /// <summary>
         /// Turns this osu!mania difficulty, hitsounded in stable, into an osu! hitsound difficulty of the same beatmap
         /// set, as it is: its notes sound as they say, and it is not changed. Done again, the new one is put in place of
         /// the one made before.
@@ -2047,7 +2053,9 @@ namespace osu.Game.Screens.Edit
         /// </remarks>
         /// <param name="withVolumes">Whether the volumes of this difficulty's lines go into the new one. Left out, the
         /// volumes of the one made before are kept.</param>
-        public void ConvertManiaToHitsoundDifficulty(bool withVolumes)
+        /// <param name="muteSliderBodies">Whether a silent sound is written for sliders to make as they are followed,
+        /// for every sample set and custom index the lines of the new one say.</param>
+        public void ConvertManiaToHitsoundDifficulty(bool withVolumes, bool muteSliderBodies = false)
         {
             if (!canConvertManiaToHitsoundDifficulty.Value)
                 return;
@@ -2070,6 +2078,7 @@ namespace osu.Game.Screens.Edit
                 var project = notesOwnSounds();
 
                 project.ConvertVolumes = withVolumes;
+                project.MuteSliderBodies = muteSliderBodies;
 
                 var read = StableManiaHitsounds.From(file, name => HitsoundDifficultyConverter.FileOf(working.BeatmapSetInfo, name));
 

@@ -141,6 +141,42 @@ namespace osu.Game.Screens.Edit.Hitsounds
         }
 
         /// <summary>
+        /// The lanes that are heard together in one file, for each such file there would be, in the order they first
+        /// are: what is shown of the lanes before they are converted.
+        /// </summary>
+        /// <param name="notes">The notes of the difficulty hitsounded in.</param>
+        /// <param name="lanes">What each lane sounds as.</param>
+        /// <param name="fallback">The hit sound of a circle none of whose lanes is one.</param>
+        /// <param name="exists">Whether a lane's file is there to be copied.</param>
+        public static IReadOnlyList<IReadOnlyList<int>> Mixes(IEnumerable<Note> notes, IReadOnlyList<LaneSound> lanes, LaneSound fallback, Func<string, bool> exists)
+        {
+            var mixes = new List<int[]>();
+
+            foreach (var group in soundingTogether(notes, lanes, fallback))
+            {
+                var (normalBank, additionBank) = banksOf(group);
+
+                // as the places of a circle are filled: the skin's sound is not mixed, and the one file is the one sound
+                // however many lanes it is in.
+                var places = group.Sounds.Where(s => s.Lane >= 0 && sounds.Contains(s.Sound.Sound) && s.Sound.HasFile && exists(s.Sound.File))
+                                  .GroupBy(s => new Place(s.Sound.Sound == HitSampleInfo.HIT_NORMAL ? normalBank : additionBank, s.Sound.Sound));
+
+                foreach (var place in places)
+                {
+                    if (place.Select(s => s.Sound.File).Distinct(StringComparer.Ordinal).Count() < 2)
+                        continue;
+
+                    int[] mixed = place.Select(s => s.Lane).OrderBy(l => l).ToArray();
+
+                    if (!mixes.Any(m => m.SequenceEqual(mixed)))
+                        mixes.Add(mixed);
+                }
+            }
+
+            return mixes;
+        }
+
+        /// <summary>
         /// The lanes that sound within <see cref="LENIENCY"/> of one another, in the order of their times.
         /// </summary>
         private static List<Together> soundingTogether(IEnumerable<Note> notes, IReadOnlyList<LaneSound> lanes, LaneSound fallback)

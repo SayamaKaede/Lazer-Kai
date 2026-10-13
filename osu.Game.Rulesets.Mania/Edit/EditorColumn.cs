@@ -39,6 +39,28 @@ namespace osu.Game.Rulesets.Mania.Edit
         public TruncatingSpriteText? SoundLabel { get; private set; }
 
         /// <summary>
+        /// Where <see cref="SoundLabel"/> is, across the lane: clicked, the notes of the lane are selected. The lanes
+        /// have no mouse of their own in the editor, so that is done by what is over them and has it (see
+        /// <see cref="ManiaBlueprintContainer"/>), which also says when the mouse is on this for it to be lit.
+        /// </summary>
+        public Drawable? SoundLabelArea { get; private set; }
+
+        private Box? soundLabelLit;
+
+        /// <summary>
+        /// Whether <see cref="SoundLabelArea"/> is lit, as something the mouse is on that can be clicked.
+        /// </summary>
+        public bool SoundLabelLit
+        {
+            set
+            {
+                // at once: the lanes go by the editor's clock, and nothing fades while that is stopped.
+                if (soundLabelLit != null)
+                    soundLabelLit.Alpha = value ? 0.3f : 0;
+            }
+        }
+
+        /// <summary>
         /// Whether the keys under the judgement line are left out, and the lane goes on there with the notes that have
         /// gone by, as in stable's editor (2026-10-12).
         /// </summary>
@@ -55,7 +77,7 @@ namespace osu.Game.Rulesets.Mania.Edit
             if (laneSounds == null)
                 return;
 
-            AddInternal(new Container
+            AddInternal(SoundLabelArea = new Container
             {
                 RelativeSizeAxes = Axes.X,
                 AutoSizeAxes = Axes.Y,
@@ -68,11 +90,27 @@ namespace osu.Game.Rulesets.Mania.Edit
                         Colour = Color4.Black,
                         Alpha = 0.6f,
                     },
+                    soundLabelLit = new Box
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Colour = Color4.White,
+                        Alpha = 0,
+                    },
                     SoundLabel = new TruncatingSpriteText
                     {
                         RelativeSizeAxes = Axes.X,
                         Font = OsuFont.GetFont(size: 12, weight: FontWeight.SemiBold),
                         Padding = new MarginPadding { Horizontal = 3, Vertical = 2 },
+                    },
+                    // right under what the lane sounds as, across the lane: lanes that will be mixed into one file
+                    // are told from the rest by it, and from the lanes of another such file by its colour.
+                    new LaneMixMarks(Index, osu.Framework.Graphics.Direction.Horizontal)
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        Height = 4,
+                        Anchor = Anchor.BottomLeft,
+                        Origin = Anchor.TopLeft,
+                        BypassAutoSizeAxes = Axes.Y,
                     },
                 }
             });

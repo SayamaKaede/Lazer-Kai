@@ -48,9 +48,21 @@ namespace osu.Game.Rulesets.Mania.Edit.Blueprints
             RelativeSizeAxes = Axes.None;
         }
 
+        /// <summary>
+        /// Whether the left button last went down on what a lane sounds as, at its top, on a difficulty made to hitsound
+        /// in. Nothing is placed by that click, down or up.
+        /// </summary>
+        protected bool WentDownOnLaneLabel { get; private set; }
+
         protected override bool OnMouseDown(MouseDownEvent e)
         {
             if (e.Button != MouseButton.Left)
+                return false;
+
+            // a click on what a lane sounds as selects the notes of the lane, which is done by what is under this.
+            WentDownOnLaneLabel = composer?.LaneLabelAt(e.ScreenSpaceMouseDownPosition) != null;
+
+            if (WentDownOnLaneLabel)
                 return false;
 
             if (Column == null)

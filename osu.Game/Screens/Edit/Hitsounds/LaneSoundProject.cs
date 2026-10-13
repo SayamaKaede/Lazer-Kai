@@ -51,6 +51,14 @@ namespace osu.Game.Screens.Edit.Hitsounds
         public bool ConvertVolumes { get; set; } = true;
 
         /// <summary>
+        /// Whether the sound a slider makes as it is followed is silenced where the hitsounds of the hitsound difficulty
+        /// are copied to: a file with no sound in it is written for every sample set and custom index its lines say,
+        /// which is what stable plays there in place of the skin's (2026-10-14).
+        /// </summary>
+        [JsonProperty("mute_slider_bodies")]
+        public bool MuteSliderBodies { get; set; }
+
+        /// <summary>
         /// Whether the notes sound as themselves rather than as their lanes: a difficulty hitsounded in stable, where a
         /// note is given a sound by copying one that has it. Its lanes are not sounds and it has no screen for them;
         /// this is kept for it only to say what it was last turned into (2026-10-13).

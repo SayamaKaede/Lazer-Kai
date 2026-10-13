@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using osu.Framework.Extensions;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Formats;
 using osu.Game.Extensions;
@@ -86,20 +87,37 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 return;
             }
 
-            if (result.Files.FirstOrDefault(f => f.Sources.Count > 1) is LaneSoundConversion.SoundFile mixed)
+            var files = new List<SoundToWrite>();
+
+            foreach (var sound in result.Files)
             {
-                notifications?.Post(new SimpleErrorNotification
+                if (sound.Sources.Count == 1)
                 {
-                    Text = LazerKaiHitsoundStrings.CannotMixSounds(string.Join(@" + ", mixed.Sources.Select(Path.GetFileName)))
-                });
-                return;
+                    var source = set.GetFile(sound.Sources[0])!;
+
+                    files.Add(new SoundToWrite(sound.Name + Path.GetExtension(source.Filename), source.File.Hash, () => working.GetStream(source.File.GetStoragePath())));
+                    continue;
+                }
+
+                // lanes that come to the one sound of a circle at the one time are heard together in one file.
+                byte[]? mixed = SoundMixing.Mix(sound.Sources.Select(bytesOf).ToArray());
+
+                if (mixed == null)
+                {
+                    notifications?.Post(new SimpleErrorNotification
+                    {
+                        Text = LazerKaiHitsoundStrings.CannotMixSounds(string.Join(@" + ", sound.Sources.Select(Path.GetFileName)))
+                    });
+                    return;
+                }
+
+                using (var stream = new MemoryStream(mixed))
+                    files.Add(new SoundToWrite(sound.Name + @".wav", stream.ComputeSHA2Hash(), () => new MemoryStream(mixed)));
             }
 
-            var files = result.Files.Select(f => (name: f.Name + Path.GetExtension(f.Sources[0]), source: set.GetFile(f.Sources[0])!)).ToArray();
-
             // a file of the mapper's own that one of these is to be found in place of.
-            var inTheWay = files.SelectMany(f => set.Files.Where(other => isTheSameSound(other.Filename, f.name)
-                                                                          && !(other.Filename == f.name && other.File.Hash == f.source.File.Hash)
+            var inTheWay = files.SelectMany(f => set.Files.Where(other => isTheSameSound(other.Filename, f.Name)
+                                                                          && !(other.Filename == f.Name && other.File.Hash == f.Hash)
                                                                           && !wasWrittenHere(other)))
                                 .Distinct()
                                 .ToArray();
@@ -114,11 +132,29 @@ namespace osu.Game.Screens.Edit.Hitsounds
             write(result, files, file, volumes);
         }
 
-        private void write(LaneSoundConversion.Result result, (string name, RealmNamedFileUsage source)[] files, Func<string> file, IReadOnlyList<(double Time, int Volume)> volumes)
+        /// <summary>
+        /// A sound file the circles are to find.
+        /// </summary>
+        /// <param name="Name">Its name in the beatmap set.</param>
+        /// <param name="Hash">The hash of what is in it, as the files of a beatmap set are told apart.</param>
+        /// <param name="Open">What is in it.</param>
+        private record SoundToWrite(string Name, string Hash, Func<Stream> Open);
+
+        private byte[] bytesOf(string filename)
+        {
+            using (var stream = working.GetStream(set.GetFile(filename)!.File.GetStoragePath()))
+            using (var memory = new MemoryStream())
+            {
+                stream.CopyTo(memory);
+                return memory.ToArray();
+            }
+        }
+
+        private void write(LaneSoundConversion.Result result, IReadOnlyList<SoundToWrite> files, Func<string> file, IReadOnlyList<(double Time, int Volume)> volumes)
         {
             var written = new Dictionary<string, string>();
 
-            foreach (var (name, source) in files)
+            foreach (var (name, hash, open) in files)
             {
                 // stable finds a sound by its name whatever kind of file it is, so another kind of the same name would
                 // be found as well as this one, or before it.
@@ -132,16 +168,47 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 // their own names.
                 bool writtenHere = there != null && wasWrittenHere(there);
 
-                if (there?.File.Hash != source.File.Hash)
+                if (there?.File.Hash != hash)
                 {
-                    using (var stream = working.GetStream(source.File.GetStoragePath()))
+                    using (var stream = open())
                         beatmaps.AddFile(set, stream, name);
 
                     writtenHere = true;
                 }
 
                 if (writtenHere)
-                    written[name] = source.File.Hash;
+                    written[name] = hash;
+            }
+
+            var before = Converted;
+
+            string difficultyName = before?.DifficultyName ?? NamingUtils.GetNextBestName(set.Beatmaps.Select(b => b.DifficultyName), CONVERTED_NAME);
+
+            string text = HitsoundDifficultyWriter.FromLanes(file(), difficultyName, result.Circles, project.ConvertVolumes ? volumes : volumesOf(before));
+
+            if (project.MuteSliderBodies)
+            {
+                string silent;
+
+                using (var stream = new MemoryStream(silent_sound))
+                    silent = stream.ComputeSHA2Hash();
+
+                foreach (string slide in HitsoundDifficultyWriter.SliderSlidesOf(text))
+                {
+                    string name = slide + @".wav";
+
+                    // one the mapper put there, of whatever kind, is the sound sliders are to make.
+                    if (set.Files.Any(f => isTheSameSound(f.Filename, name) && !wasWrittenHere(f)))
+                        continue;
+
+                    if (set.GetFile(name)?.File.Hash != silent)
+                    {
+                        using (var stream = new MemoryStream(silent_sound))
+                            beatmaps.AddFile(set, stream, name);
+                    }
+
+                    written[name] = silent;
+                }
             }
 
             // what was written the last time and is not wanted now, where it is still what was written.
@@ -154,12 +221,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 }
             }
 
-            var before = Converted;
-
-            string difficultyName = before?.DifficultyName ?? NamingUtils.GetNextBestName(set.Beatmaps.Select(b => b.DifficultyName), CONVERTED_NAME);
-
-            byte[] bytes = Encoding.UTF8.GetBytes(HitsoundDifficultyWriter.FromLanes(file(), difficultyName, result.Circles,
-                project.ConvertVolumes ? volumes : volumesOf(before)));
+            byte[] bytes = Encoding.UTF8.GetBytes(text);
 
             var made = before != null
                 ? beatmaps.ReplaceDifficultyFile(before, bytes)
@@ -170,7 +232,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
             notifications?.Post(new SimpleNotification
             {
-                Text = LazerKaiHitsoundStrings.ConvertedToHitsoundDifficulty(difficultyName, result.Circles.Count, files.Length)
+                Text = LazerKaiHitsoundStrings.ConvertedToHitsoundDifficulty(difficultyName, result.Circles.Count, files.Count)
             });
         }
 
@@ -190,6 +252,39 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
         private bool wasWrittenHere(RealmNamedFileUsage file) =>
             project.Converted?.Files.TryGetValue(file.Filename, out string? hash) == true && hash == file.File.Hash;
+
+        /// <summary>
+        /// A sound file with no sound in it: a wave file that says how its samples would be and has none. What mappers
+        /// put in a beatmap for a sound they do not want heard.
+        /// </summary>
+        private static readonly byte[] silent_sound = silentSound();
+
+        private static byte[] silentSound()
+        {
+            const int rate = 44100;
+            const short channels = 2;
+            const short bytes_per_sample = 2;
+
+            using (var file = new MemoryStream())
+            using (var writer = new BinaryWriter(file, Encoding.ASCII))
+            {
+                writer.Write(Encoding.ASCII.GetBytes(@"RIFF"));
+                writer.Write(36);
+                writer.Write(Encoding.ASCII.GetBytes(@"WAVEfmt "));
+                writer.Write(16);
+                writer.Write((short)1);
+                writer.Write(channels);
+                writer.Write(rate);
+                writer.Write(rate * channels * bytes_per_sample);
+                writer.Write((short)(channels * bytes_per_sample));
+                writer.Write((short)(bytes_per_sample * 8));
+                writer.Write(Encoding.ASCII.GetBytes(@"data"));
+                writer.Write(0);
+
+                writer.Flush();
+                return file.ToArray();
+            }
+        }
 
         private static readonly string[] sound_extensions = { @".wav", @".ogg", @".mp3" };
 

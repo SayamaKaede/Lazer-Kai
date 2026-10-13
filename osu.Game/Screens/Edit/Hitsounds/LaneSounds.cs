@@ -114,10 +114,81 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
             editorBeatmap.HitObjectAdded += added;
             editorBeatmap.HitObjectUpdated += updated;
+            editorBeatmap.HitObjectRemoved += removed;
+
+            Changed += mixesMayHaveChanged;
+            mixesMayHaveChanged();
 
             if (editor != null)
                 editor.Saved += keep;
         }
+
+        #region Lanes that will be mixed
+
+        /// <summary>
+        /// The lanes that will be heard together in one file once this is turned into a hitsound difficulty, for each
+        /// such file: lanes that are the same sound of a circle and have notes at the same time. Shown on the lanes, as
+        /// it is a file more for every way they come together, and not what was put in either lane (2026-10-14).
+        /// </summary>
+        public IReadOnlyList<IReadOnlyList<int>> Mixes { get; private set; } = Array.Empty<IReadOnlyList<int>>();
+
+        /// <summary>
+        /// <see cref="Mixes"/> are others than they were.
+        /// </summary>
+        public event Action? MixesChanged;
+
+        private static readonly Colour4[] mix_colours =
+        {
+            Colour4.FromHex(@"ff6b6b"),
+            Colour4.FromHex(@"4dd0e1"),
+            Colour4.FromHex(@"ffd54f"),
+            Colour4.FromHex(@"81c784"),
+            Colour4.FromHex(@"ba68c8"),
+            Colour4.FromHex(@"ff8a65"),
+            Colour4.FromHex(@"64b5f6"),
+            Colour4.FromHex(@"f06292"),
+        };
+
+        /// <summary>
+        /// The colour the lanes of one of <see cref="Mixes"/> are marked in, by its place among them.
+        /// </summary>
+        public static Colour4 ColourOfMix(int number) => mix_colours[number % mix_colours.Length];
+
+        /// <summary>
+        /// How long after the notes or the lanes last changed the lanes mixed are worked out again, in milliseconds:
+        /// notes dragged change every frame, and every note is gone over.
+        /// </summary>
+        private const double mixes_settle_time = 100;
+
+        private double? mixesStaleSince;
+
+        private void mixesMayHaveChanged() => mixesStaleSince ??= Time.Current;
+
+        protected override void Update()
+        {
+            base.Update();
+
+            if (mixesStaleSince is not double since || Time.Current - since < mixes_settle_time)
+                return;
+
+            mixesStaleSince = null;
+
+            var set = working.Value.BeatmapSetInfo;
+            var mixes = LaneSoundConversion.Mixes(notes(), lanes(), project.Fallback, f => set.GetFile(f) != null);
+
+            if (mixes.Count == Mixes.Count && mixes.Zip(Mixes).All(m => m.First.SequenceEqual(m.Second)))
+                return;
+
+            Mixes = mixes;
+            MixesChanged?.Invoke();
+        }
+
+        #endregion
+
+        private LaneSound[] lanes() => Enumerable.Range(0, LaneCount).Select(l => project[l]).ToArray();
+
+        private IEnumerable<LaneSoundConversion.Note> notes() =>
+            editorBeatmap.HitObjects.Where(h => h is IHasColumn).Select(h => new LaneSoundConversion.Note(h.StartTime, ((IHasColumn)h).Column));
 
         /// <summary>
         /// How many lanes the difficulty has.
@@ -308,6 +379,23 @@ namespace osu.Game.Screens.Edit.Hitsounds
         }
 
         /// <summary>
+        /// Whether sliders are made silent as they are followed, where the hitsounds of the hitsound difficulty are
+        /// copied to: see <see cref="LaneSoundProject.MuteSliderBodies"/>.
+        /// </summary>
+        public bool MuteSliderBodies
+        {
+            get => project.MuteSliderBodies;
+            set
+            {
+                if (project.MuteSliderBodies == value)
+                    return;
+
+                project.MuteSliderBodies = value;
+                keep();
+            }
+        }
+
+        /// <summary>
         /// The hitsound difficulty this was last turned into, if it is still there.
         /// </summary>
         public BeatmapInfo? Converted => converter.Converted;
@@ -331,12 +419,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
             if (osu == null)
                 return;
 
-            var lanes = Enumerable.Range(0, LaneCount).Select(l => project[l]).ToArray();
-            var notes = editorBeatmap.HitObjects.Where(h => h is IHasColumn).Select(h => new LaneSoundConversion.Note(h.StartTime, ((IHasColumn)h).Column));
-
             // written from a difficulty with nothing in it: this one is not kept as stable has it, and has no file of
             // its own to write the other from.
-            converter.Convert(notes, lanes, project.Fallback, () => HitsoundDifficultyWriter.EmptyLike(editorBeatmap, osu),
+            converter.Convert(notes(), lanes(), project.Fallback, () => HitsoundDifficultyWriter.EmptyLike(editorBeatmap, osu),
                 project.Volumes.Select(v => (v.Time, v.Volume)).ToArray());
         }
 
@@ -404,8 +489,12 @@ namespace osu.Game.Screens.Edit.Hitsounds
         /// </summary>
         private readonly List<HitObject> addedThisFrame = new List<HitObject>();
 
+        private void removed(HitObject hitObject) => mixesMayHaveChanged();
+
         private void added(HitObject hitObject)
         {
+            mixesMayHaveChanged();
+
             // a hold note's head was made from it before this, as it sounded then.
             if (apply(hitObject))
                 editorBeatmap.Update(hitObject);
@@ -430,6 +519,8 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
         private void updated(HitObject hitObject)
         {
+            mixesMayHaveChanged();
+
             // a note's parts are made from it as it is updated, so one made to sound as its lane is updated once more.
             if (apply(hitObject))
                 editorBeatmap.Update(hitObject);
@@ -483,6 +574,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
             {
                 editorBeatmap.HitObjectAdded -= added;
                 editorBeatmap.HitObjectUpdated -= updated;
+                editorBeatmap.HitObjectRemoved -= removed;
             }
 
             if (editor != null)

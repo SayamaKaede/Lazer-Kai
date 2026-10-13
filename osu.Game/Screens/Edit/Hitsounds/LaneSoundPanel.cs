@@ -56,6 +56,8 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
         public FormCheckBox WithVolumes { get; private set; } = null!;
 
+        public FormCheckBox MuteSliderBodies { get; private set; } = null!;
+
         public RoundedButton ConvertButton { get; private set; } = null!;
 
         /// <summary>
@@ -173,7 +175,12 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                                 new Dimension(GridSizeMode.Absolute, 6),
                                                 new Dimension(GridSizeMode.Absolute, 240),
                                             },
-                                            RowDimensions = new[] { new Dimension(GridSizeMode.AutoSize) },
+                                            RowDimensions = new[]
+                                            {
+                                                new Dimension(GridSizeMode.AutoSize),
+                                                new Dimension(GridSizeMode.Absolute, 8),
+                                                new Dimension(GridSizeMode.AutoSize),
+                                            },
                                             Content = new[]
                                             {
                                                 new[]
@@ -201,13 +208,27 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                                         Action = () => laneSounds.ConvertToHitsoundDifficulty(),
                                                     },
                                                 },
+                                                new[] { Empty(), Empty(), Empty(), Empty(), Empty() },
+                                                // the volumes that are used under the volume, and beside them, under
+                                                // the other, the second thing that is said of turning it into one.
+                                                new[]
+                                                {
+                                                    VolumePresets = new FillFlowContainer<HitsoundPanel.PresetButton>
+                                                    {
+                                                        AutoSizeAxes = Axes.Both,
+                                                        Direction = FillDirection.Horizontal,
+                                                        Spacing = new Vector2(5),
+                                                    },
+                                                    Empty(),
+                                                    MuteSliderBodies = new FormCheckBox
+                                                    {
+                                                        Caption = LazerKaiHitsoundStrings.MuteSliderBodies,
+                                                        HintText = LazerKaiHitsoundStrings.MuteSliderBodiesHint,
+                                                    },
+                                                    Empty(),
+                                                    Empty(),
+                                                },
                                             }
-                                        },
-                                        VolumePresets = new FillFlowContainer<HitsoundPanel.PresetButton>
-                                        {
-                                            AutoSizeAxes = Axes.Both,
-                                            Direction = FillDirection.Horizontal,
-                                            Spacing = new Vector2(5),
                                         },
                                     }
                                 },
@@ -244,6 +265,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
             WithVolumes.Current.Value = laneSounds.ConvertVolumes;
             WithVolumes.Current.BindValueChanged(with => laneSounds.ConvertVolumes = with.NewValue);
+
+            MuteSliderBodies.Current.Value = laneSounds.MuteSliderBodies;
+            MuteSliderBodies.Current.BindValueChanged(mute => laneSounds.MuteSliderBodies = mute.NewValue);
 
             volume.BindValueChanged(v =>
             {
@@ -465,7 +489,15 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 if (current == null)
                     choices.Add(current = new SoundChoice(sound.Source.Length > 0 ? sound.Source : sound.File));
 
-                InternalChild = new GridContainer
+                // down the left edge of the row, over the corner of its first box.
+                AddInternal(new LaneMixMarks(Lane, Direction.Vertical)
+                {
+                    RelativeSizeAxes = Axes.Y,
+                    Width = mix_mark_width,
+                    Depth = -1,
+                });
+
+                AddInternal(new GridContainer
                 {
                     RelativeSizeAxes = Axes.X,
                     AutoSizeAxes = Axes.Y,
@@ -513,8 +545,10 @@ namespace osu.Game.Screens.Edit.Hitsounds
                             },
                         },
                     }
-                };
+                });
             }
+
+            private const float mix_mark_width = 5;
 
             protected override void LoadComplete()
             {

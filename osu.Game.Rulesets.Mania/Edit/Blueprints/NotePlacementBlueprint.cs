@@ -56,6 +56,9 @@ namespace osu.Game.Rulesets.Mania.Edit.Blueprints
 
             base.OnMouseDown(e);
 
+            if (WentDownOnLaneLabel)
+                return false;
+
             // Place the note immediately.
             EndPlacement(true);
 

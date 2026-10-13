@@ -141,6 +141,100 @@ namespace osu.Game.Tests.Editing
         }
 
         /// <summary>
+        /// The sounds sliders make as they are followed are named for every sample set and custom index the lines say
+        /// together, which is what stable looks up where the hitsounds are copied to: a silent file is written under
+        /// each. A line of no custom index has the skin's sounds, and one of no sample set the beatmap's (2026-10-14).
+        /// </summary>
+        [Test]
+        public void TestTheSoundsOfSlidersAreNamedForEverySampleSetAndCustomIndexTheLinesSay()
+        {
+            string file = string.Join("\r\n",
+                "osu file format v14",
+                "",
+                "[General]",
+                "SampleSet: Drum",
+                "",
+                "[TimingPoints]",
+                "0,500,4,2,1,100,1,0",
+                "1000,-100,4,2,1,60,0,0",
+                "2000,-100,4,2,3,60,0,0",
+                "3000,-100,4,1,3,60,0,0",
+                "4000,-100,4,2,0,60,0,0",
+                "5000,-100,4,0,12,60,0,0",
+                "",
+                "[HitObjects]",
+                "256,192,0,5,0,2:2:0:0:");
+
+            Assert.That(HitsoundDifficultyWriter.SliderSlidesOf(file), Is.EqualTo(new[]
+            {
+                @"drum-sliderslide12",
+                @"normal-sliderslide3",
+                @"soft-sliderslide",
+                @"soft-sliderslide3",
+            }));
+        }
+
+        /// <summary>
+        /// Which lanes are heard together in a file is told for each such file, for the lanes to be shown as mixed: a
+        /// kick and a snare that are both the hit sound, and with them a second kick lane of another sample set, which
+        /// comes to the same hit sound as it is under the first's. A clap is a sound of its own beside them, and the
+        /// same file in two lanes is the one sound (2026-10-14).
+        /// </summary>
+        [Test]
+        public void TestTheLanesHeardTogetherInAFileAreTold()
+        {
+            var lanes = new[]
+            {
+                lane(HitSampleInfo.BANK_NORMAL, HitSampleInfo.HIT_NORMAL, @"kick.wav"),
+                lane(HitSampleInfo.BANK_DRUM, HitSampleInfo.HIT_NORMAL, @"snare.wav"),
+                lane(HitSampleInfo.BANK_SOFT, HitSampleInfo.HIT_CLAP, @"clap.wav"),
+                lane(HitSampleInfo.BANK_SOFT, HitSampleInfo.HIT_NORMAL, @"tom.wav"),
+                lane(HitSampleInfo.BANK_SOFT, HitSampleInfo.HIT_CLAP, @"clap.wav"),
+                lane(HitSampleInfo.BANK_SOFT, HitSampleInfo.HIT_NORMAL, string.Empty),
+            };
+
+            var mixes = LaneSoundConversion.Mixes(new[]
+            {
+                // alone, and with a clap: nothing is mixed.
+                new LaneSoundConversion.Note(1000, 0),
+                new LaneSoundConversion.Note(2000, 0),
+                new LaneSoundConversion.Note(2000, 2),
+                // the same clap twice is the one clap, and a lane with no file is the skin's sound, of which there is
+                // nothing to mix.
+                new LaneSoundConversion.Note(3000, 2),
+                new LaneSoundConversion.Note(3000, 4),
+                new LaneSoundConversion.Note(3500, 0),
+                new LaneSoundConversion.Note(3500, 5),
+                // the tom and the kick, within what counts as one time.
+                new LaneSoundConversion.Note(4000, 3),
+                new LaneSoundConversion.Note(4010, 0),
+                // the kick and the snare, twice: told once.
+                new LaneSoundConversion.Note(5000, 0),
+                new LaneSoundConversion.Note(5000, 1),
+                new LaneSoundConversion.Note(6000, 1),
+                new LaneSoundConversion.Note(6000, 0),
+                new LaneSoundConversion.Note(6000, 2),
+            }, lanes, fallback, _ => true);
+
+            Assert.That(mixes.Select(m => string.Join('+', m)), Is.EqualTo(new[] { @"0+3", @"0+1" }));
+        }
+
+        [Test]
+        public void TestALaneWhoseFileIsGoneIsNotMixed()
+        {
+            var lanes = new[]
+            {
+                lane(HitSampleInfo.BANK_NORMAL, HitSampleInfo.HIT_NORMAL, @"kick.wav"),
+                lane(HitSampleInfo.BANK_NORMAL, HitSampleInfo.HIT_NORMAL, @"gone.wav"),
+            };
+
+            var notes = new[] { new LaneSoundConversion.Note(1000, 0), new LaneSoundConversion.Note(1000, 1) };
+
+            Assert.That(LaneSoundConversion.Mixes(notes, lanes, fallback, f => f != @"gone.wav"), Is.Empty);
+            Assert.That(LaneSoundConversion.Mixes(notes, lanes, fallback, _ => true), Has.Count.EqualTo(1));
+        }
+
+        /// <summary>
         /// Sounds a few milliseconds apart are one circle, at the time of the first of them gone through.
         /// </summary>
         [TestCase(15, 1)]

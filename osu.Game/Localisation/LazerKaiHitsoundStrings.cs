@@ -343,6 +343,16 @@ namespace osu.Game.Localisation
         public static LocalisableString Lane(int number) => new TranslatableString(getKey(@"lane"), @"Lane {0}", number);
 
         /// <summary>
+        /// "Click to select every note in this lane"
+        /// </summary>
+        public static LocalisableString SelectLaneNotes => new TranslatableString(getKey(@"select_lane_notes"), @"Click to select every note in this lane");
+
+        /// <summary>
+        /// "Lanes {0} are mixed into one file where they sound together"
+        /// </summary>
+        public static LocalisableString LanesMixed(string lanes) => new TranslatableString(getKey(@"lanes_mixed"), @"Lanes {0} are mixed into one file where they sound together", lanes);
+
+        /// <summary>
         /// "Sample set"
         /// </summary>
         public static LocalisableString LaneBank => new TranslatableString(getKey(@"lane_bank"), @"Sample set");
@@ -373,6 +383,17 @@ namespace osu.Game.Localisation
         public static LocalisableString ConvertVolumesHint => new TranslatableString(getKey(@"convert_volumes_hint"), @"Without them, the volumes of the hitsound difficulty are kept as they are there.");
 
         /// <summary>
+        /// "Mute slider bodies"
+        /// </summary>
+        public static LocalisableString MuteSliderBodies => new TranslatableString(getKey(@"mute_slider_bodies"), @"Mute slider bodies");
+
+        /// <summary>
+        /// "Writes a silent sliderslide for every sample set and custom index the lines of the hitsound difficulty say. One of that name already in the beatmap is left as it is."
+        /// </summary>
+        public static LocalisableString MuteSliderBodiesHint => new TranslatableString(getKey(@"mute_slider_bodies_hint"),
+            @"Writes a silent sliderslide for every sample set and custom index the lines of the hitsound difficulty say. One of that name already in the beatmap is left as it is.");
+
+        /// <summary>
         /// "Volume from the playhead on"
         /// </summary>
         public static LocalisableString LaneVolume => new TranslatableString(getKey(@"lane_volume"), @"Volume from the playhead on");
@@ -394,10 +415,10 @@ namespace osu.Game.Localisation
         public static LocalisableString NothingToConvert => new TranslatableString(getKey(@"nothing_to_convert"), @"There are no notes to turn into circles");
 
         /// <summary>
-        /// "These sounds come to one sound of a circle and would have to be mixed into one file, which cannot be done yet: {0}"
+        /// "These sounds come to one sound of a circle and could not be mixed into one file: {0}"
         /// </summary>
         public static LocalisableString CannotMixSounds(string sounds) => new TranslatableString(getKey(@"cannot_mix_sounds"),
-            @"These sounds come to one sound of a circle and would have to be mixed into one file, which cannot be done yet: {0}", sounds);
+            @"These sounds come to one sound of a circle and could not be mixed into one file: {0}", sounds);
 
         /// <summary>
         /// "The beatmap already has sound files of these names, with other sounds in them: {0}. Replace them?"

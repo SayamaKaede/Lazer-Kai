@@ -5,15 +5,21 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using NUnit.Framework;
 using osu.Framework.Extensions;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Cursor;
+using osu.Framework.Localisation;
 using osu.Framework.Platform;
 using osu.Framework.Testing;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Formats;
 using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Extensions;
+using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Dialog;
 using osu.Game.Rulesets.Mania.Edit;
@@ -24,6 +30,7 @@ using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Hitsounds;
 using osu.Game.Tests.Resources;
+using osuTK.Input;
 
 namespace osu.Game.Tests.Visual.Editing
 {
@@ -300,6 +307,234 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddAssert("the hitsound difficulty is still there once this one is saved", () => lanes.Converted?.DifficultyName, () => Is.EqualTo(@"Hitsounds"));
             AddAssert("in the database too", () => Game.BeatmapManager.QueryBeatmap(b => b.ID == lanes.Converted!.ID)?.Ruleset.ShortName, () => Is.EqualTo(@"osu"));
+        }
+
+        /// <summary>
+        /// Two lanes that are the same sound of a circle, sounding at one time, are one file with both in it: a circle
+        /// has the one hit sound. It is written under a custom index of its own, each of the two being something else
+        /// alone (2026-10-14).
+        /// </summary>
+        [Test]
+        public void TestLanesThatComeToOneSoundOfACircleAreMixedIntoOneFile()
+        {
+            make();
+
+            give(0, @"kick.wav");
+            give(1, @"drums/snare.wav");
+
+            AddStep("put the kick on the first beat, the snare on the second and both on the third", () =>
+            {
+                EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(0) });
+                EditorBeatmap.Add(new Note { Column = 1, StartTime = beat(1) });
+                EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(2) });
+                EditorBeatmap.Add(new Note { Column = 1, StartTime = beat(2) });
+            });
+
+            convert();
+
+            AddAssert("three circles, each the normal hit sound", () => section(@"[HitObjects]"), () => Is.EqualTo(new[]
+            {
+                $@"256,192,{whole(beat(0))},5,0,1:1:0:0:",
+                $@"256,192,{whole(beat(1))},5,0,1:1:0:0:",
+                $@"256,192,{whole(beat(2))},5,0,1:1:0:0:",
+            }));
+
+            AddAssert("under a custom index each", () => new[] { indexAt(beat(0)), indexAt(beat(1)), indexAt(beat(2)) }, () => Is.Unique);
+
+            AddAssert("the kick alone is the kick", () => hashOf(hitNormalUnder(indexAt(beat(0)))), () => Is.EqualTo(hashOf(@"HS/kick.wav")));
+            AddAssert("the snare alone the snare", () => hashOf(hitNormalUnder(indexAt(beat(1)))), () => Is.EqualTo(hashOf(@"HS/snare.wav")));
+
+            AddAssert("the two at once are a file of their own", () => hashOf(hitNormalUnder(indexAt(beat(2)))),
+                () => Is.Not.Null.And.Not.EqualTo(hashOf(@"HS/kick.wav")).And.Not.EqualTo(hashOf(@"HS/snare.wav")));
+            AddAssert("which is a wave file", () => Encoding.ASCII.GetString(bytesOf(hitNormalUnder(indexAt(beat(2)))), 0, 4), () => Is.EqualTo(@"RIFF"));
+
+            string? mixed = null;
+
+            AddStep("note the file", () => mixed = hashOf(hitNormalUnder(indexAt(beat(2)))));
+            convert();
+            AddAssert("turned into one again, the file is the same one", () => hashOf(hitNormalUnder(indexAt(beat(2)))), () => Is.EqualTo(mixed));
+        }
+
+        /// <summary>
+        /// Asked to, a file with no sound in it is written for sliders to make as they are followed, for every sample
+        /// set and custom index the lines of the hitsound difficulty say: where its hitsounds are copied to, that is
+        /// what stable plays in place of the skin's. Taken away again when no longer asked for, and never put in place
+        /// of one the mapper put there (2026-10-14).
+        /// </summary>
+        [Test]
+        public void TestSlidersAreMadeSilentForWhatTheLinesSay()
+        {
+            string[] slides = null!;
+
+            make();
+
+            give(0, @"kick.wav");
+            give(1, @"drums/snare.wav");
+
+            // both the normal hit sound, so each is under a custom index of its own.
+            AddStep("put the kick on the first beat and the snare on the second", () =>
+            {
+                EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(0) });
+                EditorBeatmap.Add(new Note { Column = 1, StartTime = beat(1) });
+            });
+
+            AddAssert("not asked for unless it is", () => panel.MuteSliderBodies.Current.Value, () => Is.False);
+            convert();
+            AddAssert("nothing is written for sliders", () => slideFiles(), () => Is.Empty);
+
+            AddStep("ask for it", () => panel.MuteSliderBodies.Current.Value = true);
+            convert();
+
+            AddStep("note what the lines say", () => slides = HitsoundDifficultyWriter.SliderSlidesOf(string.Join('\n', hitsoundDifficulty())).Select(s => s + @".wav").ToArray());
+            AddAssert("two custom indices, of the one sample set", () => slides.Select(s => s.Split('-')[1]), () => Is.EqualTo(new[] { @"sliderslide.wav", @"sliderslide2.wav" }));
+            AddAssert("a file for each", () => slideFiles(), () => Is.EquivalentTo(slides));
+            AddAssert("with no sound in it", () => slides.Select(s => System.Convert.ToHexString(bytesOf(s))), () => Is.All.EqualTo(
+                "52494646" + "24000000" + "57415645" + "666D7420" + "10000000" + "0100" + "0200" + "44AC0000" + "10B10200" + "0400" + "1000" + "64617461" + "00000000"));
+
+            AddStep("no longer ask for it", () => panel.MuteSliderBodies.Current.Value = false);
+            convert();
+            AddAssert("they are taken away", () => slideFiles(), () => Is.Empty);
+
+            AddStep("put a sound of the mapper's own under the first of the names, as another kind of file", () =>
+            {
+                using (var sound = TestResources.OpenResource(@"Samples/hitsound-delay.wav"))
+                    Game.BeatmapManager.AddFile(EditorBeatmap.BeatmapInfo.BeatmapSet!, sound, Path.ChangeExtension(slides[0], @".ogg"));
+            });
+
+            AddStep("ask for it again", () => panel.MuteSliderBodies.Current.Value = true);
+            convert();
+            AddAssert("the mapper's is left, and the other written", () => slideFiles(), () => Is.EquivalentTo(new[] { Path.ChangeExtension(slides[0], @".ogg"), slides[1] }));
+            AddAssert("as it was", () => hashOf(Path.ChangeExtension(slides[0], @".ogg")), () => Is.EqualTo(hashOf(@"HS/snare.wav")));
+
+            AddStep("save", () => Editor.Save());
+            reopen();
+            AddAssert("asked for still, opened again", () => panel.MuteSliderBodies.Current.Value);
+        }
+
+        private string[] slideFiles() => EditorBeatmap.BeatmapInfo.BeatmapSet!.Files.Select(f => f.Filename).Where(f => f.Contains(@"sliderslide")).ToArray();
+
+        /// <summary>
+        /// Lanes that will be heard together in one file once turned into a hitsound difficulty are marked in the colour
+        /// of that file: on their rows, and over the lanes themselves where the notes are put (2026-10-14).
+        /// </summary>
+        [Test]
+        public void TestLanesThatWillBeMixedAreMarkedInOneColour()
+        {
+            Note snare = null!;
+
+            make();
+
+            give(0, @"kick.wav");
+            give(1, @"drums/snare.wav");
+            give(2, @"kick.wav");
+            AddStep("say the third lane is to be a soft clap", () => lanes.SetSlot(2, HitSampleInfo.BANK_SOFT, HitSampleInfo.HIT_CLAP));
+
+            AddAssert("nothing is mixed with no notes", () => lanes.Mixes, () => Is.Empty);
+
+            AddStep("put the kick, the snare and the clap on the first beat", () =>
+            {
+                EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(0) });
+                EditorBeatmap.Add(snare = new Note { Column = 1, StartTime = beat(0) });
+                EditorBeatmap.Add(new Note { Column = 2, StartTime = beat(0) });
+            });
+
+            AddUntilStep("the kick and the snare are to be mixed", () => lanes.Mixes.Select(m => string.Join('+', m)), () => Is.EqualTo(new[] { @"0+1" }));
+
+            AddUntilStep("their rows are marked in one colour", () => (rowMarks(0).Length, rowMarks(1).Length), () => Is.EqualTo((1, 1)));
+            AddAssert("the same one", () => rowMarks(0), () => Is.EqualTo(rowMarks(1)));
+            AddAssert("the clap's is not marked", () => rowMarks(2), () => Is.Empty);
+
+            AddStep("switch to the compose screen", () => Editor.Mode.Value = EditorScreenMode.Compose);
+            AddUntilStep("the lanes are up", () => Editor.ChildrenOfType<EditorColumn>().Count(), () => Is.GreaterThanOrEqualTo(3));
+            AddUntilStep("the two lanes are marked there in that colour", () => (columnMarks(0), columnMarks(1), columnMarks(2).Length),
+                () => Is.EqualTo((new[] { LaneSounds.ColourOfMix(0) }, new[] { LaneSounds.ColourOfMix(0) }, 0)));
+
+            AddStep("take the snare away", () => EditorBeatmap.Remove(snare));
+            AddUntilStep("nothing is mixed", () => lanes.Mixes, () => Is.Empty);
+            AddUntilStep("and no lane is marked", () => columnMarks(0).Length + columnMarks(1).Length, () => Is.Zero);
+        }
+
+        private Colour4[] rowMarks(int lane) =>
+            Editor.ChildrenOfType<LaneSoundPanel.LaneRow>().Single(r => r.Lane == lane).ChildrenOfType<LaneMixMarks>().Single().Colours.ToArray();
+
+        private Colour4[] columnMarks(int lane) =>
+            Editor.ChildrenOfType<EditorColumn>().Single(c => c.Index == lane).ChildrenOfType<LaneMixMarks>().Single().Colours.ToArray();
+
+        /// <summary>
+        /// A click on what a lane sounds as, at its top on the compose screen, selects the notes of that lane and no
+        /// others, whichever tool is in hand, and puts no note down (2026-10-14).
+        /// </summary>
+        [Test]
+        public void TestAClickOnWhatALaneSoundsAsSelectsTheNotesOfTheLane()
+        {
+            make();
+
+            // a lane with no sound has nothing written at its top, and so nothing to click.
+            give(0, @"kick.wav");
+            give(1, @"drums/snare.wav");
+            give(2, @"kick.wav");
+            give(3, @"drums/snare.wav");
+
+            AddStep("notes in three lanes, one of them held", () =>
+            {
+                EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(0) });
+                EditorBeatmap.Add(new HoldNote { Column = 0, StartTime = beat(1), Duration = beat(1) - beat(0) });
+                EditorBeatmap.Add(new Note { Column = 1, StartTime = beat(0) });
+                EditorBeatmap.Add(new Note { Column = 2, StartTime = beat(1) });
+            });
+
+            AddStep("switch to the compose screen", () => Editor.Mode.Value = EditorScreenMode.Compose);
+            AddUntilStep("the lanes are up", () => Editor.ChildrenOfType<EditorColumn>().Count(c => c.SoundLabelArea?.IsLoaded == true), () => Is.GreaterThanOrEqualTo(4));
+
+            AddStep("put the mouse on what the second lane sounds as", () => InputManager.MoveMouseTo(Editor.ChildrenOfType<EditorColumn>().Single(c => c.Index == 1).SoundLabelArea!));
+            AddUntilStep("it says what a click does", () => (Editor.ChildrenOfType<ManiaBlueprintContainer>().Single() as IHasTooltip)?.TooltipText,
+                () => Is.EqualTo(LazerKaiHitsoundStrings.SelectLaneNotes));
+            AddStep("put it on the lane under that", () => InputManager.MoveMouseTo(Editor.ChildrenOfType<EditorColumn>().Single(c => c.Index == 1).ScreenSpaceDrawQuad.Centre));
+            AddUntilStep("which says nothing", () => (Editor.ChildrenOfType<ManiaBlueprintContainer>().Single() as IHasTooltip)?.TooltipText, () => Is.EqualTo(default(LocalisableString)));
+
+            clickLane(0);
+            AddAssert("its two are selected, and no others", () => selectedLanes(), () => Is.EqualTo(new[] { 0, 0 }));
+
+            clickLane(1);
+            AddAssert("then the one of the second alone", () => selectedLanes(), () => Is.EqualTo(new[] { 1 }));
+
+            AddStep("take the note tool", () => InputManager.Key(Key.Number2));
+            clickLane(2);
+            AddAssert("with the note tool as well", () => selectedLanes(), () => Is.EqualTo(new[] { 2 }));
+
+            AddStep("take the hold note tool", () => InputManager.Key(Key.Number3));
+            clickLane(0);
+            AddAssert("and the hold note tool", () => selectedLanes(), () => Is.EqualTo(new[] { 0, 0 }));
+
+            clickLane(3);
+            AddAssert("a lane with none in it leaves nothing selected", () => selectedLanes(), () => Is.Empty);
+
+            AddAssert("no note was put down by any of it", () => EditorBeatmap.HitObjects.Count, () => Is.EqualTo(4));
+        }
+
+        private void clickLane(int lane) => AddStep($"click what lane {lane + 1} sounds as", () =>
+        {
+            InputManager.MoveMouseTo(Editor.ChildrenOfType<EditorColumn>().Single(c => c.Index == lane).SoundLabelArea!);
+            InputManager.Click(MouseButton.Left);
+        });
+
+        private int[] selectedLanes() => EditorBeatmap.SelectedHitObjects.OfType<ManiaHitObject>().Select(n => n.Column).OrderBy(c => c).ToArray();
+
+        /// <summary>
+        /// The custom index the lines of the hitsound difficulty say at a time.
+        /// </summary>
+        private int indexAt(double time) => lines().Last(l => l.time <= whole(time)).index;
+
+        private static string hitNormalUnder(int index) => index == 1 ? @"normal-hitnormal.wav" : $@"normal-hitnormal{index}.wav";
+
+        private byte[] bytesOf(string file)
+        {
+            using (var stream = Game.Beatmap.Value.GetStream(EditorBeatmap.BeatmapInfo.BeatmapSet!.GetFile(file)!.File.GetStoragePath()))
+            using (var memory = new MemoryStream())
+            {
+                stream.CopyTo(memory);
+                return memory.ToArray();
+            }
         }
 
         /// <summary>

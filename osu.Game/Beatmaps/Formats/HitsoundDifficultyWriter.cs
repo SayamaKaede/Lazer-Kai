@@ -127,6 +127,45 @@ namespace osu.Game.Beatmaps.Formats
                 .Select(f => (double.Parse(f[0], CultureInfo.InvariantCulture), (int)double.Parse(f[5], CultureInfo.InvariantCulture)))
                 .ToArray();
 
+        /// <summary>
+        /// The sounds sliders make as they are followed under the red and green lines of <paramref name="file"/>, by the
+        /// names stable looks them up under without their extensions: one for each sample set and custom index a line
+        /// says together. A slider's body is of the sample set of its line unless it is given one of its own, and a
+        /// line that says no custom index has the skin's sounds, which are not the beatmap's to put anything in place of.
+        /// </summary>
+        public static string[] SliderSlidesOf(string file)
+        {
+            string[] lines = file.Replace("\r\n", "\n").Split('\n').Select(l => l.Trim()).ToArray();
+
+            // what a line that says no sample set is of.
+            string ofTheBeatmap = lines.FirstOrDefault(l => l.StartsWith("SampleSet", StringComparison.Ordinal) && l.Contains(':'))?.Split(':')[1].Trim().ToLowerInvariant() switch
+            {
+                HitSampleInfo.BANK_SOFT => HitSampleInfo.BANK_SOFT,
+                HitSampleInfo.BANK_DRUM => HitSampleInfo.BANK_DRUM,
+                _ => HitSampleInfo.BANK_NORMAL,
+            };
+
+            return lines.SkipWhile(l => l != "[TimingPoints]").Skip(1)
+                        .TakeWhile(l => !l.StartsWith('['))
+                        .Where(isObject)
+                        .Select(l => l.Split(','))
+                        .Where(f => f.Length > 4
+                                    && int.TryParse(f[3], NumberStyles.Integer, CultureInfo.InvariantCulture, out _)
+                                    && int.TryParse(f[4], NumberStyles.Integer, CultureInfo.InvariantCulture, out int index) && index > 0)
+                        .Select(f => (set: int.Parse(f[3], CultureInfo.InvariantCulture), index: int.Parse(f[4], CultureInfo.InvariantCulture)))
+                        .Select(l => (bank: l.set switch
+                        {
+                            (int)LegacySampleBank.Normal => HitSampleInfo.BANK_NORMAL,
+                            (int)LegacySampleBank.Soft => HitSampleInfo.BANK_SOFT,
+                            (int)LegacySampleBank.Drum => HitSampleInfo.BANK_DRUM,
+                            _ => ofTheBeatmap,
+                        }, l.index))
+                        .Distinct()
+                        .OrderBy(l => l.bank, StringComparer.Ordinal).ThenBy(l => l.index)
+                        .Select(l => $@"{l.bank}-sliderslide{(l.index == 1 ? string.Empty : l.index.ToString(CultureInfo.InvariantCulture))}")
+                        .ToArray();
+        }
+
         private static string sound(LaneSoundConversion.Circle circle) =>
             ((circle.Whistle ? (int)LegacyHitSoundType.Whistle : 0) | (circle.Finish ? (int)LegacyHitSoundType.Finish : 0) | (circle.Clap ? (int)LegacyHitSoundType.Clap : 0))
             .ToString(CultureInfo.InvariantCulture);
