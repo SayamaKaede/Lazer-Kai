@@ -70,7 +70,15 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
         protected override void Update()
         {
+            // what stopped being drawn since the last frame loses its blueprint before anything here asks a blueprint where
+            // its object is. A box being dragged asks every frame, and the answer comes from what draws the object: with
+            // that gone, it is a place outside any box, and the object was taken out of the selection as it left the
+            // screen. Nothing was there to ask while every selected object was kept drawn; see RemoveBlueprintKeepingSelection.
+            usageEventBuffer?.Update();
+
             base.Update();
+
+            // and so does what stopped being drawn by what was just done.
             usageEventBuffer?.Update();
         }
 
