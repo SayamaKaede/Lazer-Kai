@@ -628,6 +628,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                 newDifficultyButton(LazerKaiHitsoundStrings.CopyIntoNewDifficulty, false),
                                 newDifficultyButton(LazerKaiHitsoundStrings.MakeHitsoundDifficulty, true),
                                 newManiaDifficultyButton(),
+                                convertManiaControls(),
                                 heading(LazerKaiHitsoundStrings.CopyFromHeader),
                                 copySource = new FormDropdown<string>
                                 {
@@ -2184,6 +2185,70 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 button.Enabled.Value = false;
 
             return button;
+        }
+
+        /// <summary>
+        /// Whether the volumes of an osu!mania difficulty hitsounded in stable go into the hitsound difficulty it is
+        /// turned into.
+        /// </summary>
+        public FormCheckBox ConvertManiaVolumes { get; private set; } = null!;
+
+        /// <summary>
+        /// Turns an osu!mania difficulty hitsounded in stable into an osu! hitsound difficulty.
+        /// </summary>
+        public RoundedButton ConvertManiaButton { get; private set; } = null!;
+
+        /// <summary>
+        /// What turns an osu!mania difficulty hitsounded in stable into an osu! hitsound difficulty, as it is: the button,
+        /// and whether its volumes go along. There only on an osu!mania difficulty, the one thing here that is for
+        /// nothing else (2026-10-13).
+        /// </summary>
+        private Drawable convertManiaControls()
+        {
+            ConvertManiaVolumes = new FormCheckBox
+            {
+                Caption = LazerKaiHitsoundStrings.ConvertVolumes,
+                HintText = LazerKaiHitsoundStrings.ConvertVolumesHint,
+                Current = { Value = editor?.ManiaVolumesAreConverted ?? true },
+            };
+
+            ConvertManiaButton = new RoundedButton
+            {
+                Text = LazerKaiHitsoundStrings.ConvertToHitsoundDifficulty,
+                RelativeSizeAxes = Axes.X,
+                Height = 40,
+                Action = () => editor?.ConvertManiaToHitsoundDifficulty(ConvertManiaVolumes.Current.Value),
+            };
+
+            if (editor != null)
+            {
+                var can = editor.CanConvertManiaToHitsoundDifficulty.GetBoundCopy();
+
+                can.BindValueChanged(c =>
+                {
+                    ConvertManiaButton.Enabled.Value = c.NewValue;
+                    ConvertManiaButton.TooltipText = c.NewValue ? default : LazerKaiHitsoundStrings.ConvertManiaUnavailable;
+                }, true);
+
+                canMakeHitsoundDifficulty.Add(can);
+            }
+            else
+                ConvertManiaButton.Enabled.Value = false;
+
+            return new FillFlowContainer
+            {
+                RelativeSizeAxes = Axes.X,
+                AutoSizeAxes = Axes.Y,
+                Direction = FillDirection.Vertical,
+                Spacing = new Vector2(0, 8),
+                // taking no room where it is not shown.
+                Alpha = editorBeatmap.BeatmapInfo.Ruleset.OnlineID == 3 ? 1 : 0,
+                Children = new Drawable[]
+                {
+                    ConvertManiaVolumes,
+                    ConvertManiaButton,
+                },
+            };
         }
 
         /// <summary>

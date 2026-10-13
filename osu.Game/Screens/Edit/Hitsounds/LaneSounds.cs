@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Framework.Audio.Sample;
@@ -16,10 +17,18 @@ using osu.Framework.IO.Stores;
 using osu.Framework.Platform;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Formats;
+using osu.Game.Extensions;
+using osu.Game.Localisation;
 using osu.Game.Models;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Dialog;
+using osu.Game.Overlays.Notifications;
+using osu.Game.Rulesets;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.Objects.Types;
+using osu.Game.Utils;
 
 namespace osu.Game.Screens.Edit.Hitsounds
 {
@@ -57,6 +66,15 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
         [Resolved(canBeNull: true)]
         private Editor? editor { get; set; }
+
+        [Resolved]
+        private RulesetStore rulesets { get; set; } = null!;
+
+        [Resolved(canBeNull: true)]
+        private INotificationOverlay? notifications { get; set; }
+
+        [Resolved(canBeNull: true)]
+        private IDialogOverlay? dialogOverlay { get; set; }
 
         /// <summary>
         /// The sounds kept beside the game, which the lanes are given theirs from.
@@ -176,7 +194,168 @@ namespace osu.Game.Screens.Edit.Hitsounds
             var sound = project[lane];
 
             if (sound.HasFile)
-                editorBeatmap.BeatmapSkin?.GetSample(sampleOf(sound))?.Play();
+                editorBeatmap.BeatmapSkin?.GetSample(sampleOf(sound, project.VolumeAt(clock.CurrentTime)))?.Play();
+        }
+
+        #region Volume
+
+        /// <summary>
+        /// How loud a note at <paramref name="time"/> is, in percent.
+        /// </summary>
+        public int VolumeAt(double time) => project.VolumeAt(time);
+
+        /// <summary>
+        /// Where the volume changes, in the order of their times.
+        /// </summary>
+        public IReadOnlyList<LaneVolume> Volumes => project.Volumes;
+
+        /// <summary>
+        /// Where a change of volume made for the playhead goes: on the notes that are at it, which it is for, and
+        /// otherwise on the playhead's millisecond.
+        /// </summary>
+        public double VolumePlace()
+        {
+            double now = clock.CurrentTime;
+            double? note = null;
+
+            foreach (var hitObject in editorBeatmap.HitObjects)
+            {
+                if (Math.Abs(hitObject.StartTime - now) <= HitPoints.LENIENCY && (note == null || hitObject.StartTime < note))
+                    note = hitObject.StartTime;
+            }
+
+            return note ?? Math.Round(now);
+        }
+
+        /// <summary>
+        /// Makes notes <paramref name="volume"/> loud from the playhead on, until the volume next changes: as the volume
+        /// of the green line at the playhead is set on the hitsound screen of an osu! difficulty, there being no green
+        /// lines here to set it of.
+        /// </summary>
+        public void SetVolume(int volume)
+        {
+            double time = VolumePlace();
+
+            if (project.VolumeAt(time) == volume)
+                return;
+
+            project.SetVolume(time, volume);
+            keep();
+
+            applyToEveryNote();
+            Changed?.Invoke();
+        }
+
+        #endregion
+
+        #region Turning into a hitsound difficulty
+
+        /// <summary>
+        /// The hit sound of a circle none of whose lanes is one.
+        /// </summary>
+        public LaneSound Fallback => project.Fallback;
+
+        /// <summary>
+        /// Gives the circles none of whose lanes is a hit sound one from the library, or with null, the skin's.
+        /// </summary>
+        /// <returns>Whether it was given: a sound no longer in the library is not.</returns>
+        public bool GiveFallback(string? libraryFile)
+        {
+            string file = string.Empty;
+
+            if (libraryFile != null)
+            {
+                file = copyIntoSet(libraryFile);
+
+                if (file.Length == 0)
+                    return false;
+            }
+
+            project.Fallback.File = file;
+            project.Fallback.Source = libraryFile ?? string.Empty;
+
+            keep();
+            Changed?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// Says which sample set the hit sound of such circles is of.
+        /// </summary>
+        public void SetFallbackBank(string bank)
+        {
+            project.Fallback.Bank = bank;
+
+            keep();
+            Changed?.Invoke();
+        }
+
+        /// <summary>
+        /// Whether the volumes set here go into the hitsound difficulty. Left out, the volumes of the one this was last
+        /// turned into are kept, for the volume to be set there instead.
+        /// </summary>
+        public bool ConvertVolumes
+        {
+            get => project.ConvertVolumes;
+            set
+            {
+                if (project.ConvertVolumes == value)
+                    return;
+
+                project.ConvertVolumes = value;
+                keep();
+            }
+        }
+
+        /// <summary>
+        /// The hitsound difficulty this was last turned into, if it is still there.
+        /// </summary>
+        public BeatmapInfo? Converted => converter.Converted;
+
+        private HitsoundDifficultyConverter converter => new HitsoundDifficultyConverter(beatmaps, working.Value, project, keep, notifications, dialogOverlay);
+
+        /// <summary>
+        /// Turns the difficulty into an osu! hitsound difficulty of the same beatmap set: a circle wherever lanes sound,
+        /// and the sound files those circles are to find. Done again, it is put in place of the one made before.
+        /// </summary>
+        /// <remarks>
+        /// As Mapping Tools' Hitsound Studio does it (see <see cref="LaneSoundConversion"/>), but for where it is
+        /// written: straight into the beatmap set, where Mapping Tools writes to a folder of its own for the mapper to
+        /// move from. So nothing of the mapper's own is written over without asking: only the difficulty and the files
+        /// this made the last time are.
+        /// </remarks>
+        public void ConvertToHitsoundDifficulty()
+        {
+            var osu = rulesets.GetRuleset(0);
+
+            if (osu == null)
+                return;
+
+            var lanes = Enumerable.Range(0, LaneCount).Select(l => project[l]).ToArray();
+            var notes = editorBeatmap.HitObjects.Where(h => h is IHasColumn).Select(h => new LaneSoundConversion.Note(h.StartTime, ((IHasColumn)h).Column));
+
+            // written from a difficulty with nothing in it: this one is not kept as stable has it, and has no file of
+            // its own to write the other from.
+            converter.Convert(notes, lanes, project.Fallback, () => HitsoundDifficultyWriter.EmptyLike(editorBeatmap, osu),
+                project.Volumes.Select(v => (v.Time, v.Volume)).ToArray());
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Makes every note sound as its lane does, and as loud as is said for where it is, as one edit.
+        /// </summary>
+        private void applyToEveryNote()
+        {
+            editorBeatmap.BeginChange();
+
+            foreach (var hitObject in editorBeatmap.HitObjects.ToArray())
+            {
+                if (apply(hitObject))
+                    editorBeatmap.Update(hitObject);
+            }
+
+            editorBeatmap.EndChange();
         }
 
         /// <summary>
@@ -267,25 +446,34 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
             var sound = project[column.Column];
 
+            // as loud as is said for where it is, which a note moved in time may not be yet.
+            int volume = project.VolumeAt(hitObject.StartTime);
+
             if (sound.HasFile)
             {
-                if (hitObject.Samples.Count == 1 && hitObject.Samples[0] is ConvertHitObjectParser.FileHitSampleInfo file && file.Filename == sound.File)
+                if (hitObject.Samples.Count == 1 && hitObject.Samples[0] is ConvertHitObjectParser.FileHitSampleInfo file && file.Filename == sound.File && file.Volume == volume)
                     return false;
 
-                hitObject.Samples = new List<HitSampleInfo> { sampleOf(sound) };
+                hitObject.Samples = new List<HitSampleInfo> { sampleOf(sound, volume) };
                 return true;
             }
 
             // a lane with no sound of its own: a note brought from one that has, or left from when this one had, goes
             // back to the plain hit.
-            if (!hitObject.Samples.Any(s => s is ConvertHitObjectParser.FileHitSampleInfo))
+            if (hitObject.Samples.Any(s => s is ConvertHitObjectParser.FileHitSampleInfo))
+            {
+                hitObject.Samples = new List<HitSampleInfo> { new HitSampleInfo(HitSampleInfo.HIT_NORMAL, volume: volume) };
+                return true;
+            }
+
+            if (hitObject.Samples.All(s => s.Volume == volume))
                 return false;
 
-            hitObject.Samples = new List<HitSampleInfo> { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) };
+            hitObject.Samples = hitObject.Samples.Select(s => s.With(newVolume: volume)).ToList();
             return true;
         }
 
-        private static HitSampleInfo sampleOf(LaneSound sound) => new ConvertHitObjectParser.FileHitSampleInfo(sound.File, 100);
+        private static HitSampleInfo sampleOf(LaneSound sound, int volume) => new ConvertHitObjectParser.FileHitSampleInfo(sound.File, volume);
 
         protected override void Dispose(bool isDisposing)
         {

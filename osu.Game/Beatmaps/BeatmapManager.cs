@@ -261,6 +261,9 @@ namespace osu.Game.Beatmaps
             var newBeatmapInfo = referenceWorkingBeatmap.BeatmapInfo.Clone();
             newBeatmapInfo.ID = Guid.NewGuid();
             newBeatmapInfo.DifficultyName = newBeatmap.BeatmapInfo.DifficultyName;
+            // the file's, which is another than the reference's where an osu! difficulty is written from one of
+            // osu!mania's that was hitsounded in.
+            newBeatmapInfo.Ruleset = newBeatmap.BeatmapInfo.Ruleset;
             // the file is found by its hash, so the clone would otherwise be saved over the difficulty it was made from.
             newBeatmapInfo.Hash = string.Empty;
             newBeatmapInfo.ResetOnlineInfo();
@@ -274,6 +277,28 @@ namespace osu.Game.Beatmaps
 
             workingBeatmapCache.Invalidate(targetBeatmapSet);
             return GetWorkingBeatmap(newBeatmapInfo);
+        }
+
+        /// <summary>
+        /// Puts <paramref name="file"/> in place of the file of <paramref name="beatmapInfo"/>, byte for byte.
+        /// </summary>
+        /// <remarks>
+        /// For a difficulty written as stable writes one that is written again: a hitsound difficulty, when the
+        /// difficulty it was made from has been changed. It stays the difficulty it was, by the same name.
+        /// </remarks>
+        /// <param name="beatmapInfo">The difficulty, of a set whose difficulties it is one of.</param>
+        /// <param name="file">The file.</param>
+        public virtual WorkingBeatmap ReplaceDifficultyFile(BeatmapInfo beatmapInfo, byte[] file)
+        {
+            Beatmap newBeatmap;
+
+            using (var reader = new LineBufferedReader(new MemoryStream(file)))
+                newBeatmap = Formats.Decoder.GetDecoder<Beatmap>(reader).Decode(reader);
+
+            save(beatmapInfo, newBeatmap, null, null, transferCollections: true, file);
+
+            workingBeatmapCache.Invalidate(beatmapInfo.BeatmapSet!);
+            return GetWorkingBeatmap(beatmapInfo);
         }
 
         private WorkingBeatmap addDifficultyToSet(BeatmapSetInfo targetBeatmapSet, IBeatmap newBeatmap, ISkin beatmapSkin, Storyboard storyboard)

@@ -36,8 +36,36 @@ namespace osu.Game.Screens.Edit.Hitsounds
         [Resolved]
         private LaneSounds laneSounds { get; set; } = null!;
 
-        private FillFlowContainer<LaneRow> rows = null!;
+        [Resolved]
+        private EditorClock clock { get; set; } = null!;
+
+        private FillFlowContainer rows = null!;
         private OsuSpriteText emptyText = null!;
+
+        /// <summary>
+        /// How loud notes are at the playhead, as shown: set, it is how loud they are from there on.
+        /// </summary>
+        private readonly BindableInt volume = new BindableInt(LaneSoundProject.FULL_VOLUME) { MinValue = 5, MaxValue = 100 };
+
+        public FormSliderBar<int> Volume { get; private set; } = null!;
+
+        /// <summary>
+        /// The volumes that are used somewhere, a button each, as on the hitsound screen of an osu! difficulty.
+        /// </summary>
+        public FillFlowContainer<HitsoundPanel.PresetButton> VolumePresets { get; private set; } = null!;
+
+        public FormCheckBox WithVolumes { get; private set; } = null!;
+
+        public RoundedButton ConvertButton { get; private set; } = null!;
+
+        /// <summary>
+        /// Whether what is shown is being brought up to date, rather than changed by the mapper.
+        /// </summary>
+        private bool refreshing;
+
+        private bool stale = true;
+
+        private double shownFor = double.NaN;
 
         /// <param name="shown">Whether the hitsound screen is the one showing.</param>
         public LaneSoundPanel(IBindable<bool> shown)
@@ -133,6 +161,54 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                             Font = OsuFont.GetFont(size: 14),
                                             Colour = colourProvider.Colour1,
                                         },
+                                        new GridContainer
+                                        {
+                                            RelativeSizeAxes = Axes.X,
+                                            AutoSizeAxes = Axes.Y,
+                                            ColumnDimensions = new[]
+                                            {
+                                                new Dimension(),
+                                                new Dimension(GridSizeMode.Absolute, 6),
+                                                new Dimension(GridSizeMode.Absolute, 260),
+                                                new Dimension(GridSizeMode.Absolute, 6),
+                                                new Dimension(GridSizeMode.Absolute, 240),
+                                            },
+                                            RowDimensions = new[] { new Dimension(GridSizeMode.AutoSize) },
+                                            Content = new[]
+                                            {
+                                                new[]
+                                                {
+                                                    Volume = new FormSliderBar<int>
+                                                    {
+                                                        Caption = LazerKaiHitsoundStrings.LaneVolume,
+                                                        Current = volume,
+                                                        TransferValueOnCommit = true,
+                                                    },
+                                                    Empty(),
+                                                    WithVolumes = new FormCheckBox
+                                                    {
+                                                        Caption = LazerKaiHitsoundStrings.ConvertVolumes,
+                                                        HintText = LazerKaiHitsoundStrings.ConvertVolumesHint,
+                                                    },
+                                                    Empty(),
+                                                    ConvertButton = new RoundedButton
+                                                    {
+                                                        Text = LazerKaiHitsoundStrings.ConvertToHitsoundDifficulty,
+                                                        RelativeSizeAxes = Axes.X,
+                                                        Height = 36,
+                                                        Anchor = Anchor.CentreLeft,
+                                                        Origin = Anchor.CentreLeft,
+                                                        Action = () => laneSounds.ConvertToHitsoundDifficulty(),
+                                                    },
+                                                },
+                                            }
+                                        },
+                                        VolumePresets = new FillFlowContainer<HitsoundPanel.PresetButton>
+                                        {
+                                            AutoSizeAxes = Axes.Both,
+                                            Direction = FillDirection.Horizontal,
+                                            Spacing = new Vector2(5),
+                                        },
                                     }
                                 },
                             },
@@ -142,7 +218,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                 new OsuScrollContainer
                                 {
                                     RelativeSizeAxes = Axes.Both,
-                                    Child = rows = new FillFlowContainer<LaneRow>
+                                    Child = rows = new FillFlowContainer
                                     {
                                         RelativeSizeAxes = Axes.X,
                                         AutoSizeAxes = Axes.Y,
@@ -165,6 +241,64 @@ namespace osu.Game.Screens.Edit.Hitsounds
             base.LoadComplete();
 
             shown.BindValueChanged(s => Alpha = s.NewValue ? 1 : 0, true);
+
+            WithVolumes.Current.Value = laneSounds.ConvertVolumes;
+            WithVolumes.Current.BindValueChanged(with => laneSounds.ConvertVolumes = with.NewValue);
+
+            volume.BindValueChanged(v =>
+            {
+                if (refreshing)
+                    return;
+
+                laneSounds.SetVolume(v.NewValue);
+                stale = true;
+            });
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+
+            if (!shown.Value || (!stale && clock.CurrentTime == shownFor))
+                return;
+
+            stale = false;
+            shownFor = clock.CurrentTime;
+
+            refreshing = true;
+
+            int current = laneSounds.VolumeAt(laneSounds.VolumePlace());
+            int[] used = laneSounds.Volumes.Select(v => v.Volume).Append(LaneSoundProject.FULL_VOLUME).Distinct().OrderBy(v => v).ToArray();
+
+            volume.Value = current;
+
+            if (!VolumePresets.Select(b => b.Value).SequenceEqual(used))
+            {
+                VolumePresets.Clear();
+
+                foreach (int value in used)
+                {
+                    var button = new HitsoundPanel.PresetButton(value, $@"{value}%");
+
+                    button.Current.BindValueChanged(state =>
+                    {
+                        if (refreshing)
+                            return;
+
+                        if (state.NewValue == TernaryState.True)
+                            laneSounds.SetVolume(value);
+
+                        stale = true;
+                    });
+
+                    VolumePresets.Add(button);
+                }
+            }
+
+            foreach (var button in VolumePresets)
+                button.Current.Value = button.Value == current ? TernaryState.True : TernaryState.False;
+
+            refreshing = false;
         }
 
         /// <summary>
@@ -179,6 +313,8 @@ namespace osu.Game.Screens.Edit.Hitsounds
             rows.Clear();
 
             // a dropdown opens over the rows under it.
+            rows.Add(new FallbackRow(files) { Depth = -1 });
+
             for (int lane = 0; lane < laneSounds.LaneCount; lane++)
                 rows.Add(new LaneRow(lane, files) { Depth = lane });
         }
@@ -208,6 +344,86 @@ namespace osu.Game.Screens.Edit.Hitsounds
         public record SoundChoice(string? Path)
         {
             public override string ToString() => Path ?? @"-";
+        }
+
+        /// <summary>
+        /// The hit sound of the circles none of whose lanes is one, once the difficulty is turned into an osu! hitsound
+        /// difficulty: laid out as a lane is, above the lanes.
+        /// </summary>
+        public partial class FallbackRow : CompositeDrawable
+        {
+            private readonly IReadOnlyList<string> files;
+
+            [Resolved]
+            private LaneSounds laneSounds { get; set; } = null!;
+
+            public FormDropdown<SoundChoice> Sound { get; private set; } = null!;
+            public FormEnumDropdown<LaneBank> Bank { get; private set; } = null!;
+
+            public FallbackRow(IReadOnlyList<string> files)
+            {
+                this.files = files;
+            }
+
+            [BackgroundDependencyLoader]
+            private void load()
+            {
+                RelativeSizeAxes = Axes.X;
+                AutoSizeAxes = Axes.Y;
+
+                var sound = laneSounds.Fallback;
+
+                // with none, it is the skin's.
+                var none = new SoundChoice((string?)null);
+                var choices = files.Select(f => new SoundChoice(f)).Prepend(none).ToList();
+
+                var current = !sound.HasFile ? none : choices.FirstOrDefault(c => c.Path == sound.Source);
+
+                if (current == null)
+                    choices.Add(current = new SoundChoice(sound.Source.Length > 0 ? sound.Source : sound.File));
+
+                InternalChild = new GridContainer
+                {
+                    RelativeSizeAxes = Axes.X,
+                    AutoSizeAxes = Axes.Y,
+                    ColumnDimensions = new[]
+                    {
+                        new Dimension(),
+                        new Dimension(GridSizeMode.Absolute, 6),
+                        new Dimension(GridSizeMode.Absolute, 170),
+                        // as wide as what a lane has after its sample set.
+                        new Dimension(GridSizeMode.Absolute, 6 + 170 + 6 + 40),
+                    },
+                    RowDimensions = new[] { new Dimension(GridSizeMode.AutoSize) },
+                    Content = new[]
+                    {
+                        new[]
+                        {
+                            Sound = new FormDropdown<SoundChoice>
+                            {
+                                Caption = LazerKaiHitsoundStrings.FallbackSound,
+                                Items = choices,
+                                Current = { Value = current },
+                            },
+                            Empty(),
+                            Bank = new FormEnumDropdown<LaneBank>
+                            {
+                                Caption = LazerKaiHitsoundStrings.LaneBank,
+                                Current = { Value = (LaneBank)System.Math.Max(0, System.Array.IndexOf(bank_names, sound.Bank)) },
+                            },
+                            Empty(),
+                        },
+                    }
+                };
+            }
+
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+
+                Sound.Current.BindValueChanged(choice => laneSounds.GiveFallback(choice.NewValue.Path));
+                Bank.Current.BindValueChanged(bank => laneSounds.SetFallbackBank(bank_names[(int)bank.NewValue]));
+            }
         }
 
         /// <summary>

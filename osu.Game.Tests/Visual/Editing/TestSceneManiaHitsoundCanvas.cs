@@ -1,6 +1,9 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Extensions;
@@ -10,6 +13,9 @@ using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Database;
+using osu.Game.Extensions;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Dialog;
 using osu.Game.Rulesets.Mania.Edit;
 using osu.Game.Rulesets.Mania.Objects;
 using osu.Game.Rulesets.Mania.UI;
@@ -243,6 +249,234 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddUntilStep("its head sounds as the lane", () => fileOf(hold.Head), () => Is.EqualTo(@"HS/kick.wav"));
         }
+
+        /// <summary>
+        /// The difficulty is turned into an osu! one of the same beatmap set, as stable has one: a circle wherever lanes
+        /// sound, saying which sample sets and which added sounds, and the sounds themselves under the names stable
+        /// looks those up by (2026-10-13).
+        /// </summary>
+        [Test]
+        public void TestTheDifficultyIsTurnedIntoAHitsoundDifficulty()
+        {
+            make();
+
+            give(0, @"kick.wav");
+            give(1, @"drums/snare.wav");
+            AddStep("say the second lane is to be a soft clap", () => lanes.SetSlot(1, HitSampleInfo.BANK_SOFT, HitSampleInfo.HIT_CLAP));
+
+            AddStep("put the kick on the first beat, both on the second and the clap alone on the third", () =>
+            {
+                EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(0) });
+                EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(1) });
+                EditorBeatmap.Add(new Note { Column = 1, StartTime = beat(1) });
+                EditorBeatmap.Add(new Note { Column = 1, StartTime = beat(2) });
+            });
+
+            convert();
+
+            AddAssert("there is an osu! difficulty for it", () => (lanes.Converted?.DifficultyName, lanes.Converted?.Ruleset.ShortName), () => Is.EqualTo((@"Hitsounds", @"osu")));
+            AddAssert("as stable has one", () => hitsoundDifficulty().First(), () => Is.EqualTo(@"osu file format v14"));
+
+            AddAssert("a circle wherever lanes sound, in the middle", () => section(@"[HitObjects]"), () => Is.EqualTo(new[]
+            {
+                // the kick is the normal set's hit sound.
+                $@"256,192,{whole(beat(0))},5,0,1:1:0:0:",
+                $@"256,192,{whole(beat(1))},5,8,1:2:0:0:",
+                // with no lane that is a hit sound, it is the soft one of the skin.
+                $@"256,192,{whole(beat(2))},5,8,2:2:0:0:",
+            }));
+
+            AddAssert("the red lines say the custom index the sounds are under, with no green line for it",
+                () => lines().Select(l => (l.red, l.index, l.volume)), () => Is.All.EqualTo((true, 1, 100)));
+
+            AddAssert("the kick is the normal hit sound of the beatmap", () => hashOf(@"normal-hitnormal.wav"), () => Is.EqualTo(hashOf(@"HS/kick.wav")));
+            AddAssert("the snare its soft clap", () => hashOf(@"soft-hitclap.wav"), () => Is.EqualTo(hashOf(@"HS/snare.wav")));
+            AddAssert("and nothing is written for the skin's sound", () => hashOf(@"soft-hitnormal.wav"), () => Is.Null);
+
+            AddAssert("still in the difficulty hitsounded in", () => EditorBeatmap.BeatmapInfo.DifficultyName, () => Is.EqualTo(@"Hitsounds (mania)"));
+
+            AddStep("save", () => Editor.Save());
+            reopen();
+
+            AddAssert("the hitsound difficulty is still there once this one is saved", () => lanes.Converted?.DifficultyName, () => Is.EqualTo(@"Hitsounds"));
+            AddAssert("in the database too", () => Game.BeatmapManager.QueryBeatmap(b => b.ID == lanes.Converted!.ID)?.Ruleset.ShortName, () => Is.EqualTo(@"osu"));
+        }
+
+        /// <summary>
+        /// Turned into one again, it is put in place of the one made before, and so are the sound files written then.
+        /// </summary>
+        [Test]
+        public void TestTurningItIntoOneAgainPutsItInPlaceOfTheLast()
+        {
+            Guid first = Guid.Empty;
+
+            make();
+
+            give(0, @"kick.wav");
+            AddStep("put a note in the lane", () => EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(0) }));
+
+            convert();
+            AddStep("note which difficulty it is", () => first = lanes.Converted!.ID);
+
+            give(0, @"drums/snare.wav");
+            AddStep("put another note in the lane", () => EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(1) }));
+
+            convert();
+
+            AddAssert("it is the same difficulty", () => lanes.Converted?.ID, () => Is.EqualTo(first));
+            AddAssert("and the only one made", () => EditorBeatmap.BeatmapInfo.BeatmapSet!.Beatmaps.Count(b => b.DifficultyName.StartsWith(@"Hitsounds", StringComparison.Ordinal) && b.Ruleset.ShortName == @"osu"),
+                () => Is.EqualTo(1));
+            AddAssert("with both circles", () => section(@"[HitObjects]"), () => Has.Length.EqualTo(2));
+            AddAssert("and the sound the lane has now", () => hashOf(@"normal-hitnormal.wav"), () => Is.EqualTo(hashOf(@"HS/snare.wav")));
+        }
+
+        /// <summary>
+        /// A sound file of the mapper's own that one of the files is to be found in place of is not written over
+        /// without asking.
+        /// </summary>
+        [Test]
+        public void TestASoundFileOfTheMappersOwnIsAskedAboutBeforeItIsWrittenOver()
+        {
+            make();
+
+            give(0, @"kick.wav");
+            AddStep("put a note in the lane", () => EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(0) }));
+
+            AddStep("put a normal hit sound of another kind in the beatmap", () =>
+            {
+                using (var sound = TestResources.OpenResource(@"Samples/hitsound-delay.wav"))
+                    Game.BeatmapManager.AddFile(EditorBeatmap.BeatmapInfo.BeatmapSet!, sound, @"normal-hitnormal.wav");
+            });
+
+            AddStep("turn it into a hitsound difficulty", () => lanes.ConvertToHitsoundDifficulty());
+
+            AddUntilStep("asked first", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog, () => Is.InstanceOf<ConfirmDialog>());
+            AddAssert("with nothing made yet", () => lanes.Converted, () => Is.Null);
+            AddAssert("nor written", () => hashOf(@"normal-hitnormal.wav"), () => Is.Not.EqualTo(hashOf(@"HS/kick.wav")));
+
+            AddStep("say yes", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog!.PerformOkAction());
+
+            AddUntilStep("made", () => lanes.Converted, () => Is.Not.Null);
+            AddAssert("and written", () => hashOf(@"normal-hitnormal.wav"), () => Is.EqualTo(hashOf(@"HS/kick.wav")));
+        }
+
+        /// <summary>
+        /// The volume is set from the playhead on, as the volume of the green line at the playhead is on the hitsound
+        /// screen of an osu! difficulty, and goes into the hitsound difficulty as green lines.
+        /// </summary>
+        [Test]
+        public void TestTheVolumeIsSetFromThePlayheadOn()
+        {
+            Note[] notes = null!;
+
+            make();
+
+            give(0, @"kick.wav");
+            AddStep("put a note on each of three beats", () =>
+            {
+                notes = Enumerable.Range(0, 3).Select(i => new Note { Column = 0, StartTime = beat(i) }).ToArray();
+                EditorBeatmap.AddRange(notes);
+            });
+
+            AddStep("go to the second", () => clock.Seek(beat(1)));
+            AddStep("turn the volume down to sixty", () => panel.Volume.Current.Value = 60);
+
+            AddAssert("notes are that loud from there on", () => notes.Select(n => n.Samples.Single().Volume), () => Is.EqualTo(new[] { 100, 60, 60 }));
+            AddUntilStep("there is a button for it", () => panel.VolumePresets.Select(b => b.Value), () => Is.EqualTo(new[] { 60, 100 }));
+
+            AddStep("put a note on the fourth beat", () => EditorBeatmap.Add(new Note { Column = 0, StartTime = beat(3) }));
+            AddAssert("it is as loud", () => EditorBeatmap.HitObjects.Last().Samples.Single().Volume, () => Is.EqualTo(60));
+
+            AddStep("go back to the first", () => clock.Seek(beat(0)));
+            AddUntilStep("the volume shown is the one there", () => panel.Volume.Current.Value, () => Is.EqualTo(100));
+
+            convert();
+            AddAssert("the hitsound difficulty has a green line where it changes", () => greenLines(), () => Is.EqualTo(new[] { (whole(beat(1)), 1, 60) }));
+            AddAssert("and the red lines after it say the same", () => lines().Where(l => l.red).Select(l => l.volume),
+                () => Is.EqualTo(Enumerable.Repeat(60, redLines.Length - 1).Prepend(100)));
+
+            AddStep("save", () => Editor.Save());
+            reopen();
+
+            AddAssert("the volume is kept through a save and a reload", () => lanes.VolumeAt(beat(2)), () => Is.EqualTo(60));
+        }
+
+        /// <summary>
+        /// Without the volumes set here, the volumes of the hitsound difficulty made before are kept as its lines say
+        /// them: the volume can be set there instead.
+        /// </summary>
+        [Test]
+        public void TestWithoutTheVolumesTheOnesOfTheHitsoundDifficultyAreKept()
+        {
+            make();
+
+            give(0, @"kick.wav");
+            AddStep("put a note on each of three beats", () => EditorBeatmap.AddRange(Enumerable.Range(0, 3).Select(i => new Note { Column = 0, StartTime = beat(i) })));
+
+            AddStep("sixty from the second beat on", () =>
+            {
+                clock.Seek(beat(1));
+                lanes.SetVolume(60);
+            });
+
+            convert();
+
+            AddStep("leave the volumes out", () => panel.WithVolumes.Current.Value = false);
+            AddStep("thirty from the second beat on, here", () => lanes.SetVolume(30));
+
+            convert();
+
+            AddAssert("the hitsound difficulty is as loud as it was", () => greenLines(), () => Is.EqualTo(new[] { (whole(beat(1)), 1, 60) }));
+
+            AddStep("put the volumes in again", () => panel.WithVolumes.Current.Value = true);
+
+            convert();
+
+            AddAssert("with them, it is as loud as is said here", () => greenLines(), () => Is.EqualTo(new[] { (whole(beat(1)), 1, 30) }));
+        }
+
+        private LaneSoundPanel panel => Editor.ChildrenOfType<LaneSoundPanel>().Single();
+
+        private EditorClock clock => Editor.ChildrenOfType<EditorClock>().Single();
+
+        private double beat(int number) => redLines[0].time + number * redLines[0].beatLength;
+
+        /// <summary>
+        /// A time as a file has it.
+        /// </summary>
+        private static int whole(double time) => (int)Math.Floor(time + 1e-6);
+
+        private void convert()
+        {
+            AddStep("turn it into a hitsound difficulty", () => panel.ConvertButton.TriggerClick());
+            AddUntilStep("done", () => lanes.Converted, () => Is.Not.Null);
+        }
+
+        /// <summary>
+        /// The file of the hitsound difficulty the difficulty was turned into, by its lines.
+        /// </summary>
+        private string[] hitsoundDifficulty()
+        {
+            var set = EditorBeatmap.BeatmapInfo.BeatmapSet!;
+
+            using (var stream = Game.Beatmap.Value.GetStream(set.GetFile(lanes.Converted!.Path!)!.File.GetStoragePath()))
+            using (var reader = new StreamReader(stream))
+                return reader.ReadToEnd().Replace("\r\n", "\n").Split('\n');
+        }
+
+        private string[] section(string name) => hitsoundDifficulty().SkipWhile(l => l != name).Skip(1).TakeWhile(l => !l.StartsWith('[')).Where(l => l.Length > 0).ToArray();
+
+        /// <summary>
+        /// The red and green lines of the hitsound difficulty: when, which, and the custom index and volume each says.
+        /// </summary>
+        private (int time, bool red, int index, int volume)[] lines() =>
+            section(@"[TimingPoints]").Select(l => l.Split(','))
+                                      .Select(f => ((int)double.Parse(f[0], CultureInfo.InvariantCulture), f[6] == @"1", int.Parse(f[4]), int.Parse(f[5])))
+                                      .ToArray();
+
+        private (int time, int index, int volume)[] greenLines() => lines().Where(l => !l.red).Select(l => (l.time, l.index, l.volume)).ToArray();
+
+        private string? hashOf(string file) => EditorBeatmap.BeatmapInfo.BeatmapSet!.GetFile(file)?.File.Hash;
 
         private void reopen()
         {

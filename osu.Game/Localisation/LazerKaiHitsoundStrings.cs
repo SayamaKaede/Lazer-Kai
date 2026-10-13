@@ -352,6 +352,60 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString PlayLaneSound => new TranslatableString(getKey(@"play_lane_sound"), @"Play");
 
+        /// <summary>
+        /// "Turn into a hitsound difficulty"
+        /// </summary>
+        public static LocalisableString ConvertToHitsoundDifficulty => new TranslatableString(getKey(@"convert_to_hitsound_difficulty"), @"Turn into a hitsound difficulty");
+
+        /// <summary>
+        /// "With the volumes set here"
+        /// </summary>
+        public static LocalisableString ConvertVolumes => new TranslatableString(getKey(@"convert_volumes"), @"With the volumes set here");
+
+        /// <summary>
+        /// "Without them, the volumes of the hitsound difficulty are kept as they are there."
+        /// </summary>
+        public static LocalisableString ConvertVolumesHint => new TranslatableString(getKey(@"convert_volumes_hint"), @"Without them, the volumes of the hitsound difficulty are kept as they are there.");
+
+        /// <summary>
+        /// "Volume from the playhead on"
+        /// </summary>
+        public static LocalisableString LaneVolume => new TranslatableString(getKey(@"lane_volume"), @"Volume from the playhead on");
+
+        /// <summary>
+        /// "Hit sound of a circle with none"
+        /// </summary>
+        public static LocalisableString FallbackSound => new TranslatableString(getKey(@"fallback_sound"), @"Hit sound of a circle with none");
+
+        /// <summary>
+        /// "For an osu!mania beatmap in v14 format, while improved stable compatibility is on"
+        /// </summary>
+        public static LocalisableString ConvertManiaUnavailable => new TranslatableString(getKey(@"convert_mania_unavailable"),
+            @"For an osu!mania beatmap in v14 format, while improved stable compatibility is on");
+
+        /// <summary>
+        /// "There are no notes to turn into circles"
+        /// </summary>
+        public static LocalisableString NothingToConvert => new TranslatableString(getKey(@"nothing_to_convert"), @"There are no notes to turn into circles");
+
+        /// <summary>
+        /// "These sounds come to one sound of a circle and would have to be mixed into one file, which cannot be done yet: {0}"
+        /// </summary>
+        public static LocalisableString CannotMixSounds(string sounds) => new TranslatableString(getKey(@"cannot_mix_sounds"),
+            @"These sounds come to one sound of a circle and would have to be mixed into one file, which cannot be done yet: {0}", sounds);
+
+        /// <summary>
+        /// "The beatmap already has sound files of these names, with other sounds in them: {0}. Replace them?"
+        /// </summary>
+        public static LocalisableString ReplaceSoundFiles(string files) => new TranslatableString(getKey(@"replace_sound_files"),
+            @"The beatmap already has sound files of these names, with other sounds in them: {0}. Replace them?", files);
+
+        /// <summary>
+        /// "Turned into {0}: {1} circles, {2} sound files"
+        /// </summary>
+        public static LocalisableString ConvertedToHitsoundDifficulty(string name, int circles, int files) => new TranslatableString(getKey(@"converted_to_hitsound_difficulty"),
+            @"Turned into {0}: {1} circles, {2} sound files", name, circles, files);
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

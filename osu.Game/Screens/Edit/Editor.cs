@@ -480,9 +480,10 @@ namespace osu.Game.Screens.Edit
             dependencies.Cache(savedTimingLines);
             dependencies.CacheAs<ILineVolumes>(savedTimingLines);
 
-            // a difficulty made to hitsound in, whose lanes are its sounds: one that has lanes kept for it.
+            // a difficulty made to hitsound in, whose lanes are its sounds: one that has lanes kept for it. One hitsounded
+            // in stable has something kept for it too once it has been turned into a hitsound difficulty, and is not one.
             if (canSave && editorBeatmap.BeatmapInfo.Ruleset.OnlineID == mania_ruleset_id
-                        && new LaneSoundProjectStore(storage).Load(editorBeatmap.BeatmapInfo) is LaneSoundProject lanes)
+                        && new LaneSoundProjectStore(storage).Load(editorBeatmap.BeatmapInfo) is LaneSoundProject lanes && !lanes.NotesSoundAsThemselves)
             {
                 AddInternal(laneSounds = new LaneSounds(lanes));
                 dependencies.Cache(laneSounds);
@@ -2007,6 +2008,75 @@ namespace osu.Game.Screens.Edit
 
             canMakeManiaHitsoundDifficulty.Value = canSave && editorBeatmap.BeatmapInfo.Ruleset.OnlineID == 0 && !MutationTracker.InProgress.Value
                                                    && rulesets.GetRuleset(mania_ruleset_id) != null;
+
+            canConvertManiaToHitsoundDifficulty.Value = canSave && stableCompatibility.Value && keptStableVersion.Value != null
+                                                        && editorBeatmap.BeatmapInfo.Ruleset.OnlineID == mania_ruleset_id && laneSounds == null
+                                                        && !MutationTracker.InProgress.Value;
+        }
+
+        /// <summary>
+        /// Whether <see cref="ConvertManiaToHitsoundDifficulty"/> can be done: for an osu!mania difficulty kept in stable's
+        /// format, whose notes say what they sound as and whose green lines are its own. One made to hitsound in here,
+        /// whose lanes are its sounds, is turned into one from its own screen (see <see cref="LaneSounds"/>).
+        /// </summary>
+        public IBindable<bool> CanConvertManiaToHitsoundDifficulty => canConvertManiaToHitsoundDifficulty;
+
+        private readonly Bindable<bool> canConvertManiaToHitsoundDifficulty = new Bindable<bool>();
+
+        /// <summary>
+        /// What is kept for an osu!mania difficulty hitsounded in stable: what it was last turned into, and whether its
+        /// volumes went along.
+        /// </summary>
+        private LaneSoundProject notesOwnSounds() =>
+            new LaneSoundProjectStore(storage).Load(editorBeatmap.BeatmapInfo) ?? new LaneSoundProject { NotesSoundAsThemselves = true };
+
+        /// <summary>
+        /// Whether the volumes of this difficulty went into the hitsound difficulty the last time it was turned into one.
+        /// </summary>
+        public bool ManiaVolumesAreConverted => notesOwnSounds().ConvertVolumes;
+
+        /// <summary>
+        /// Turns this osu!mania difficulty, hitsounded in stable, into an osu! hitsound difficulty of the same beatmap
+        /// set, as it is: its notes sound as they say, and it is not changed. Done again, the new one is put in place of
+        /// the one made before.
+        /// </summary>
+        /// <remarks>
+        /// What Mapping Tools' Hitsound Studio does with such a difficulty, which is how the user has made hitsound
+        /// difficulties until now (see <see cref="StableManiaHitsounds"/> and <see cref="HitsoundDifficultyConverter"/>).
+        /// </remarks>
+        /// <param name="withVolumes">Whether the volumes of this difficulty's lines go into the new one. Left out, the
+        /// volumes of the one made before are kept.</param>
+        public void ConvertManiaToHitsoundDifficulty(bool withVolumes)
+        {
+            if (!canConvertManiaToHitsoundDifficulty.Value)
+                return;
+
+            attemptMutationOperation(() =>
+            {
+                // saved first, so that the file read is the difficulty as it is seen.
+                if (!Save())
+                    return false;
+
+                var working = Beatmap.Value;
+                byte[] saved = readSavedFile(working);
+
+                if (saved == null)
+                    return false;
+
+                string file = Encoding.UTF8.GetString(saved);
+
+                var store = new LaneSoundProjectStore(storage);
+                var project = notesOwnSounds();
+
+                project.ConvertVolumes = withVolumes;
+
+                var read = StableManiaHitsounds.From(file, name => HitsoundDifficultyConverter.FileOf(working.BeatmapSetInfo, name));
+
+                new HitsoundDifficultyConverter(beatmapManager, working, project, () => store.Save(editorBeatmap.BeatmapInfo, project), notifications, dialogOverlay)
+                    .Convert(read.Notes, read.Sounds, read.Fallback, () => file, read.Volumes);
+
+                return true;
+            });
         }
 
         private const int mania_ruleset_id = 3;

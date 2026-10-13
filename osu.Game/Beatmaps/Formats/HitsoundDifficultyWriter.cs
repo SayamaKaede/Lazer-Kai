@@ -7,9 +7,12 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using osu.Game.Audio;
 using osu.Game.Beatmaps.Legacy;
 using osu.Game.IO;
+using osu.Game.Rulesets;
 using osu.Game.Rulesets.Objects.Types;
+using osu.Game.Screens.Edit.Hitsounds;
 
 namespace osu.Game.Beatmaps.Formats
 {
@@ -51,6 +54,201 @@ namespace osu.Game.Beatmaps.Formats
         }
 
         /// <summary>
+        /// The difficulty in <paramref name="file"/> with <paramref name="circles"/> for its objects, and green lines
+        /// only where the custom index or the volume changes: what a difficulty hitsounded in osu!mania is turned
+        /// into (see <see cref="LaneSoundConversion"/>).
+        /// </summary>
+        /// <remarks>
+        /// As Mapping Tools writes one. A circle says its sample sets itself and nothing else, so the lines have only
+        /// the custom index and the volume to say, and hundreds of circles go by between two of them.
+        /// </remarks>
+        /// <param name="file">A difficulty as stable has it, for everything but its objects and green lines. It need not be
+        /// an osu! one: what is written is, and one hitsounded in stable's osu!mania is written from itself, as Mapping
+        /// Tools writes it.</param>
+        /// <param name="name">What the new difficulty is called.</param>
+        /// <param name="circles">The circles, in the order of their times.</param>
+        /// <param name="volumes">The volume from each of these times on, in the order of their times.</param>
+        public static string FromLanes(string file, string name, IReadOnlyList<LaneSoundConversion.Circle> circles, IReadOnlyList<(double Time, int Volume)> volumes)
+        {
+            var hitObjects = circles.Select(c => circle(wholeTime(c.Time), sound(c), $"{bank(c.NormalBank)}:{bank(c.AdditionBank)}:0:0:")).ToArray();
+
+            return rewrite(file, name, hitObjects, timingLines(file, circles, volumes));
+        }
+
+        /// <summary>
+        /// A difficulty of <paramref name="ruleset"/> with nothing in it, as stable has one: the song, the names and the
+        /// red lines of <paramref name="like"/>, and none of its objects.
+        /// </summary>
+        /// <remarks>
+        /// What <see cref="FromLanes"/> is given, where the difficulty hitsounded in is not kept as stable has it and
+        /// has no file to write the new one from.
+        /// </remarks>
+        public static string EmptyLike(IBeatmap like, RulesetInfo ruleset)
+        {
+            var info = like.BeatmapInfo.Clone();
+
+            info.Ruleset = ruleset;
+            // what any osu! difficulty has until it is said otherwise: the lanes of the other are no size of circle.
+            info.Difficulty = new BeatmapDifficulty(like.Difficulty) { CircleSize = 4 };
+
+            var empty = new Beatmap
+            {
+                BeatmapInfo = info,
+                AudioLeadIn = like.AudioLeadIn,
+                Bookmarks = like.Bookmarks.ToArray(),
+                TimelineZoom = like.TimelineZoom,
+            };
+
+            foreach (var timingPoint in like.ControlPointInfo.TimingPoints)
+                empty.ControlPointInfo.Add(timingPoint.Time, timingPoint.DeepClone());
+
+            var builder = new StringBuilder();
+
+            using (var writer = new StringWriter(builder))
+                new LegacyBeatmapEncoder(empty, null, null, LegacyBeatmapEncoder.STABLE_VERSION).Encode(writer);
+
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// The volume every red and green line of <paramref name="file"/> says, in the order of the file: what
+        /// <see cref="FromLanes"/> is given to keep the volumes of a difficulty it writes again.
+        /// </summary>
+        public static (double Time, int Volume)[] VolumesOf(string file) =>
+            file.Replace("\r\n", "\n").Split('\n')
+                .SkipWhile(l => l.Trim() != "[TimingPoints]").Skip(1)
+                .Select(l => l.Trim())
+                .TakeWhile(l => !l.StartsWith('['))
+                .Where(isObject)
+                .Select(l => l.Split(','))
+                .Where(f => f.Length > 5
+                            && double.TryParse(f[0], NumberStyles.Float, CultureInfo.InvariantCulture, out _)
+                            && double.TryParse(f[5], NumberStyles.Float, CultureInfo.InvariantCulture, out _))
+                .Select(f => (double.Parse(f[0], CultureInfo.InvariantCulture), (int)double.Parse(f[5], CultureInfo.InvariantCulture)))
+                .ToArray();
+
+        private static string sound(LaneSoundConversion.Circle circle) =>
+            ((circle.Whistle ? (int)LegacyHitSoundType.Whistle : 0) | (circle.Finish ? (int)LegacyHitSoundType.Finish : 0) | (circle.Clap ? (int)LegacyHitSoundType.Clap : 0))
+            .ToString(CultureInfo.InvariantCulture);
+
+        private static int bank(string name) => name switch
+        {
+            HitSampleInfo.BANK_NORMAL => (int)LegacySampleBank.Normal,
+            HitSampleInfo.BANK_DRUM => (int)LegacySampleBank.Drum,
+            _ => (int)LegacySampleBank.Soft,
+        };
+
+        /// <summary>
+        /// The red lines of <paramref name="file"/>, and a green line wherever the custom index of
+        /// <paramref name="circles"/> or the volume of <paramref name="volumes"/> is other than the line before says.
+        /// </summary>
+        private static IReadOnlyList<string> timingLines(string file, IReadOnlyList<LaneSoundConversion.Circle> circles, IReadOnlyList<(double Time, int Volume)> volumes)
+        {
+            var redLines = file.Replace("\r\n", "\n").Split('\n')
+                               .SkipWhile(l => l.Trim() != "[TimingPoints]").Skip(1)
+                               .Select(l => l.Trim())
+                               .TakeWhile(l => !l.StartsWith('['))
+                               .Where(isObject)
+                               .Select(l => l.Split(','))
+                               // a line of a file too old to say which it is, is a red one if its beat length is not negative.
+                               .Where(f => f.Length > 6 ? f[6].Trim() == "1" : f.Length > 1 && !f[1].TrimStart().StartsWith('-'))
+                               .Select(f => (time: startOf(f), fields: f))
+                               .OrderBy(r => r.time)
+                               .ToList();
+
+            // what is wanted from each time on: a custom index where the circles go to another, a volume where that
+            // changes, either without the other.
+            var wanted = new SortedDictionary<double, (int? index, int? volume)>();
+
+            int? lastIndex = null;
+
+            foreach (var c in circles)
+            {
+                if (c.CustomIndex == lastIndex)
+                    continue;
+
+                double time = Math.Floor(c.Time + 1e-6);
+
+                wanted[time] = (c.CustomIndex, wanted.GetValueOrDefault(time).volume);
+                lastIndex = c.CustomIndex;
+            }
+
+            foreach (var (volumeTime, volume) in volumes)
+            {
+                double time = Math.Floor(volumeTime + 1e-6);
+
+                wanted[time] = (wanted.GetValueOrDefault(time).index, volume);
+            }
+
+            // stable goes by the first red line for anything before it, so what is wanted up to there is wanted from
+            // that line: a green line before it would be a line with no beat to go by.
+            if (redLines.Count > 0)
+            {
+                (int? index, int? volume) early = default;
+
+                foreach (double time in wanted.Keys.Where(t => t <= redLines[0].time).ToArray())
+                {
+                    early = (wanted[time].index ?? early.index, wanted[time].volume ?? early.volume);
+                    wanted.Remove(time);
+                }
+
+                if (early.index != null || early.volume != null)
+                    wanted[redLines[0].time] = early;
+            }
+
+            var lines = new List<string>();
+
+            string meter = "4";
+            string sampleSet = "0";
+            (int index, int volume) said = (0, 100);
+            (int? index, int? volume) want = default;
+
+            int red = 0;
+
+            foreach (double time in redLines.Select(r => r.time).Concat(wanted.Keys).Distinct().OrderBy(t => t))
+            {
+                if (wanted.TryGetValue(time, out var change))
+                    want = (change.index ?? want.index, change.volume ?? want.volume);
+
+                for (; red < redLines.Count && redLines[red].time <= time; red++)
+                {
+                    string[] fields = (string[])redLines[red].fields.Clone();
+
+                    meter = fields.ElementAtOrDefault(2)?.Trim() ?? meter;
+                    sampleSet = fields.ElementAtOrDefault(3)?.Trim() ?? sampleSet;
+
+                    // a red line says a custom index and a volume as a green one does, so it says what is wanted where
+                    // it is, rather than what the file had it say and a green line on top of it to say otherwise.
+                    said = (want.index ?? whole(fields.ElementAtOrDefault(4), 0), want.volume ?? whole(fields.ElementAtOrDefault(5), 100));
+
+                    if (fields.Length > 5)
+                    {
+                        fields[4] = said.index.ToString(CultureInfo.InvariantCulture);
+                        fields[5] = said.volume.ToString(CultureInfo.InvariantCulture);
+                    }
+
+                    lines.Add(string.Join(',', fields));
+                }
+
+                var now = (want.index ?? said.index, want.volume ?? said.volume);
+
+                if (now == said)
+                    continue;
+
+                lines.Add(FormattableString.Invariant($"{time},-100,{meter},{sampleSet},{now.Item1},{now.Item2},0,0"));
+                said = now;
+            }
+
+            return lines;
+
+            static double startOf(string[] fields) =>
+                double.TryParse(fields[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double time) ? time : 0;
+
+            static int whole(string? field, int otherwise) =>
+                double.TryParse(field, NumberStyles.Float, CultureInfo.InvariantCulture, out double value) ? (int)value : otherwise;
+        }
+
+        /// <summary>
         /// The stack leniency of a hitsound difficulty: none, so that its circles, all in one place, are not drawn as a
         /// stack walking off up and to the left (2026-10-08).
         /// </summary>
@@ -60,7 +258,12 @@ namespace osu.Game.Beatmaps.Formats
         /// <paramref name="file"/> named <paramref name="name"/>, without its online id, and with its objects replaced by
         /// <paramref name="hitObjects"/> if there are any to put in their place.
         /// </summary>
-        private static string rewrite(string file, string name, IReadOnlyList<string>? hitObjects)
+        /// <param name="file">The file.</param>
+        /// <param name="name">What the new difficulty is called.</param>
+        /// <param name="hitObjects">The objects to put in place of the file's, if any are.</param>
+        /// <param name="timingPoints">The red and green lines to have in place of the file's: all of them, whether or not
+        /// the file has any. With these, <paramref name="hitObjects"/> are also put in whether or not the file has any.</param>
+        private static string rewrite(string file, string name, IReadOnlyList<string>? hitObjects, IReadOnlyList<string>? timingPoints = null)
         {
             string newLine = file.Contains("\r\n") ? "\r\n" : "\n";
             string[] lines = file.Replace("\r\n", "\n").Split('\n');
@@ -90,11 +293,37 @@ namespace osu.Game.Beatmaps.Formats
 
                     section = trimmed;
                     written.Add(line);
+
+                    // put in at the head of their sections, which may have nothing in them to put these in place of.
+                    if (timingPoints != null)
+                    {
+                        if (section == "[TimingPoints]")
+                            written.AddRange(timingPoints);
+                        else if (section == "[HitObjects]" && hitObjects != null)
+                        {
+                            written.AddRange(hitObjects);
+                            objectsWritten = true;
+                        }
+                    }
+
                     continue;
                 }
 
                 switch (section)
                 {
+                    case "[TimingPoints]" when timingPoints != null && isObject(trimmed):
+                        continue;
+
+                    // an osu! difficulty, whatever the file is: one hitsounded in osu!mania is written from itself.
+                    case "[General]" when timingPoints != null && trimmed.StartsWith("Mode:", StringComparison.Ordinal):
+                        written.Add("Mode: 0");
+                        continue;
+
+                    // what any osu! difficulty has until it is said otherwise: the lanes of the other are no size of circle.
+                    case "[Difficulty]" when timingPoints != null && trimmed.StartsWith("CircleSize:", StringComparison.Ordinal):
+                        written.Add("CircleSize:4");
+                        continue;
+
                     case "[General]" when hitObjects != null && trimmed.StartsWith("StackLeniency:", StringComparison.Ordinal):
                         written.Add(stack_leniency);
                         stackLeniencyWritten = true;
