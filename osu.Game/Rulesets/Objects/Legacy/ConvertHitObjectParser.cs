@@ -721,7 +721,19 @@ namespace osu.Game.Rulesets.Objects.Legacy
 
             public sealed override LegacyHitSampleInfo With(Optional<string> newName = default, Optional<string> newBank = default, Optional<int> newVolume = default,
                                                             Optional<bool> newEditorAutoBank = default, Optional<int> newCustomSampleBank = default, Optional<bool> newIsLayered = default)
-                => new FileHitSampleInfo(Filename, newVolume.GetOr(Volume));
+            {
+                // an addition made from it is one of a sample set's, as loud as the file and under the same custom
+                // index. It was the file again: asked for a whistle or a clap, the editor got a second hit sound, and a
+                // point with two cannot be written. That took the game down where a note of a difficulty hitsounded in
+                // stable's osu!mania, each a file of its own, was given an addition (DOTNET-G, 2026-10-13).
+                if (newName.GetOr(HIT_NORMAL) is string name && name != HIT_NORMAL)
+                {
+                    return new LegacyHitSampleInfo(name, newBank.GetOr(Bank), newVolume.GetOr(Volume), newEditorAutoBank.GetOr(EditorAutoBank),
+                        newCustomSampleBank.GetOr(CustomSampleBank), newIsLayered.GetOr(IsLayered));
+                }
+
+                return new FileHitSampleInfo(Filename, newVolume.GetOr(Volume));
+            }
 
             public bool Equals(FileHitSampleInfo? other)
                 => base.Equals(other) && Filename == other.Filename;

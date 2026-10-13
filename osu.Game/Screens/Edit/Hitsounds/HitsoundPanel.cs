@@ -655,7 +655,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 button.AlwaysPresent = true;
             }
 
-            placeCircleButton.Enabled.Value = placeCircleWithPreviousButton.Enabled.Value = canPlace;
+            placeCircleButton.Pressable.Value = placeCircleWithPreviousButton.Pressable.Value = canPlace;
         }
 
         protected override void LoadComplete()
@@ -1997,6 +1997,16 @@ namespace osu.Game.Screens.Edit.Hitsounds
         {
             private readonly Action act;
 
+            /// <summary>
+            /// Whether it is to be pressed at all.
+            /// </summary>
+            /// <remarks>
+            /// Said here rather than by disabling the button from outside: a button is made one to be pressed as it
+            /// loads and is given what it does, which is after whoever made it could say otherwise. The buttons that put
+            /// a circle in, not shown where there is none to put in, could be pressed there (DOTNET-G, 2026-10-13).
+            /// </remarks>
+            public readonly BindableBool Pressable = new BindableBool(true);
+
             public ActionButton(Action act)
             {
                 this.act = act;
@@ -2009,9 +2019,11 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 // in place of the toggling the others do, which would light it.
                 Action = () =>
                 {
-                    if (Enabled.Value)
+                    if (Pressable.Value && Enabled.Value)
                         act();
                 };
+
+                Pressable.BindValueChanged(pressable => Enabled.Value = pressable.NewValue, true);
             }
         }
 
