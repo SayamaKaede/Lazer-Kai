@@ -358,6 +358,7 @@ namespace osu.Game.Localisation
             [$@"{hitsound_prefix}:line_before_not_taken"] = @"{0}の{1}ms前（適用されない）",
             [$@"{hitsound_prefix}:line_at"] = @"緑線 {0}",
             [$@"{hitsound_prefix}:line_to_add"] = @"緑線 {0}（新規）",
+            [$@"{hitsound_prefix}:lines_of_selection"] = @"緑線（選択した箇所）",
             [$@"{hitsound_prefix}:advance_by_previous_spacing"] = @"サークル配置後に自動で次へシーク",
             [$@"{hitsound_prefix}:paste_hitsounds_only"] = @"HSだけ貼り付け",
             [$@"{hitsound_prefix}:place_circle"] = @"サークルを置く",

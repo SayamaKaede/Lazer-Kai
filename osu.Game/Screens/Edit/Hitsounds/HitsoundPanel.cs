@@ -796,7 +796,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
                     : HitsoundEditing.AdditionBankState(lit, bankName) ?? (bankName == additionBank ? TernaryState.True : TernaryState.False);
             }
 
-            var line = lineAtThePlayhead();
+            var line = lineShown();
 
             if (line != null)
             {
@@ -807,9 +807,15 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 lineVolume.Value = line.Value.Volume;
 
                 double place = linePlace();
-                lineHeading.Text = standingLine(place) is SavedTimingLine standing
-                    ? LazerKaiHitsoundStrings.LineAt(standing.Time.ToEditorFormattedString())
-                    : LazerKaiHitsoundStrings.LineToAdd(place.ToEditorFormattedString());
+
+                if (hasSelection)
+                    lineHeading.Text = LazerKaiHitsoundStrings.LinesOfSelection;
+                else
+                {
+                    lineHeading.Text = standingLine(place) is SavedTimingLine standing
+                        ? LazerKaiHitsoundStrings.LineAt(standing.Time.ToEditorFormattedString())
+                        : LazerKaiHitsoundStrings.LineToAdd(place.ToEditorFormattedString());
+                }
 
                 var lines = savedTimingLines!.Lines;
 
@@ -865,7 +871,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
         /// </summary>
         private void stepLineIndex(int by)
         {
-            if (lineAtThePlayhead() is not SavedTimingLine line)
+            if (lineShown() is not SavedTimingLine line)
                 return;
 
             int index = Math.Max(0, line.SampleIndex + by);
@@ -877,6 +883,12 @@ namespace osu.Game.Screens.Edit.Hitsounds
         {
             if (refreshing || !linesEditable)
                 return;
+
+            if (hasSelection)
+            {
+                changeLinesOfSelection(change);
+                return;
+            }
 
             var inEffect = lineAtThePlayhead();
 
@@ -893,6 +905,55 @@ namespace osu.Game.Screens.Edit.Hitsounds
             lineEditing.Confirm();
 
             stale = true;
+        }
+
+        /// <summary>
+        /// Changes what the selected sounds follow and nothing else: with objects selected, a change is for them, and the
+        /// ones after them go on as they were.
+        /// </summary>
+        private void changeLinesOfSelection(Func<SavedTimingLine, SavedTimingLine> change)
+        {
+            var selected = selectedSounds();
+            var lines = savedTimingLines!.Lines.ToList();
+
+            var edited = LinesForPoints.Change(lines,
+                editorBeatmap.HitObjects.SelectMany(h => HitPoints.Of(h, durationSoundsAtEnd)).Select(p => (p.Time, selected.Contains((p.HitObject, p.Node ?? 0)))), change);
+
+            if (edited.SequenceEqual(lines))
+                return;
+
+            lineEditing!.SetAll(edited);
+            lineEditing.Confirm();
+
+            stale = true;
+        }
+
+        /// <summary>
+        /// The sounds a change of line is for with objects selected, each by its object and node. A slider's body
+        /// follows the line its head does, and something with no nodes has the one sound.
+        /// </summary>
+        private HashSet<(HitObject, int)> selectedSounds() => Target.Select(p => (p.HitObject, p.Node ?? 0)).ToHashSet();
+
+        /// <summary>
+        /// The line whose sample set, custom index and volume are shown: the one the first of the selected sounds follows,
+        /// or with nothing selected the one at the playhead.
+        /// </summary>
+        private SavedTimingLine? lineShown()
+        {
+            if (!hasSelection)
+                return lineAtThePlayhead();
+
+            if (!linesEditable)
+                return null;
+
+            var selected = selectedSounds();
+            var times = selected.Select(s => s.Item1).Distinct()
+                                .SelectMany(h => HitPoints.Of(h, durationSoundsAtEnd))
+                                .Where(p => selected.Contains((p.HitObject, p.Node ?? 0)))
+                                .Select(p => p.Time)
+                                .ToArray();
+
+            return times.Length > 0 ? lineEditing!.InEffectAt(times.Min() + HitPoints.LENIENCY) : null;
         }
 
         /// <summary>

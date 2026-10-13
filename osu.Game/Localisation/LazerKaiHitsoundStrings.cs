@@ -245,6 +245,11 @@ namespace osu.Game.Localisation
         public static LocalisableString LineToAdd(string time) => new TranslatableString(getKey(@"line_to_add"), @"Green line at {0} (new)", time);
 
         /// <summary>
+        /// "Green lines of the selection"
+        /// </summary>
+        public static LocalisableString LinesOfSelection => new TranslatableString(getKey(@"lines_of_selection"), @"Green lines of the selection");
+
+        /// <summary>
         /// "Place a circle"
         /// </summary>
         public static LocalisableString PlaceCircle => new TranslatableString(getKey(@"place_circle"), @"Place a circle");

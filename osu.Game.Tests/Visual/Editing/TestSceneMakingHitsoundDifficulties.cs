@@ -182,6 +182,59 @@ namespace osu.Game.Tests.Visual.Editing
         }
 
         /// <summary>
+        /// With objects selected, what the green line's boxes are given goes to those objects and to nothing else: a line
+        /// is put in where a run of them begins, and another at the object after it, saying what that one already did.
+        /// The playhead, where the line goes with nothing selected, has no say in it (2026-10-14).
+        /// </summary>
+        [TestCase(new[] { 30, 31, 32 })]
+        [TestCase(new[] { 30, 32, 35 })]
+        public void TestALineChangedWithObjectsSelectedChangesThoseAlone(int[] picked)
+        {
+            HitObject[] selected = null!;
+            Dictionary<double, int> linesBefore = null!;
+            Dictionary<HitObject, int[]> soundsBefore = null!;
+            int volume = 0;
+
+            AddStep("switch to the hitsound screen", () => Editor.Mode.Value = EditorScreenMode.Hitsounds);
+            AddStep("seek to an object", () => ((EditorClock)Editor.Dependencies.Get(typeof(EditorClock))).Seek(EditorBeatmap.HitObjects[10].StartTime));
+            AddStep("select others", () =>
+            {
+                selected = picked.Select(i => EditorBeatmap.HitObjects[i]).ToArray();
+                linesBefore = lineVolumes();
+                soundsBefore = EditorBeatmap.HitObjects.ToDictionary(h => h, volumesOf);
+
+                EditorBeatmap.SelectedHitObjects.AddRange(selected);
+            });
+            AddUntilStep("the panel is for them", () => panel.Target.Select(p => p.HitObject).Distinct(), () => Is.EquivalentTo(selected));
+
+            AddStep("press a volume none of them has", () =>
+            {
+                // the volumes come after the custom indices.
+                var button = panel.ChildrenOfType<HitsoundPanel.PresetButton>().Last(b => b.Value > 5 && timesOf(selected).All(t => linesBefore[t] != b.Value));
+                volume = button.Value;
+                button.TriggerClick();
+            });
+
+            AddAssert("the lines say it where they are", () => timesOf(selected).Select(t => lineVolumes()[t]), () => Is.All.EqualTo(volume));
+            AddAssert("and what they said everywhere else", () => lineVolumes().Where(v => !timesOf(selected).Contains(v.Key)),
+                () => Is.EquivalentTo(linesBefore.Where(v => !timesOf(selected).Contains(v.Key))));
+
+            AddAssert("they sound it", () => selected.SelectMany(volumesOf), () => Is.All.EqualTo(volume));
+            AddAssert("nothing else sounds otherwise", () => EditorBeatmap.HitObjects.Except(selected).All(h => volumesOf(h).SequenceEqual(soundsBefore[h])));
+
+            AddUntilStep("the volume shown is theirs", () => panel.LineVolume.Value, () => Is.EqualTo(volume));
+        }
+
+        /// <summary>
+        /// What the lines say the volume is at every time something sounds.
+        /// </summary>
+        private Dictionary<double, int> lineVolumes() => timesOf(EditorBeatmap.HitObjects).Distinct().ToDictionary(t => t, t => lineAt(t + 5).Volume);
+
+        private static IEnumerable<double> timesOf(IEnumerable<HitObject> hitObjects) => hitObjects.SelectMany(h => HitPoints.Of(h, true)).Select(p => p.Time);
+
+        private static int[] volumesOf(HitObject hitObject) => HitPoints.Of(hitObject, true).SelectMany(p => p.Samples).Select(s => s.Volume).ToArray();
+
+        /// <summary>
         /// The custom index goes up and down by the arrows at the end of its box, and 0 is shown as "Default", which is
         /// what stable calls it: in the box, and on its button, which stays first (2026-10-11).
         /// </summary>
