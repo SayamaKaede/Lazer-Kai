@@ -179,6 +179,113 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString WholeOffsetPending => new TranslatableString(getKey(@"whole_offset_pending"), @"Confirm or cancel the changes to the green lines first.");
 
+        /// <summary>
+        /// "Copy red lines..."
+        /// </summary>
+        public static LocalisableString CopyRedLines => new TranslatableString(getKey(@"copy_red_lines"), @"Copy red lines...");
+
+        /// <summary>
+        /// "Copy red lines"
+        /// </summary>
+        public static LocalisableString CopyRedLinesHeader => new TranslatableString(getKey(@"copy_red_lines_header"), @"Copy red lines");
+
+        /// <summary>
+        /// "Puts the red lines of one difficulty in the place of another's: where they are, the BPM and the time signature. Objects, green lines and bookmarks no further from a tick of the new lines than the number of milliseconds below are put on it."
+        /// </summary>
+        public static LocalisableString CopyRedLinesBody => new TranslatableString(getKey(@"copy_red_lines_body"),
+            @"Puts the red lines of one difficulty in the place of another's: where they are, the BPM and the time signature. Objects, green lines and bookmarks no further from a tick of the new lines than the number of milliseconds below are put on it.");
+
+        /// <summary>
+        /// "Direction"
+        /// </summary>
+        public static LocalisableString CopyRedLinesDirection => new TranslatableString(getKey(@"copy_red_lines_direction"), @"Direction");
+
+        /// <summary>
+        /// "Another difficulty → this difficulty"
+        /// </summary>
+        public static LocalisableString CopyRedLinesFromAnother => new TranslatableString(getKey(@"copy_red_lines_from_another"), @"Another difficulty → this difficulty");
+
+        /// <summary>
+        /// "This difficulty → other difficulties"
+        /// </summary>
+        public static LocalisableString CopyRedLinesToOthers => new TranslatableString(getKey(@"copy_red_lines_to_others"), @"This difficulty → other difficulties");
+
+        /// <summary>
+        /// "Copy from"
+        /// </summary>
+        public static LocalisableString CopyRedLinesSource => new TranslatableString(getKey(@"copy_red_lines_source"), @"Copy from");
+
+        /// <summary>
+        /// "Copy to"
+        /// </summary>
+        public static LocalisableString CopyRedLinesTargets => new TranslatableString(getKey(@"copy_red_lines_targets"), @"Copy to");
+
+        /// <summary>
+        /// "The difficulties ticked are written to at once. This cannot be undone."
+        /// </summary>
+        public static LocalisableString CopyRedLinesToOthersWarning => new TranslatableString(getKey(@"copy_red_lines_to_others_warning"),
+            @"The difficulties ticked are written to at once. This cannot be undone.");
+
+        /// <summary>
+        /// "Move everything with its beat"
+        /// </summary>
+        public static LocalisableString CopyRedLinesKeepBeats => new TranslatableString(getKey(@"copy_red_lines_keep_beats"), @"Move everything with its beat");
+
+        /// <summary>
+        /// "Objects, green lines, bookmarks and breaks go to where their beat is under the new red lines: as far on as the red lines are, and as much further apart as the BPM is slower. Off, only what is within the milliseconds below of a tick is moved."
+        /// </summary>
+        public static LocalisableString CopyRedLinesKeepBeatsHint => new TranslatableString(getKey(@"copy_red_lines_keep_beats_hint"),
+            @"Objects, green lines, bookmarks and breaks go to where their beat is under the new red lines: as far on as the red lines are, and as much further apart as the BPM is slower. Off, only what is within the milliseconds below of a tick is moved.");
+
+        /// <summary>
+        /// "Snap what is within (ms)"
+        /// </summary>
+        public static LocalisableString CopyRedLinesWithin => new TranslatableString(getKey(@"copy_red_lines_within"), @"Snap what is within (ms)");
+
+        /// <summary>
+        /// "Nothing is snapped for 0."
+        /// </summary>
+        public static LocalisableString CopyRedLinesWithinHint => new TranslatableString(getKey(@"copy_red_lines_within_hint"), @"Nothing is snapped for 0.");
+
+        /// <summary>
+        /// "Copy"
+        /// </summary>
+        public static LocalisableString CopyRedLinesApply => new TranslatableString(getKey(@"copy_red_lines_apply"), @"Copy");
+
+        /// <summary>
+        /// "The difficulty to copy from has no red lines."
+        /// </summary>
+        public static LocalisableString CopyRedLinesNone => new TranslatableString(getKey(@"copy_red_lines_none"), @"The difficulty to copy from has no red lines.");
+
+        /// <summary>
+        /// "Copied {0} red lines. Put on a tick: {1} objects, {2} green lines. Objects off every tick: {3}"
+        /// </summary>
+        public static LocalisableString CopyRedLinesDone(int redLines, int objects, int lines, int offTicks) => new TranslatableString(getKey(@"copy_red_lines_done"),
+            @"Copied {0} red lines. Put on a tick: {1} objects, {2} green lines. Objects off every tick: {3}", redLines, objects, lines, offTicks);
+
+        /// <summary>
+        /// "Copied the red lines to {0} difficulties. Put on a tick: {1} objects, {2} green lines."
+        /// </summary>
+        public static LocalisableString CopyRedLinesDoneToOthers(int difficulties, int objects, int lines) => new TranslatableString(getKey(@"copy_red_lines_done_to_others"),
+            @"Copied the red lines to {0} difficulties. Put on a tick: {1} objects, {2} green lines.", difficulties, objects, lines);
+
+        /// <summary>
+        /// "Objects off every tick remain in: {0}"
+        /// </summary>
+        public static LocalisableString CopyRedLinesOffTicksIn(string difficulties) => new TranslatableString(getKey(@"copy_red_lines_off_ticks_in"),
+            @"Objects off every tick remain in: {0}", difficulties);
+
+        /// <summary>
+        /// "Not copied to these, which could not be kept in stable's format: {0}"
+        /// </summary>
+        public static LocalisableString CopyRedLinesNotKept(string difficulties) => new TranslatableString(getKey(@"copy_red_lines_not_kept"),
+            @"Not copied to these, which could not be kept in stable's format: {0}", difficulties);
+
+        /// <summary>
+        /// "Could not copy to: {0}"
+        /// </summary>
+        public static LocalisableString CopyRedLinesFailed(string difficulties) => new TranslatableString(getKey(@"copy_red_lines_failed"), @"Could not copy to: {0}", difficulties);
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

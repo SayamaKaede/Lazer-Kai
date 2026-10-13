@@ -811,6 +811,10 @@ namespace osu.Game.Screens.Edit
                                             new EditorMenuItem(EditorStrings.SetPreviewPointToCurrent, MenuItemType.Standard, SetPreviewPointToCurrentTime),
                                             new EditorMenuItem(EditorStrings.SnapAllNotesToCurrentSnapDivisor, MenuItemType.Destructive, confirmSnapAllHitObjectsToCurrentDivisor),
                                             new EditorMenuItem(LazerKaiGreenLineStrings.WholeOffset, MenuItemType.Standard, AdjustWholeBeatmapOffset),
+                                            new EditorMenuItem(LazerKaiGreenLineStrings.CopyRedLines, MenuItemType.Standard, CopyRedLines)
+                                            {
+                                                Action = { Disabled = loadableBeatmap.BeatmapSetInfo.Beatmaps.Count < 2 }
+                                            },
                                             new EditorMenuItem(EditorStrings.Synchronise, MenuItemType.Destructive, confirmSyncTimingAttributes)
                                             {
                                                 Action = { Disabled = loadableBeatmap.BeatmapSetInfo.Beatmaps.Count < 2 }
@@ -883,6 +887,7 @@ namespace osu.Game.Screens.Edit
                     greenLinePanel = new GreenLinePanel { State = { Value = Visibility.Hidden } },
                     // above everything else of the editor's, which it stands in the way of while it is open.
                     wholeBeatmapOffset = new WholeBeatmapOffsetOverlay { State = { Value = Visibility.Hidden } },
+                    redLineCopy = new RedLineCopyOverlay { State = { Value = Visibility.Hidden } },
                     MutationTracker,
                     autoBackup = new EditorAutoBackup
                     {
@@ -1931,6 +1936,86 @@ namespace osu.Game.Screens.Edit
             }
 
             wholeBeatmapOffset.Show();
+        }
+
+        private RedLineCopyOverlay redLineCopy;
+
+        /// <summary>
+        /// Opens the window red lines are copied between this difficulty and the others of the set from.
+        /// </summary>
+        internal void CopyRedLines()
+        {
+            // as moving the whole beatmap is: what the green line panel has pending would become a part of the copy.
+            if (greenLinePanel?.Pending == true)
+            {
+                notifications?.Post(new SimpleNotification { Text = LazerKaiGreenLineStrings.WholeOffsetPending });
+                return;
+            }
+
+            redLineCopy.Show();
+        }
+
+        /// <summary>
+        /// Puts the red lines of this difficulty in the place of those of others of the set, which are saved with them
+        /// at once, and opens the set again as copying the bookmarks to them does.
+        /// </summary>
+        /// <param name="targets">The difficulties to copy to.</param>
+        /// <param name="within">How many milliseconds from a tick something stands and is still put on it.</param>
+        /// <param name="keepBeats">Whether everything of them is first moved to where its beat is under the red lines.</param>
+        internal void CopyRedLinesToOthers(IReadOnlyList<BeatmapInfo> targets, int within, bool keepBeats)
+        {
+            var redLines = RedLineCopying.Of(editorBeatmap.ControlPointInfo);
+            bool keepStableFiles = osuConfig.Get<bool>(OsuSetting.StableCompatibility);
+
+            int copied = 0;
+            int objects = 0;
+            int lines = 0;
+
+            var offTicks = new List<string>();
+            var notKept = new List<string>();
+            var failed = new List<string>();
+
+            foreach (var beatmapInfo in targets)
+            {
+                try
+                {
+                    // loaded as the beatmap in the editor is, for it to be changed the same way.
+                    var result = RedLineCopying.CopyTo(beatmapManager, beatmapManager.GetWorkingBeatmap(beatmapInfo), keepStableFiles, redLines, within, keepBeats, LoadComponent);
+
+                    if (result == null)
+                    {
+                        notKept.Add(beatmapInfo.DifficultyName);
+                        continue;
+                    }
+
+                    copied++;
+                    objects += result.Value.Objects;
+                    lines += result.Value.Lines;
+
+                    if (result.Value.OffTicks > 0)
+                        offTicks.Add($@"{beatmapInfo.DifficultyName} ({result.Value.OffTicks})");
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, $@"Failed to copy red lines to {beatmapInfo.GetDisplayTitle()}");
+                    failed.Add(beatmapInfo.DifficultyName);
+                }
+            }
+
+            notifications?.Post(new SimpleNotification { Text = LazerKaiGreenLineStrings.CopyRedLinesDoneToOthers(copied, objects, lines) });
+
+            if (offTicks.Count > 0)
+                notifications?.Post(new SimpleNotification { Text = LazerKaiGreenLineStrings.CopyRedLinesOffTicksIn(string.Join(@", ", offTicks)) });
+
+            if (notKept.Count > 0)
+                notifications?.Post(new SimpleErrorNotification { Text = LazerKaiGreenLineStrings.CopyRedLinesNotKept(string.Join(@", ", notKept)) });
+
+            if (failed.Count > 0)
+                notifications?.Post(new SimpleErrorNotification { Text = LazerKaiGreenLineStrings.CopyRedLinesFailed(string.Join(@", ", failed)) });
+
+            // the set is other than the editor has it: saving this difficulty with it as it was would put the others back.
+            if (copied > 0)
+                SaveAndReload(withDialog: false);
         }
 
         private EditorMenuItem removeUnneededGreenLinesMenuItem;

@@ -267,6 +267,26 @@ namespace osu.Game.Screens.Edit
             return SavedTimingLines.Parse(text)!.Value;
         }
 
+        /// <summary>
+        /// A red line at the given time and of the given beat, saying of the sounds and kiai what this one says: the
+        /// line a red line copied from another difficulty is put in as, where this is what was followed there.
+        /// </summary>
+        /// <param name="time">Where it is.</param>
+        /// <param name="beatLength">How long its beat is, in milliseconds.</param>
+        /// <param name="meter">How many beats its bar has.</param>
+        /// <param name="omitFirstBarLine">Whether the bar line it starts with is left out.</param>
+        public SavedTimingLine RedLineAt(double time, double beatLength, int meter, bool omitFirstBarLine)
+        {
+            // the effects stable keeps in the one number: kiai, and the first bar line left out.
+            int effects = (Kiai ? 1 : 0) | (omitFirstBarLine ? 8 : 0);
+
+            string text = string.Join(',', format(time), beatLength.ToString(@"R", CultureInfo.InvariantCulture), meter.ToString(CultureInfo.InvariantCulture),
+                SampleSet.ToString(CultureInfo.InvariantCulture), SampleIndex.ToString(CultureInfo.InvariantCulture), Volume.ToString(CultureInfo.InvariantCulture), @"1",
+                effects.ToString(CultureInfo.InvariantCulture));
+
+            return SavedTimingLines.Parse(text)!.Value;
+        }
+
         public SavedTimingLine WithTime(double time) => withField(0, format(time));
 
         public SavedTimingLine WithSliderVelocity(double velocity) => withField(1, (-100 / velocity).ToString(@"R", CultureInfo.InvariantCulture));

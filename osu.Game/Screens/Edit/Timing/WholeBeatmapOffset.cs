@@ -71,8 +71,8 @@ namespace osu.Game.Screens.Edit.Timing
             }
 
             // the objects first: what a line is moved over is given what the line says, where it then is.
-            int objects = snapObjects(beatmap);
-            int snappedLines = lines != null && linesAreKept ? snapLines(beatmap, lines) : 0;
+            int objects = SnapObjects(beatmap, SNAP_LENIENCY);
+            int snappedLines = lines != null && linesAreKept ? SnapLines(beatmap, lines, SNAP_LENIENCY) : 0;
 
             beatmap.EndChange();
 
@@ -153,19 +153,21 @@ namespace osu.Game.Screens.Edit.Timing
         /// Puts every object that is just off a tick on it: where it starts, and where it ends for one that is as long as
         /// it is set to be. A slider ends where its length and velocity put it, and is moved whole.
         /// </summary>
+        /// <param name="beatmap">The beatmap.</param>
+        /// <param name="leniency">How far from a tick an object stands and is still put on it, in milliseconds.</param>
         /// <returns>How many were.</returns>
-        private static int snapObjects(EditorBeatmap beatmap)
+        public static int SnapObjects(EditorBeatmap beatmap, double leniency)
         {
             var info = beatmap.ControlPointInfo;
             int snapped = 0;
 
             foreach (var hitObject in beatmap.HitObjects.ToArray())
             {
-                double start = tickJustMissed(info, hitObject.StartTime) ?? hitObject.StartTime;
+                double start = TickJustMissed(info, hitObject.StartTime, leniency) ?? hitObject.StartTime;
 
                 if (hitObject is IHasDuration withDuration and not IHasPath)
                 {
-                    double end = tickJustMissed(info, withDuration.EndTime) ?? withDuration.EndTime;
+                    double end = TickJustMissed(info, withDuration.EndTime, leniency) ?? withDuration.EndTime;
 
                     if (start == hitObject.StartTime && end == withDuration.EndTime)
                         continue;
@@ -192,8 +194,11 @@ namespace osu.Game.Screens.Edit.Timing
         /// Puts every green line that is just off a tick on it, and gives the objects it is moved over what it says.
         /// Red lines stay: they are what the ticks are counted from.
         /// </summary>
+        /// <param name="beatmap">The beatmap.</param>
+        /// <param name="lines">The lines of its file.</param>
+        /// <param name="leniency">How far from a tick a line stands and is still put on it, in milliseconds.</param>
         /// <returns>How many were.</returns>
-        private static int snapLines(EditorBeatmap beatmap, SavedTimingLines lines)
+        public static int SnapLines(EditorBeatmap beatmap, SavedTimingLines lines, double leniency)
         {
             var info = beatmap.ControlPointInfo;
             var edited = lines.Lines.ToList();
@@ -205,7 +210,7 @@ namespace osu.Game.Screens.Edit.Timing
             {
                 var line = edited[i];
 
-                if (line.Uninherited || placeOnTick(info, line.Time) is not double place)
+                if (line.Uninherited || placeOnTick(info, line.Time, leniency) is not double place)
                 {
                     i++;
                     continue;
@@ -251,16 +256,16 @@ namespace osu.Game.Screens.Edit.Timing
         }
 
         /// <summary>
-        /// The tick a time is just off: a millisecond or more from it, and less than <see cref="SNAP_LENIENCY"/>.
+        /// The tick a time is just off: a millisecond or more from it, and less than <paramref name="leniency"/>.
         /// </summary>
         /// <returns>The tick, or null for a time that is on one or too far from any.</returns>
-        private static double? tickJustMissed(ControlPointInfo info, double time)
+        public static double? TickJustMissed(ControlPointInfo info, double time, double leniency)
         {
-            double tick = closestTick(info, time);
+            double tick = ClosestTick(info, time);
             double off = Math.Abs(time - tick);
 
             // times kept in whole milliseconds stand up to one from the tick they are on.
-            return off >= 1 && off < SNAP_LENIENCY ? tick : null;
+            return off >= 1 && off < leniency ? tick : null;
         }
 
         /// <summary>
@@ -268,11 +273,11 @@ namespace osu.Game.Screens.Edit.Timing
         /// in on the tick is written, and from where it is read by an object on the tick.
         /// </summary>
         /// <returns>The time, or null for a line that is there already or too far from any tick.</returns>
-        private static double? placeOnTick(ControlPointInfo info, double time)
+        private static double? placeOnTick(ControlPointInfo info, double time, double leniency)
         {
-            double tick = closestTick(info, time);
+            double tick = ClosestTick(info, time);
 
-            if (Math.Abs(time - tick) >= SNAP_LENIENCY)
+            if (Math.Abs(time - tick) >= leniency)
                 return null;
 
             double place = Math.Floor(tick);
@@ -280,7 +285,10 @@ namespace osu.Game.Screens.Edit.Timing
             return time >= place && time <= tick ? null : place;
         }
 
-        private static double closestTick(ControlPointInfo info, double time)
+        /// <summary>
+        /// The tick of any of the divisors stable's editor offers that is closest to a time.
+        /// </summary>
+        public static double ClosestTick(ControlPointInfo info, double time)
         {
             double closest = double.NaN;
 
