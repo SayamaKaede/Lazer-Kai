@@ -48,6 +48,16 @@ namespace osu.Game.Screens.Edit.Collab
         }
 
         /// <summary>
+        /// Takes every stretch along with its bookmark, when the bookmarks have all moved by the same amount.
+        /// </summary>
+        /// <remarks>
+        /// That is the division that was agreed, at another time: it is what moving the whole beatmap in time does. The
+        /// stretch before the first bookmark opens on none, and stays as it is.
+        /// </remarks>
+        public void MoveAssignments(int by) =>
+            Assignment = Assignment.ToDictionary(a => a.Key == CollabBlock.HEAD ? a.Key : a.Key + by, a => a.Value);
+
+        /// <summary>
         /// Gives a collaborator the name they are actually known by, carrying over everything already given to them.
         /// </summary>
         /// <remarks>

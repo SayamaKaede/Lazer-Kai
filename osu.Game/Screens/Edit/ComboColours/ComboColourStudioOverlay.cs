@@ -256,6 +256,26 @@ namespace osu.Game.Screens.Edit.ComboColours
             sortAndRebuild();
         }
 
+        /// <summary>
+        /// Takes the layout along when the whole beatmap is moved in time.
+        /// </summary>
+        /// <remarks>
+        /// The points are at times of their own and kept beside the beatmap, so nothing that moves the beatmap moves
+        /// them. Left where they were, each would stand after the combo it was put on once the beatmap is moved
+        /// earlier, and colour the next one in its place.
+        /// </remarks>
+        public void MoveInTime(int milliseconds)
+        {
+            if (milliseconds == 0 || project.Points.Count == 0)
+                return;
+
+            foreach (var point in project.Points)
+                point.Time += milliseconds;
+
+            rebuildRows();
+            save();
+        }
+
         private void sortAndRebuild()
         {
             project.Points.Sort((a, b) => a.Time.CompareTo(b.Time));

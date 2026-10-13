@@ -807,6 +807,7 @@ namespace osu.Game.Screens.Edit
                                         {
                                             new EditorMenuItem(EditorStrings.SetPreviewPointToCurrent, MenuItemType.Standard, SetPreviewPointToCurrentTime),
                                             new EditorMenuItem(EditorStrings.SnapAllNotesToCurrentSnapDivisor, MenuItemType.Destructive, confirmSnapAllHitObjectsToCurrentDivisor),
+                                            new EditorMenuItem(LazerKaiGreenLineStrings.WholeOffset, MenuItemType.Standard, AdjustWholeBeatmapOffset),
                                             new EditorMenuItem(EditorStrings.Synchronise, MenuItemType.Destructive, confirmSyncTimingAttributes)
                                             {
                                                 Action = { Disabled = loadableBeatmap.BeatmapSetInfo.Beatmaps.Count < 2 }
@@ -877,6 +878,8 @@ namespace osu.Game.Screens.Edit
                     difficultyGraphDetail = new DifficultyGraphDetailOverlay { State = { Value = Visibility.Hidden } },
                     // above the screens, so the lines can be edited from whichever one is open, as in stable.
                     greenLinePanel = new GreenLinePanel { State = { Value = Visibility.Hidden } },
+                    // above everything else of the editor's, which it stands in the way of while it is open.
+                    wholeBeatmapOffset = new WholeBeatmapOffsetOverlay { State = { Value = Visibility.Hidden } },
                     MutationTracker,
                     autoBackup = new EditorAutoBackup
                     {
@@ -886,6 +889,9 @@ namespace osu.Game.Screens.Edit
                     new EditorPlaybackLoop(),
                 }
             });
+
+            // the colour layout is kept beside the beatmap at times of its own, and goes where the beatmap does.
+            wholeBeatmapOffset.Moved += milliseconds => comboColourStudio.MoveInTime(milliseconds);
 
             // until the composer has loaded and said whether it can place them, which the update loop asks once.
             placementPresetsMenuItem.Action.Disabled = true;
@@ -1904,6 +1910,24 @@ namespace osu.Game.Screens.Edit
 
                 SaveAndReload(withDialog: false);
             }));
+        }
+
+        private WholeBeatmapOffsetOverlay wholeBeatmapOffset;
+
+        /// <summary>
+        /// Opens the window that moves the whole beatmap in time.
+        /// </summary>
+        internal void AdjustWholeBeatmapOffset()
+        {
+            // what the green line panel has pending is held open as one step to undo, which this would become a part of
+            // and be put back with.
+            if (greenLinePanel?.Pending == true)
+            {
+                notifications?.Post(new SimpleNotification { Text = LazerKaiGreenLineStrings.WholeOffsetPending });
+                return;
+            }
+
+            wholeBeatmapOffset.Show();
         }
 
         private EditorMenuItem removeUnneededGreenLinesMenuItem;

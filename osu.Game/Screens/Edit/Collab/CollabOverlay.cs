@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -337,7 +338,11 @@ namespace osu.Game.Screens.Edit.Collab
         {
             base.LoadComplete();
 
-            editorBeatmap.Bookmarks.BindCollectionChanged((_, _) => rebuild());
+            editorBeatmap.Bookmarks.BindCollectionChanged((_, changed) =>
+            {
+                followBookmarksMovedTogether(changed);
+                rebuild();
+            });
             editorBeatmap.BeatmapReprocessed += rebuild;
 
             // moving the slider is working in the panel. It takes the press itself rather than letting it through, so
@@ -345,6 +350,36 @@ namespace osu.Game.Screens.Edit.Collab
             opacity.BindValueChanged(_ => setFocused(true));
 
             rebuild();
+        }
+
+        /// <summary>
+        /// Keeps who has which stretch when every bookmark moves by the same amount, as they do when the whole beatmap is
+        /// moved in time and when that is undone.
+        /// </summary>
+        /// <remarks>
+        /// Any other change to the bookmarks is a division nobody has agreed to yet, and what was given in the stretches it
+        /// changes is dropped as it always was. Moved together, the stretches are the ones that were agreed, and dropping
+        /// them emptied a whole collaboration for an offset put right by a few milliseconds.
+        /// </remarks>
+        private void followBookmarksMovedTogether(NotifyCollectionChangedEventArgs changed)
+        {
+            if (changed.Action != NotifyCollectionChangedAction.Replace || changed.OldItems == null || changed.NewItems == null)
+                return;
+
+            int[] before = changed.OldItems.Cast<int>().ToArray();
+            int[] after = changed.NewItems.Cast<int>().ToArray();
+
+            // every bookmark there is, and each as far as the first.
+            if (before.Length == 0 || before.Length != after.Length || after.Length != editorBeatmap.Bookmarks.Count)
+                return;
+
+            int by = after[0] - before[0];
+
+            if (by == 0 || before.Zip(after).Any(pair => pair.Second - pair.First != by))
+                return;
+
+            project.MoveAssignments(by);
+            save();
         }
 
         /// <summary>

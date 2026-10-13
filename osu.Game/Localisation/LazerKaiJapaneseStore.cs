@@ -280,6 +280,14 @@ namespace osu.Game.Localisation
             [$@"{green_line_prefix}:filter_all"] = @"すべて",
             [$@"{green_line_prefix}:filter_red_lines"] = @"赤線のみ",
             [$@"{green_line_prefix}:filter_green_lines"] = @"緑線のみ",
+            [$@"{green_line_prefix}:whole_offset"] = @"全体のオフセットを調整...",
+            [$@"{green_line_prefix}:whole_offset_header"] = @"全体のオフセットを調整",
+            [$@"{green_line_prefix}:whole_offset_body"] = @"赤線・緑線・ノーツ・休憩時間・ブックマーク・プレビューポイントを、すべて同じ時間だけ移動します。そのあと、ティックから2ms未満ずれているノーツと緑線をティックに合わせます。元に戻すことができます。",
+            [$@"{green_line_prefix}:whole_offset_amount"] = @"移動する時間（ms）",
+            [$@"{green_line_prefix}:whole_offset_amount_hint"] = @"負の数を入力すると、前に移動します。0の場合は移動せず、ティックからずれているものだけを合わせます。",
+            [$@"{green_line_prefix}:whole_offset_apply"] = @"適用",
+            [$@"{green_line_prefix}:whole_offset_moved"] = @"全体を{0}ms移動しました。ティックに合わせた数: ノーツ{1}個、緑線{2}本",
+            [$@"{green_line_prefix}:whole_offset_pending"] = @"先に、緑線の変更を確定するか取り消してください",
             [$@"{green_line_prefix}:not_editable"] = @"「Stableとの互換性を強化する」がオンのとき、Stable形式（v14以前）のosu!の譜面で緑線を編集できます",
 
             // HS モード

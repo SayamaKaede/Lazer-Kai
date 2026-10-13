@@ -136,6 +136,49 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString FilterGreenLines => new TranslatableString(getKey(@"filter_green_lines"), @"Green lines");
 
+        /// <summary>
+        /// "Adjust the offset of the whole beatmap..."
+        /// </summary>
+        public static LocalisableString WholeOffset => new TranslatableString(getKey(@"whole_offset"), @"Adjust the offset of the whole beatmap...");
+
+        /// <summary>
+        /// "Adjust the offset of the whole beatmap"
+        /// </summary>
+        public static LocalisableString WholeOffsetHeader => new TranslatableString(getKey(@"whole_offset_header"), @"Adjust the offset of the whole beatmap");
+
+        /// <summary>
+        /// "The red lines, green lines, objects, breaks, bookmarks and the preview point are all moved by the same amount. Objects and green lines less than 2 ms off a tick are then put on it. It can be undone."
+        /// </summary>
+        public static LocalisableString WholeOffsetBody => new TranslatableString(getKey(@"whole_offset_body"),
+            @"The red lines, green lines, objects, breaks, bookmarks and the preview point are all moved by the same amount. Objects and green lines less than 2 ms off a tick are then put on it. It can be undone.");
+
+        /// <summary>
+        /// "Milliseconds to move by"
+        /// </summary>
+        public static LocalisableString WholeOffsetAmount => new TranslatableString(getKey(@"whole_offset_amount"), @"Milliseconds to move by");
+
+        /// <summary>
+        /// "A negative number moves everything earlier. With 0, nothing is moved and only what is off a tick is put on it."
+        /// </summary>
+        public static LocalisableString WholeOffsetAmountHint => new TranslatableString(getKey(@"whole_offset_amount_hint"),
+            @"A negative number moves everything earlier. With 0, nothing is moved and only what is off a tick is put on it.");
+
+        /// <summary>
+        /// "Apply"
+        /// </summary>
+        public static LocalisableString WholeOffsetApply => new TranslatableString(getKey(@"whole_offset_apply"), @"Apply");
+
+        /// <summary>
+        /// "Moved everything by {0} ms. Put on a tick: {1} objects, {2} green lines."
+        /// </summary>
+        public static LocalisableString WholeOffsetMoved(string amount, int objects, int lines) =>
+            new TranslatableString(getKey(@"whole_offset_moved"), @"Moved everything by {0} ms. Put on a tick: {1} objects, {2} green lines.", amount, objects, lines);
+
+        /// <summary>
+        /// "Confirm or cancel the changes to the green lines first."
+        /// </summary>
+        public static LocalisableString WholeOffsetPending => new TranslatableString(getKey(@"whole_offset_pending"), @"Confirm or cancel the changes to the green lines first.");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

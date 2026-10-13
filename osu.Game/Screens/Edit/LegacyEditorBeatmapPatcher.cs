@@ -102,6 +102,15 @@ namespace osu.Game.Screens.Edit
         {
             var newBookmarks = getNewBeatmap().Bookmarks.ToHashSet();
 
+            // every bookmark moved by the same amount is put back as one change that says so: it is what moving the whole
+            // beatmap in time does to them, and one at a time it would be every bookmark taken out and others put in,
+            // which a collaboration divided at them would be told as.
+            if (movedTogether(editorBeatmap.Bookmarks, newBookmarks) is int by)
+            {
+                editorBeatmap.Bookmarks.ReplaceRange(0, editorBeatmap.Bookmarks.Count, editorBeatmap.Bookmarks.Select(b => b + by).ToList());
+                return;
+            }
+
             foreach (int oldBookmark in editorBeatmap.Bookmarks.ToArray())
             {
                 if (newBookmarks.Contains(oldBookmark))
@@ -119,6 +128,23 @@ namespace osu.Game.Screens.Edit
                 if (idx < 0)
                     editorBeatmap.Bookmarks.Insert(~idx, newBookmark);
             }
+        }
+
+        /// <summary>
+        /// How far every bookmark has gone, where each has gone as far as the others and none has stayed.
+        /// </summary>
+        /// <returns>The amount, or null when they have not all moved by one.</returns>
+        private static int? movedTogether(IReadOnlyCollection<int> oldBookmarks, IReadOnlyCollection<int> newBookmarks)
+        {
+            int[] before = oldBookmarks.Distinct().OrderBy(b => b).ToArray();
+            int[] after = newBookmarks.OrderBy(b => b).ToArray();
+
+            if (before.Length == 0 || before.Length != after.Length || before.Length != oldBookmarks.Count)
+                return null;
+
+            int by = after[0] - before[0];
+
+            return by != 0 && before.Zip(after).All(pair => pair.Second - pair.First == by) ? by : null;
         }
 
         private void processHitObjects(DiffResult result, Func<IBeatmap> getNewBeatmap)
