@@ -3,6 +3,7 @@
 
 using System;
 using System.Globalization;
+using System.Reflection;
 using osu.Framework;
 using osu.Framework.Bindables;
 using osu.Framework.Configuration;
@@ -418,10 +419,50 @@ namespace osu.Game.Configuration
         /// <summary>
         /// Sets a setting from its value as the settings file writes it.
         /// </summary>
+        /// <remarks>
+        /// A setting the settings screen has greyed out is set all the same. The screen greys one out by disabling what
+        /// it shows, which is the setting itself, and a setting that is disabled throws when it is set: a preset
+        /// applied while automatic new combos were off, when their interval is greyed out, took the game down
+        /// (DOTNET-J). Greyed out is that the setting does nothing as things are, not that it is not to be changed, so
+        /// it is set and left greyed out.
+        /// </remarks>
         internal void SetText(OsuSetting lookup, string value)
         {
-            if (ConfigStore[lookup] is IParseable parseable)
+            var setting = ConfigStore[lookup];
+
+            if (setting is not IParseable parseable)
+                return;
+
+            if (!setting.Disabled)
+            {
                 parseable.Parse(value, CultureInfo.InvariantCulture);
+                return;
+            }
+
+            // of a bindable of whatever kind the setting is: nothing that all of them are says how to enable one.
+            var disabled = setting.GetType().GetProperty(nameof(Bindable<bool>.Disabled));
+
+            if (disabled == null)
+                return;
+
+            try
+            {
+                disabled.SetValue(setting, false);
+            }
+            catch (TargetInvocationException)
+            {
+                // somebody has it to themselves, which is another thing than greyed out, and it is theirs to set.
+                return;
+            }
+
+            try
+            {
+                parseable.Parse(value, CultureInfo.InvariantCulture);
+            }
+            finally
+            {
+                disabled.SetValue(setting, true);
+            }
         }
 
         protected override bool CheckLookupContainsPrivateInformation(OsuSetting lookup)

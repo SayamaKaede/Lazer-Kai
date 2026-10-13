@@ -126,6 +126,60 @@ namespace osu.Game.Tests.Editing
         }
 
         /// <summary>
+        /// A setting the settings screen has greyed out is set all the same (DOTNET-J).
+        /// </summary>
+        /// <remarks>
+        /// The interval of automatic new combos is greyed out while they are off, and the two the automatic backup is
+        /// kept by while it is off: greyed out is that the setting does nothing as things are, not that it is not to be
+        /// changed. The screen greys one out by disabling what it shows, which is the setting itself, and a setting
+        /// that is disabled throws when it is set: applying a preset with automatic new combos off took the game down.
+        /// </remarks>
+        [TestCase(OsuSetting.EditorAutoNewComboInterval)]
+        [TestCase(OsuSetting.EditorAutoBackupInterval)]
+        [TestCase(OsuSetting.EditorAutoBackupKeepCount)]
+        public void TestASettingGreyedOutIsSetAllTheSame(OsuSetting setting)
+        {
+            using (var storage = new TemporaryNativeStorage(nameof(LazerKaiSettingsPresetTest)))
+            using (var config = new OsuConfigManager(storage))
+            {
+                // another value than it has, for it to be seen to be set.
+                string other = setting switch
+                {
+                    OsuSetting.EditorAutoNewComboInterval => AutoNewComboInterval.TwoBars.ToString(),
+                    // as a setting that is not a whole number is written.
+                    OsuSetting.EditorAutoBackupInterval => @"7.0",
+                    _ => @"7",
+                };
+
+                var mine = new LazerKaiSettingsPreset(new Dictionary<OsuSetting, string>(LazerKaiSettingsPreset.Capture(config).Values) { [setting] = other });
+
+                Assert.That(config.GetText(setting), Is.Not.EqualTo(other));
+
+                // as the screen has it: a copy of the setting bound to it, which the setting is disabled with.
+                switch (setting)
+                {
+                    case OsuSetting.EditorAutoNewComboInterval:
+                        config.GetBindable<AutoNewComboInterval>(setting).Disabled = true;
+                        break;
+
+                    case OsuSetting.EditorAutoBackupInterval:
+                        config.GetBindable<double>(setting).Disabled = true;
+                        break;
+
+                    default:
+                        config.GetBindable<int>(setting).Disabled = true;
+                        break;
+                }
+
+                Assert.DoesNotThrow(() => mine.ApplyTo(config));
+
+                Assert.That(config.GetText(setting), Is.EqualTo(other));
+                Assert.That(config.GetBindable<AutoNewComboInterval>(OsuSetting.EditorAutoNewComboInterval).Disabled, Is.EqualTo(setting == OsuSetting.EditorAutoNewComboInterval),
+                    "greyed out still, where it was");
+            }
+        }
+
+        /// <summary>
         /// The settings before applying are kept apart from the presets a mapper saved, which cannot be named as it is.
         /// </summary>
         [Test]
