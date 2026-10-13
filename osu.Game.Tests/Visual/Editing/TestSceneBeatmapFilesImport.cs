@@ -39,7 +39,7 @@ namespace osu.Game.Tests.Visual.Editing
         /// </summary>
         private BeatmapSetInfo other = null!;
 
-        private BeatmapFilesScreen? screen => Game.ScreenStack.CurrentScreen as BeatmapFilesScreen;
+        private ImportFromAnotherSetScreen? screen => Game.ScreenStack.CurrentScreen as ImportFromAnotherSetScreen;
 
         private ImportFromAnotherSet import => screen!.Import;
 
@@ -74,7 +74,7 @@ namespace osu.Game.Tests.Visual.Editing
 
             base.SetUpSteps();
 
-            AddStep("open the files of the set", () => Editor.OpenBeatmapFiles());
+            AddStep("open the screen", () => Editor.OpenImportFromAnotherSet());
             AddUntilStep("the sets of the game are listed", () => screen?.IsLoaded == true && import.SetsListed);
         }
 
@@ -132,36 +132,6 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("they are there already now", () => import.SoundRows.Where(r => r.Sound.Standing == ImportStanding.ThereAlready).Select(r => r.Sound.Name),
                 () => Is.EqualTo(new[] { @"drums/tom.ogg", @"Snare.wav", @"soft-hitclap2.wav" }));
             AddAssert("nothing more to bring in", () => !import.ImportButton.Enabled.Value);
-        }
-
-        [Test]
-        public void TestSoundsBroughtInAreSoundsOfTheSetToBeNamed()
-        {
-            var sounds = () => screen!.Sounds;
-
-            choose();
-            AddStep("bring in", () => import.ImportButton.TriggerClick());
-            AddUntilStep("brought in", () => import.Changed);
-
-            AddStep("go to the sounds of the set", () => screen!.Tab.Value = BeatmapFilesScreen.FilesTab.Sounds);
-            AddAssert("the ones brought in are among them", () => sounds().Rows.Select(r => r.Filename), () => Is.SupersetOf(new[] { @"drums/tom.ogg", @"soft-hitclap2.wav" }));
-
-            AddStep("choose the one in a folder", () => sounds().Rows.Single(r => r.Filename == @"drums/tom.ogg").TriggerClick());
-            AddStep("say what it is to be", () =>
-            {
-                sounds().Bank.Current.Value = SoundsOfTheSet.NamedBank.Normal;
-                sounds().Sound.Current.Value = SoundsOfTheSet.NamedSound.HitNormal;
-                sounds().Number.Current.Value = @"9";
-            });
-
-            // beside the difficulties, where stable looks for a hitsound, and the kind of file it was.
-            AddAssert("the name is out of the folder", () => sounds().NewName, () => Is.EqualTo(@"normal-hitnormal9.ogg"));
-            AddStep("rename", () => sounds().RenameButton.TriggerClick());
-            AddAssert("the file has the name", () => hashOf(@"normal-hitnormal9.ogg"), () => Is.EqualTo(theirHashOf(@"drums/tom.ogg")).And.Not.Null);
-            AddAssert("and not the one it had", () => hashOf(@"drums/tom.ogg"), () => Is.Null);
-
-            AddStep("back to the other set", () => screen!.Tab.Value = BeatmapFilesScreen.FilesTab.Import);
-            AddAssert("its sound is one to bring in again", () => import.SoundRows.Single(r => r.Sound.Name == @"drums/tom.ogg").Sound.Standing, () => Is.EqualTo(ImportStanding.New));
         }
 
         [Test]
@@ -266,7 +236,7 @@ namespace osu.Game.Tests.Visual.Editing
             });
             AddUntilStep("back in the editor as it was", () => Game.ScreenStack.CurrentScreen == before);
 
-            AddStep("open the files of the set", () => Editor.OpenBeatmapFiles());
+            AddStep("open the screen", () => Editor.OpenImportFromAnotherSet());
             AddUntilStep("the sets of the game are listed", () => screen?.IsLoaded == true && import.SetsListed);
 
             choose();

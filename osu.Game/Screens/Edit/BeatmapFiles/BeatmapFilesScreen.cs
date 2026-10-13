@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
-using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
@@ -11,30 +10,39 @@ using osu.Framework.Screens;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
-using osu.Game.Graphics.UserInterface;
-using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osuTK;
 
 namespace osu.Game.Screens.Edit.BeatmapFiles
 {
     /// <summary>
-    /// Where the files of the beatmap set being edited are seen to from inside the editor (2026-10-13).
+    /// A screen on which the files of the beatmap set being edited are seen to from inside the editor (2026-10-13).
     /// </summary>
     /// <remarks>
     /// A set has no folder here: one is written out for it to be opened, and the editor waits until it is done with,
     /// so the folders of two sets are never open side by side to copy from one to the other. What a mapper opened the
-    /// folder for is done here instead, on the files as the game keeps them.
+    /// folder for is done on these instead, on the files as the game keeps them: one screen for each thing done, each
+    /// under its own name in the File menu (asked for in place of one screen with a tab for each).
     ///
-    /// The editor is saved before this is opened, as before the folder is: what is brought in is written to the set at
-    /// once, beside the difficulty as it was last saved.
+    /// The editor is saved before one is opened, as before the folder is: what is done is written to the set at once,
+    /// beside the difficulty as it was last saved.
     /// </remarks>
-    public partial class BeatmapFilesScreen : OsuScreen
+    public abstract partial class BeatmapFilesScreen : OsuScreen
     {
-        public ImportFromAnotherSet Import { get; private set; } = null!;
-
         // as in the editor this is a part of: the toolbar would lead out of it by a way that is not this screen's.
         public override bool HideOverlaysOnEnter => true;
+
+        /// <summary>
+        /// What the screen is for, as the File menu calls it.
+        /// </summary>
+        protected abstract LocalisableString Heading { get; }
+
+        /// <summary>
+        /// Whether the files of the set were changed here: the editor then has to open the set again to have them.
+        /// </summary>
+        protected abstract bool Changed { get; }
+
+        protected abstract Drawable CreateContent();
 
         [Resolved]
         private Editor editor { get; set; } = null!;
@@ -44,10 +52,6 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
 
         [Resolved]
         private BeatmapManager beatmaps { get; set; } = null!;
-
-        public SoundsOfTheSet Sounds { get; private set; } = null!;
-
-        public readonly Bindable<FilesTab> Tab = new Bindable<FilesTab>();
 
         private bool reopening;
 
@@ -86,41 +90,14 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
                             {
                                 new Drawable[]
                                 {
-                                    new FillFlowContainer
+                                    new OsuSpriteText
                                     {
-                                        RelativeSizeAxes = Axes.X,
-                                        AutoSizeAxes = Axes.Y,
-                                        Direction = FillDirection.Vertical,
-                                        Spacing = new Vector2(10),
-                                        Children = new Drawable[]
-                                        {
-                                            new OsuSpriteText
-                                            {
-                                                Text = LazerKaiBeatmapFilesStrings.BeatmapFiles,
-                                                Font = OsuFont.Default.With(size: 24, weight: FontWeight.SemiBold),
-                                            },
-                                            new OsuTabControl<FilesTab>
-                                            {
-                                                RelativeSizeAxes = Axes.X,
-                                                Height = 30,
-                                                Current = Tab,
-                                            },
-                                        },
+                                        Text = Heading,
+                                        Font = OsuFont.Default.With(size: 24, weight: FontWeight.SemiBold),
                                     },
                                 },
                                 new[] { Empty() },
-                                new Drawable[]
-                                {
-                                    new Container
-                                    {
-                                        RelativeSizeAxes = Axes.Both,
-                                        Children = new Drawable[]
-                                        {
-                                            Import = new ImportFromAnotherSet(),
-                                            Sounds = new SoundsOfTheSet { Alpha = 0 },
-                                        },
-                                    },
-                                },
+                                new[] { CreateContent() },
                             },
                         },
                     },
@@ -128,29 +105,11 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
             };
         }
 
-        protected override void LoadComplete()
-        {
-            base.LoadComplete();
-
-            Tab.BindValueChanged(tab =>
-            {
-                Import.FadeTo(tab.NewValue == FilesTab.Import ? 1 : 0);
-                Sounds.FadeTo(tab.NewValue == FilesTab.Sounds ? 1 : 0);
-
-                // what was done on the one is what the other has to show: a sound brought in is a sound of the set,
-                // and one given another name is another sound to bring one in over.
-                if (tab.NewValue == FilesTab.Sounds)
-                    Sounds.Refresh();
-                else
-                    Import.Refresh();
-            });
-        }
-
         public override bool OnExiting(ScreenExitEvent e)
         {
             // the editor has the set as it was when it opened it: what was brought in is not among the difficulties it
             // lists, and a sound it looked for and did not find it does not look for again. It opens the set again.
-            if ((Import.Changed || Sounds.Changed) && !reopening)
+            if (Changed && !reopening)
             {
                 reopening = true;
 
@@ -165,15 +124,6 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
             }
 
             return base.OnExiting(e);
-        }
-
-        public enum FilesTab
-        {
-            [LocalisableDescription(typeof(LazerKaiBeatmapFilesStrings), nameof(LazerKaiBeatmapFilesStrings.ImportFromAnotherSet))]
-            Import,
-
-            [LocalisableDescription(typeof(LazerKaiBeatmapFilesStrings), nameof(LazerKaiBeatmapFilesStrings.SoundsOfThisSet))]
-            Sounds,
         }
     }
 }

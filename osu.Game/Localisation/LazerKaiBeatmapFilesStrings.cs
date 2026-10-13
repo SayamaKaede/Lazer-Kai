@@ -10,9 +10,37 @@ namespace osu.Game.Localisation
         private const string prefix = @"osu.Game.Resources.Localisation.LazerKaiBeatmapFiles";
 
         /// <summary>
-        /// "Beatmap files"
+        /// "Edit file names"
         /// </summary>
-        public static LocalisableString BeatmapFiles => new TranslatableString(getKey(@"beatmap_files"), @"Beatmap files");
+        public static LocalisableString EditFileNames => new TranslatableString(getKey(@"edit_file_names"), @"Edit file names");
+
+        /// <summary>
+        /// "Drop .wav, .mp3 or .ogg files on this screen to add them to the beatmap (shorter than 15 seconds)."
+        /// </summary>
+        public static LocalisableString DropHint => new TranslatableString(getKey(@"drop_hint"),
+            @"Drop .wav, .mp3 or .ogg files on this screen to add them to the beatmap (shorter than 15 seconds).");
+
+        /// <summary>
+        /// "Added {0} sound files."
+        /// </summary>
+        public static LocalisableString SoundsAdded(int count) => new TranslatableString(getKey(@"sounds_added"), @"Added {0} sound files.", count);
+
+        /// <summary>
+        /// "Files of 15 seconds or longer cannot be added: {0}"
+        /// </summary>
+        public static LocalisableString TooLongToAdd(string files) => new TranslatableString(getKey(@"too_long_to_add"), @"Files of 15 seconds or longer cannot be added: {0}", files);
+
+        /// <summary>
+        /// "These files could not be read as sound, and were not added: {0}"
+        /// </summary>
+        public static LocalisableString NotReadAsSound(string files) => new TranslatableString(getKey(@"not_read_as_sound"),
+            @"These files could not be read as sound, and were not added: {0}", files);
+
+        /// <summary>
+        /// "Files with the name of this beatmap's song cannot be added: {0}"
+        /// </summary>
+        public static LocalisableString NameOfTheSongNotAdded(string files) => new TranslatableString(getKey(@"name_of_the_song_not_added"),
+            @"Files with the name of this beatmap's song cannot be added: {0}", files);
 
         /// <summary>
         /// "Import from another beatmap"
@@ -104,11 +132,6 @@ namespace osu.Game.Localisation
         /// "Imported {0} difficulties and {1} sounds."
         /// </summary>
         public static LocalisableString Imported(int difficulties, int sounds) => new TranslatableString(getKey(@"imported"), @"Imported {0} difficulties and {1} sounds.", difficulties, sounds);
-
-        /// <summary>
-        /// "Sounds of this beatmap"
-        /// </summary>
-        public static LocalisableString SoundsOfThisSet => new TranslatableString(getKey(@"sounds_of_this_set"), @"Sounds of this beatmap");
 
         /// <summary>
         /// "Choose a sound on the left."

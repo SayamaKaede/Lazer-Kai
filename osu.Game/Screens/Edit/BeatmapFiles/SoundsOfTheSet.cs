@@ -2,17 +2,20 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Framework.Audio.Sample;
+using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
+using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Graphics;
@@ -23,6 +26,8 @@ using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
 using osu.Game.Models;
 using osu.Game.Overlays;
+using osu.Game.Overlays.Dialog;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Screens.Edit.Hitsounds;
 using osuTK;
 using DescriptionAttribute = System.ComponentModel.DescriptionAttribute;
@@ -86,6 +91,23 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
         [Resolved]
         private EditorBeatmap editorBeatmap { get; set; } = null!;
 
+        [Resolved(canBeNull: true)]
+        private IDialogOverlay? dialogOverlay { get; set; }
+
+        [Resolved(canBeNull: true)]
+        private INotificationOverlay? notifications { get; set; }
+
+        /// <summary>
+        /// How long a file is from which it is not taken for a hitsound, in milliseconds. A song dropped here, where
+        /// it would have been dropped on the editor to be the beatmap's, is not made a file of the set beside it.
+        /// </summary>
+        public const double TOO_LONG = 15000;
+
+        /// <summary>
+        /// How the length of a file dropped here is found, in milliseconds: null for one that is no sound.
+        /// </summary>
+        public Func<byte[], double?> LengthOf { get; set; } = SoundLength.Of;
+
         private BeatmapSetInfo set = null!;
 
         private ISampleStore? samples;
@@ -120,17 +142,23 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
                             RelativeSizeAxes = Axes.Both,
                             Children = new Drawable[]
                             {
-                                new OsuScrollContainer
+                                new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
-                                    Child = Rows = new FillFlowContainer<SoundRow>
+                                    // over what is said under the list.
+                                    Padding = new MarginPadding { Bottom = 44 },
+                                    Child = new OsuScrollContainer
                                     {
-                                        RelativeSizeAxes = Axes.X,
-                                        AutoSizeAxes = Axes.Y,
-                                        Direction = FillDirection.Vertical,
-                                        Spacing = new Vector2(4),
-                                        // clear of the scrollbar.
-                                        Padding = new MarginPadding { Right = 14 },
+                                        RelativeSizeAxes = Axes.Both,
+                                        Child = Rows = new FillFlowContainer<SoundRow>
+                                        {
+                                            RelativeSizeAxes = Axes.X,
+                                            AutoSizeAxes = Axes.Y,
+                                            Direction = FillDirection.Vertical,
+                                            Spacing = new Vector2(4),
+                                            // clear of the scrollbar.
+                                            Padding = new MarginPadding { Right = 14 },
+                                        },
                                     },
                                 },
                                 nothing = new OsuSpriteText
@@ -138,6 +166,19 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
                                     Text = LazerKaiBeatmapFilesStrings.NoSounds,
                                     Colour = colourProvider.Foreground1,
                                     Alpha = 0,
+                                },
+                                // what is not to be guessed of a list: that files are dropped on it.
+                                new OsuTextFlowContainer(t =>
+                                {
+                                    t.Font = OsuFont.Default.With(size: 12);
+                                    t.Colour = colourProvider.Foreground1;
+                                })
+                                {
+                                    Anchor = Anchor.BottomLeft,
+                                    Origin = Anchor.BottomLeft,
+                                    RelativeSizeAxes = Axes.X,
+                                    AutoSizeAxes = Axes.Y,
+                                    Text = LazerKaiBeatmapFilesStrings.DropHint,
                                 },
                             },
                         },
@@ -362,6 +403,138 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
             Chosen = name;
 
             Refresh();
+        }
+
+        /// <summary>
+        /// Makes files of sound dropped on the screen sounds of the set, under the names they have.
+        /// </summary>
+        /// <remarks>
+        /// One the set has another sound under the name of is asked about first, as one brought in from another set is.
+        /// One as long as a song is not taken, nor one that cannot be read as sound, nor one named as the set's song.
+        /// </remarks>
+        /// <param name="paths">Where the files are.</param>
+        public void AddFiles(IReadOnlyList<string> paths)
+        {
+            var free = new List<(string name, byte[] contents)>();
+            var taken = new List<(string name, byte[] contents)>();
+
+            var tooLong = new List<string>();
+            var notSound = new List<string>();
+            var songs = new List<string>();
+
+            string? thereAlready = null;
+
+            foreach (string path in paths)
+            {
+                string name = Path.GetFileName(path);
+
+                if (!BeatmapSetSounds.IsSound(name))
+                    continue;
+
+                byte[] contents;
+
+                try
+                {
+                    contents = File.ReadAllBytes(path);
+                }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+                {
+                    notSound.Add(name);
+                    continue;
+                }
+
+                double? length = LengthOf(contents);
+
+                if (length == null)
+                {
+                    notSound.Add(name);
+                    continue;
+                }
+
+                if (length >= TOO_LONG)
+                {
+                    tooLong.Add(name);
+                    continue;
+                }
+
+                string hash;
+
+                using (var stream = new MemoryStream(contents))
+                    hash = stream.ComputeSHA2Hash();
+
+                switch (BeatmapSetSounds.StandingOf(set, name, hash))
+                {
+                    case ImportStanding.New:
+                        free.Add((name, contents));
+                        break;
+
+                    case ImportStanding.InPlaceOfAnother:
+                        taken.Add((name, contents));
+                        break;
+
+                    case ImportStanding.NameOfTheSong:
+                        songs.Add(name);
+                        break;
+
+                    case ImportStanding.ThereAlready:
+                        thereAlready = name;
+                        break;
+                }
+            }
+
+            sayNotAdded(tooLong, LazerKaiBeatmapFilesStrings.TooLongToAdd);
+            sayNotAdded(notSound, LazerKaiBeatmapFilesStrings.NotReadAsSound);
+            sayNotAdded(songs, LazerKaiBeatmapFilesStrings.NameOfTheSongNotAdded);
+
+            // the very file is not put in again, and is shown to be there.
+            if (thereAlready != null && free.Count == 0 && taken.Count == 0 && set.GetFile(thereAlready) is RealmNamedFileUsage there)
+                choose(there.Filename);
+
+            put(free);
+
+            if (taken.Count == 0)
+                return;
+
+            // a sound of the set is not put anything in place of without saying which: it cannot be had back.
+            if (dialogOverlay != null)
+                dialogOverlay.Push(new ConfirmDialog(LazerKaiBeatmapFilesStrings.OverwriteSounds(string.Join(@", ", taken.Select(t => t.name))), () => put(taken)));
+            else
+                put(taken);
+        }
+
+        private void sayNotAdded(IReadOnlyList<string> names, Func<string, LocalisableString> text)
+        {
+            if (names.Count == 0)
+                return;
+
+            notifications?.Post(new SimpleErrorNotification { Text = text(string.Join(@", ", names)) });
+        }
+
+        private void put(IReadOnlyList<(string name, byte[] contents)> sounds)
+        {
+            if (sounds.Count == 0)
+                return;
+
+            foreach (var (name, contents) in sounds)
+            {
+                using (var stream = new MemoryStream(contents))
+                    BeatmapSetSounds.Put(beatmaps, set, name, stream);
+            }
+
+            Changed = true;
+
+            notifications?.Post(new SimpleNotification
+            {
+                Icon = FontAwesome.Solid.FileImport,
+                Text = LazerKaiBeatmapFilesStrings.SoundsAdded(sounds.Count),
+            });
+
+            Refresh();
+
+            // the last of them is chosen, to be given its name next: by the name the set has it under, which for one
+            // put in place of another is as that one's was written.
+            if (set.GetFile(sounds[^1].name) is RealmNamedFileUsage last && Rows.Any(r => r.Filename == last.Filename))
+                choose(last.Filename);
         }
 
         protected override void Dispose(bool isDisposing)

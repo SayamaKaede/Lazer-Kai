@@ -238,9 +238,22 @@ namespace osu.Game.Graphics.UserInterfaceV2
                 game.UnregisterImportHandler(this);
         }
 
+        /// <summary>
+        /// Whether a file dropped on the game at this moment is this selector's to take.
+        /// </summary>
+        /// <remarks>
+        /// A file dropped is given to every selector there is for its kind, whatever is on screen. One that belongs to
+        /// a screen something else has been opened over says here that the file is not meant for it.
+        /// </remarks>
+        protected virtual bool TakesDroppedFiles => true;
+
         Task ICanAcceptFiles.Import(params string[] paths)
         {
-            Schedule(() => Current.Value = new FileInfo(paths.First()));
+            // asked now, not when the file is taken: a selector of a screen that is covered is not run until the
+            // screen is shown again, by when it would be asking about another moment.
+            if (TakesDroppedFiles)
+                Schedule(() => Current.Value = new FileInfo(paths.First()));
+
             return Task.CompletedTask;
         }
 

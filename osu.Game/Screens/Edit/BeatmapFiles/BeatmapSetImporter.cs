@@ -1,7 +1,6 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -56,18 +55,12 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
             // before the difficulties, which are saved as files of the set and say then what the set is made of.
             foreach (var sound in sounds.Where(s => s.CanBeBroughtIn))
             {
-                // stable finds a sound by its name whatever kind of file it is, so another kind of the same name would
-                // be found as well as this one, or before it.
-                foreach (var other in set.Files.Where(f => !string.Equals(f.Filename, sound.Name, StringComparison.OrdinalIgnoreCase)
-                                                           && BeatmapSetSounds.IsTheSameSound(f.Filename, sound.Name)).ToArray())
-                    beatmaps.DeleteFile(set, other);
-
                 using (var stream = theirs.GetStream(sound.Name))
                 {
                     if (stream == null)
                         continue;
 
-                    beatmaps.AddFile(set, stream, sound.Name);
+                    BeatmapSetSounds.Put(beatmaps, set, sound.Name, stream);
                 }
 
                 broughtSounds.Add(sound.Name);

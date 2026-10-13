@@ -8,6 +8,7 @@ using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Screens;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterfaceV2;
@@ -30,6 +31,13 @@ namespace osu.Game.Screens.Edit.Setup
         private readonly bool beatmapHasMultipleDifficulties;
 
         public readonly Bindable<bool> ApplyToAllDifficulties = new Bindable<bool>(true);
+
+        [Resolved(canBeNull: true)]
+        private Editor? editor { get; set; }
+
+        // a sound dropped on a screen opened over the editor is not the beatmap's song for being a file of sound: the
+        // screen sound files are named on takes them for hitsounds (2026-10-13).
+        protected override bool TakesDroppedFiles => editor?.IsCurrentScreen() != false;
 
         public FormBeatmapFileSelector(bool beatmapHasMultipleDifficulties, params string[] handledExtensions)
             : base(handledExtensions)

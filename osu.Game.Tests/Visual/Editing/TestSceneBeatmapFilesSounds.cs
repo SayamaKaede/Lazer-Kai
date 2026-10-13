@@ -1,6 +1,8 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Extensions;
@@ -8,10 +10,13 @@ using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Dialog;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.BeatmapFiles;
+using osu.Game.Screens.Edit.Setup;
 using osu.Game.Tests.Resources;
 
 namespace osu.Game.Tests.Visual.Editing
@@ -28,9 +33,11 @@ namespace osu.Game.Tests.Visual.Editing
 
         private BeatmapInfo edited = null!;
 
-        private BeatmapFilesScreen? screen => Game.ScreenStack.CurrentScreen as BeatmapFilesScreen;
+        private SoundFileNamesScreen? screen => Game.ScreenStack.CurrentScreen as SoundFileNamesScreen;
 
         private SoundsOfTheSet sounds => screen!.Sounds;
+
+        private PopupDialog? dialog => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog;
 
         public override void SetUpSteps()
         {
@@ -44,10 +51,13 @@ namespace osu.Game.Tests.Visual.Editing
 
             base.SetUpSteps();
 
-            AddStep("open the files of the set", () => Editor.OpenBeatmapFiles());
-            AddUntilStep("the screen is up", () => screen?.IsLoaded == true);
-            AddStep("go to its sounds", () => screen!.Tab.Value = BeatmapFilesScreen.FilesTab.Sounds);
-            AddUntilStep("they are listed", () => sounds.Rows.Any());
+            open();
+        }
+
+        private void open()
+        {
+            AddStep("open the screen", () => Editor.OpenSoundFileNames());
+            AddUntilStep("the sounds of the set are listed", () => screen?.IsLoaded == true && sounds.Rows.Any());
         }
 
         [Test]
@@ -181,6 +191,165 @@ namespace osu.Game.Tests.Visual.Editing
             AddUntilStep("the editor opens the set again", () => Editor != before && Editor?.ReadyForUse == true);
             AddAssert("on the difficulty it was on", () => EditorBeatmap.BeatmapInfo.ID, () => Is.EqualTo(edited.ID));
         }
+
+        [Test]
+        public void TestASoundInAFolderIsNamedOutOfIt()
+        {
+            string? tom = null;
+
+            AddStep("a sound in a folder", () =>
+            {
+                using (var stream = new MemoryStream(resource(@"test-sample.ogg")()))
+                    Game.BeatmapManager.AddFile(BeatmapSetFiles.Read(Game.Realm, edited.BeatmapSet!.ID)!, stream, @"drums/tom.ogg");
+
+                tom = hashOf(@"drums/tom.ogg");
+                sounds.Refresh();
+            });
+
+            choose(@"drums/tom.ogg");
+            say(SoundsOfTheSet.NamedBank.Normal, SoundsOfTheSet.NamedSound.HitNormal, @"9");
+
+            // beside the difficulties, where stable looks for a hitsound, and the kind of file it was.
+            AddAssert("the name is out of the folder", () => sounds.NewName, () => Is.EqualTo(@"normal-hitnormal9.ogg"));
+            AddStep("rename", () => sounds.RenameButton.TriggerClick());
+            AddAssert("the file has the name", () => hashOf(@"normal-hitnormal9.ogg"), () => Is.EqualTo(tom).And.Not.Null);
+            AddAssert("and not the one it had", () => hashOf(@"drums/tom.ogg"), () => Is.Null);
+        }
+
+        #region Files dropped on the screen
+
+        [Test]
+        public void TestASoundDroppedOnTheScreenIsASoundOfTheSet()
+        {
+            drop((@"dropped.wav", resource(@"hitsound-no-delay.wav")));
+
+            AddUntilStep("it is listed", names, () => Does.Contain(@"dropped.wav"));
+            AddAssert("it is a file of the set", () => hashOf(@"dropped.wav"), () => Is.Not.Null);
+            AddAssert("and the one chosen, to be named next", () => sounds.Chosen, () => Is.EqualTo(@"dropped.wav"));
+        }
+
+        [Test]
+        public void TestEveryKindOfFileAHitsoundIsCanBeDropped()
+        {
+            drop((@"a.wav", resource(@"hitsound-no-delay.wav")), (@"b.mp3", resource(@"test-sample-cut.mp3")), (@"c.ogg", resource(@"test-sample.ogg")));
+
+            AddUntilStep("they are listed", names, () => Is.SupersetOf(new[] { @"a.wav", @"b.mp3", @"c.ogg" }));
+        }
+
+        [Test]
+        public void TestAFileAsLongAsASongIsNotTaken()
+        {
+            // with one that is taken, for there to be something to see it was looked at by.
+            drop((@"long.mp3", song), (@"short.wav", resource(@"hitsound-no-delay.wav")));
+
+            AddUntilStep("the short one is listed", names, () => Does.Contain(@"short.wav"));
+            AddAssert("the long one is no file of the set", () => hashOf(@"long.mp3"), () => Is.Null);
+        }
+
+        [Test]
+        public void TestAFileThatIsNoSoundIsNotTaken()
+        {
+            drop((@"corrupt.wav", resource(@"corrupt.wav")), (@"fine.ogg", resource(@"test-sample.ogg")));
+
+            AddUntilStep("the one that is a sound is listed", names, () => Does.Contain(@"fine.ogg"));
+            AddAssert("the other is no file of the set", () => hashOf(@"corrupt.wav"), () => Is.Null);
+        }
+
+        [Test]
+        public void TestASoundDroppedOverAnotherOfItsNameIsAskedAbout()
+        {
+            string? kick = null;
+
+            AddStep("note the kick", () => kick = hashOf(@"Kick.wav"));
+
+            // stable does not mind how a name is written.
+            drop((@"kick.wav", resource(@"hitsound-no-delay.wav")));
+
+            AddUntilStep("asked first", () => dialog is ConfirmDialog);
+            AddAssert("the kick is the one it was", () => hashOf(@"Kick.wav"), () => Is.EqualTo(kick));
+
+            AddStep("say so", () => dialog!.PerformOkAction());
+            AddUntilStep("the kick is the one dropped", () => hashOf(@"Kick.wav"), () => Is.Not.EqualTo(kick).And.Not.Null);
+            AddAssert("under the one name still", () => BeatmapSetFiles.Read(Game.Realm, edited.BeatmapSet!.ID)!.Files.Count(f => BeatmapSetSounds.IsTheSameSound(f.Filename, @"Kick.wav")),
+                () => Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TestTheVeryFileDroppedAgainIsLeftAsItIs()
+        {
+            drop((@"Kick.wav", () => new BeatmapSetFiles(Game.BeatmapManager, BeatmapSetFiles.Read(Game.Realm, edited.BeatmapSet!.ID)!).Get(@"Kick.wav")));
+
+            AddUntilStep("it is shown to be there", () => sounds.Chosen, () => Is.EqualTo(@"Kick.wav"));
+            AddAssert("nothing was asked", () => dialog, () => Is.Null);
+            AddAssert("and nothing changed", () => !sounds.Changed);
+        }
+
+        [Test]
+        public void TestWhatIsDroppedHereIsNotMadeTheSongOfTheBeatmap()
+        {
+            Editor before = null!;
+
+            AddStep("leave", () =>
+            {
+                before = Editor;
+                screen!.Exit();
+            });
+            AddUntilStep("back in the editor", () => Game.ScreenStack.CurrentScreen == before);
+
+            // where a file of sound dropped on the editor is made the song of the beatmap.
+            AddStep("go to the setup screen", () => Editor.Mode.Value = EditorScreenMode.SongSetup);
+            AddUntilStep("its file selectors are up", () => Editor.ChildrenOfType<FormBeatmapFileSelector>().Count(s => s.IsLoaded) >= 3);
+            AddWaitStep("let them listen for files", 3);
+
+            open();
+
+            // one this screen does not take either, so that it is left with nothing changed, for the editor it is
+            // left to: what the setup screen is given it does once it is shown again.
+            drop((@"long.mp3", song));
+            AddWaitStep("let it be looked at", 5);
+
+            AddStep("leave", () => screen!.Exit());
+            AddUntilStep("back in the editor", () => Game.ScreenStack.CurrentScreen == before);
+            AddWaitStep("let the setup screen do what it was given", 10);
+
+            AddAssert("the song is the one it was", () => EditorBeatmap.Metadata.AudioFile, () => Is.EqualTo(edited.Metadata.AudioFile));
+            AddAssert("and no other file of sound is one of the set's", () => hashOf(@"long.mp3") == null && hashOf(@"audio.mp3") == null);
+        }
+
+        /// <summary>
+        /// Drops files on the game, as they are dragged onto its window.
+        /// </summary>
+        private void drop(params (string name, Func<byte[]> contents)[] files) => AddStep($"drop {string.Join(@", ", files.Select(f => f.name))}", () =>
+        {
+            var folder = Game.Storage.GetStorageForDirectory(@"dropped");
+
+            string[] paths = files.Select(f =>
+            {
+                using (var stream = folder.CreateFileSafely(f.name))
+                    stream.Write(f.contents());
+
+                return folder.GetFullPath(f.name);
+            }).ToArray();
+
+            Game.Import(paths).WaitSafely();
+        });
+
+        private static Func<byte[]> resource(string name) => () =>
+        {
+            using (var stream = TestResources.OpenResource($@"Samples/{name}"))
+            using (var memory = new MemoryStream())
+            {
+                stream.CopyTo(memory);
+                return memory.ToArray();
+            }
+        };
+
+        /// <summary>
+        /// The song of the beatmap set, which is minutes long.
+        /// </summary>
+        private byte[] song() => new BeatmapSetFiles(Game.BeatmapManager, BeatmapSetFiles.Read(Game.Realm, edited.BeatmapSet!.ID)!).Get(edited.Metadata.AudioFile);
+
+        #endregion
 
         private void choose(string name)
         {

@@ -386,8 +386,13 @@ namespace osu.Game.Localisation
             [$@"{hitsound_prefix}:status_nothing_to_copy_onto"] = @"手前のHSをコピー (コピー先の音なし)",
             [$@"{hitsound_prefix}:status_nothing_before"] = @"手前のHSをコピー (手前の音なし)",
 
-            // 譜面のファイル（他のセットからのインポート）
-            [$@"{beatmap_files_prefix}:beatmap_files"] = @"譜面のファイル",
+            // 他のセットからインポート・ファイル名を編集
+            [$@"{beatmap_files_prefix}:edit_file_names"] = @"ファイル名を編集",
+            [$@"{beatmap_files_prefix}:drop_hint"] = @".wav・.mp3・.ogg のファイルをこの画面にドラッグ＆ドロップすると、このセットに追加できます（15秒未満）",
+            [$@"{beatmap_files_prefix}:sounds_added"] = @"音のファイルを {0} 個追加しました",
+            [$@"{beatmap_files_prefix}:too_long_to_add"] = @"15秒以上のファイルは追加できません: {0}",
+            [$@"{beatmap_files_prefix}:not_read_as_sound"] = @"音として読み取れないファイルは追加していません: {0}",
+            [$@"{beatmap_files_prefix}:name_of_the_song_not_added"] = @"曲のファイルと同じ名前のファイルは追加できません: {0}",
             [$@"{beatmap_files_prefix}:import_from_another_set"] = @"他のセットからインポート",
             [$@"{beatmap_files_prefix}:search_sets"] = @"セットを検索",
             [$@"{beatmap_files_prefix}:more_sets"] = @"ほかに{0}件あります。検索で絞り込んでください",
@@ -406,7 +411,6 @@ namespace osu.Game.Localisation
             [$@"{beatmap_files_prefix}:import"] = @"インポート（難易度 {0}・音 {1}）",
             [$@"{beatmap_files_prefix}:overwrite_sounds"] = @"このセットの音を上書きします: {0}。よろしいですか？",
             [$@"{beatmap_files_prefix}:imported"] = @"インポートしました（難易度 {0}・音 {1}）",
-            [$@"{beatmap_files_prefix}:sounds_of_this_set"] = @"このセットの音",
             [$@"{beatmap_files_prefix}:choose_a_sound"] = @"左の一覧から音を選択してください",
             [$@"{beatmap_files_prefix}:sample_set"] = @"サンプルセット",
             [$@"{beatmap_files_prefix}:sound_kind"] = @"音の種類",

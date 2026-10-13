@@ -2726,9 +2726,14 @@ namespace osu.Game.Screens.Edit
                 yield return externalEdit;
             }
 
-            var beatmapFiles = new EditorMenuItem(LazerKaiBeatmapFilesStrings.BeatmapFiles, MenuItemType.Standard, OpenBeatmapFiles);
-            saveRelatedMenuItems.Add(beatmapFiles);
-            yield return beatmapFiles;
+            // one for each thing the folder was opened to do, rather than one that leads to both.
+            var importFromAnotherSet = new EditorMenuItem(LazerKaiBeatmapFilesStrings.ImportFromAnotherSet, MenuItemType.Standard, OpenImportFromAnotherSet);
+            saveRelatedMenuItems.Add(importFromAnotherSet);
+            yield return importFromAnotherSet;
+
+            var editFileNames = new EditorMenuItem(LazerKaiBeatmapFilesStrings.EditFileNames, MenuItemType.Standard, OpenSoundFileNames);
+            saveRelatedMenuItems.Add(editFileNames);
+            yield return editFileNames;
 
             bool isSetMadeOfLegacyRulesetBeatmaps = (isNewBeatmap && Ruleset.Value.IsLegacyRuleset())
                                                     || (!isNewBeatmap && Beatmap.Value.BeatmapSetInfo.Beatmaps.All(b => b.Ruleset.IsLegacyRuleset()));
@@ -2800,10 +2805,20 @@ namespace osu.Game.Screens.Edit
         }
 
         /// <summary>
-        /// Opens the screen the files of the beatmap set are seen to on, saving first as before its folder is opened:
+        /// Opens the screen difficulties and sounds of another beatmap set are brought into this one on.
+        /// </summary>
+        public void OpenImportFromAnotherSet() => openBeatmapFiles(() => new ImportFromAnotherSetScreen());
+
+        /// <summary>
+        /// Opens the screen the sounds of the beatmap set are given the names they are played as hitsounds by on.
+        /// </summary>
+        public void OpenSoundFileNames() => openBeatmapFiles(() => new SoundFileNamesScreen());
+
+        /// <summary>
+        /// Opens a screen the files of the beatmap set are seen to on, saving first as before its folder is opened:
         /// what is done there is written to the set at once.
         /// </summary>
-        public void OpenBeatmapFiles()
+        private void openBeatmapFiles(Func<BeatmapFilesScreen> screen)
         {
             if (HasUnsavedChanges)
             {
@@ -2812,16 +2827,14 @@ namespace osu.Game.Screens.Edit
                     if (!Save())
                         return false;
 
-                    open();
+                    this.Push(screen());
                     return true;
                 })));
             }
             else
             {
-                open();
+                this.Push(screen());
             }
-
-            void open() => this.Push(new BeatmapFilesScreen());
         }
 
         /// <summary>

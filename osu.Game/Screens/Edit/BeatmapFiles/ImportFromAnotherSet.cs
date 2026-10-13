@@ -323,12 +323,6 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
         }
 
         /// <summary>
-        /// Shows what the chosen set has again: what bringing a sound in would do is another thing once the sounds of
-        /// the set being edited have been given other names.
-        /// </summary>
-        public void Refresh() => showContents();
-
-        /// <summary>
         /// Shows what the chosen set has: its difficulties, to be ticked, and its sounds, ticked already where the set
         /// being edited has none of their names.
         /// </summary>

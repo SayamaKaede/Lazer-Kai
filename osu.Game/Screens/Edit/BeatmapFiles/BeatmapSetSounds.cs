@@ -31,7 +31,7 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
         /// The sounds of <paramref name="source"/>, and what bringing each into <paramref name="target"/> would do there.
         /// </summary>
         public static IReadOnlyList<ImportableSound> ToBringInto(BeatmapSetInfo target, BeatmapSetInfo source) =>
-            Of(source).Select(f => new ImportableSound(f.Filename, standing(f, target))).ToArray();
+            Of(source).Select(f => new ImportableSound(f.Filename, StandingOf(target, f.Filename, f.File.Hash))).ToArray();
 
         /// <summary>
         /// Whether <paramref name="filename"/> is the sound stable plays for <paramref name="name"/>: it finds a sound by
@@ -52,9 +52,15 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
         /// </summary>
         public static bool IsSound(string filename) => SupportedExtensions.AUDIO_EXTENSIONS.Contains(Path.GetExtension(filename).ToLowerInvariant());
 
-        private static ImportStanding standing(RealmNamedFileUsage file, BeatmapSetInfo target)
+        /// <summary>
+        /// What bringing a sound into <paramref name="target"/> would do there.
+        /// </summary>
+        /// <param name="target">The set.</param>
+        /// <param name="name">What the sound is called.</param>
+        /// <param name="hash">The hash of what is in it, as the files of a beatmap set are told apart.</param>
+        public static ImportStanding StandingOf(BeatmapSetInfo target, string name, string hash)
         {
-            var there = target.Files.Where(f => IsTheSameSound(f.Filename, file.Filename)).ToArray();
+            var there = target.Files.Where(f => IsTheSameSound(f.Filename, name)).ToArray();
 
             if (there.Length == 0)
                 return ImportStanding.New;
@@ -64,10 +70,24 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
             if (there.Any(f => songs.Contains(f.Filename, StringComparer.OrdinalIgnoreCase)))
                 return ImportStanding.NameOfTheSong;
 
-            if (there.Length == 1 && string.Equals(there[0].Filename, file.Filename, StringComparison.OrdinalIgnoreCase) && there[0].File.Hash == file.File.Hash)
+            if (there.Length == 1 && string.Equals(there[0].Filename, name, StringComparison.OrdinalIgnoreCase) && there[0].File.Hash == hash)
                 return ImportStanding.ThereAlready;
 
             return ImportStanding.InPlaceOfAnother;
+        }
+
+        /// <summary>
+        /// Makes <paramref name="contents"/> the sound <paramref name="name"/> of <paramref name="set"/>, in place of
+        /// whatever was.
+        /// </summary>
+        public static void Put(BeatmapManager beatmaps, BeatmapSetInfo set, string name, Stream contents)
+        {
+            // stable finds a sound by its name whatever kind of file it is, so another kind of the same name would be
+            // found as well as this one, or before it.
+            foreach (var other in set.Files.Where(f => !string.Equals(f.Filename, name, StringComparison.OrdinalIgnoreCase) && IsTheSameSound(f.Filename, name)).ToArray())
+                beatmaps.DeleteFile(set, other);
+
+            beatmaps.AddFile(set, contents, name);
         }
 
         private static string[] songsOf(BeatmapSetInfo set) =>
