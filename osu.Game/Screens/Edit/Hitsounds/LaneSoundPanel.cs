@@ -60,6 +60,8 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
         public RoundedButton ConvertButton { get; private set; } = null!;
 
+        public LaneSoundPresetButton PresetButton { get; private set; } = null!;
+
         /// <summary>
         /// Whether what is shown is being brought up to date, rather than changed by the mapper.
         /// </summary>
@@ -154,6 +156,13 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                                     Width = 240,
                                                     Height = 36,
                                                     Action = rebuild,
+                                                },
+                                                // the rows are made anew for a preset as they are for the folder:
+                                                // each says what its lane sounds as from when it was made.
+                                                PresetButton = new LaneSoundPresetButton(laneSounds, rebuild)
+                                                {
+                                                    Width = 160,
+                                                    Height = 36,
                                                 },
                                             }
                                         },

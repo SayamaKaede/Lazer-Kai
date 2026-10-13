@@ -9,7 +9,10 @@ using System.Text;
 using NUnit.Framework;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
+using osu.Framework.Graphics.Sprites;
+using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
 using osu.Framework.Platform;
 using osu.Framework.Testing;
@@ -19,9 +22,12 @@ using osu.Game.Beatmaps.Formats;
 using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Extensions;
+using osu.Game.Graphics.UserInterface;
+using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Dialog;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Mania.Edit;
 using osu.Game.Rulesets.Mania.Objects;
 using osu.Game.Rulesets.Mania.UI;
@@ -669,6 +675,320 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddAssert("with them, it is as loud as is said here", () => greenLines(), () => Is.EqualTo(new[] { (whole(beat(1)), 1, 30) }));
         }
+
+        #region Presets
+
+        /// <summary>
+        /// The lanes are kept under a name and put back as a whole: on the lanes in place of what they have become, on
+        /// the rows that show them, and on the notes, which sound as their lanes (2026-10-13).
+        /// </summary>
+        [Test]
+        public void TestLanesKeptAsAPresetComeBackInPlaceOfTheOthers()
+        {
+            Note inTheFirst = null!;
+            Note inTheSecond = null!;
+
+            make();
+
+            give(0, @"kick.wav");
+            give(3, @"drums/snare.wav");
+            AddStep("the fourth is to be a drum clap", () => lanes.SetSlot(3, HitSampleInfo.BANK_DRUM, HitSampleInfo.HIT_CLAP));
+            AddStep("a circle with none is a kick of the drum set", () =>
+            {
+                lanes.GiveFallback(@"kick.wav");
+                lanes.SetFallbackBank(HitSampleInfo.BANK_DRUM);
+            });
+
+            openPresets();
+            AddAssert("none are kept yet", rowNames, () => Is.Empty);
+
+            saveAs(@"kit", @"Save");
+
+            AddAssert("the list shows it", rowNames, () => Is.EqualTo(new[] { @"kit" }));
+            AddAssert("it is kept beside the game, by the sounds of the folder", () => soundsOf(@"kit"), () => Is.EqualTo(new[]
+            {
+                (0, @"kick.wav", HitSampleInfo.BANK_NORMAL, HitSampleInfo.HIT_NORMAL),
+                (3, @"drums/snare.wav", HitSampleInfo.BANK_DRUM, HitSampleInfo.HIT_CLAP),
+            }));
+            AddAssert("with a lane for every lane", () => presets.Load().Find(@"kit")!.Lanes.Count, () => Is.EqualTo(Editor.HITSOUND_CANVAS_LANES));
+            AddAssert("and the hit sound of a circle with none", () =>
+            {
+                var fallback = presets.Load().Find(@"kit")!.Fallback;
+                return (fallback.Source, fallback.Bank);
+            }, () => Is.EqualTo((@"kick.wav", HitSampleInfo.BANK_DRUM)));
+
+            AddStep("put a note in the first lane and one in the second", () =>
+            {
+                EditorBeatmap.Add(inTheFirst = new Note { Column = 0, StartTime = beat(0), Samples = { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) } });
+                EditorBeatmap.Add(inTheSecond = new Note { Column = 1, StartTime = beat(1), Samples = { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) } });
+            });
+
+            give(0, null);
+            give(1, @"drums/snare.wav");
+            give(3, null);
+            AddStep("a circle with none is the skin's again", () =>
+            {
+                lanes.GiveFallback(null);
+                lanes.SetFallbackBank(HitSampleInfo.BANK_SOFT);
+            });
+            AddAssert("the second note sounds as its lane", () => fileOf(inTheSecond), () => Is.EqualTo(@"HS/snare.wav"));
+
+            AddStep("click the preset", () => row(@"kit").TriggerClick());
+
+            AddAssert("the lanes are the preset's", () => Enumerable.Range(0, 4).Select(l => (lanes[l].File, lanes[l].Bank, lanes[l].Sound)).ToArray(), () => Is.EqualTo(new[]
+            {
+                (@"HS/kick.wav", HitSampleInfo.BANK_NORMAL, HitSampleInfo.HIT_NORMAL),
+                (string.Empty, HitSampleInfo.BANK_NORMAL, HitSampleInfo.HIT_NORMAL),
+                (string.Empty, HitSampleInfo.BANK_NORMAL, HitSampleInfo.HIT_NORMAL),
+                (@"HS/snare.wav", HitSampleInfo.BANK_DRUM, HitSampleInfo.HIT_CLAP),
+            }));
+            AddAssert("so is the hit sound of a circle with none", () => (lanes.Fallback.File, lanes.Fallback.Bank), () => Is.EqualTo((@"HS/kick.wav", HitSampleInfo.BANK_DRUM)));
+            AddUntilStep("the rows say so", () => new[] { 0, 1, 3 }.Select(lane =>
+            {
+                var laneRow = Editor.ChildrenOfType<LaneSoundPanel.LaneRow>().SingleOrDefault(r => r.Lane == lane && r.IsLoaded);
+                return (laneRow?.Sound.Current.Value.Path, laneRow?.Bank.Current.Value, laneRow?.Kind.Current.Value);
+            }).ToArray(), () => Is.EqualTo(new (string?, LaneSoundPanel.LaneBank?, LaneSoundPanel.LaneKind?)[]
+            {
+                (@"kick.wav", LaneSoundPanel.LaneBank.Normal, LaneSoundPanel.LaneKind.Normal),
+                (null, LaneSoundPanel.LaneBank.Normal, LaneSoundPanel.LaneKind.Normal),
+                (@"drums/snare.wav", LaneSoundPanel.LaneBank.Drum, LaneSoundPanel.LaneKind.Clap),
+            }));
+            AddUntilStep("the first note sounds as its lane again", () => fileOf(inTheFirst), () => Is.EqualTo(@"HS/kick.wav"));
+            AddAssert("the second is a plain hit", () => inTheSecond.Samples.Select(s => (s.Name, s is ConvertHitObjectParser.FileHitSampleInfo)),
+                () => Is.EqualTo(new[] { (HitSampleInfo.HIT_NORMAL, false) }));
+            AddUntilStep("the presets are closed", () => popover?.State.Value != Visibility.Visible);
+
+            AddStep("save", () => Editor.Save());
+            reopen();
+
+            AddAssert("the lanes are the preset's through a save and a reload", () => (lanes[0].File, lanes[1].File, lanes[3].File),
+                () => Is.EqualTo((@"HS/kick.wav", string.Empty, @"HS/snare.wav")));
+        }
+
+        /// <summary>
+        /// A preset is of the sounds of the folder, not of a beatmap: put on a beatmap that has none of them, it brings
+        /// them into it.
+        /// </summary>
+        [Test]
+        public void TestAPresetKeptElsewhereBringsItsSoundsIntoTheBeatmap()
+        {
+            Note note = null!;
+
+            make();
+
+            AddStep("a preset kept from another beatmap", () => keep(new LaneSoundPreset
+            {
+                Name = @"elsewhere",
+                Lanes =
+                {
+                    new LaneSoundPresetSound(),
+                    new LaneSoundPresetSound { Source = @"drums/snare.wav", Bank = HitSampleInfo.BANK_SOFT, Sound = HitSampleInfo.HIT_WHISTLE },
+                },
+            }));
+            AddAssert("the beatmap has not its sound", () => EditorBeatmap.BeatmapInfo.BeatmapSet!.GetFile(@"HS/snare.wav"), () => Is.Null);
+
+            openPresets();
+            AddAssert("it is offered", rowNames, () => Is.EqualTo(new[] { @"elsewhere" }));
+
+            AddStep("click it", () => row(@"elsewhere").TriggerClick());
+
+            AddAssert("its sound is copied into the beatmap", () => EditorBeatmap.BeatmapInfo.BeatmapSet!.GetFile(@"HS/snare.wav"), () => Is.Not.Null);
+            AddAssert("the second lane is it", () => (lanes[1].File, lanes[1].Source, lanes[1].Bank, lanes[1].Sound),
+                () => Is.EqualTo((@"HS/snare.wav", @"drums/snare.wav", HitSampleInfo.BANK_SOFT, HitSampleInfo.HIT_WHISTLE)));
+
+            AddStep("put a note in that lane", () => EditorBeatmap.Add(note = new Note { Column = 1, StartTime = beat(0), Samples = { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) } }));
+            AddAssert("it sounds as it", () => fileOf(note), () => Is.EqualTo(@"HS/snare.wav"));
+        }
+
+        /// <summary>
+        /// A sound taken out of the folder since the preset was kept is not put on its lane, which is left with none
+        /// rather than with what it had: the lanes are the preset's and nothing else's. The mapper is told which.
+        /// </summary>
+        [Test]
+        public void TestASoundNoLongerInTheFolderLeavesItsLaneWithNone()
+        {
+            Note note = null!;
+
+            make();
+
+            give(0, @"kick.wav");
+            AddStep("put a note in the first lane", () => EditorBeatmap.Add(note = new Note { Column = 0, StartTime = beat(0), Samples = { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) } }));
+            AddAssert("it sounds as it", () => fileOf(note), () => Is.EqualTo(@"HS/kick.wav"));
+
+            AddStep("put on a preset of a sound that is gone and one that is not", () => lanes.ApplyPreset(new LaneSoundPreset
+            {
+                Name = @"old",
+                Lanes =
+                {
+                    new LaneSoundPresetSound { Source = @"gone.wav", Bank = HitSampleInfo.BANK_DRUM, Sound = HitSampleInfo.HIT_FINISH },
+                    new LaneSoundPresetSound { Source = @"kick.wav" },
+                },
+            }));
+
+            AddAssert("the first lane has no sound, and is otherwise as the preset says", () => (lanes[0].File, lanes[0].Source, lanes[0].Bank, lanes[0].Sound),
+                () => Is.EqualTo((string.Empty, string.Empty, HitSampleInfo.BANK_DRUM, HitSampleInfo.HIT_FINISH)));
+            AddUntilStep("its note is a plain hit", () => note.Samples.Select(s => (s.Name, s is ConvertHitObjectParser.FileHitSampleInfo)),
+                () => Is.EqualTo(new[] { (HitSampleInfo.HIT_NORMAL, false) }));
+            AddAssert("the second lane has its sound", () => lanes[1].File, () => Is.EqualTo(@"HS/kick.wav"));
+            AddUntilStep("which sound was left out is said", () => Game.ChildrenOfType<SimpleErrorNotification>()
+                                                                     .Any(n => n.Text.ToString() == @"These sounds are no longer in the hitsound folder, and were left out: gone.wav"));
+        }
+
+        /// <summary>
+        /// A preset kept from more lanes than the difficulty has is put on the lanes there are, and the sounds of the
+        /// others are not brought into the beatmap, where nothing would play them. No lane is left as it was either,
+        /// one that is not there now included.
+        /// </summary>
+        [Test]
+        public void TestLanesTheDifficultyDoesNotHaveAreLeftOut()
+        {
+            make();
+
+            give(17, @"kick.wav");
+
+            AddStep("say the difficulty has four lanes", () => EditorBeatmap.Difficulty.CircleSize = 4);
+            AddStep("put on a preset with a sound for the twelfth", () => lanes.ApplyPreset(new LaneSoundPreset
+            {
+                Name = @"wide",
+                Lanes = Enumerable.Range(0, 12).Select(lane => new LaneSoundPresetSound { Source = lane == 11 ? @"drums/snare.wav" : lane == 1 ? @"kick.wav" : string.Empty }).ToList(),
+            }));
+
+            AddAssert("the second lane has its sound", () => lanes[1].File, () => Is.EqualTo(@"HS/kick.wav"));
+            AddAssert("the sound of the twelfth is not in the beatmap", () => EditorBeatmap.BeatmapInfo.BeatmapSet!.GetFile(@"HS/snare.wav"), () => Is.Null);
+
+            AddStep("say it has eighteen again", () => EditorBeatmap.Difficulty.CircleSize = 18);
+            AddAssert("the twelfth has no sound", () => lanes[11].HasFile, () => Is.False);
+            AddAssert("nor has the last, which had one before the preset", () => lanes[17].HasFile, () => Is.False);
+        }
+
+        [Test]
+        public void TestKeepingUnderATakenNameOverwrites()
+        {
+            make();
+
+            give(0, @"kick.wav");
+
+            openPresets();
+            saveAs(@"mine", @"Save");
+
+            give(0, @"drums/snare.wav");
+
+            saveAs(@"mine", @"Overwrite");
+
+            AddAssert("the list has it once", rowNames, () => Is.EqualTo(new[] { @"mine" }));
+            AddAssert("it holds the lanes as they were the second time", () => soundsOf(@"mine"),
+                () => Is.EqualTo(new[] { (0, @"drums/snare.wav", HitSampleInfo.BANK_NORMAL, HitSampleInfo.HIT_NORMAL) }));
+        }
+
+        /// <summary>
+        /// Lanes none of which has a sound say nothing worth keeping, and are not kept.
+        /// </summary>
+        [Test]
+        public void TestLanesWithNoSoundAtAllAreNotKept()
+        {
+            make();
+
+            openPresets();
+            clickTab(@"Save as a preset");
+            typeName(@"nothing");
+
+            AddAssert("not to be saved", () => saveButton(@"Save").Enabled.Value, () => Is.False);
+
+            AddStep("try all the same", () => saveButton(@"Save").TriggerClick());
+            AddAssert("nothing is kept", () => presets.Load().Presets, () => Is.Empty);
+        }
+
+        /// <summary>
+        /// As the combo colour presets are deleted: the middle button offers it on the row, which is the right button
+        /// for whoever has the two swapped.
+        /// </summary>
+        [Test]
+        public void TestAPresetIsDeletedWithTheMiddleButton()
+        {
+            make();
+
+            give(0, @"kick.wav");
+
+            AddStep("two presets kept before", () => keep(
+                new LaneSoundPreset { Name = @"gone", Lanes = { new LaneSoundPresetSound { Source = @"drums/snare.wav" } } },
+                new LaneSoundPreset { Name = @"kept", Lanes = { new LaneSoundPresetSound { Source = @"kick.wav" } } }));
+
+            openPresets();
+
+            AddStep("press the right button on the first", () =>
+            {
+                InputManager.MoveMouseTo(row(@"gone"));
+                InputManager.Click(MouseButton.Right);
+            });
+            AddWaitStep("give it time", 5);
+            AddAssert("deleting is not offered", () => row(@"gone").DeleteButton.Alpha, () => Is.EqualTo(0));
+
+            AddStep("press the middle button on it", () => InputManager.Click(MouseButton.Middle));
+            AddUntilStep("deleting is offered", () => row(@"gone").DeleteButton.Alpha, () => Is.EqualTo(1));
+            AddAssert("nothing is deleted yet", rowNames, () => Is.EqualTo(new[] { @"gone", @"kept" }));
+
+            AddStep("click delete", () => row(@"gone").DeleteButton.TriggerClick());
+
+            AddAssert("only the other is left", rowNames, () => Is.EqualTo(new[] { @"kept" }));
+            AddAssert("only the other is on disk", () => presets.Load().Presets.Select(p => p.Name), () => Is.EqualTo(new[] { @"kept" }));
+            AddAssert("the presets are still open", () => popover?.State.Value, () => Is.EqualTo(Visibility.Visible));
+            AddAssert("the lanes are left alone", () => lanes[0].File, () => Is.EqualTo(@"HS/kick.wav"));
+        }
+
+        private LaneSoundPresetPopover? popover => Editor.ChildrenOfType<LaneSoundPresetPopover>().SingleOrDefault();
+
+        private LaneSoundPresetStore presets => new LaneSoundPresetStore(Game.Storage);
+
+        /// <summary>
+        /// Keeps presets as if they had been kept before, from any beatmap.
+        /// </summary>
+        private void keep(params LaneSoundPreset[] kept)
+        {
+            var list = presets.Load();
+
+            foreach (var preset in kept)
+                list.Save(preset);
+
+            presets.Save(list);
+        }
+
+        /// <summary>
+        /// The lanes of a preset on disk that have a sound: which, the sound, and what it is to be.
+        /// </summary>
+        private (int lane, string source, string bank, string sound)[] soundsOf(string name) =>
+            presets.Load().Find(name)!.Lanes.Select((l, lane) => (lane, l.Source, l.Bank, l.Sound)).Where(l => l.Source.Length > 0).ToArray();
+
+        private void openPresets()
+        {
+            AddStep("open the presets", () => panel.PresetButton.TriggerClick());
+            AddUntilStep("they are open", () => popover?.State.Value == Visibility.Visible && popover.IsLoaded);
+        }
+
+        // the tab control keeps a dropdown of the same items for when they do not fit, so the tab is found by its kind.
+        private void clickTab(string text) => AddStep($"click \"{text}\"", () =>
+        {
+            InputManager.MoveMouseTo(popover!.ChildrenOfType<TabItem>().Single(i => i.ChildrenOfType<SpriteText>().Any(t => t.Text.ToString() == text)));
+            InputManager.Click(MouseButton.Left);
+        });
+
+        private void typeName(string name) => AddStep($"type \"{name}\"", () =>
+            // the tab control's dropdown has a search box of its own.
+            popover!.ChildrenOfType<OsuTextBox>().Single(t => t.PlaceholderText.ToString() == @"Preset name").Current.Value = name);
+
+        private RoundedButton saveButton(string text) => popover!.ChildrenOfType<RoundedButton>().Single(b => b.Text.ToString() == text);
+
+        private void saveAs(string name, string button)
+        {
+            clickTab(@"Save as a preset");
+            typeName(name);
+            AddStep($"click {button}", () => saveButton(button).TriggerClick());
+        }
+
+        private string[] rowNames() => popover!.ChildrenOfType<LaneSoundPresetPopover.PresetRow>().Select(r => r.Preset.Name).ToArray();
+
+        private LaneSoundPresetPopover.PresetRow row(string name) => popover!.ChildrenOfType<LaneSoundPresetPopover.PresetRow>().Single(r => r.Preset.Name == name);
+
+        #endregion
 
         private LaneSoundPanel panel => Editor.ChildrenOfType<LaneSoundPanel>().Single();
 

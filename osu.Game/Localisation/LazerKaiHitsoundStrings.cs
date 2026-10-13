@@ -432,6 +432,52 @@ namespace osu.Game.Localisation
         public static LocalisableString ConvertedToHitsoundDifficulty(string name, int circles, int files) => new TranslatableString(getKey(@"converted_to_hitsound_difficulty"),
             @"Turned into {0}: {1} circles, {2} sound files", name, circles, files);
 
+        /// <summary>
+        /// "Presets"
+        /// </summary>
+        public static LocalisableString LanePresets => new TranslatableString(getKey(@"lane_presets"), @"Presets");
+
+        /// <summary>
+        /// "Choose a preset"
+        /// </summary>
+        public static LocalisableString ChooseALanePreset => new TranslatableString(getKey(@"choose_a_lane_preset"), @"Choose a preset");
+
+        /// <summary>
+        /// "Save as a preset"
+        /// </summary>
+        public static LocalisableString SaveAsALanePreset => new TranslatableString(getKey(@"save_as_a_lane_preset"), @"Save as a preset");
+
+        /// <summary>
+        /// "No presets saved yet."
+        /// </summary>
+        public static LocalisableString NoLanePresetsYet => new TranslatableString(getKey(@"no_lane_presets_yet"), @"No presets saved yet.");
+
+        /// <summary>
+        /// "Preset name"
+        /// </summary>
+        public static LocalisableString LanePresetName => new TranslatableString(getKey(@"lane_preset_name"), @"Preset name");
+
+        /// <summary>
+        /// "Save"
+        /// </summary>
+        public static LocalisableString SaveLanePreset => new TranslatableString(getKey(@"save_lane_preset"), @"Save");
+
+        /// <summary>
+        /// "Overwrite"
+        /// </summary>
+        public static LocalisableString OverwriteLanePreset => new TranslatableString(getKey(@"overwrite_lane_preset"), @"Overwrite");
+
+        /// <summary>
+        /// "No lane has a sound yet."
+        /// </summary>
+        public static LocalisableString NoLaneSoundsToSave => new TranslatableString(getKey(@"no_lane_sounds_to_save"), @"No lane has a sound yet.");
+
+        /// <summary>
+        /// "These sounds are no longer in the hitsound folder, and were left out: {0}"
+        /// </summary>
+        public static LocalisableString LanePresetSoundsMissing(string sounds) => new TranslatableString(getKey(@"lane_preset_sounds_missing"),
+            @"These sounds are no longer in the hitsound folder, and were left out: {0}", sounds);
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

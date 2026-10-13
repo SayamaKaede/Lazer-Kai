@@ -100,6 +100,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
         {
             Library = new HitsoundLibrary(storage);
             store = new LaneSoundProjectStore(storage);
+            Presets = new LaneSoundPresetStore(storage);
             librarySamples = audio.GetSampleStore(new StorageBackedResourceStore(storage.GetStorageForDirectory(HitsoundLibrary.DIRECTORY)));
 
             project.EnsureLanes(LaneCount);
@@ -423,6 +424,80 @@ namespace osu.Game.Screens.Edit.Hitsounds
             // its own to write the other from.
             converter.Convert(notes(), lanes(), project.Fallback, () => HitsoundDifficultyWriter.EmptyLike(editorBeatmap, osu),
                 project.Volumes.Select(v => (v.Time, v.Volume)).ToArray());
+        }
+
+        #endregion
+
+        #region Presets
+
+        /// <summary>
+        /// Where the lanes are kept under a name, to be put on the lanes of another difficulty.
+        /// </summary>
+        public LaneSoundPresetStore Presets { get; private set; } = null!;
+
+        /// <summary>
+        /// The lanes as they are, to be kept under <paramref name="name"/>.
+        /// </summary>
+        public LaneSoundPreset AsPreset(string name) => LaneSoundPreset.From(name, lanes(), project.Fallback);
+
+        /// <summary>
+        /// Puts the sounds of <paramref name="preset"/> on the lanes in place of every sound they have, copying them
+        /// into the beatmap set; every note sounds as its lane does from then on.
+        /// </summary>
+        /// <remarks>
+        /// The lanes are the preset's afterwards and nothing of what they were, as the combo colours are after a preset
+        /// of those. So a sound that is no longer in the library leaves its lane with none, and the mapper is told
+        /// which. A lane the difficulty does not have is left out, for no sound to be brought into the beatmap that
+        /// nothing in it plays.
+        /// </remarks>
+        public void ApplyPreset(LaneSoundPreset preset)
+        {
+            var missing = new List<string>();
+            var sounds = new List<LaneSound>();
+
+            for (int lane = 0; lane < LaneCount; lane++)
+                sounds.Add(soundOf(lane < preset.Lanes.Count ? preset.Lanes[lane] : new LaneSoundPresetSound(), missing));
+
+            project.Lanes = sounds;
+            project.Fallback = soundOf(preset.Fallback, missing);
+
+            keep();
+
+            applyToEveryNote();
+            Changed?.Invoke();
+
+            if (missing.Count > 0)
+            {
+                notifications?.Post(new SimpleErrorNotification
+                {
+                    Text = LazerKaiHitsoundStrings.LanePresetSoundsMissing(string.Join(@", ", missing.Distinct()))
+                });
+            }
+        }
+
+        /// <summary>
+        /// A sound of a preset as a lane has one, copied into the beatmap set.
+        /// </summary>
+        /// <param name="sound">The sound.</param>
+        /// <param name="missing">Added to if it is no longer in the library.</param>
+        private LaneSound soundOf(LaneSoundPresetSound sound, List<string> missing)
+        {
+            var result = new LaneSound { Bank = sound.Bank, Sound = sound.Sound };
+
+            if (!sound.HasSound)
+                return result;
+
+            string file = copyIntoSet(sound.Source);
+
+            if (file.Length == 0)
+            {
+                missing.Add(sound.Source);
+                return result;
+            }
+
+            result.File = file;
+            result.Source = sound.Source;
+            return result;
         }
 
         #endregion
