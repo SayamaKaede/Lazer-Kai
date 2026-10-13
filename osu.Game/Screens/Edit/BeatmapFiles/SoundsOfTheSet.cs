@@ -1,0 +1,492 @@
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// See the LICENCE file in the repository root for full licence text.
+
+using System;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using osu.Framework.Allocation;
+using osu.Framework.Audio;
+using osu.Framework.Audio.Sample;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Shapes;
+using osu.Framework.Graphics.Sprites;
+using osu.Framework.Input.Events;
+using osu.Game.Beatmaps;
+using osu.Game.Database;
+using osu.Game.Graphics;
+using osu.Game.Graphics.Containers;
+using osu.Game.Graphics.Sprites;
+using osu.Game.Graphics.UserInterface;
+using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Localisation;
+using osu.Game.Models;
+using osu.Game.Overlays;
+using osuTK;
+using DescriptionAttribute = System.ComponentModel.DescriptionAttribute;
+
+namespace osu.Game.Screens.Edit.BeatmapFiles
+{
+    /// <summary>
+    /// The sounds of the beatmap set being edited, to be heard and to be given the names they are played as hitsounds
+    /// by, without the folder of the set being opened (2026-10-13).
+    /// </summary>
+    /// <remarks>
+    /// A name is not typed: the names stable plays are of one form (see <see cref="HitsoundFileName"/>), so the sample
+    /// set, the sound and the number are chosen and the name follows. What plays a sound by its old name, as a note
+    /// of an osu!mania difficulty or a storyboard may, is not told of the new one.
+    /// </remarks>
+    public partial class SoundsOfTheSet : CompositeDrawable
+    {
+        /// <summary>
+        /// Whether a sound has been given another name: the editor then has to open the set again to find it by it.
+        /// </summary>
+        public bool Changed { get; private set; }
+
+        public FillFlowContainer<SoundRow> Rows { get; private set; } = null!;
+
+        public FormEnumDropdown<NamedBank> Bank { get; private set; } = null!;
+
+        public FormEnumDropdown<NamedSound> Sound { get; private set; } = null!;
+
+        public FormNumberBox Number { get; private set; } = null!;
+
+        public RoundedButton RenameButton { get; private set; } = null!;
+
+        /// <summary>
+        /// The sound chosen on the left, by its name in the set.
+        /// </summary>
+        public string? Chosen { get; private set; }
+
+        /// <summary>
+        /// The name what is chosen on the right comes to, if a number is said.
+        /// </summary>
+        public string? NewName { get; private set; }
+
+        [Resolved]
+        private BeatmapManager beatmaps { get; set; } = null!;
+
+        [Resolved]
+        private RealmAccess realm { get; set; } = null!;
+
+        [Resolved]
+        private AudioManager audio { get; set; } = null!;
+
+        [Resolved]
+        private EditorBeatmap editorBeatmap { get; set; } = null!;
+
+        private BeatmapSetInfo set = null!;
+
+        private ISampleStore? samples;
+
+        private OsuSpriteText nothing = null!;
+        private OsuSpriteText chooseOne = null!;
+        private FillFlowContainer form = null!;
+        private OsuSpriteText title = null!;
+        private OsuSpriteText result = null!;
+        private OsuSpriteText taken = null!;
+
+        [BackgroundDependencyLoader]
+        private void load(OverlayColourProvider colourProvider, OsuColour colours)
+        {
+            RelativeSizeAxes = Axes.Both;
+
+            InternalChild = new GridContainer
+            {
+                RelativeSizeAxes = Axes.Both,
+                ColumnDimensions = new[]
+                {
+                    new Dimension(GridSizeMode.Relative, 0.5f),
+                    new Dimension(GridSizeMode.Absolute, 20),
+                    new Dimension(),
+                },
+                Content = new[]
+                {
+                    new[]
+                    {
+                        new Container
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Children = new Drawable[]
+                            {
+                                new OsuScrollContainer
+                                {
+                                    RelativeSizeAxes = Axes.Both,
+                                    Child = Rows = new FillFlowContainer<SoundRow>
+                                    {
+                                        RelativeSizeAxes = Axes.X,
+                                        AutoSizeAxes = Axes.Y,
+                                        Direction = FillDirection.Vertical,
+                                        Spacing = new Vector2(4),
+                                        // clear of the scrollbar.
+                                        Padding = new MarginPadding { Right = 14 },
+                                    },
+                                },
+                                nothing = new OsuSpriteText
+                                {
+                                    Text = LazerKaiBeatmapFilesStrings.NoSounds,
+                                    Colour = colourProvider.Foreground1,
+                                    Alpha = 0,
+                                },
+                            },
+                        },
+                        Empty(),
+                        new Container
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Children = new Drawable[]
+                            {
+                                chooseOne = new OsuSpriteText
+                                {
+                                    Text = LazerKaiBeatmapFilesStrings.ChooseASound,
+                                    Colour = colourProvider.Foreground1,
+                                },
+                                form = new FillFlowContainer
+                                {
+                                    RelativeSizeAxes = Axes.X,
+                                    AutoSizeAxes = Axes.Y,
+                                    Direction = FillDirection.Vertical,
+                                    Spacing = new Vector2(8),
+                                    Children = new Drawable[]
+                                    {
+                                        title = new TruncatingSpriteText
+                                        {
+                                            RelativeSizeAxes = Axes.X,
+                                            Font = OsuFont.Default.With(size: 18, weight: FontWeight.SemiBold),
+                                            Margin = new MarginPadding { Bottom = 6 },
+                                        },
+                                        Bank = new FormEnumDropdown<NamedBank>
+                                        {
+                                            Caption = LazerKaiBeatmapFilesStrings.SampleSet,
+                                        },
+                                        Sound = new FormEnumDropdown<NamedSound>
+                                        {
+                                            Caption = LazerKaiBeatmapFilesStrings.SoundKind,
+                                        },
+                                        Number = new FormNumberBox
+                                        {
+                                            Caption = LazerKaiBeatmapFilesStrings.CustomIndex,
+                                            HintText = LazerKaiBeatmapFilesStrings.CustomIndexHint,
+                                            Current = { Value = @"1" },
+                                        },
+                                        result = new OsuSpriteText
+                                        {
+                                            Margin = new MarginPadding { Top = 6 },
+                                        },
+                                        taken = new OsuSpriteText
+                                        {
+                                            Font = OsuFont.Default.With(size: 14),
+                                            Colour = colours.Orange1,
+                                        },
+                                        RenameButton = new RoundedButton
+                                        {
+                                            Width = 200,
+                                            Height = 36,
+                                            Margin = new MarginPadding { Top = 6 },
+                                            Text = LazerKaiBeatmapFilesStrings.Rename,
+                                            Action = rename,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            Bank.Current.BindValueChanged(_ => updateNewName());
+            Sound.Current.BindValueChanged(_ => updateNewName());
+            Number.Current.BindValueChanged(_ => updateNewName());
+
+            Refresh();
+        }
+
+        /// <summary>
+        /// Reads the sounds of the set again: they are other than they were once some have been brought in.
+        /// </summary>
+        public void Refresh()
+        {
+            set = BeatmapSetFiles.Read(realm, editorBeatmap.BeatmapInfo.BeatmapSet!.ID)!;
+
+            // made again each time: a sound once played is kept by its name, which may be another sound's by now.
+            samples?.Dispose();
+            samples = audio.GetSampleStore(new BeatmapSetFiles(beatmaps, set));
+
+            string[] sounds = BeatmapSetSounds.Of(set).Select(f => f.Filename).ToArray();
+
+            if (Chosen != null && !sounds.Contains(Chosen))
+                Chosen = null;
+
+            Rows.ChildrenEnumerable = sounds.Select(name => new SoundRow(name)
+            {
+                Chosen = () => choose(name),
+                Played = () => samples?.Get(name)?.Play(),
+                IsChosen = name == Chosen,
+            });
+
+            nothing.Alpha = sounds.Length == 0 ? 1 : 0;
+
+            showChosen();
+        }
+
+        private void choose(string name)
+        {
+            Chosen = name;
+
+            foreach (var row in Rows)
+                row.IsChosen = row.Filename == name;
+
+            // one that is a hitsound already is shown as what it is. Any other leaves what was chosen for the one
+            // before it, which the next of a set of sounds is most often one step from.
+            if (HitsoundFileName.Of(name) is HitsoundFileName named)
+            {
+                Bank.Current.Value = (NamedBank)Array.IndexOf(HitsoundFileName.BANKS, named.Bank);
+                Sound.Current.Value = (NamedSound)Array.IndexOf(HitsoundFileName.SOUNDS, named.Sound);
+                Number.Current.Value = named.Index.ToString(CultureInfo.InvariantCulture);
+            }
+
+            showChosen();
+        }
+
+        private void showChosen()
+        {
+            chooseOne.Alpha = Chosen == null ? 1 : 0;
+            form.Alpha = Chosen == null ? 0 : 1;
+
+            title.Text = Chosen ?? string.Empty;
+
+            updateNewName();
+        }
+
+        /// <summary>
+        /// The number said, or null if none is: nothing said is the first, as the name with no number is.
+        /// </summary>
+        private int? number
+        {
+            get
+            {
+                string text = Number.Current.Value.Trim();
+
+                if (text.Length == 0)
+                    return 1;
+
+                return int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out int said) && said >= 1 ? said : null;
+            }
+        }
+
+        private void updateNewName()
+        {
+            NewName = null;
+
+            if (Chosen != null && number is int index)
+                NewName = new HitsoundFileName(HitsoundFileName.BANKS[(int)Bank.Current.Value], HitsoundFileName.SOUNDS[(int)Sound.Current.Value], index).WithExtension(Path.GetExtension(Chosen));
+
+            // the name it has already is no other name to give it.
+            bool another = NewName != null && !string.Equals(NewName, Chosen, StringComparison.OrdinalIgnoreCase);
+
+            var by = another ? BeatmapSetSounds.TakenBy(set, NewName!, Chosen!) : null;
+
+            result.Text = NewName == null ? default : LazerKaiBeatmapFilesStrings.NewName(NewName);
+
+            taken.Text = by == null ? default : LazerKaiBeatmapFilesStrings.NameTaken(by.Filename);
+            taken.Alpha = by == null ? 0 : 1;
+
+            RenameButton.Enabled.Value = another && by == null;
+        }
+
+        private void rename()
+        {
+            if (!RenameButton.Enabled.Value || Chosen == null || NewName == null)
+                return;
+
+            if (set.GetFile(Chosen) is not RealmNamedFileUsage file)
+                return;
+
+            string name = NewName;
+
+            using (var stream = new BeatmapSetFiles(beatmaps, set).GetStream(Chosen))
+            {
+                if (stream == null)
+                    return;
+
+                beatmaps.AddFile(set, stream, name);
+            }
+
+            beatmaps.DeleteFile(set, file);
+
+            Changed = true;
+            Chosen = name;
+
+            Refresh();
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            samples?.Dispose();
+        }
+
+        /// <summary>
+        /// The sample sets, in the order of <see cref="HitsoundFileName.BANKS"/> and written as they are in a name.
+        /// </summary>
+        public enum NamedBank
+        {
+            [Description(@"normal")]
+            Normal,
+
+            [Description(@"soft")]
+            Soft,
+
+            [Description(@"drum")]
+            Drum,
+        }
+
+        /// <summary>
+        /// The sounds of a sample set, in the order of <see cref="HitsoundFileName.SOUNDS"/> and written as they are
+        /// in a name.
+        /// </summary>
+        public enum NamedSound
+        {
+            [Description(@"hitnormal")]
+            HitNormal,
+
+            [Description(@"hitwhistle")]
+            HitWhistle,
+
+            [Description(@"hitfinish")]
+            HitFinish,
+
+            [Description(@"hitclap")]
+            HitClap,
+
+            [Description(@"slidertick")]
+            SliderTick,
+
+            [Description(@"sliderslide")]
+            SliderSlide,
+
+            [Description(@"sliderwhistle")]
+            SliderWhistle,
+        }
+
+        /// <summary>
+        /// One sound of the set: clicked to be given a name, and played to be heard.
+        /// </summary>
+        public partial class SoundRow : OsuClickableContainer
+        {
+            public readonly string Filename;
+
+            public Action? Chosen { get; init; }
+
+            public Action? Played { get; init; }
+
+            public IconButton PlayButton { get; private set; } = null!;
+
+            private bool isChosen;
+
+            public bool IsChosen
+            {
+                get => isChosen;
+                set
+                {
+                    isChosen = value;
+
+                    if (IsLoaded)
+                        updateColour();
+                }
+            }
+
+            private Box background = null!;
+
+            [Resolved]
+            private OverlayColourProvider colourProvider { get; set; } = null!;
+
+            public SoundRow(string filename)
+            {
+                Filename = filename;
+
+                // given here rather than in the loader: the clickable container sizes its content from these in a
+                // loader of its own, which runs before this class's.
+                RelativeSizeAxes = Axes.X;
+                AutoSizeAxes = Axes.Y;
+            }
+
+            [BackgroundDependencyLoader]
+            private void load()
+            {
+                Masking = true;
+                CornerRadius = 5;
+                Action = () => Chosen?.Invoke();
+
+                Children = new Drawable[]
+                {
+                    background = new Box { RelativeSizeAxes = Axes.Both },
+                    new Container
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        AutoSizeAxes = Axes.Y,
+                        Padding = new MarginPadding { Horizontal = 8, Vertical = 6 },
+                        Child = new GridContainer
+                        {
+                            RelativeSizeAxes = Axes.X,
+                            AutoSizeAxes = Axes.Y,
+                            ColumnDimensions = new[]
+                            {
+                                new Dimension(GridSizeMode.Absolute, 28),
+                                new Dimension(),
+                            },
+                            RowDimensions = new[] { new Dimension(GridSizeMode.AutoSize) },
+                            Content = new[]
+                            {
+                                new Drawable[]
+                                {
+                                    PlayButton = new IconButton
+                                    {
+                                        Anchor = Anchor.CentreLeft,
+                                        Origin = Anchor.CentreLeft,
+                                        Size = new Vector2(20),
+                                        IconScale = new Vector2(0.55f),
+                                        Icon = FontAwesome.Solid.Play,
+                                        TooltipText = LazerKaiBeatmapFilesStrings.PlaySound,
+                                        Action = () => Played?.Invoke(),
+                                    },
+                                    new TruncatingSpriteText
+                                    {
+                                        Anchor = Anchor.CentreLeft,
+                                        Origin = Anchor.CentreLeft,
+                                        RelativeSizeAxes = Axes.X,
+                                        Text = Filename,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                };
+
+                updateColour();
+            }
+
+            private void updateColour() =>
+                background.FadeColour(isChosen ? colourProvider.Background1 : IsHovered ? colourProvider.Background2 : colourProvider.Background3, 100, Easing.OutQuint);
+
+            protected override bool OnHover(HoverEvent e)
+            {
+                updateColour();
+                return base.OnHover(e);
+            }
+
+            protected override void OnHoverLost(HoverLostEvent e)
+            {
+                updateColour();
+                base.OnHoverLost(e);
+            }
+        }
+    }
+}

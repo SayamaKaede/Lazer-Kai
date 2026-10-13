@@ -386,6 +386,36 @@ namespace osu.Game.Localisation
             [$@"{hitsound_prefix}:status_nothing_to_copy_onto"] = @"手前のHSをコピー (コピー先の音なし)",
             [$@"{hitsound_prefix}:status_nothing_before"] = @"手前のHSをコピー (手前の音なし)",
 
+            // 譜面のファイル（他のセットからのインポート）
+            [$@"{beatmap_files_prefix}:beatmap_files"] = @"譜面のファイル",
+            [$@"{beatmap_files_prefix}:import_from_another_set"] = @"他のセットからインポート",
+            [$@"{beatmap_files_prefix}:search_sets"] = @"セットを検索",
+            [$@"{beatmap_files_prefix}:more_sets"] = @"ほかに{0}件あります。検索で絞り込んでください",
+            [$@"{beatmap_files_prefix}:no_sets_found"] = @"該当するセットはありません",
+            [$@"{beatmap_files_prefix}:choose_a_set"] = @"左の一覧からセットを選択してください",
+            [$@"{beatmap_files_prefix}:set_summary"] = @"{0} · 難易度 {1}",
+            [$@"{beatmap_files_prefix}:difficulties"] = @"難易度",
+            [$@"{beatmap_files_prefix}:sounds"] = @"音のファイル",
+            [$@"{beatmap_files_prefix}:no_sounds"] = @"音のファイルはありません",
+            [$@"{beatmap_files_prefix}:select_all"] = @"すべて選択",
+            [$@"{beatmap_files_prefix}:select_none"] = @"すべて解除",
+            [$@"{beatmap_files_prefix}:play_sound"] = @"再生",
+            [$@"{beatmap_files_prefix}:there_already"] = @"同じものがあります",
+            [$@"{beatmap_files_prefix}:in_place_of_another"] = @"同じ名前の別の音があります。チェックすると上書きします",
+            [$@"{beatmap_files_prefix}:name_of_the_song"] = @"曲のファイルと同じ名前のためインポートできません",
+            [$@"{beatmap_files_prefix}:import"] = @"インポート（難易度 {0}・音 {1}）",
+            [$@"{beatmap_files_prefix}:overwrite_sounds"] = @"このセットの音を上書きします: {0}。よろしいですか？",
+            [$@"{beatmap_files_prefix}:imported"] = @"インポートしました（難易度 {0}・音 {1}）",
+            [$@"{beatmap_files_prefix}:sounds_of_this_set"] = @"このセットの音",
+            [$@"{beatmap_files_prefix}:choose_a_sound"] = @"左の一覧から音を選択してください",
+            [$@"{beatmap_files_prefix}:sample_set"] = @"サンプルセット",
+            [$@"{beatmap_files_prefix}:sound_kind"] = @"音の種類",
+            [$@"{beatmap_files_prefix}:custom_index"] = @"番号",
+            [$@"{beatmap_files_prefix}:custom_index_hint"] = @"1 は番号なしの名前になります",
+            [$@"{beatmap_files_prefix}:new_name"] = @"変更後の名前: {0}",
+            [$@"{beatmap_files_prefix}:name_taken"] = @"この名前は使用中です: {0}",
+            [$@"{beatmap_files_prefix}:rename"] = @"名前を変更",
+
             // リプレイの解析設定
             [$@"{replay_prefix}:hide_hidden_effect"] = @"HDの効果を非表示",
             [$@"{replay_prefix}:hide_flashlight_effect"] = @"FLの効果を非表示",
@@ -685,6 +715,7 @@ namespace osu.Game.Localisation
         private const string saved_lines_prefix = @"osu.Game.Resources.Localisation.LazerKaiSavedLines";
         private const string green_line_prefix = @"osu.Game.Resources.Localisation.LazerKaiGreenLine";
         private const string hitsound_prefix = @"osu.Game.Resources.Localisation.LazerKaiHitsound";
+        private const string beatmap_files_prefix = @"osu.Game.Resources.Localisation.LazerKaiBeatmapFiles";
         private const string song_select_prefix = @"osu.Game.Resources.Localisation.LazerKaiSongSelect";
         private const string preset_prefix = @"osu.Game.Resources.Localisation.PlacementPreset";
         private const string combo_colour_preset_prefix = @"osu.Game.Resources.Localisation.LazerKaiComboColourPreset";

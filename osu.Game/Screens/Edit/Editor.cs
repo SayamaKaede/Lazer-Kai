@@ -54,6 +54,7 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Screens.Backgrounds;
+using osu.Game.Screens.Edit.BeatmapFiles;
 using osu.Game.Screens.Edit.ComboColours;
 using osu.Game.Screens.Edit.Presets;
 using osu.Game.Screens.Edit.DifficultyGraph;
@@ -2725,6 +2726,10 @@ namespace osu.Game.Screens.Edit
                 yield return externalEdit;
             }
 
+            var beatmapFiles = new EditorMenuItem(LazerKaiBeatmapFilesStrings.BeatmapFiles, MenuItemType.Standard, OpenBeatmapFiles);
+            saveRelatedMenuItems.Add(beatmapFiles);
+            yield return beatmapFiles;
+
             bool isSetMadeOfLegacyRulesetBeatmaps = (isNewBeatmap && Ruleset.Value.IsLegacyRuleset())
                                                     || (!isNewBeatmap && Beatmap.Value.BeatmapSetInfo.Beatmaps.All(b => b.Ruleset.IsLegacyRuleset()));
             bool submissionAvailable = api.Endpoints.BeatmapSubmissionServiceUrl != null;
@@ -2792,6 +2797,31 @@ namespace osu.Game.Screens.Edit
             {
                 this.Push(new ExternalEditScreen());
             }
+        }
+
+        /// <summary>
+        /// Opens the screen the files of the beatmap set are seen to on, saving first as before its folder is opened:
+        /// what is done there is written to the set at once.
+        /// </summary>
+        public void OpenBeatmapFiles()
+        {
+            if (HasUnsavedChanges)
+            {
+                dialogOverlay.Push(new SaveRequiredPopupDialog(() => attemptMutationOperation(() =>
+                {
+                    if (!Save())
+                        return false;
+
+                    open();
+                    return true;
+                })));
+            }
+            else
+            {
+                open();
+            }
+
+            void open() => this.Push(new BeatmapFilesScreen());
         }
 
         /// <summary>
