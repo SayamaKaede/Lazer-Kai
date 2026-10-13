@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace osu.Game.Beatmaps.Formats
@@ -21,6 +22,8 @@ namespace osu.Game.Beatmaps.Formats
         private const string general = @"[General]";
         private const string metadata = @"[Metadata]";
         private const string events = @"[Events]";
+        private const string timing_points = @"[TimingPoints]";
+        private const string hit_objects = @"[HitObjects]";
 
         /// <summary>
         /// What a difficulty says that is the whole set's, by the section it is said in.
@@ -42,7 +45,9 @@ namespace osu.Game.Beatmaps.Formats
         /// <param name="file">The file of the difficulty brought in.</param>
         /// <param name="like">The file of a difficulty of the set it is brought into.</param>
         /// <param name="name">What it is called there.</param>
-        public static string AsOneOf(string file, string like, string name)
+        /// <param name="shift">How many custom sets on from their own its sounds are brought into the set as, where they
+        /// are: every line and every object of a custom set is then of the one that many on, to sound as it did.</param>
+        public static string AsOneOf(string file, string like, string name, int shift = 0)
         {
             var (said, backgrounds) = read(like);
 
@@ -100,6 +105,14 @@ namespace osu.Game.Beatmaps.Formats
                             written.AddRange(backgrounds);
 
                         backgroundsWritten = true;
+                        continue;
+
+                    case timing_points when shift != 0 && isData(trimmed):
+                        written.Add(lineOfCustomSet(line, shift));
+                        continue;
+
+                    case hit_objects when shift != 0 && isData(trimmed):
+                        written.Add(objectOfCustomSet(line, shift));
                         continue;
                 }
 
@@ -170,6 +183,65 @@ namespace osu.Game.Beatmaps.Formats
             }
 
             return (said, backgrounds);
+        }
+
+        private static bool isData(string line) => line.Length > 0 && !line.StartsWith(@"//", StringComparison.Ordinal);
+
+        /// <summary>
+        /// A red or green line as one of the custom set <paramref name="shift"/> on from its own. A line of none
+        /// follows the skin, and stays as it is.
+        /// </summary>
+        private static string lineOfCustomSet(string line, int shift)
+        {
+            string[] fields = line.Split(',');
+
+            if (fields.Length <= 4 || !shifted(ref fields[4], shift))
+                return line;
+
+            return string.Join(',', fields);
+        }
+
+        /// <summary>
+        /// An object as one of the custom set <paramref name="shift"/> on from its own, where it says one of its own
+        /// rather than following its line.
+        /// </summary>
+        private static string objectOfCustomSet(string line, int shift)
+        {
+            string[] fields = line.Split(',');
+
+            if (fields.Length < 5 || !int.TryParse(fields[3].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int type))
+                return line;
+
+            // where each kind of object says its own sounds. A hold note of osu!mania says them after where it ends,
+            // in the same field.
+            bool hold = (type & 128) != 0;
+            int field = hold ? 5 : (type & 2) != 0 ? 10 : (type & 8) != 0 ? 6 : 5;
+
+            if (fields.Length <= field)
+                return line;
+
+            // the sample sets of the hit and of the additions, and then the custom set.
+            string[] sounds = fields[field].Split(':');
+            int index = hold ? 3 : 2;
+
+            if (sounds.Length <= index || !shifted(ref sounds[index], shift))
+                return line;
+
+            fields[field] = string.Join(':', sounds);
+            return string.Join(',', fields);
+        }
+
+        /// <summary>
+        /// Makes the custom set written in <paramref name="field"/> the one <paramref name="shift"/> on.
+        /// </summary>
+        /// <returns>Whether there was one written there.</returns>
+        private static bool shifted(ref string field, int shift)
+        {
+            if (!int.TryParse(field.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int index) || index < 1)
+                return false;
+
+            field = (index + shift).ToString(CultureInfo.InvariantCulture);
+            return true;
         }
 
         /// <summary>

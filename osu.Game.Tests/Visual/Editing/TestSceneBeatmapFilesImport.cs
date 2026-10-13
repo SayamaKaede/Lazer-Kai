@@ -135,6 +135,77 @@ namespace osu.Game.Tests.Visual.Editing
         }
 
         [Test]
+        public void TestTheCustomSetsToShiftByStartFromOne()
+        {
+            AddAssert("nothing is shifted unless it is said", () => !import.ShiftToggle.Current.Value);
+
+            // the set being edited has no sound of a custom set to be beside.
+            AddAssert("by one", () => import.ShiftBy.Current.Value, () => Is.EqualTo(@"1"));
+
+            AddStep("up", () => import.ShiftUp.TriggerClick());
+            AddAssert("by two", () => import.ShiftBy.Current.Value, () => Is.EqualTo(@"2"));
+
+            AddStep("down twice", () =>
+            {
+                import.ShiftDown.TriggerClick();
+                import.ShiftDown.TriggerClick();
+            });
+            AddAssert("by no less than one", () => import.ShiftBy.Current.Value, () => Is.EqualTo(@"1"));
+        }
+
+        /// <summary>
+        /// The names of the sounds alone, unless the difficulties are said to follow them: the sounds are as often
+        /// brought in to be used by hand.
+        /// </summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TestHitsoundsAreBroughtInAsCustomSetsFurtherOn(bool difficultiesToo)
+        {
+            choose();
+
+            AddStep("tick the hitsound difficulty", () => import.DifficultyRows.Single(r => r.Difficulty.DifficultyName == @"Hitsounds").Box.Current.Value = true);
+
+            AddAssert("the difficulties do not follow unless it is said", () => !import.ShiftDifficulties.Current.Value);
+
+            AddStep("three custom sets on", () =>
+            {
+                import.ShiftBy.Current.Value = @"3";
+                import.ShiftToggle.Current.Value = true;
+                import.ShiftDifficulties.Current.Value = difficultiesToo;
+            });
+
+            AddAssert("the difficulty is ticked still", () => import.DifficultyRows.Single(r => r.Difficulty.DifficultyName == @"Hitsounds").Box.Current.Value);
+
+            AddAssert("a sound of a custom set is to be of the one three on", () => import.SoundRows.Select(r => (r.Sound.Source, r.Sound.Name)),
+                () => Does.Contain((@"soft-hitclap2.wav", @"soft-hitclap5.wav")));
+
+            // and is what it was to the set: in place of the one there, whichever custom sets the others go to.
+            AddAssert("one of none is to be as it is", () => import.SoundRows.Select(r => (r.Sound.Source, r.Sound.Name, r.Sound.Standing)),
+                () => Does.Contain((@"Kick.wav", @"Kick.wav", ImportStanding.InPlaceOfAnother)));
+
+            AddStep("bring in", () => import.ImportButton.TriggerClick());
+            AddUntilStep("brought in", () => import.Changed);
+
+            AddAssert("the sound is a file of the set under that name", () => hashOf(@"soft-hitclap5.wav"), () => Is.EqualTo(theirHashOf(@"soft-hitclap2.wav")).And.Not.Null);
+            AddAssert("and not under its own", () => hashOf(@"soft-hitclap2.wav"), () => Is.Null);
+
+            AddAssert(difficultiesToo ? "the lines of the difficulty are of the custom sets three on" : "the lines of the difficulty are of the custom sets they were",
+                () => section(fileOf(editedSet().Beatmaps.Single(b => b.DifficultyName == @"Hitsounds")), @"[TimingPoints]").Where(l => l.Length > 0), () => Is.EqualTo(difficultiesToo
+                    ? new[]
+                    {
+                        @"500,400,4,2,4,60,1,0",
+                        @"700,-100,4,2,5,40,0,0",
+                        @"900,-50,4,2,6,40,0,1",
+                    }
+                    : new[]
+                    {
+                        @"500,400,4,2,1,60,1,0",
+                        @"700,-100,4,2,2,40,0,0",
+                        @"900,-50,4,2,3,40,0,1",
+                    }));
+        }
+
+        [Test]
         public void TestASoundInPlaceOfAnotherIsBroughtInOnceItIsSaidTo()
         {
             string? kick = null;

@@ -30,8 +30,23 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
         /// <summary>
         /// The sounds of <paramref name="source"/>, and what bringing each into <paramref name="target"/> would do there.
         /// </summary>
-        public static IReadOnlyList<ImportableSound> ToBringInto(BeatmapSetInfo target, BeatmapSetInfo source) =>
-            Of(source).Select(f => new ImportableSound(f.Filename, StandingOf(target, f.Filename, f.File.Hash))).ToArray();
+        /// <param name="target">The set brought into.</param>
+        /// <param name="source">The set brought from.</param>
+        /// <param name="shift">How many custom sets on from their own the sounds are brought in as: see
+        /// <see cref="HitsoundFileName.Shifted"/>.</param>
+        public static IReadOnlyList<ImportableSound> ToBringInto(BeatmapSetInfo target, BeatmapSetInfo source, int shift = 0) =>
+            Of(source).Select(f =>
+            {
+                string name = HitsoundFileName.Shifted(f.Filename, shift);
+
+                return new ImportableSound(name, StandingOf(target, name, f.File.Hash)) { Source = f.Filename };
+            }).ToArray();
+
+        /// <summary>
+        /// The highest custom set any sound of <paramref name="set"/> is of, or 0 if it has none of any.
+        /// </summary>
+        public static int HighestCustomIndex(BeatmapSetInfo set) =>
+            set.Files.Select(f => HitsoundFileName.Of(f.Filename)?.Index ?? 0).DefaultIfEmpty(0).Max();
 
         /// <summary>
         /// Whether <paramref name="filename"/> is the sound stable plays for <paramref name="name"/>: it finds a sound by
@@ -97,10 +112,15 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
     /// <summary>
     /// A sound of another beatmap set, by its name there.
     /// </summary>
-    /// <param name="Name">Its name in the set it is a file of, which is its name where it is brought in.</param>
+    /// <param name="Name">Its name where it is brought in.</param>
     /// <param name="Standing">What bringing it in would do.</param>
     public record ImportableSound(string Name, ImportStanding Standing)
     {
+        /// <summary>
+        /// Its name in the set it is a file of: <see cref="Name"/>, unless it is brought in as another custom set.
+        /// </summary>
+        public string Source { get; init; } = Name;
+
         /// <summary>
         /// Whether it is brought in if asked for: one that is there already has nothing to bring.
         /// </summary>

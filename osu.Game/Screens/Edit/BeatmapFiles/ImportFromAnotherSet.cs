@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using osu.Framework.Allocation;
@@ -28,6 +29,7 @@ using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Dialog;
 using osu.Game.Overlays.Notifications;
+using osu.Game.Screens.Edit.Hitsounds;
 using osuTK;
 
 namespace osu.Game.Screens.Edit.BeatmapFiles
@@ -65,6 +67,32 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
         public RoundedButton? TickAllButton { get; private set; }
 
         public RoundedButton? TickNoneButton { get; private set; }
+
+        /// <summary>
+        /// Whether the sounds are brought in as the custom sets <see cref="ShiftBy"/> on from their own: for a set
+        /// that has sounds of the same custom sets already, which are not to be put anything in place of.
+        /// </summary>
+        public FormCheckBox ShiftToggle { get; private set; } = null!;
+
+        /// <summary>
+        /// Whether the difficulties brought in with them are written for those custom sets as well, to sound as the
+        /// sounds brought in. Not unless it is said: asked for after the two were first one toggle, since the sounds
+        /// are as often brought in to be used by hand (2026-10-14).
+        /// </summary>
+        public FormCheckBox ShiftDifficulties { get; private set; } = null!;
+
+        public FormNumberBox ShiftBy { get; private set; } = null!;
+
+        public IconButton ShiftUp { get; private set; } = null!;
+
+        public IconButton ShiftDown { get; private set; } = null!;
+
+        /// <summary>
+        /// How wide the box the number of custom sets is said in is: as the custom index of the hitsound screen.
+        /// </summary>
+        private const float shift_by_width = 165;
+
+        private Container shiftByPart = null!;
 
         public IEnumerable<DifficultyRow> DifficultyRows => contents.OfType<DifficultyRow>();
 
@@ -206,6 +234,8 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
                                 new Dimension(),
                                 new Dimension(GridSizeMode.Absolute, 10),
                                 new Dimension(GridSizeMode.AutoSize),
+                                new Dimension(GridSizeMode.Absolute, 10),
+                                new Dimension(GridSizeMode.AutoSize),
                             },
                             Content = new[]
                             {
@@ -222,6 +252,78 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
                                             Spacing = new Vector2(4),
                                             // clear of the scrollbar.
                                             Padding = new MarginPadding { Right = 14 },
+                                        },
+                                    },
+                                },
+                                new[] { Empty() },
+                                new Drawable[]
+                                {
+                                    // under the list rather than in it: said once for whichever set is chosen.
+                                    new GridContainer
+                                    {
+                                        RelativeSizeAxes = Axes.X,
+                                        AutoSizeAxes = Axes.Y,
+                                        ColumnDimensions = new[]
+                                        {
+                                            new Dimension(),
+                                            new Dimension(GridSizeMode.Absolute, 10),
+                                            new Dimension(GridSizeMode.Absolute, shift_by_width),
+                                        },
+                                        RowDimensions = new[]
+                                        {
+                                            new Dimension(GridSizeMode.AutoSize),
+                                            new Dimension(GridSizeMode.Absolute, 6),
+                                            new Dimension(GridSizeMode.AutoSize),
+                                        },
+                                        Content = new[]
+                                        {
+                                            new Drawable[]
+                                            {
+                                                ShiftToggle = new FormCheckBox
+                                                {
+                                                    Caption = LazerKaiBeatmapFilesStrings.ShiftCustomIndex,
+                                                    HintText = LazerKaiBeatmapFilesStrings.ShiftCustomIndexHint,
+                                                },
+                                                Empty(),
+                                                // as the custom index of the hitsound screen is: a number to say, with
+                                                // arrows at its end that take it one up or down.
+                                                shiftByPart = new Container
+                                                {
+                                                    RelativeSizeAxes = Axes.X,
+                                                    AutoSizeAxes = Axes.Y,
+                                                    Children = new Drawable[]
+                                                    {
+                                                        ShiftBy = new FormNumberBox
+                                                        {
+                                                            Caption = LazerKaiBeatmapFilesStrings.ShiftBy,
+                                                        },
+                                                        new FillFlowContainer
+                                                        {
+                                                            Anchor = Anchor.CentreRight,
+                                                            Origin = Anchor.CentreRight,
+                                                            AutoSizeAxes = Axes.Both,
+                                                            Direction = FillDirection.Vertical,
+                                                            Margin = new MarginPadding { Right = 6 },
+                                                            Children = new Drawable[]
+                                                            {
+                                                                ShiftUp = new HitsoundPanel.IndexStepButton(1) { Action = () => stepShift(1) },
+                                                                ShiftDown = new HitsoundPanel.IndexStepButton(-1) { Action = () => stepShift(-1) },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                            new[] { Empty(), Empty(), Empty() },
+                                            new[]
+                                            {
+                                                ShiftDifficulties = new FormCheckBox
+                                                {
+                                                    Caption = LazerKaiBeatmapFilesStrings.ShiftDifficultiesToo,
+                                                    HintText = LazerKaiBeatmapFilesStrings.ShiftDifficultiesTooHint,
+                                                },
+                                                Empty(),
+                                                Empty(),
+                                            },
                                         },
                                     },
                                 },
@@ -254,8 +356,40 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
                 search = Scheduler.AddDelayed(listSets, search_delay);
             });
 
-            showContents();
+            // from the custom set after the last this set has, which is where sounds brought in are beside its own.
+            int highest = BeatmapSetSounds.HighestCustomIndex(BeatmapSetFiles.Read(realm, editorBeatmap.BeatmapInfo.BeatmapSet!.ID)!);
+
+            ShiftBy.Current.Value = Math.Max(1, highest).ToString(CultureInfo.InvariantCulture);
+
+            ShiftBy.Current.BindValueChanged(_ => shiftChanged());
+            ShiftToggle.Current.BindValueChanged(_ => shiftChanged(), true);
+
             readSets();
+        }
+
+        /// <summary>
+        /// How many custom sets on from their own the sounds are brought in as: none, unless it is said so.
+        /// </summary>
+        private int shift => ShiftToggle.Current.Value && int.TryParse(ShiftBy.Current.Value?.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out int by) ? by : 0;
+
+        private void shiftChanged()
+        {
+            // the number says nothing while it is not asked for, nor does whether the difficulties follow it.
+            shiftByPart.Alpha = ShiftToggle.Current.Value ? 1 : 0.5f;
+            ShiftDifficulties.Alpha = ShiftToggle.Current.Value ? 1 : 0.5f;
+
+            // the sounds have other names, and are other sounds to the set brought into.
+            showContents();
+        }
+
+        /// <summary>
+        /// Takes the number of custom sets one up or down, and no lower than one: none is the toggle's to say.
+        /// </summary>
+        private void stepShift(int by)
+        {
+            int now = int.TryParse(ShiftBy.Current.Value?.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out int said) ? said : 1;
+
+            ShiftBy.Current.Value = Math.Max(1, now + by).ToString(CultureInfo.InvariantCulture);
         }
 
         /// <summary>
@@ -328,6 +462,9 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
         /// </summary>
         private void showContents()
         {
+            // shown again for the same set, the difficulties ticked are ticked still.
+            var ticked = DifficultyRows.Where(r => r.Box.Current.Value).Select(r => r.Difficulty.ID).ToHashSet();
+
             contents.Clear();
 
             if (source == null)
@@ -355,9 +492,15 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
             contents.Add(heading(LazerKaiBeatmapFilesStrings.Difficulties));
 
             foreach (var difficulty in source.Beatmaps.OrderBy(b => b.Ruleset.OnlineID).ThenBy(b => b.StarRating))
-                contents.Add(new DifficultyRow(difficulty) { Ticked = updateImportButton });
+            {
+                contents.Add(new DifficultyRow(difficulty)
+                {
+                    Ticked = updateImportButton,
+                    Box = { Current = { Value = ticked.Contains(difficulty.ID) } },
+                });
+            }
 
-            var sounds = BeatmapSetSounds.ToBringInto(edited, source);
+            var sounds = BeatmapSetSounds.ToBringInto(edited, source, shift);
 
             contents.Add(new Container
             {
@@ -412,7 +555,7 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
                 contents.Add(new SoundRow(sound)
                 {
                     Ticked = updateImportButton,
-                    Played = () => previews?.Get(sound.Name)?.Play(),
+                    Played = () => previews?.Get(sound.Source)?.Play(),
                 });
             }
 
@@ -469,7 +612,8 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
             if (source == null)
                 return;
 
-            var imported = new BeatmapSetImporter(beatmaps).Import(editorBeatmap.BeatmapInfo, source, difficulties, sounds);
+            // the sounds are under the names they are to have already: what is said here is for the difficulties.
+            var imported = new BeatmapSetImporter(beatmaps).Import(editorBeatmap.BeatmapInfo, source, difficulties, sounds, ShiftDifficulties.Current.Value ? shift : 0);
 
             Changed = true;
 
@@ -651,7 +795,9 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
 
                 Box = new OsuCheckbox(nubOnRight: false)
                 {
-                    LabelText = Sound.Name,
+                    // by the name it is to have, which is what is in place of another or not, and by the one it has
+                    // where that is another.
+                    LabelText = Sound.Source == Sound.Name ? Sound.Name : LazerKaiBeatmapFilesStrings.ShiftedFrom(Sound.Name, Sound.Source),
                     Current = { Value = Sound.Standing == ImportStanding.New },
                 };
 

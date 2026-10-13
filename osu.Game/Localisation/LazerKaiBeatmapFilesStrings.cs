@@ -173,6 +173,38 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString Rename => new TranslatableString(getKey(@"rename"), @"Rename");
 
+        /// <summary>
+        /// "Shift custom indices on import"
+        /// </summary>
+        public static LocalisableString ShiftCustomIndex => new TranslatableString(getKey(@"shift_custom_index"), @"Shift custom indices on import");
+
+        /// <summary>
+        /// "Hitsounds named like soft-hitclap2.wav are imported under the name of the custom index higher by the number on the right, without overwriting the hitsounds this beatmap has."
+        /// </summary>
+        public static LocalisableString ShiftCustomIndexHint => new TranslatableString(getKey(@"shift_custom_index_hint"),
+            @"Hitsounds named like soft-hitclap2.wav are imported under the name of the custom index higher by the number on the right, without overwriting the hitsounds this beatmap has.");
+
+        /// <summary>
+        /// "Shift the custom indices in the difficulties too"
+        /// </summary>
+        public static LocalisableString ShiftDifficultiesToo => new TranslatableString(getKey(@"shift_difficulties_too"), @"Shift the custom indices in the difficulties too");
+
+        /// <summary>
+        /// "The custom index of the green and red lines and of the objects of the difficulties imported is raised by the same number, for them to play the hitsounds imported with them."
+        /// </summary>
+        public static LocalisableString ShiftDifficultiesTooHint => new TranslatableString(getKey(@"shift_difficulties_too_hint"),
+            @"The custom index of the green and red lines and of the objects of the difficulties imported is raised by the same number, for them to play the hitsounds imported with them.");
+
+        /// <summary>
+        /// "Shift by"
+        /// </summary>
+        public static LocalisableString ShiftBy => new TranslatableString(getKey(@"shift_by"), @"Shift by");
+
+        /// <summary>
+        /// "{0} (was {1})"
+        /// </summary>
+        public static LocalisableString ShiftedFrom(string name, string source) => new TranslatableString(getKey(@"shifted_from"), @"{0} (was {1})", name, source);
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

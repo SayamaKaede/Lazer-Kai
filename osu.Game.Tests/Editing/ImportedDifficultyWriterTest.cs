@@ -227,6 +227,56 @@ namespace osu.Game.Tests.Editing
         }
 
         [Test]
+        public void TestCustomSetsAreSoManyOnWhenTheSoundsAreBroughtInAsThose()
+        {
+            string[] numbered = theirs.Select(l => l switch
+            {
+                // a circle of a custom set of its own, a slider of one, and a hold note of osu!mania, which says
+                // where it ends before the rest.
+                @"256,192,900,1,8,0:0:0:0:" => @"256,192,900,1,8,0:0:2:70:",
+                @"256,192,500,5,0,0:0:0:0:" => @"256,192,500,5,0,0:0:0:0:",
+                _ => l,
+            }).Concat(new[]
+            {
+                @"100,100,1300,2,0,L|200:100,1,90,2|0,0:0|0:0,0:0:1:0:",
+                @"100,100,1700,2,0,L|200:100,1,90,2|0,0:0|0:0",
+                @"64,192,2100,128,0,2500:0:0:2:70:",
+                @"256,192,2900,1,0,0:0:3:70:own.wav",
+                @"",
+            }).ToArray();
+
+            string file = ImportedDifficultyWriter.AsOneOf(stable(numbered), lazer(ours), @"Hitsounds", 3);
+
+            // a line of no custom set follows the skin, whichever the sets are.
+            Assert.That(section(file, @"[TimingPoints]"), Is.EqualTo(new[]
+            {
+                @"500,400,4,2,4,60,1,0",
+                @"900,-50,4,2,6,40,0,1",
+                @"",
+            }));
+
+            Assert.That(section(file, @"[HitObjects]").Where(l => l.Length > 0), Is.EqualTo(new[]
+            {
+                // one that says none of its own follows its line.
+                @"256,192,500,5,0,0:0:0:0:",
+                @"256,192,900,1,8,0:0:5:70:",
+                @"100,100,1300,2,0,L|200:100,1,90,2|0,0:0|0:0,0:0:4:0:",
+                // the sample sets of a slider's ends are no custom set.
+                @"100,100,1700,2,0,L|200:100,1,90,2|0,0:0|0:0",
+                @"64,192,2100,128,0,2500:0:0:5:70:",
+                @"256,192,2900,1,0,0:0:6:70:own.wav",
+            }));
+        }
+
+        [Test]
+        public void TestALineOfNoCustomSetStaysOne()
+        {
+            string[] skinned = theirs.Select(l => l == @"500,400,4,2,1,60,1,0" ? @"500,400,4,2,0,60,1,0" : l).ToArray();
+
+            Assert.That(section(ImportedDifficultyWriter.AsOneOf(stable(skinned), lazer(ours), @"Hitsounds", 3), @"[TimingPoints]")[0], Is.EqualTo(@"500,400,4,2,0,60,1,0"));
+        }
+
+        [Test]
         public void TestTheLinesEndAsTheFilesDid()
         {
             string file = written();

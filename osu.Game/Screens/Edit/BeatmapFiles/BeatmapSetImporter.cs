@@ -41,8 +41,12 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
         /// the song, the background and the names as it does.</param>
         /// <param name="from">The set brought from.</param>
         /// <param name="difficulties">Which of its difficulties.</param>
-        /// <param name="sounds">Which of its sounds. One that would be put in place of another is.</param>
-        public Imported Import(BeatmapInfo into, BeatmapSetInfo from, IEnumerable<BeatmapInfo> difficulties, IEnumerable<ImportableSound> sounds)
+        /// <param name="sounds">Which of its sounds, under the names they are to have. One that would be put in place of
+        /// another is.</param>
+        /// <param name="shift">How many custom sets on from their own the difficulties are written for, where the sounds
+        /// are brought in as those and the difficulties are to sound as them: see
+        /// <see cref="ImportedDifficultyWriter.AsOneOf"/>. The sounds themselves are under the names they are given.</param>
+        public Imported Import(BeatmapInfo into, BeatmapSetInfo from, IEnumerable<BeatmapInfo> difficulties, IEnumerable<ImportableSound> sounds, int shift = 0)
         {
             // read afresh, so that what is brought in is added to the set as the game has it now.
             var reference = beatmaps.GetWorkingBeatmap(into, true);
@@ -55,7 +59,7 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
             // before the difficulties, which are saved as files of the set and say then what the set is made of.
             foreach (var sound in sounds.Where(s => s.CanBeBroughtIn))
             {
-                using (var stream = theirs.GetStream(sound.Name))
+                using (var stream = theirs.GetStream(sound.Source))
                 {
                     if (stream == null)
                         continue;
@@ -81,7 +85,7 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
                         continue;
 
                     string name = NamingUtils.GetNextBestName(set.Beatmaps.Select(b => b.DifficultyName), difficulty.DifficultyName);
-                    string written = ImportedDifficultyWriter.AsOneOf(Encoding.UTF8.GetString(file), Encoding.UTF8.GetString(like), name);
+                    string written = ImportedDifficultyWriter.AsOneOf(Encoding.UTF8.GetString(file), Encoding.UTF8.GetString(like), name, shift);
 
                     broughtDifficulties.Add(beatmaps.AddDifficultyFromFile(set, reference, Encoding.UTF8.GetBytes(written)).BeatmapInfo.DifficultyName);
                 }

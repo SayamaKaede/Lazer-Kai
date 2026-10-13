@@ -68,6 +68,51 @@ namespace osu.Game.Tests.Editing
             }
         }
 
+        [TestCase(@"soft-hitclap2.wav", 3, @"soft-hitclap5.wav")]
+        // the first custom set is the name with no number.
+        [TestCase(@"normal-hitnormal.wav", 3, @"normal-hitnormal4.wav")]
+        [TestCase(@"drum-sliderslide10.ogg", 1, @"drum-sliderslide11.ogg")]
+        [TestCase(@"soft-hitclap2.wav", 0, @"soft-hitclap2.wav")]
+        // a name of no custom set has none to be another.
+        [TestCase(@"kick.wav", 3, @"kick.wav")]
+        [TestCase(@"HS/soft-hitclap2.wav", 3, @"HS/soft-hitclap2.wav")]
+        public void TestANameIsOfTheCustomSetSoManyOn(string filename, int by, string expected)
+        {
+            Assert.That(HitsoundFileName.Shifted(filename, by), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void TestTheHighestCustomSetOfABeatmapSet()
+        {
+            Assert.That(BeatmapSetSounds.HighestCustomIndex(set(@"kick.wav")), Is.EqualTo(0));
+            Assert.That(BeatmapSetSounds.HighestCustomIndex(set(@"soft-hitclap.wav")), Is.EqualTo(1));
+            Assert.That(BeatmapSetSounds.HighestCustomIndex(set(@"soft-hitclap.wav", @"drum-hitfinish7.ogg", @"normal-hitnormal3.wav")), Is.EqualTo(7));
+        }
+
+        [Test]
+        public void TestASoundBroughtInUnderAnotherCustomSetIsNotInPlaceOfTheOneThere()
+        {
+            var ours = set(@"soft-hitclap2.wav", @"kick.wav");
+            var theirs = set(@"soft-hitclap2.wav", @"kick.wav");
+
+            // told apart by what is in them, which here is their names: the same in both.
+            theirs.Files.Single(f => f.Filename == @"soft-hitclap2.wav").File.Hash = @"another clap";
+            theirs.Files.Single(f => f.Filename == @"kick.wav").File.Hash = @"another kick";
+
+            Assert.That(BeatmapSetSounds.ToBringInto(ours, theirs).Select(s => (s.Source, s.Name, s.Standing)), Is.EqualTo(new[]
+            {
+                (@"kick.wav", @"kick.wav", ImportStanding.InPlaceOfAnother),
+                (@"soft-hitclap2.wav", @"soft-hitclap2.wav", ImportStanding.InPlaceOfAnother),
+            }));
+
+            Assert.That(BeatmapSetSounds.ToBringInto(ours, theirs, 2).Select(s => (s.Source, s.Name, s.Standing)), Is.EqualTo(new[]
+            {
+                // a name of no custom set is brought in as it is, and is in place of the one there still.
+                (@"kick.wav", @"kick.wav", ImportStanding.InPlaceOfAnother),
+                (@"soft-hitclap2.wav", @"soft-hitclap4.wav", ImportStanding.New),
+            }));
+        }
+
         private static BeatmapSetInfo set(params string[] files)
         {
             var made = new BeatmapSetInfo();

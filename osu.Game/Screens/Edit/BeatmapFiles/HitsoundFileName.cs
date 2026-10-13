@@ -43,6 +43,19 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
         public string WithExtension(string extension) => $@"{Bank}-{Sound}{(Index >= 2 ? Index.ToString(CultureInfo.InvariantCulture) : string.Empty)}{extension}";
 
         /// <summary>
+        /// The name <paramref name="filename"/> has in the custom set <paramref name="by"/> on from its own. A name
+        /// that is of no custom set is as it was.
+        /// </summary>
+        /// <remarks>
+        /// For sounds brought into a beatmap set that has sounds of the same custom sets already, which are not to be
+        /// put anything in place of: brought in as the sets after them, they are beside them instead.
+        /// </remarks>
+        public static string Shifted(string filename, int by) =>
+            by != 0 && Of(filename) is HitsoundFileName name && name.Index + by >= 1
+                ? (name with { Index = name.Index + by }).WithExtension(Path.GetExtension(filename))
+                : filename;
+
+        /// <summary>
         /// What <paramref name="filename"/> is played as, or null if it is no name of the form.
         /// </summary>
         public static HitsoundFileName? Of(string filename)
