@@ -99,6 +99,34 @@ namespace osu.Game.Tests.Visual.Editing
         }
 
         [Test]
+        public void TestTheArrowsTakeTheNumberOneUpOrDown()
+        {
+            choose(@"Snare.wav");
+            say(SoundsOfTheSet.NamedBank.Drum, SoundsOfTheSet.NamedSound.HitFinish, @"1");
+
+            AddStep("up", () => sounds.NumberUp.TriggerClick());
+            AddAssert("the next custom set", () => (sounds.Number.Current.Value, sounds.NewName), () => Is.EqualTo((@"2", @"drum-hitfinish2.wav")));
+
+            AddStep("up", () => sounds.NumberUp.TriggerClick());
+            AddStep("down", () => sounds.NumberDown.TriggerClick());
+            AddAssert("back on it", () => sounds.Number.Current.Value, () => Is.EqualTo(@"2"));
+
+            AddStep("down twice", () =>
+            {
+                sounds.NumberDown.TriggerClick();
+                sounds.NumberDown.TriggerClick();
+            });
+            AddAssert("there is none before the first", () => (sounds.Number.Current.Value, sounds.NewName), () => Is.EqualTo((@"1", @"drum-hitfinish.wav")));
+
+            AddStep("say no number", () => sounds.Number.Current.Value = string.Empty);
+            AddStep("up", () => sounds.NumberUp.TriggerClick());
+            AddAssert("up from the first", () => sounds.Number.Current.Value, () => Is.EqualTo(@"2"));
+
+            // as the custom index of the hitsound screen is: a number's box, not a name's.
+            AddAssert("the box is as wide as a number needs", () => sounds.Number.DrawWidth, () => Is.EqualTo(165).And.LessThan(sounds.Bank.DrawWidth));
+        }
+
+        [Test]
         public void TestANameAnotherSoundHasCannotBeGiven()
         {
             string? snare = null;

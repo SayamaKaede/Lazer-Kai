@@ -23,6 +23,7 @@ using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
 using osu.Game.Models;
 using osu.Game.Overlays;
+using osu.Game.Screens.Edit.Hitsounds;
 using osuTK;
 using DescriptionAttribute = System.ComponentModel.DescriptionAttribute;
 
@@ -51,6 +52,15 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
         public FormEnumDropdown<NamedSound> Sound { get; private set; } = null!;
 
         public FormNumberBox Number { get; private set; } = null!;
+
+        public IconButton NumberUp { get; private set; } = null!;
+
+        public IconButton NumberDown { get; private set; } = null!;
+
+        /// <summary>
+        /// How wide the number's box is: as the custom index of the hitsound screen.
+        /// </summary>
+        private const float number_width = 165;
 
         public RoundedButton RenameButton { get; private set; } = null!;
 
@@ -164,11 +174,34 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
                                         {
                                             Caption = LazerKaiBeatmapFilesStrings.SoundKind,
                                         },
-                                        Number = new FormNumberBox
+                                        // as the custom index of the hitsound screen is: a number to say, no wider than
+                                        // a number, with arrows at its end that take it one up or down.
+                                        new Container
                                         {
-                                            Caption = LazerKaiBeatmapFilesStrings.CustomIndex,
-                                            HintText = LazerKaiBeatmapFilesStrings.CustomIndexHint,
-                                            Current = { Value = @"1" },
+                                            Width = number_width,
+                                            AutoSizeAxes = Axes.Y,
+                                            Children = new Drawable[]
+                                            {
+                                                Number = new FormNumberBox
+                                                {
+                                                    Caption = LazerKaiBeatmapFilesStrings.CustomIndex,
+                                                    HintText = LazerKaiBeatmapFilesStrings.CustomIndexHint,
+                                                    Current = { Value = @"1" },
+                                                },
+                                                new FillFlowContainer
+                                                {
+                                                    Anchor = Anchor.CentreRight,
+                                                    Origin = Anchor.CentreRight,
+                                                    AutoSizeAxes = Axes.Both,
+                                                    Direction = FillDirection.Vertical,
+                                                    Margin = new MarginPadding { Right = 6 },
+                                                    Children = new Drawable[]
+                                                    {
+                                                        NumberUp = new HitsoundPanel.IndexStepButton(1) { Action = () => stepNumber(1) },
+                                                        NumberDown = new HitsoundPanel.IndexStepButton(-1) { Action = () => stepNumber(-1) },
+                                                    },
+                                                },
+                                            },
                                         },
                                         result = new OsuSpriteText
                                         {
@@ -279,6 +312,11 @@ namespace osu.Game.Screens.Edit.BeatmapFiles
                 return int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out int said) && said >= 1 ? said : null;
             }
         }
+
+        /// <summary>
+        /// Takes the number one up or down, from the first if none is said. There is no custom set before the first.
+        /// </summary>
+        private void stepNumber(int by) => Number.Current.Value = Math.Max(1, (number ?? 1) + by).ToString(CultureInfo.InvariantCulture);
 
         private void updateNewName()
         {
