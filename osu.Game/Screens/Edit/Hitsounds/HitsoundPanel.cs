@@ -134,7 +134,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
         private OsuSpriteText targetText = null!;
         private TruncatingSpriteText statusText = null!;
         private OsuSpriteText lineHeading = null!;
-        private FillFlowContainer lineRow = null!;
+        private StableFormatPart lineRow = null!;
+        private StableFormatNotice stableFormatNotice = null!;
+        private IBindable<StableFormatNeeds>? stableFormatNeeds;
 
         /// <summary>
         /// What the last copy or paste did, as shown over the buttons: left there until the next one, so that what was
@@ -177,7 +179,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
         private FormDropdown<string> copySource = null!;
         private RoundedButton copyFromButton = null!;
 
-        private Drawable nearLinesHeading = null!;
+        private StableFormatPart nearLinesHeading = null!;
         private Drawable nearLinesScroll = null!;
         private FillFlowContainer nearLinesFlow = null!;
 
@@ -360,7 +362,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
                             // set once, at the bottom (2026-10-10). Under the other side's they did not fit at 1080p.
                             side(new Drawable[]
                             {
-                                nearLinesHeading = new FillFlowContainer
+                                nearLinesHeading = new StableFormatPart
                                 {
                                     RelativeSizeAxes = Axes.X,
                                     AutoSizeAxes = Axes.Y,
@@ -435,6 +437,12 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                 Margin = new MarginPadding { Top = 30, Horizontal = 28 },
                                 Children = new Drawable[]
                                 {
+                                    // over everything, where it is not missed: what the parts greyed out below are waiting
+                                    // for, and the button that does it (2026-10-15).
+                                    stableFormatNotice = new StableFormatNotice(() => editor?.ConfirmUseStableFormat())
+                                    {
+                                        Width = block_width,
+                                    },
                                     // where the mapper's eyes are while using it: just under the timeline. What the buttons
                                     // are for on the left, over the first of them, and what was last done on the right, to
                                     // see that it was (2026-10-10).
@@ -461,7 +469,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                     // the line the sounds at the playhead follow, changed as stable's timing panel changes
                                     // one: where the playhead is (2026-10-08). Named over it, since a change here goes on to
                                     // the next line rather than to what the buttons are for.
-                                    lineRow = new FillFlowContainer
+                                    lineRow = new StableFormatPart
                                     {
                                         Width = block_width,
                                         AutoSizeAxes = Axes.Y,
@@ -706,6 +714,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
             {
                 keptStableVersion = editor.KeptStableVersion.GetBoundCopy();
                 keptStableVersion.BindValueChanged(_ => stale = nearLinesStale = true);
+
+                stableFormatNeeds = editor.StableFormatNeeds.GetBoundCopy();
+                stableFormatNeeds.BindValueChanged(n => stableFormatNotice.Needs = n.NewValue, true);
             }
 
             shown.BindValueChanged(s =>
@@ -829,7 +840,14 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
             refreshing = false;
 
-            lineRow.Alpha = line != null ? 1 : 0;
+            // there either way, so that what the difficulty is missing is seen to be for something: greyed out where the
+            // lines are not its own to change (2026-10-15).
+            lineRow.Available = linesEditable;
+            lineRow.Alpha = line != null || !linesEditable ? 1 : 0;
+
+            if (!linesEditable)
+                lineHeading.Text = LazerKaiHitsoundStrings.LineUnavailable;
+
             targetText.Text = describe(Target);
 
             bool canCopyFrom = linesEditable && copySource.Items.Any();
@@ -1393,7 +1411,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
             nearLinesFlow.Clear();
 
             // the lines are the file's, which only a beatmap kept in stable's format has, as for the line over the buttons.
-            nearLinesHeading.Alpha = nearLinesScroll.Alpha = linesEditable ? 1 : 0;
+            // The heading stays, greyed out, for what it is waiting for to be seen.
+            nearLinesHeading.Available = linesEditable;
+            nearLinesScroll.Alpha = linesEditable ? 1 : 0;
 
             if (!linesEditable)
                 return;
@@ -1493,6 +1513,120 @@ namespace osu.Game.Screens.Edit.Hitsounds
                     AutoSizeAxes = Axes.Y,
                     Text = LocalisableString.Interpolate($"{lineTime.ToEditorFormattedString()}  {where}"),
                 };
+            }
+        }
+
+        /// <summary>
+        /// A part of the screen that needs the difficulty kept in stable's format: there either way, greyed out and taking
+        /// nothing in until it is (2026-10-15).
+        /// </summary>
+        /// <remarks>
+        /// Greyed out with its colour rather than its alpha, which the panel uses to show and hide it.
+        /// </remarks>
+        public partial class StableFormatPart : FillFlowContainer
+        {
+            private bool available = true;
+
+            public bool Available
+            {
+                get => available;
+                set
+                {
+                    if (available == value)
+                        return;
+
+                    available = value;
+                    this.FadeColour(value ? Colour4.White : Colour4.White.Opacity(0.35f), 200, Easing.OutQuint);
+                }
+            }
+
+            public override bool PropagatePositionalInputSubTree => available && base.PropagatePositionalInputSubTree;
+
+            public override bool PropagateNonPositionalInputSubTree => available && base.PropagateNonPositionalInputSubTree;
+        }
+
+        /// <summary>
+        /// What keeping the difficulty in stable's format is missing, in red over everything, and a button that asks to do
+        /// it all at once (see <see cref="Editor.ConfirmUseStableFormat"/>). Says only what is missing.
+        /// </summary>
+        public partial class StableFormatNotice : FillFlowContainer
+        {
+            private readonly OsuTextFlowContainer text;
+            private readonly RoundedButton button;
+
+            private StableFormatNeeds needs;
+
+            public StableFormatNeeds Needs
+            {
+                get => needs;
+                set
+                {
+                    needs = value;
+
+                    bool compatibility = value.HasFlag(StableFormatNeeds.Compatibility);
+                    bool conversion = value.HasFlag(StableFormatNeeds.Conversion);
+
+                    text.Text = compatibility && conversion ? LazerKaiHitsoundStrings.NeedsCompatibilityAndConversion
+                        : compatibility ? LazerKaiHitsoundStrings.NeedsCompatibility
+                        : LazerKaiHitsoundStrings.NeedsConversion;
+
+                    button.Text = compatibility && conversion ? LazerKaiHitsoundStrings.TurnOnAndConvert
+                        : compatibility ? LazerKaiHitsoundStrings.TurnOnCompatibility
+                        : LazerKaiStableCompatibilityStrings.ConvertToStableFormat;
+
+                    Alpha = value == StableFormatNeeds.None ? 0 : 1;
+                }
+            }
+
+            private const float button_width = 260;
+
+            public StableFormatNotice(Action action)
+            {
+                AutoSizeAxes = Axes.Y;
+                Direction = FillDirection.Vertical;
+                Spacing = new Vector2(0, 6);
+                Alpha = 0;
+
+                // kept short: everything under it moves down by as much, and the last row of buttons only just fits at
+                // 1080p as it is.
+                Margin = new MarginPadding { Bottom = -10 };
+
+                Children = new Drawable[]
+                {
+                    text = new OsuTextFlowContainer(t => t.Font = OsuFont.GetFont(size: 18, weight: FontWeight.Bold))
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        AutoSizeAxes = Axes.Y,
+                    },
+                    new Container
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        AutoSizeAxes = Axes.Y,
+                        Children = new Drawable[]
+                        {
+                            button = new RoundedButton
+                            {
+                                Width = button_width,
+                                Height = 32,
+                                Action = action,
+                            },
+                            new OsuTextFlowContainer(t => t.Font = OsuFont.GetFont(size: 13))
+                            {
+                                RelativeSizeAxes = Axes.X,
+                                AutoSizeAxes = Axes.Y,
+                                Padding = new MarginPadding { Left = button_width + 12 },
+                                Text = LazerKaiHitsoundStrings.StableFormatNeededFor,
+                            },
+                        }
+                    },
+                };
+            }
+
+            [BackgroundDependencyLoader]
+            private void load(OsuColour colours)
+            {
+                text.Colour = colours.Red1;
+                button.BackgroundColour = colours.Red3;
             }
         }
 

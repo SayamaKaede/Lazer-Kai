@@ -484,6 +484,43 @@ namespace osu.Game.Localisation
         public static LocalisableString LaneSoundsMissing(string sounds) => new TranslatableString(getKey(@"lane_sounds_missing"),
             @"These sounds are no longer in the hitsound folder: {0}", sounds);
 
+        /// <summary>
+        /// "Turn on "Improve compatibility with stable""
+        /// </summary>
+        public static LocalisableString NeedsCompatibility => new TranslatableString(getKey(@"needs_compatibility"), @"Turn on ""Improve compatibility with stable""");
+
+        /// <summary>
+        /// "Convert this difficulty to v14 format"
+        /// </summary>
+        public static LocalisableString NeedsConversion => new TranslatableString(getKey(@"needs_conversion"), @"Convert this difficulty to v14 format");
+
+        /// <summary>
+        /// "Turn on "Improve compatibility with stable" and convert this difficulty to v14 format"
+        /// </summary>
+        public static LocalisableString NeedsCompatibilityAndConversion => new TranslatableString(getKey(@"needs_compatibility_and_conversion"),
+            @"Turn on ""Improve compatibility with stable"" and convert this difficulty to v14 format");
+
+        /// <summary>
+        /// "The green line, copying from another difficulty, making a hitsound difficulty and the list of lines that may be unsnapped are for a difficulty kept in stable's format."
+        /// </summary>
+        public static LocalisableString StableFormatNeededFor => new TranslatableString(getKey(@"stable_format_needed_for"),
+            @"The green line, copying from another difficulty, making a hitsound difficulty and the list of lines that may be unsnapped are for a difficulty kept in stable's format.");
+
+        /// <summary>
+        /// "Turn on"
+        /// </summary>
+        public static LocalisableString TurnOnCompatibility => new TranslatableString(getKey(@"turn_on_compatibility"), @"Turn on");
+
+        /// <summary>
+        /// "Turn on and convert to v14 format"
+        /// </summary>
+        public static LocalisableString TurnOnAndConvert => new TranslatableString(getKey(@"turn_on_and_convert"), @"Turn on and convert to v14 format");
+
+        /// <summary>
+        /// "Green line"
+        /// </summary>
+        public static LocalisableString LineUnavailable => new TranslatableString(getKey(@"line_unavailable"), @"Green line");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

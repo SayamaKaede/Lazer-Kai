@@ -494,7 +494,9 @@ namespace osu.Game.Screens.Edit
             if (savedFile != null)
                 savedTimingLines.Update(savedFile);
 
-            bool keepingStableFile = canSave && savedFile != null && config.Get<bool>(OsuSetting.StableCompatibility) && StableFileKeeper.IsStableFile(savedFile);
+            savedInStableFormat.Value = savedFile != null && StableFileKeeper.IsStableFile(savedFile);
+
+            bool keepingStableFile = canSave && savedInStableFormat.Value && config.Get<bool>(OsuSetting.StableCompatibility);
 
             // the presets kept beside the file, where they are newer than the file's own: always, for a file kept in
             // stable's format, which has no line for them. Put back before the first state is taken, so that having them
@@ -919,6 +921,9 @@ namespace osu.Game.Screens.Edit
             keptStableVersion.BindValueChanged(_ => updateCanMakeHitsoundDifficulty());
             MutationTracker.InProgress.BindValueChanged(_ => updateCanMakeHitsoundDifficulty(), true);
 
+            stableCompatibility.BindValueChanged(_ => updateStableFormatNeeds());
+            savedInStableFormat.BindValueChanged(_ => updateStableFormatNeeds(), true);
+
             changeHandler?.CanRedo.BindValueChanged(v => redoMenuItem.Action.Disabled = !v.NewValue, true);
         }
 
@@ -1240,6 +1245,7 @@ namespace osu.Game.Screens.Edit
             stableFileKeeper = null;
             savedTimingLines.StopShowingVelocityLines();
             keptStableVersion.Value = null;
+            savedInStableFormat.Value = false;
             notifications?.Post(new SimpleNotification { Text = LazerKaiStableCompatibilityStrings.SavedInLazerFormat });
             return true;
         }
@@ -1280,6 +1286,7 @@ namespace osu.Game.Screens.Edit
 
             // what was just written, encoded again the same way, since the manager does not hand the file back.
             savedTimingLines.Update(Encoding.UTF8.GetBytes(StableFileKeeper.Encode(editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard)));
+            savedInStableFormat.Value = false;
         }
 
         protected override void Update()
@@ -2054,29 +2061,91 @@ namespace osu.Game.Screens.Edit
         /// </summary>
         internal void ConfirmConvertToStableFormat()
         {
-            dialogOverlay.Push(new ConvertToStableFormatDialog(() => attemptMutationOperation(() =>
+            dialogOverlay.Push(new ConvertToStableFormatDialog(() => attemptMutationOperation(convertToStableFormat)));
+        }
+
+        private bool convertToStableFormat()
+        {
+            // saved first as it always is, so that a beatmap never saved has a file, and unsaved changes are in it.
+            if (!Save())
+                return false;
+
+            var info = beatmapManager.QueryBeatmap(b => b.ID == editorBeatmap.BeatmapInfo.ID);
+            byte[] saved = info == null ? null : readSavedFile(beatmapManager.GetWorkingBeatmap(info, true));
+
+            if (saved == null)
+                return false;
+
+            using (var converted = LegacyBeatmapExporter.EncodeForStable(() => new MemoryStream(saved), info, LegacyBeatmapExporter.ConvertForStable))
             {
-                // saved first as it always is, so that a beatmap never saved has a file, and unsaved changes are in it.
-                if (!Save())
+                if (converted == null)
                     return false;
 
-                var info = beatmapManager.QueryBeatmap(b => b.ID == editorBeatmap.BeatmapInfo.ID);
-                byte[] saved = info == null ? null : readSavedFile(beatmapManager.GetWorkingBeatmap(info, true));
+                beatmapManager.SaveFile(editorBeatmap.BeatmapInfo, editorBeatmap.PlayableBeatmap, converted.ToArray());
+            }
 
-                if (saved == null)
-                    return false;
+            // opened again, the file is read as one from stable is, and what the conversion changed shows.
+            SwitchToDifficulty(editorBeatmap.BeatmapInfo);
+            return true;
+        }
 
-                using (var converted = LegacyBeatmapExporter.EncodeForStable(() => new MemoryStream(saved), info, LegacyBeatmapExporter.ConvertForStable))
+        /// <summary>
+        /// Whether the difficulty's file is in stable's format, as it was opened or last saved, whether or not the option
+        /// to keep it so is on.
+        /// </summary>
+        private readonly Bindable<bool> savedInStableFormat = new Bindable<bool>();
+
+        /// <summary>
+        /// What the difficulty is missing before it is kept in stable's format, as the hitsound screen asks for it. Only
+        /// an osu! difficulty is converted; one of another mode is asked only for the option.
+        /// </summary>
+        public IBindable<StableFormatNeeds> StableFormatNeeds => stableFormatNeeds;
+
+        private readonly Bindable<StableFormatNeeds> stableFormatNeeds = new Bindable<StableFormatNeeds>();
+
+        private void updateStableFormatNeeds()
+        {
+            var needs = Edit.StableFormatNeeds.None;
+
+            if (canSave)
+            {
+                if (!stableCompatibility.Value)
+                    needs |= Edit.StableFormatNeeds.Compatibility;
+
+                if (!savedInStableFormat.Value && editorBeatmap.BeatmapInfo.Ruleset.OnlineID == 0)
+                    needs |= Edit.StableFormatNeeds.Conversion;
+            }
+
+            stableFormatNeeds.Value = needs;
+        }
+
+        /// <summary>
+        /// Asks whether to do what <see cref="StableFormatNeeds"/> says is missing, and does it all at once: the option is
+        /// turned on, the difficulty converted where it is not in stable's format, and opened again to be kept in it.
+        /// </summary>
+        public void ConfirmUseStableFormat()
+        {
+            var needs = stableFormatNeeds.Value;
+
+            if (needs == Edit.StableFormatNeeds.None)
+                return;
+
+            // a file already in stable's format with nothing unsaved only needs opening again, which keeps it from then
+            // on. An unsaved change cannot go into it without the option having been on as it was opened, so it is saved
+            // and converted along with the rest, and the dialog says so.
+            var done = HasUnsavedChanges ? needs | Edit.StableFormatNeeds.Conversion : needs;
+
+            dialogOverlay.Push(new UseStableFormatDialog(done, () => attemptMutationOperation(() =>
+            {
+                stableCompatibility.Value = true;
+
+                if (!done.HasFlag(Edit.StableFormatNeeds.Conversion))
                 {
-                    if (converted == null)
-                        return false;
-
-                    beatmapManager.SaveFile(editorBeatmap.BeatmapInfo, editorBeatmap.PlayableBeatmap, converted.ToArray());
+                    SwitchToDifficulty(editorBeatmap.BeatmapInfo);
+                    return true;
                 }
 
-                // opened again, the file is read as one from stable is, and what the conversion changed shows.
-                SwitchToDifficulty(editorBeatmap.BeatmapInfo);
-                return true;
+                return convertToStableFormat();
             })));
         }
 

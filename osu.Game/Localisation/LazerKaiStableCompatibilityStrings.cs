@@ -101,6 +101,30 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString DoNotSave => new TranslatableString(getKey(@"do_not_save"), @"Don't save");
 
+        /// <summary>
+        /// "Turn on "Improve compatibility with stable"?"
+        /// </summary>
+        public static LocalisableString TurnOnCompatibilityHeader => new TranslatableString(getKey(@"turn_on_compatibility_header"),
+            @"Turn on ""Improve compatibility with stable""?");
+
+        /// <summary>
+        /// "It applies to every beatmap. This difficulty is in stable's format already, and is opened again to be kept in it."
+        /// </summary>
+        public static LocalisableString TurnOnCompatibilityBody => new TranslatableString(getKey(@"turn_on_compatibility_body"),
+            @"It applies to every beatmap. This difficulty is in stable's format already, and is opened again to be kept in it.");
+
+        /// <summary>
+        /// "Turn on "Improve compatibility with stable" and convert this difficulty to v14 format?"
+        /// </summary>
+        public static LocalisableString TurnOnAndConvertHeader => new TranslatableString(getKey(@"turn_on_and_convert_header"),
+            @"Turn on ""Improve compatibility with stable"" and convert this difficulty to v14 format?");
+
+        /// <summary>
+        /// "The option applies to every beatmap. {0}"
+        /// </summary>
+        public static LocalisableString TurnOnAndConvertBody(LocalisableString conversion) => new TranslatableString(getKey(@"turn_on_and_convert_body"),
+            @"The option applies to every beatmap. {0}", conversion);
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }
