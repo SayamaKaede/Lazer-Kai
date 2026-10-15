@@ -6,6 +6,7 @@ using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Framework.Platform;
@@ -44,6 +45,11 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
 
         [Resolved]
         private INotificationOverlay? notifications { get; set; }
+
+        [Resolved]
+        private SettingsOverlay? settings { get; set; }
+
+        private IBindable<Visibility>? settingsState;
 
         private LazerKaiSettingsPresetStore store = null!;
 
@@ -107,6 +113,16 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
 
             name.BindValueChanged(n => save.Enabled.Value = LazerKaiSettingsPresetStore.NameFor(n.NewValue).Length > 0, true);
             selected.BindValueChanged(s => delete.Enabled.Value = !s.NewValue.StartsWith(':'), true);
+
+            // read again each time the settings are opened: the welcome after the first-run setup applies the
+            // recommended settings from outside them, and the settings put aside then would otherwise not be on the
+            // list to go back to until the next start.
+            settingsState = settings?.State.GetBoundCopy();
+            settingsState?.BindValueChanged(s =>
+            {
+                if (s.NewValue == Visibility.Visible)
+                    refreshItems();
+            });
         }
 
         private void refreshItems()
@@ -116,7 +132,13 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
             if (store.LoadBeforeApplying() != null)
                 items = items.Append(BEFORE_APPLYING);
 
-            dropdown.Items = items.Concat(store.Names()).ToList();
+            var list = items.Concat(store.Names()).ToList();
+
+            // a preset taken out of the folder by hand since the list was last read.
+            if (!list.Contains(selected.Value))
+                selected.Value = RECOMMENDED;
+
+            dropdown.Items = list;
         }
 
         private LazerKaiSettingsPreset? presetFor(string choice)
@@ -154,11 +176,26 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
 
         private void apply(string choice, LazerKaiSettingsPreset preset)
         {
+            apply(store, config, notifications, choice, preset);
+            refreshItems();
+        }
+
+        /// <summary>
+        /// The question whether to apply the recommended settings, applying them on a yes, for asking it from outside
+        /// these settings: the welcome after the first-run setup (<see cref="FirstRunSetup.LazerKaiWelcomeDialog"/>).
+        /// </summary>
+        /// <remarks>
+        /// Asked and applied the same way as from here, so that what was there before is put aside to go back to.
+        /// </remarks>
+        public static PopupDialog AskToApplyRecommended(Storage storage, OsuConfigManager config, INotificationOverlay? notifications) =>
+            new ApplySettingsPresetDialog(PresetDropdown.NameOf(RECOMMENDED), LazerKaiSettingsStrings.ApplySettingsPresetBody,
+                () => apply(new LazerKaiSettingsPresetStore(storage), config, notifications, RECOMMENDED, new LazerKaiSettingsPreset(LazerKaiSettingsPreset.RECOMMENDED)));
+
+        private static void apply(LazerKaiSettingsPresetStore store, OsuConfigManager config, INotificationOverlay? notifications, string choice, LazerKaiSettingsPreset preset)
+        {
             // the settings as they were go aside first, so that applying can be undone by applying them.
             store.SaveBeforeApplying(LazerKaiSettingsPreset.Capture(config));
             preset.ApplyTo(config);
-
-            refreshItems();
 
             notifications?.Post(new SimpleNotification
             {

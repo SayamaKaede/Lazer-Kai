@@ -733,6 +733,12 @@ namespace osu.Game.Localisation
             // the volume row on its own
             [$@"{editor_prefix}:hide_timeline_volume"] = @"音量の行を非表示",
             [$@"{editor_prefix}:hide_timeline_volume_description"] = @"空いた分だけノーツが大きくなります。SVの行はそのままです",
+
+            // shown once the first-run setup is out of the way
+            [$@"{welcome_prefix}:header"] = @"Lazer-Kaiへようこそ",
+            [$@"{welcome_prefix}:body"] = @"Lazer-Kaiは、マッピングのためのosu!lazerです。まず「はじめに」で主な機能を確認してください。それぞれの詳しい説明は説明書にあります。どちらも設定のLazer-Kaiからいつでも開くことができます。",
+            [$@"{welcome_prefix}:apply_recommended_settings"] = @"おすすめ設定を適用",
+            [$@"{welcome_prefix}:close"] = @"閉じる",
         };
 
         private const string editor_prefix = @"osu.Game.Resources.Localisation.Editor";
@@ -753,6 +759,7 @@ namespace osu.Game.Localisation
         private const string combo_colour_preset_prefix = @"osu.Game.Resources.Localisation.LazerKaiComboColourPreset";
         private const string mapping_prefix = @"osu.Game.Resources.Localisation.MappingSummary";
         private const string replay_prefix = @"osu.Game.Resources.Localisation.LazerKaiReplay";
+        private const string welcome_prefix = @"osu.Game.Resources.Localisation.LazerKaiWelcome";
 
         public LazerKaiJapaneseStore(ILocalisationStore fallback)
         {

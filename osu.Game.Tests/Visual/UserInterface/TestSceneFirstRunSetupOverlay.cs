@@ -17,7 +17,6 @@ using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Game.Configuration;
 using osu.Game.Database;
-using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osu.Game.Overlays.FirstRunSetup;
 using osu.Game.Overlays.Notifications;
@@ -130,28 +129,9 @@ namespace osu.Game.Tests.Visual.UserInterface
         [TestCase(true)]
         public void TestBackButton(bool keyboard)
         {
-            AddUntilStep("step to last", () =>
-            {
-                var nextButton = overlay.NextButton.AsNonNull();
-
-                if (overlay.CurrentScreen?.IsLoaded != false)
-                    nextButton.TriggerClick();
-
-                return nextButton.Text == CommonStrings.Finish;
-            });
-
-            AddUntilStep("step back to start", () =>
-            {
-                if (overlay.CurrentScreen?.IsLoaded != false && !(overlay.CurrentScreen is ScreenWelcome))
-                {
-                    if (keyboard)
-                        InputManager.Key(Key.Escape);
-                    else
-                        ScreenFooter.BackButton.TriggerClick();
-                }
-
-                return overlay.CurrentScreen is ScreenWelcome;
-            });
+            // Lazer-Kai: the setup asks for the language alone, so there is no later step to step back from. Going
+            // back from the one there is still closes it.
+            AddUntilStep("at the start", () => overlay.CurrentScreen is ScreenWelcome);
 
             AddAssert("overlay not dismissed", () => overlay.State.Value == Visibility.Visible);
 
@@ -190,9 +170,12 @@ namespace osu.Game.Tests.Visual.UserInterface
         [Test]
         public void TestResumeViaNotification()
         {
-            AddStep("step to next", () => overlay.NextButton.AsNonNull().TriggerClick());
+            // Lazer-Kai: closing the setup on a first run counts as having been through it, so what is offered back
+            // is only the setup run again from the settings. With the language alone, that is also the screen it
+            // comes back to.
+            AddStep("not a first run", () => LocalConfig.SetValue(OsuSetting.ShowFirstRunSetup, false));
 
-            AddAssert("is at known screen", () => overlay.CurrentScreen is ScreenUIScale);
+            AddAssert("is at known screen", () => overlay.CurrentScreen is ScreenWelcome);
 
             AddStep("hide", () => overlay.Hide());
             AddAssert("overlay hidden", () => overlay.State.Value == Visibility.Hidden);
@@ -202,7 +185,7 @@ namespace osu.Game.Tests.Visual.UserInterface
             AddStep("run notification action", () => lastNotification.Activated?.Invoke());
 
             AddAssert("overlay shown", () => overlay.State.Value == Visibility.Visible);
-            AddAssert("is resumed", () => overlay.CurrentScreen is ScreenUIScale);
+            AddAssert("is resumed", () => overlay.CurrentScreen is ScreenWelcome);
         }
 
         private void createScreen()
