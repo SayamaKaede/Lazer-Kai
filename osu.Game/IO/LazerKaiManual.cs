@@ -22,6 +22,17 @@ namespace osu.Game.IO
         public const string FILENAME = @"説明書.html";
 
         /// <summary>
+        /// The name the getting-started guide is written and shipped under.
+        /// </summary>
+        /// <remarks>
+        /// The manual goes through every feature, which is more than somebody who has just installed the build can
+        /// find their way through (2026-10-14). The guide is the short way in: the main features by name alone, each
+        /// pointing on into the manual, and the questions that keep coming up. It ships the same way the manual
+        /// does.
+        /// </remarks>
+        public const string GUIDE_FILENAME = @"はじめに.html";
+
+        /// <summary>
         /// The manual inside <paramref name="directory"/>, or null when there is none there.
         /// </summary>
         /// <remarks>
@@ -29,12 +40,20 @@ namespace osu.Game.IO
         /// binary built straight out of the repository. What reads this hides itself rather than offering a button
         /// that would open nothing.
         /// </remarks>
-        public static string? Find(string? directory)
+        public static string? Find(string? directory) => find(directory, FILENAME);
+
+        /// <summary>
+        /// The getting-started guide inside <paramref name="directory"/>, or null when there is none there, for the
+        /// same reason as <see cref="Find"/>.
+        /// </summary>
+        public static string? FindGuide(string? directory) => find(directory, GUIDE_FILENAME);
+
+        private static string? find(string? directory, string filename)
         {
             if (string.IsNullOrEmpty(directory))
                 return null;
 
-            string path = Path.Combine(directory, FILENAME);
+            string path = Path.Combine(directory, filename);
 
             return File.Exists(path) ? path : null;
         }

@@ -12,7 +12,7 @@ using osu.Game.Localisation;
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
 {
     /// <summary>
-    /// Opens the manual and the changelogs that ship beside the game.
+    /// Opens the getting-started guide, the manual and the changelogs that ship beside the game.
     /// </summary>
     /// <remarks>
     /// First in the section on purpose: whoever opens the fork's settings without knowing what is in them is
@@ -27,6 +27,7 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
     {
         protected override LocalisableString Header => LazerKaiSettingsStrings.ManualHeader;
 
+        private readonly string? guide;
         private readonly string? path;
         private readonly IReadOnlyList<LazerKaiChangelog.Release> changelog;
 
@@ -39,10 +40,12 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
         [Resolved]
         private SettingsOverlay? settings { get; set; }
 
+        /// <param name="guide">The getting-started guide, or null when there is none.</param>
         /// <param name="path">The manual, or null when there is none.</param>
         /// <param name="changelog">Every release's changelog, newest first. Empty when there are none.</param>
-        public ManualSettings(string? path, IReadOnlyList<LazerKaiChangelog.Release> changelog)
+        public ManualSettings(string? guide, string? path, IReadOnlyList<LazerKaiChangelog.Release> changelog)
         {
+            this.guide = guide;
             this.path = path;
             this.changelog = changelog;
         }
@@ -50,9 +53,22 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
         [BackgroundDependencyLoader]
         private void load()
         {
+            bool first = true;
+
+            // the guide before the manual: it is where somebody new starts, and it leads on into the manual.
+            if (guide != null)
+            {
+                add(new SettingsButton
+                {
+                    Text = LazerKaiSettingsStrings.OpenGuide,
+                    TooltipText = LazerKaiSettingsStrings.OpenGuideDescription,
+                    Action = () => gameHost.OpenFileExternally(guide),
+                });
+            }
+
             if (path != null)
             {
-                Add(new SettingsButton
+                add(new SettingsButton
                 {
                     Text = LazerKaiSettingsStrings.OpenManual,
                     TooltipText = LazerKaiSettingsStrings.OpenManualDescription,
@@ -62,11 +78,9 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
 
             if (changelog.Count > 0)
             {
-                Add(new SettingsButton
+                add(new SettingsButton
                 {
                     Text = LazerKaiSettingsStrings.ShowChangelog,
-                    // only under the manual's button: as the first row it sits where the heading leaves it.
-                    Margin = new MarginPadding { Top = path != null ? BUTTON_GAP : 0 },
                     Action = () =>
                     {
                         // the changelog fills the screen, and the settings would otherwise stay on top of it.
@@ -74,6 +88,18 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                         changelogOverlay?.ShowReleases(changelog);
                     },
                 });
+            }
+
+            // a gap only under another button: as the first row, a button sits where the heading leaves it. The
+            // button's own pull at the bottom stays, as the gap was settled with it under the button above; replaced
+            // too, a button in the middle would leave a wider gap under itself than above.
+            void add(SettingsButton button)
+            {
+                if (!first)
+                    button.Margin = new MarginPadding { Top = BUTTON_GAP, Bottom = button.Margin.Bottom };
+
+                first = false;
+                Add(button);
             }
         }
     }

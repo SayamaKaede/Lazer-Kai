@@ -38,6 +38,17 @@ namespace osu.Game.Localisation
             @"Opens the page that ships with this build, in whatever reads a web page.");
 
         /// <summary>
+        /// "Open "Getting started""
+        /// </summary>
+        public static LocalisableString OpenGuide => new TranslatableString(getKey(@"open_guide"), @"Open ""Getting started""");
+
+        /// <summary>
+        /// "The main features and frequently asked questions, in whatever reads a web page."
+        /// </summary>
+        public static LocalisableString OpenGuideDescription => new TranslatableString(getKey(@"open_guide_description"),
+            @"The main features and frequently asked questions, in whatever reads a web page.");
+
+        /// <summary>
         /// "Show the changelog"
         /// </summary>
         public static LocalisableString ShowChangelog => new TranslatableString(getKey(@"show_changelog"), @"Show the changelog");

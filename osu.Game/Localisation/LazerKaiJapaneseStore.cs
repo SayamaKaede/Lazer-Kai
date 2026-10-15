@@ -534,6 +534,8 @@ namespace osu.Game.Localisation
             [$@"{settings_prefix}:manual_header"] = @"説明書・Changelog",
             [$@"{settings_prefix}:open_manual"] = @"説明書を開く",
             [$@"{settings_prefix}:open_manual_description"] = @"このビルドに同梱されている説明書を、ブラウザで表示します",
+            [$@"{settings_prefix}:open_guide"] = @"「はじめに」を開く",
+            [$@"{settings_prefix}:open_guide_description"] = @"主な機能とよくある質問を、ブラウザで表示します",
             [$@"{settings_prefix}:show_changelog"] = @"Changelogを表示",
             [$@"{settings_prefix}:changelog_title"] = @"Changelog",
 

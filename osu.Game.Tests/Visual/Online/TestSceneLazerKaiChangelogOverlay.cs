@@ -116,7 +116,7 @@ namespace osu.Game.Tests.Visual.Online
                     Children = new Drawable[]
                     {
                         overlay,
-                        settings = new ManualSettings(null, releases)
+                        settings = new ManualSettings(null, null, releases)
                         {
                             Anchor = Anchor.Centre,
                             Origin = Anchor.Centre,

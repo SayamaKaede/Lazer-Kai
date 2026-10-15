@@ -59,5 +59,30 @@ namespace osu.Game.Tests.NonVisual
         {
             Assert.That(LazerKaiManual.Find(nowhere), Is.Null);
         }
+
+        [Test]
+        public void TestGuideFoundWhereItShips()
+        {
+            string expected = Path.Combine(directory, LazerKaiManual.GUIDE_FILENAME);
+            File.WriteAllText(expected, @"<html></html>");
+
+            Assert.That(LazerKaiManual.FindGuide(directory), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void TestTheManualIsNotTheGuide()
+        {
+            File.WriteAllText(Path.Combine(directory, LazerKaiManual.FILENAME), @"<html></html>");
+
+            Assert.That(LazerKaiManual.FindGuide(directory), Is.Null);
+            Assert.That(LazerKaiManual.Find(directory), Is.Not.Null);
+        }
+
+        [TestCase(null)]
+        [TestCase(@"")]
+        public void TestNowhereToLookForTheGuide(string? nowhere)
+        {
+            Assert.That(LazerKaiManual.FindGuide(nowhere), Is.Null);
+        }
     }
 }
