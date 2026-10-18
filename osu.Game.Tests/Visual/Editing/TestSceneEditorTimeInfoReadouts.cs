@@ -3,12 +3,16 @@
 
 using System.Linq;
 using NUnit.Framework;
+using osu.Framework.Allocation;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Platform;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps.ControlPoints;
+using osu.Game.Graphics.UserInterface;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Screens.Edit.Components;
+using osuTK.Input;
 
 namespace osu.Game.Tests.Visual.Editing
 {
@@ -61,6 +65,45 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddStep("seek before kiai", () => EditorClock.Seek(5000));
             AddUntilStep("kiai is still not shown", () => !showing("Kiai"));
+        }
+
+        [Resolved]
+        private Clipboard clipboard { get; set; } = null!;
+
+        private OsuTextBox timestampBox => timeInfo.ChildrenOfType<OsuTextBox>().Single();
+
+        private void clickTimestamp()
+        {
+            AddStep("click the timestamp", () =>
+            {
+                InputManager.MoveMouseTo(timestampBox.Parent!);
+                InputManager.Click(MouseButton.Left);
+            });
+        }
+
+        [Test]
+        public void TestClickingGoesToATimestampOnTheClipboard()
+        {
+            AddStep("seek to 5s", () => EditorClock.Seek(5000));
+            // without objects named, so that it goes to the time itself rather than the next object from there.
+            AddStep("copy a timestamp", () => clipboard.SetText("00:15:000 - "));
+
+            clickTimestamp();
+
+            AddUntilStep("went to 15s", () => EditorClock.CurrentTime, () => Is.EqualTo(15000).Within(1));
+            AddAssert("no box to paste into", () => timestampBox.Alpha, () => Is.Zero);
+        }
+
+        [Test]
+        public void TestClickingAsksForATimestampWhenTheClipboardHasNone()
+        {
+            AddStep("seek to 5s", () => EditorClock.Seek(5000));
+            AddStep("copy something else", () => clipboard.SetText("not a timestamp"));
+
+            clickTimestamp();
+
+            AddUntilStep("box to paste into", () => timestampBox.Alpha, () => Is.EqualTo(1));
+            AddAssert("stayed at 5s", () => EditorClock.CurrentTime, () => Is.EqualTo(5000).Within(1));
         }
     }
 }

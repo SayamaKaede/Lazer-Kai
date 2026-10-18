@@ -8,6 +8,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Platform;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Extensions;
@@ -147,6 +148,9 @@ namespace osu.Game.Screens.Edit.Components
             [Resolved]
             private EditorClock editorClock { get; set; } = null!;
 
+            [Resolved]
+            private Clipboard clipboard { get; set; } = null!;
+
             public TimestampControl()
                 : base(HoverSampleSet.Button)
             {
@@ -199,6 +203,12 @@ namespace osu.Game.Screens.Edit.Components
 
                 Action = () =>
                 {
+                    // a timestamp is clicked here to paste one that was just copied from a mod post, so one already on
+                    // the clipboard is gone to straight away rather than asking for it to be pasted. Anything else there
+                    // opens the box as before.
+                    if (clipboard.GetText() is string copied && editor?.HandleTimestamp(copied.Trim()) == true)
+                        return;
+
                     trackTimer.Alpha = 0;
                     inputTextBox.Alpha = 1;
                     inputTextBox.Text = editorClock.CurrentTime.ToEditorFormattedString();
