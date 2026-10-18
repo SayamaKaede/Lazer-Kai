@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using osu.Game.Beatmaps.Legacy;
 using osu.Game.Skinning;
 using osu.Game.Storyboards;
 
@@ -67,13 +68,74 @@ namespace osu.Game.Beatmaps.Formats
             bool timingChanged = !timingOf(beatmap).SequenceEqual(timing);
 
             if (current == baseline && timingLines == null && !timingChanged)
-                return file;
+                return WithSampleSetOfFirstLine(file);
 
             var merger = new StableFileMerger(file, baseline, current, beatmap, timingLines, timingChanged);
             byte[]? merged = merger.Merge();
 
             LastFailure = merger.Failure;
-            return merged;
+            return merged == null ? null : WithSampleSetOfFirstLine(merged);
+        }
+
+        /// <summary>
+        /// <paramref name="file"/> with the sample set [General] says made that of its first line, as stable writes it
+        /// on every save: one that said None was kept as it was here, and went out to stable so (2026-10-18). Nothing
+        /// else of the file is touched, and a first line of no sample set of its own leaves it as it is.
+        /// </summary>
+        public static byte[] WithSampleSetOfFirstLine(byte[] file)
+        {
+            byte[] bom = Encoding.UTF8.GetPreamble();
+            bool hasBom = file.AsSpan().StartsWith(bom);
+            string text = Encoding.UTF8.GetString(file, hasBom ? bom.Length : 0, file.Length - (hasBom ? bom.Length : 0));
+
+            string? firstLinesSet = null;
+            int sampleSetLine = -1, sampleSetValue = -1;
+            string? section = null;
+            int start = 0;
+
+            while (start < text.Length)
+            {
+                int end = text.IndexOf('\n', start);
+                if (end < 0) end = text.Length;
+
+                string line = text.AsSpan(start, end - start).Trim().ToString();
+
+                if (line.StartsWith('[') && line.EndsWith(']'))
+                    section = line;
+                else if (section == "[General]" && sampleSetLine < 0 && line.StartsWith("SampleSet", StringComparison.Ordinal) && line.Contains(':'))
+                {
+                    sampleSetLine = start;
+                    sampleSetValue = text.IndexOf(':', start) + 1;
+                }
+                else if (section == "[TimingPoints]" && firstLinesSet == null && line.Length > 0 && !line.StartsWith("//", StringComparison.Ordinal))
+                {
+                    string[] fields = line.Split(',');
+
+                    firstLinesSet = fields.Length > 3 && int.TryParse(fields[3], out int set) ? set switch
+                    {
+                        (int)LegacySampleBank.Normal => nameof(LegacySampleBank.Normal),
+                        (int)LegacySampleBank.Soft => nameof(LegacySampleBank.Soft),
+                        (int)LegacySampleBank.Drum => nameof(LegacySampleBank.Drum),
+                        _ => string.Empty,
+                    } : string.Empty;
+                }
+
+                start = end + 1;
+            }
+
+            if (sampleSetLine < 0 || string.IsNullOrEmpty(firstLinesSet))
+                return file;
+
+            int valueEnd = text.IndexOfAny(new[] { '\r', '\n' }, sampleSetValue);
+            if (valueEnd < 0) valueEnd = text.Length;
+
+            if (text.AsSpan(sampleSetValue, valueEnd - sampleSetValue).Trim().SequenceEqual(firstLinesSet))
+                return file;
+
+            string written = text[..sampleSetValue] + " " + firstLinesSet + text[valueEnd..];
+            byte[] body = Encoding.UTF8.GetBytes(written);
+
+            return hasBom ? bom.Concat(body).ToArray() : body;
         }
 
         /// <summary>

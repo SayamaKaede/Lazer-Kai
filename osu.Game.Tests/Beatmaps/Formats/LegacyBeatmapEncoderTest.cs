@@ -450,6 +450,47 @@ SampleSet: Soft
             Assert.That(encodeToString(editorBeatmap.PlayableBeatmap), Does.Contain("SampleSet: Soft"));
         }
 
+        /// <summary>
+        /// A beatmap made in lazer and written for stable says in [General] the sample set its first line has, as one
+        /// made in stable does: lazer's own file has no sample set of the beatmap's to give (2026-10-18).
+        /// </summary>
+        [TestCase(HitSampleInfo.BANK_SOFT)]
+        [TestCase(HitSampleInfo.BANK_DRUM)]
+        [TestCase(HitSampleInfo.BANK_NORMAL)]
+        public void TestSampleSetOfABeatmapMadeInLazerIsItsFirstLines(string bank)
+        {
+            var beatmap = new Beatmap
+            {
+                BeatmapInfo = { Ruleset = new OsuRuleset().RulesetInfo },
+            };
+
+            beatmap.ControlPointInfo.Add(1000, new TimingControlPoint { BeatLength = 500 });
+
+            for (int i = 0; i < 4; i++)
+            {
+                beatmap.HitObjects.Add(new HitCircle
+                {
+                    StartTime = 1000 + i * 500,
+                    Position = new Vector2(256, 192),
+                    Samples = { new HitSampleInfo(HitSampleInfo.HIT_NORMAL, bank) },
+                });
+            }
+
+            string written;
+
+            using (var saved = new MemoryStream(Encoding.UTF8.GetBytes(encodeToString(beatmap))))
+            using (var forStable = osu.Game.Database.LegacyBeatmapExporter.EncodeForStable(() => new MemoryStream(saved.ToArray()), beatmap.BeatmapInfo,
+                       osu.Game.Database.LegacyBeatmapExporter.ConvertForStable)!)
+                written = Encoding.UTF8.GetString(forStable.ToArray());
+
+            string[] lines = written.Split('\n').Select(l => l.Trim()).ToArray();
+            string firstLine = lines.SkipWhile(l => l != "[TimingPoints]").Skip(1).First();
+            var firstLinesBank = (LegacySampleBank)int.Parse(firstLine.Split(',')[3]);
+
+            Assert.That(firstLinesBank, Is.Not.EqualTo(LegacySampleBank.None), written);
+            Assert.That(lines, Does.Contain($"SampleSet: {firstLinesBank}"), written);
+        }
+
         private static IBeatmap decodeFromString(string contents)
         {
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(contents)))
