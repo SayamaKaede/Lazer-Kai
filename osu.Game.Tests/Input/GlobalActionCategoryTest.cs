@@ -43,7 +43,16 @@ namespace osu.Game.Tests.Input
             int lastEditor = Array.LastIndexOf(order, GlobalActionCategory.Editor.ToActions().Last());
             int firstOverlay = Array.IndexOf(order, GlobalActionCategory.Overlays.ToActions().First());
 
-            foreach (var action in GlobalActionCategory.EditorLazerKai.ToActions())
+            var fork = new[]
+            {
+                GlobalActionCategory.EditorLazerKaiDisplay,
+                GlobalActionCategory.EditorLazerKaiPlayback,
+                GlobalActionCategory.EditorLazerKaiEditing,
+                GlobalActionCategory.EditorLazerKaiHitsoundMode,
+                GlobalActionCategory.EditorLazerKaiOther,
+            };
+
+            foreach (var action in fork.SelectMany(c => c.ToActions()))
             {
                 int at = Array.IndexOf(order, action);
 

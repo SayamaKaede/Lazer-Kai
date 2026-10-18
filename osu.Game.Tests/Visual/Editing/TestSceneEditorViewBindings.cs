@@ -62,6 +62,7 @@ namespace osu.Game.Tests.Visual.Editing
                              OsuSetting.EditorAlwaysExpandLeftToolbox,
                              OsuSetting.EditorAlwaysExpandTimelinePointLabels,
                              OsuSetting.EditorShowAutoCursor,
+                             OsuSetting.EditorHideTimelineVolume,
                          })
                 {
                     config.GetBindable<bool>(setting).SetDefault();
@@ -76,6 +77,8 @@ namespace osu.Game.Tests.Visual.Editing
         [TestCase(GlobalAction.EditorToggleLeftToolboxExpansion, OsuSetting.EditorAlwaysExpandLeftToolbox)]
         [TestCase(GlobalAction.EditorToggleTimelinePointLabels, OsuSetting.EditorAlwaysExpandTimelinePointLabels)]
         [TestCase(GlobalAction.EditorToggleAutoCursor, OsuSetting.EditorShowAutoCursor)]
+        // in the settings rather than the view menu, so it has no menu item to name the key (2026-10-18).
+        [TestCase(GlobalAction.EditorToggleTimelineVolume, OsuSetting.EditorHideTimelineVolume)]
         public void TestActionMovesItsOwnSetting(GlobalAction action, OsuSetting setting)
         {
             bool started = false;

@@ -73,8 +73,20 @@ namespace osu.Game.Input.Bindings
                 case GlobalActionCategory.EditorTestPlay:
                     return editorTestPlayKeyBindings;
 
-                case GlobalActionCategory.EditorLazerKai:
-                    return lazerKaiEditorKeyBindings;
+                case GlobalActionCategory.EditorLazerKaiDisplay:
+                    return lazerKaiDisplayKeyBindings;
+
+                case GlobalActionCategory.EditorLazerKaiPlayback:
+                    return lazerKaiPlaybackKeyBindings;
+
+                case GlobalActionCategory.EditorLazerKaiEditing:
+                    return lazerKaiEditingKeyBindings;
+
+                case GlobalActionCategory.EditorLazerKaiHitsoundMode:
+                    return lazerKaiHitsoundModeKeyBindings;
+
+                case GlobalActionCategory.EditorLazerKaiOther:
+                    return lazerKaiOtherKeyBindings;
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(category), category, $"Unexpected {nameof(GlobalActionCategory)}");
@@ -89,40 +101,61 @@ namespace osu.Game.Input.Bindings
         public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e) => handler?.OnReleased(e);
 
         /// <summary>
-        /// This fork's own editor bindings, kept apart from the stock ones only so that they can be given a heading of
+        /// This fork's own editor bindings, kept apart from the stock ones only so that they can be given headings of
         /// their own in the key bindings panel.
         /// </summary>
         /// <remarks>
         /// Which list an action sits in is a matter of presentation: bindings are stored against the action's number,
         /// so moving one between these lists leaves whatever the user bound to it alone. The order these are checked in
         /// still matters though, which is why this stays next to the stock editor bindings.
+        ///
+        /// Most are registered unbound: they are conveniences, and every obvious editor combination is already taken.
         /// </remarks>
-        private static IEnumerable<KeyBinding> lazerKaiEditorKeyBindings => new[]
+        private static IEnumerable<KeyBinding> lazerKaiEditorKeyBindings => lazerKaiDisplayKeyBindings
+                                                                            .Concat(lazerKaiPlaybackKeyBindings)
+                                                                            .Concat(lazerKaiEditingKeyBindings)
+                                                                            .Concat(lazerKaiHitsoundModeKeyBindings)
+                                                                            .Concat(lazerKaiOtherKeyBindings);
+
+        private static IEnumerable<KeyBinding> lazerKaiDisplayKeyBindings => new[]
         {
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimeline),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimelinePoints),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimelineVolume),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimelinePointLabels),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleDifficultyGraph),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleVolumeGraph),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleReferenceDifficulty),
+            new KeyBinding(InputKey.None, GlobalAction.EditorNextReferenceDifficulty),
+            new KeyBinding(InputKey.None, GlobalAction.EditorPreviousReferenceDifficulty),
+            new KeyBinding(InputKey.None, GlobalAction.EditorTogglePlayAreaBorder),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleOffscreenDetection),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleAutoCursor),
             new KeyBinding(InputKey.None, GlobalAction.EditorToggleComposerModPreview),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleLeftToolboxExpansion),
+        };
+
+        private static IEnumerable<KeyBinding> lazerKaiPlaybackKeyBindings => new[]
+        {
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleHitsounds),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleMusic),
+            new KeyBinding(InputKey.None, GlobalAction.EditorIncreasePlaybackSpeed),
+            new KeyBinding(InputKey.None, GlobalAction.EditorDecreasePlaybackSpeed),
+        };
+
+        private static IEnumerable<KeyBinding> lazerKaiEditingKeyBindings => new[]
+        {
             // key positions, not characters: these are the two keys a JIS keyboard labels `[` and `]`, which sit one
             // to the right of where a US keyboard puts them.
             new KeyBinding(new[] { InputKey.BracketRight }, GlobalAction.EditorDecreaseSliderVelocity),
             new KeyBinding(new[] { InputKey.BackSlash }, GlobalAction.EditorIncreaseSliderVelocity),
             new KeyBinding(new[] { InputKey.Alt, InputKey.BracketRight }, GlobalAction.EditorDecreaseSliderVelocityFine),
             new KeyBinding(new[] { InputKey.Alt, InputKey.BackSlash }, GlobalAction.EditorIncreaseSliderVelocityFine),
-            // registered unbound: these are conveniences, and every obvious editor combination is already taken.
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimeline),
-            new KeyBinding(InputKey.None, GlobalAction.EditorBackupNow),
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleHitsounds),
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleMusic),
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimelinePoints),
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleReferenceDifficulty),
-            new KeyBinding(InputKey.None, GlobalAction.EditorNextReferenceDifficulty),
-            new KeyBinding(InputKey.None, GlobalAction.EditorPreviousReferenceDifficulty),
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleDifficultyGraph),
-            new KeyBinding(InputKey.None, GlobalAction.EditorTogglePlayAreaBorder),
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleOffscreenDetection),
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleLeftToolboxExpansion),
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleTimelinePointLabels),
             new KeyBinding(InputKey.None, GlobalAction.EditorTogglePlacementPresets),
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleAutoCursor),
-            new KeyBinding(InputKey.None, GlobalAction.EditorToggleVolumeGraph),
+        };
+
+        private static IEnumerable<KeyBinding> lazerKaiHitsoundModeKeyBindings => new[]
+        {
             new KeyBinding(InputKey.None, GlobalAction.EditorHitsoundMode),
             // next to Q, W, E and R, which the hitsound screen's other keys are, and free in the editor.
             new KeyBinding(new[] { InputKey.A }, GlobalAction.EditorHitsoundSameAsPrevious),
@@ -130,6 +163,11 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(new[] { InputKey.Number2 }, GlobalAction.EditorHitsoundPlaceCircle),
             new KeyBinding(new[] { InputKey.Shift, InputKey.Number2 }, GlobalAction.EditorHitsoundPlaceCircleWithPrevious),
             new KeyBinding(new[] { InputKey.Control, InputKey.Shift, InputKey.V }, GlobalAction.EditorHitsoundPasteOnly),
+        };
+
+        private static IEnumerable<KeyBinding> lazerKaiOtherKeyBindings => new[]
+        {
+            new KeyBinding(InputKey.None, GlobalAction.EditorBackupNow),
         };
 
         private static IEnumerable<KeyBinding> globalKeyBindings => new[]
@@ -774,6 +812,15 @@ namespace osu.Game.Input.Bindings
 
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorHitsoundPasteOnly))]
         EditorHitsoundPasteOnly,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleTimelineVolume))]
+        EditorToggleTimelineVolume,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorIncreasePlaybackSpeed))]
+        EditorIncreasePlaybackSpeed,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorDecreasePlaybackSpeed))]
+        EditorDecreasePlaybackSpeed,
     }
 
     public enum GlobalActionCategory
@@ -786,6 +833,13 @@ namespace osu.Game.Input.Bindings
         AudioControl,
         Overlays,
         EditorTestPlay,
-        EditorLazerKai,
+
+        // this fork's editor bindings, split the way its settings are (2026-10-18). Only which heading an action is
+        // listed under: bindings are stored against the action, so these can be renumbered freely.
+        EditorLazerKaiDisplay,
+        EditorLazerKaiPlayback,
+        EditorLazerKaiEditing,
+        EditorLazerKaiHitsoundMode,
+        EditorLazerKaiOther,
     }
 }

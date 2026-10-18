@@ -380,6 +380,8 @@ namespace osu.Game.Screens.Edit
         private Bindable<bool> editorAutoBackup;
         private Bindable<bool> editorShowVolumeGraph;
 
+        private Bindable<bool> editorHideTimelineVolume;
+
         private EditorAutoBackup autoBackup;
 
         [Resolved]
@@ -607,6 +609,7 @@ namespace osu.Game.Screens.Edit
             editorShowDifficultyGraph = config.GetBindable<bool>(OsuSetting.EditorShowDifficultyGraph);
             editorAutoBackup = config.GetBindable<bool>(OsuSetting.EditorAutoBackup);
             editorShowVolumeGraph = config.GetBindable<bool>(OsuSetting.EditorShowVolumeGraph);
+            editorHideTimelineVolume = config.GetBindable<bool>(OsuSetting.EditorHideTimelineVolume);
 
             // These two settings don't work together. Make them mutually exclusive to let the user know.
             editorAutoSeekOnPlacement.BindValueChanged(enabled =>
@@ -1006,6 +1009,10 @@ namespace osu.Game.Screens.Edit
 
             editorShowVolumeGraph.BindValueChanged(shown =>
                 announceState(EditorStrings.ShowVolumeGraph, shown.NewValue ? EditorStrings.Shown : EditorStrings.Hidden));
+
+            // as the timeline's rows are: what the row is doing, the setting itself being named "hide".
+            editorHideTimelineVolume.BindValueChanged(hidden =>
+                announceState(EditorStrings.TimelineVolumeRow, hidden.NewValue ? EditorStrings.Hidden : EditorStrings.Shown));
 
             editorShowPlayAreaBorder.BindValueChanged(shown =>
                 announceState(EditorStrings.ShowPlayAreaBorder, shown.NewValue ? EditorStrings.Shown : EditorStrings.Hidden));
@@ -1520,6 +1527,18 @@ namespace osu.Game.Screens.Edit
 
                 case GlobalAction.EditorToggleVolumeGraph:
                     editorShowVolumeGraph.Value = !editorShowVolumeGraph.Value;
+                    return true;
+
+                case GlobalAction.EditorToggleTimelineVolume:
+                    editorHideTimelineVolume.Value = !editorHideTimelineVolume.Value;
+                    return true;
+
+                case GlobalAction.EditorIncreasePlaybackSpeed:
+                    changePlaybackSpeed(1);
+                    return true;
+
+                case GlobalAction.EditorDecreasePlaybackSpeed:
+                    changePlaybackSpeed(-1);
                     return true;
 
                 case GlobalAction.EditorTogglePlayAreaBorder:
@@ -2436,6 +2455,16 @@ namespace osu.Game.Screens.Edit
         /// </summary>
         private void announceState(LocalisableString what, LocalisableString state)
             => onScreenDisplay?.Display(new EditorToast(what, state));
+
+        /// <summary>
+        /// Steps the playback speed, and says what it is now: also at either end, where the key leaves it as it was.
+        /// Where speed cannot be adjusted the bottom bar's own tooltip says why, so the key does nothing.
+        /// </summary>
+        private void changePlaybackSpeed(int direction)
+        {
+            if (bottomBar.PlaybackControl.ChangeSpeed(direction) is double speed)
+                announceState(EditorStrings.PlaybackSpeed, $"{speed:0%}");
+        }
 
         /// <summary>
         /// The name of the difficulty being ghosted, or that there is none.

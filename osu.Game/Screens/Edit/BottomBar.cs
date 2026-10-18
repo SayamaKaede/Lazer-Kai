@@ -26,6 +26,11 @@ namespace osu.Game.Screens.Edit
 
         public TestGameplayButton TestGameplayButton { get; private set; } = null!;
 
+        /// <summary>
+        /// The playback speed, which the editor's keys for it step through.
+        /// </summary>
+        public PlaybackControl PlaybackControl { get; private set; } = null!;
+
         private SummaryTimeline summaryTimeline = null!;
 
         private IBindable<bool> saveInProgress = null!;
@@ -68,7 +73,7 @@ namespace osu.Game.Screens.Edit
                         {
                             new TimeInfoContainer { RelativeSizeAxes = Axes.Both },
                             summaryTimeline = new SummaryTimeline { RelativeSizeAxes = Axes.Both },
-                            new PlaybackControl { RelativeSizeAxes = Axes.Both },
+                            PlaybackControl = new PlaybackControl { RelativeSizeAxes = Axes.Both },
                             TestGameplayButton = new TestGameplayButton
                             {
                                 RelativeSizeAxes = Axes.Both,

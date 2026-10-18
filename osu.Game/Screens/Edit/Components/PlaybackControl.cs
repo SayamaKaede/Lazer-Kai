@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Linq;
 using osuTK;
 using osuTK.Graphics;
@@ -123,6 +124,22 @@ namespace osu.Game.Screens.Edit.Components
             playbackSpeedControl.TooltipText = default;
         }
 
+        /// <summary>
+        /// Moves the playback speed to the next of the speeds offered, up or down, staying put at either end.
+        /// </summary>
+        /// <returns>The speed it is now, or null where speed cannot be adjusted (while timing, or with a rate mod on).</returns>
+        public double? ChangeSpeed(int direction)
+        {
+            if (tempoAdjustment.Disabled)
+                return null;
+
+            double[] speeds = PlaybackTabControl.TEMPO_VALUES;
+            int index = Array.IndexOf(speeds, tempoAdjustment.Value);
+
+            tempoAdjustment.Value = speeds[Math.Clamp((index < 0 ? Array.IndexOf(speeds, 1) : index) + direction, 0, speeds.Length - 1)];
+            return tempoAdjustment.Value;
+        }
+
         private void takeSpeedAway(LocalisableString reason)
         {
             // there is more than one reason to take it away, so it may well be disabled already, and a disabled
@@ -168,7 +185,7 @@ namespace osu.Game.Screens.Edit.Components
 
         public partial class PlaybackTabControl : OsuTabControl<double>
         {
-            private static readonly double[] tempo_values = { 0.25, 0.5, 0.75, 1, 1.5 };
+            internal static readonly double[] TEMPO_VALUES = { 0.25, 0.5, 0.75, 1, 1.5 };
 
             protected override TabItem<double> CreateTabItem(double value) => new PlaybackTabItem(value);
 
@@ -179,9 +196,9 @@ namespace osu.Game.Screens.Edit.Components
                 RelativeSizeAxes = Axes.Both;
                 TabContainer.Spacing = Vector2.Zero;
 
-                tempo_values.ForEach(AddItem);
+                TEMPO_VALUES.ForEach(AddItem);
 
-                Current.Value = tempo_values.Last();
+                Current.Value = TEMPO_VALUES.Last();
             }
 
             public partial class PlaybackTabItem : TabItem<double>
@@ -196,7 +213,7 @@ namespace osu.Game.Screens.Edit.Components
                 {
                     RelativeSizeAxes = Axes.Both;
 
-                    Width = 1f / tempo_values.Length;
+                    Width = 1f / TEMPO_VALUES.Length;
 
                     Children = new Drawable[]
                     {

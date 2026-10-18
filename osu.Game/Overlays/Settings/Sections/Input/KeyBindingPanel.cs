@@ -61,8 +61,23 @@ namespace osu.Game.Overlays.Settings.Sections.Input
                 {
                     new GlobalKeyBindingsSubsection(CommonStrings.General, GlobalActionCategory.Editor),
                     new GlobalKeyBindingsSubsection(InputSettingsStrings.EditorTestPlaySection, GlobalActionCategory.EditorTestPlay),
-                    new GlobalKeyBindingsSubsection(LazerKaiSettingsStrings.SectionHeader, GlobalActionCategory.EditorLazerKai),
                 }.Concat(rulesetEditorVariants),
+            });
+
+            // a section of its own rather than one heading under the editor's, with its headings listed in the sidebar
+            // the way this fork's settings are: there were 26 bindings under one heading, and finding one meant reading
+            // all of them (2026-10-18).
+            AddSection(new GlobalKeyBindingsSection(FontAwesome.Solid.PenNib, LazerKaiSettingsStrings.SectionHeader)
+            {
+                ListSubsectionsInSidebar = true,
+                Children = new[]
+                {
+                    new GlobalKeyBindingsSubsection(LazerKaiSettingsStrings.DisplayHeader, GlobalActionCategory.EditorLazerKaiDisplay),
+                    new GlobalKeyBindingsSubsection(LazerKaiSettingsStrings.KeyBindingPlaybackHeader, GlobalActionCategory.EditorLazerKaiPlayback),
+                    new GlobalKeyBindingsSubsection(LazerKaiSettingsStrings.KeyBindingEditingHeader, GlobalActionCategory.EditorLazerKaiEditing),
+                    new GlobalKeyBindingsSubsection(LazerKaiSettingsStrings.KeyBindingHitsoundModeHeader, GlobalActionCategory.EditorLazerKaiHitsoundMode),
+                    new GlobalKeyBindingsSubsection(LazerKaiSettingsStrings.OtherSectionHeader, GlobalActionCategory.EditorLazerKaiOther),
+                }
             });
         }
     }

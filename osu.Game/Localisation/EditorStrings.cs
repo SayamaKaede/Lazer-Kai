@@ -1349,6 +1349,11 @@ namespace osu.Game.Localisation
         public static LocalisableString TimelinePointRows => new TranslatableString(getKey(@"timeline_point_rows"), @"Timeline velocity and volume rows");
 
         /// <summary>
+        /// "Volume row"
+        /// </summary>
+        public static LocalisableString TimelineVolumeRow => new TranslatableString(getKey(@"timeline_volume_row"), @"Volume row");
+
+        /// <summary>
         /// "shown"
         /// </summary>
         public static LocalisableString Shown => new TranslatableString(getKey(@"shown"), @"shown");

@@ -316,6 +316,21 @@ namespace osu.Game.Localisation
             new TranslatableString(getKey(@"editor_hitsound_paste_only"), @"Hitsounds: paste hitsounds only");
 
         /// <summary>
+        /// "Toggle the volume row"
+        /// </summary>
+        public static LocalisableString EditorToggleTimelineVolume => new TranslatableString(getKey(@"editor_toggle_timeline_volume"), @"Toggle the volume row");
+
+        /// <summary>
+        /// "Increase playback speed"
+        /// </summary>
+        public static LocalisableString EditorIncreasePlaybackSpeed => new TranslatableString(getKey(@"editor_increase_playback_speed"), @"Increase playback speed");
+
+        /// <summary>
+        /// "Decrease playback speed"
+        /// </summary>
+        public static LocalisableString EditorDecreasePlaybackSpeed => new TranslatableString(getKey(@"editor_decrease_playback_speed"), @"Decrease playback speed");
+
+        /// <summary>
         /// "Toggle the miss timeline"
         /// </summary>
         public static LocalisableString ToggleReplayMissTimeline =>
