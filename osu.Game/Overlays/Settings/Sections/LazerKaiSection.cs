@@ -140,6 +140,7 @@ namespace osu.Game.Overlays.Settings.Sections
             Children = new Drawable[]
             {
                 new BackupSettings(),
+                new SongSelectSettings(),
                 new ExternalToolSettings(),
             };
         }

@@ -5,7 +5,9 @@ using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Screens.Edit;
+using osu.Game.Screens.Play;
 using osu.Game.Screens.Select;
 using osuTK.Input;
 
@@ -17,6 +19,12 @@ namespace osu.Game.Tests.Visual.SongSelect
     public partial class TestSceneAltClickEdit : SongSelectTestScene
     {
         private BeatmapInfo other => Beatmaps.GetAllUsableBeatmapSets().Single().Beatmaps.OrderBy(b => b.DifficultyName).Skip(1).First();
+
+        [SetUpSteps]
+        public void SetUpUnswapped()
+        {
+            AddStep("play from song select", () => Config.SetValue(OsuSetting.SongSelectOpensEditor, false));
+        }
 
         [Test]
         public void TestAltClickOpensTheDifficultyInTheEditor()
@@ -40,6 +48,47 @@ namespace osu.Game.Tests.Visual.SongSelect
             AddUntilStep("it is selected", () => Beatmap.Value.BeatmapInfo.Equals(other));
             AddAssert("the editor is not opened", () => Stack.CurrentScreen == SongSelect);
         }
+
+        /// <summary>
+        /// "Open the editor from song select" swaps the two (2026-10-18 request): what would play opens the editor.
+        /// </summary>
+        [Test]
+        public void TestClickingTheSelectedDifficultyOpensTheEditorWhenSwapped()
+        {
+            swap();
+            loadWithOneSet();
+
+            AddStep("click a difficulty that is not selected", () => click(other, alt: false));
+            AddUntilStep("it is selected", () => Beatmap.Value.BeatmapInfo.Equals(other));
+            AddAssert("the editor is not opened yet", () => Stack.CurrentScreen == SongSelect);
+
+            AddStep("click it again", () => click(other, alt: false));
+            AddUntilStep("the editor is opened", () => Stack.CurrentScreen is EditorLoader || Stack.CurrentScreen is Editor);
+            AddAssert("on that difficulty", () => Beatmap.Value.BeatmapInfo.Equals(other));
+        }
+
+        [Test]
+        public void TestEnterOpensTheEditorWhenSwapped()
+        {
+            swap();
+            loadWithOneSet();
+
+            AddStep("press enter", () => InputManager.Key(Key.Enter));
+            AddUntilStep("the editor is opened", () => Stack.CurrentScreen is EditorLoader || Stack.CurrentScreen is Editor);
+        }
+
+        [Test]
+        public void TestAltClickPlaysWhenSwapped()
+        {
+            swap();
+            loadWithOneSet();
+
+            AddStep("alt-click a difficulty that is not selected", () => click(other, alt: true));
+            AddUntilStep("it is played", () => Stack.CurrentScreen is PlayerLoader);
+            AddAssert("on that difficulty", () => Beatmap.Value.BeatmapInfo.Equals(other));
+        }
+
+        private void swap() => AddStep("open the editor from song select", () => Config.SetValue(OsuSetting.SongSelectOpensEditor, true));
 
         private void loadWithOneSet()
         {

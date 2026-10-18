@@ -421,6 +421,37 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString ManiaTickDescription => new TranslatableString(getKey(@"mania_tick_description"), @"The lines drawn across the lanes, not those of the timeline");
 
+        /// <summary>
+        /// "Playback"
+        /// </summary>
+        public static LocalisableString KeyBindingPlaybackHeader => new TranslatableString(getKey(@"key_binding_playback_header"), @"Playback");
+
+        /// <summary>
+        /// "Placement and editing"
+        /// </summary>
+        public static LocalisableString KeyBindingEditingHeader => new TranslatableString(getKey(@"key_binding_editing_header"), @"Placement and editing");
+
+        /// <summary>
+        /// "Hitsound mode"
+        /// </summary>
+        public static LocalisableString KeyBindingHitsoundModeHeader => new TranslatableString(getKey(@"key_binding_hitsound_mode_header"), @"Hitsound mode");
+
+        /// <summary>
+        /// "Song select"
+        /// </summary>
+        public static LocalisableString SongSelectHeader => new TranslatableString(getKey(@"song_select_header"), @"Song select");
+
+        /// <summary>
+        /// "Open the editor from song select"
+        /// </summary>
+        public static LocalisableString SongSelectOpensEditor => new TranslatableString(getKey(@"song_select_opens_editor"), @"Open the editor from song select");
+
+        /// <summary>
+        /// "Clicking the selected difficulty, Enter and the logo open it in the editor. Alt-click to play it."
+        /// </summary>
+        public static LocalisableString SongSelectOpensEditorDescription => new TranslatableString(getKey(@"song_select_opens_editor_description"),
+            @"Clicking the selected difficulty, Enter and the logo open it in the editor. Alt-click to play it.");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

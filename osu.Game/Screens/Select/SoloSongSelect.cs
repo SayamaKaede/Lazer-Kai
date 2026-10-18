@@ -7,6 +7,7 @@ using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Framework.Audio.Sample;
+using osu.Framework.Bindables;
 using osu.Framework.Extensions.LocalisationExtensions;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Platform;
@@ -77,9 +78,13 @@ namespace osu.Game.Screens.Select
             return dependencies;
         }
 
+        private Bindable<bool> opensEditor = null!;
+
         [BackgroundDependencyLoader]
-        private void load(AudioManager audio)
+        private void load(AudioManager audio, OsuConfigManager config)
         {
+            opensEditor = config.GetBindable<bool>(OsuSetting.SongSelectOpensEditor);
+
             sampleConfirmSelection = audio.Samples.Get(@"SongSelect/confirm-selection");
 
             AddInternal(new SongSelectTouchInputDetector());
@@ -165,7 +170,7 @@ namespace osu.Game.Screens.Select
 
         public override IEnumerable<OsuMenuItem> GetForwardActions(BeatmapInfo beatmap)
         {
-            yield return new OsuMenuItem(ButtonSystemStrings.Play.ToSentence(), MenuItemType.Highlighted, () => SelectAndRun(beatmap, OnStart)) { Icon = FontAwesome.Solid.Check };
+            yield return new OsuMenuItem(ButtonSystemStrings.Play.ToSentence(), MenuItemType.Highlighted, () => SelectAndRun(beatmap, play)) { Icon = FontAwesome.Solid.Check };
             yield return new OsuMenuItem(ButtonSystemStrings.Edit.ToSentence(), MenuItemType.Standard, () => Edit(beatmap)) { Icon = FontAwesome.Solid.PencilAlt };
 
             yield return new OsuMenuItemSpacer();
@@ -198,6 +203,21 @@ namespace osu.Game.Screens.Select
         }
 
         protected override void OnStart()
+        {
+            // Ctrl+Enter starts with autoplay, which only playing has: it still plays when the two are swapped.
+            if (opensEditor.Value && GetContainingInputManager()?.CurrentState?.Keyboard.ControlPressed != true)
+            {
+                this.Push(new EditorLoader());
+                return;
+            }
+
+            play();
+        }
+
+        /// <summary>
+        /// Plays the selected beatmap, whatever <see cref="OsuSetting.SongSelectOpensEditor"/> says starting does.
+        /// </summary>
+        private void play()
         {
             if (playerLoader != null) return;
 
@@ -261,7 +281,12 @@ namespace osu.Game.Screens.Select
             if (!this.IsCurrentScreen())
                 return false;
 
-            Edit(beatmap);
+            // alt-click is the other one of the two, so it plays when starting opens the editor.
+            if (opensEditor.Value)
+                SelectAndRun(beatmap, play);
+            else
+                Edit(beatmap);
+
             return true;
         }
 

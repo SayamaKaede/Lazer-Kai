@@ -240,6 +240,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorLiveModPreview, true);
             SetDefault(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement, false);
             SetDefault(OsuSetting.EditorManiaAdvanceByPreviousSpacingOnPlacement, false);
+            SetDefault(OsuSetting.SongSelectOpensEditor, false);
             SetDefault(OsuSetting.EditorFreehandSliderPlacement, true);
             SetDefault(OsuSetting.EditorAlwaysExpandTimelinePointLabels, false);
             SetDefault(OsuSetting.EditorSelectionColour, EditorSelectionColour.Default);
@@ -1394,5 +1395,11 @@ namespace osu.Game.Configuration
         /// playhead away from the rest. Off unless it is turned on (2026-10-14).
         /// </summary>
         EditorManiaAdvanceByPreviousSpacingOnPlacement,
+
+        /// <summary>
+        /// Whether song select opens a beatmap in the editor where it would start playing it, and plays it where it
+        /// would open it in the editor: for somebody who goes there to map far more often than to play (2026-10-18).
+        /// </summary>
+        SongSelectOpensEditor,
     }
 }

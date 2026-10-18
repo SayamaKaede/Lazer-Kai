@@ -69,7 +69,8 @@ namespace osu.Game.Screens.Select
         IEnumerable<OsuMenuItem> GetDifficultyModActions(BeatmapInfo beatmap);
 
         /// <summary>
-        /// Selects the difficulty and opens it in the editor, if this song select can.
+        /// Selects the difficulty and opens it in the editor, if this song select can. Where starting a beatmap opens
+        /// the editor instead (<see cref="Configuration.OsuSetting.SongSelectOpensEditor"/>), this plays it.
         /// </summary>
         /// <returns>Whether it was opened.</returns>
         bool EditDifficulty(BeatmapInfo beatmap);
