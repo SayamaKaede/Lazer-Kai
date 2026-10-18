@@ -423,11 +423,12 @@ namespace osu.Game.Screens.Edit.Collab
             // the rows about to be thrown away are never told the pointer left them.
             highlight.Clear();
 
-            emptyText.Alpha = blocks.Count > 1 ? 0 : 1;
+            // two bookmarks already make a stretch to give somebody, now that the stretches are only those between them.
+            emptyText.Alpha = blocks.Count > 0 ? 0 : 1;
 
             rows.Clear();
 
-            if (blocks.Count > 1)
+            if (blocks.Count > 0)
             {
                 foreach (var block in blocks)
                     rows.Add(new CollabBlockRow(block, project, colourProvider, onAssigned) { Height = row_height });
@@ -455,12 +456,12 @@ namespace osu.Game.Screens.Edit.Collab
 
             var counted = project.TotalsFor(blocks);
 
-            foreach ((string name, double drain) in counted)
+            foreach ((string name, CollabTime time) in counted)
             {
                 var theirs = blocks.Where(b => project.Assignment.TryGetValue(b.Key, out string? who) && who == name).ToArray();
                 var colour = CollabColours.For(project.Names.IndexOf(name));
 
-                totals.Add(new CollabTotal(name, drain, colourProvider)
+                totals.Add(new CollabTotal(name, time, colourProvider)
                 {
                     Removed = () => remove(name),
                     Renamed = renamed => rename(name, renamed),
@@ -474,11 +475,11 @@ namespace osu.Game.Screens.Edit.Collab
             updateBands();
 
             var unclaimed = blocks.Where(b => !project.Assignment.ContainsKey(b.Key)).ToArray();
-            double unassigned = unclaimed.Sum(b => b.DrainTime);
 
-            if (unassigned > 0 || counted.Count == 0)
+            // by whether anything is left rather than by how long it plays: before anything is mapped, nothing does.
+            if (unclaimed.Length > 0 || counted.Count == 0)
             {
-                totals.Add(new CollabTotal(CollabStrings.Unassigned.ToString(), unassigned, colourProvider)
+                totals.Add(new CollabTotal(CollabStrings.Unassigned, CollabTime.Of(unclaimed), colourProvider)
                 {
                     Pointed = pointed => point(unclaimed, pointed ? unclaimed : null, colourProvider.Foreground1),
                 });

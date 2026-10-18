@@ -20,10 +20,10 @@ namespace osu.Game.Localisation
         public static LocalisableString MenuItem => new TranslatableString(getKey(@"menu_item"), @"Collab Manager...");
 
         /// <summary>
-        /// "Add bookmarks where the beatmap is divided, and they become the stretches to hand out."
+        /// "Add bookmarks where each stretch starts and ends, and the stretches between them are handed out."
         /// </summary>
         public static LocalisableString NoBookmarksYet => new TranslatableString(getKey(@"no_bookmarks_yet"),
-            @"Add bookmarks where the beatmap is divided, and they become the stretches to hand out.");
+            @"Add bookmarks where each stretch starts and ends, and the stretches between them are handed out.");
 
         /// <summary>
         /// "unassigned"
@@ -53,10 +53,17 @@ namespace osu.Game.Localisation
             new TranslatableString(getKey(@"whole_beatmap"), @"whole beatmap {0}", drainTime);
 
         /// <summary>
-        /// "{0} / {1} objects"
+        /// "{0} / {1} · {2} objects"
         /// </summary>
-        public static LocalisableString BlockSummary(string drainTime, int objectCount) =>
-            new TranslatableString(getKey(@"block_summary"), @"{0} / {1} objects", drainTime, objectCount);
+        public static LocalisableString BlockSummary(string drainTime, string length, int objectCount) =>
+            new TranslatableString(getKey(@"block_summary"), @"{0} / {1} · {2} objects", drainTime, length, objectCount);
+
+        /// <summary>
+        /// "{0} / {1}"
+        /// </summary>
+        /// <remarks>The drain time, then the time between bookmarks (2026-10-18, the user's order).</remarks>
+        public static LocalisableString Time(string drainTime, string length) =>
+            new TranslatableString(getKey(@"time"), @"{0} / {1}", drainTime, length);
 
         /// <summary>
         /// "Rename"

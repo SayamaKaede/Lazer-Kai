@@ -29,8 +29,9 @@ namespace osu.Game.Screens.Edit.Collab
     /// </summary>
     public partial class CollabTotal : CompositeDrawable, IHasPopover, IHasTooltip
     {
-        private readonly string name;
-        private readonly double drainTime;
+        // localisable for the reading of what nobody has, which is named by the game rather than by somebody.
+        private readonly LocalisableString name;
+        private readonly CollabTime time;
         private readonly OverlayColourProvider colourProvider;
 
         /// <summary>Takes this collaborator off the beatmap, or null for a reading nobody can be taken off.</summary>
@@ -44,10 +45,10 @@ namespace osu.Game.Screens.Edit.Collab
 
         private Box background = null!;
 
-        public CollabTotal(string name, double drainTime, OverlayColourProvider colourProvider)
+        public CollabTotal(LocalisableString name, CollabTime time, OverlayColourProvider colourProvider)
         {
             this.name = name;
-            this.drainTime = drainTime;
+            this.time = time;
             this.colourProvider = colourProvider;
         }
 
@@ -77,7 +78,7 @@ namespace osu.Game.Screens.Edit.Collab
                     {
                         Anchor = Anchor.CentreLeft,
                         Origin = Anchor.CentreLeft,
-                        Text = ComposeStatusDisplay.DrainTimeReadout(drainTime),
+                        Text = CollabStrings.Time(ComposeStatusDisplay.DrainTimeReadout(time.DrainTime), ComposeStatusDisplay.DrainTimeReadout(time.Length)),
                         Font = OsuFont.Default.With(size: 13),
                         Colour = colourProvider.Foreground1,
                     },
@@ -112,7 +113,7 @@ namespace osu.Game.Screens.Edit.Collab
         /// </summary>
         public LocalisableString TooltipText => Renamed == null ? default : CollabStrings.Rename;
 
-        public Popover GetPopover() => new RenamePopover(name, renamed =>
+        public Popover GetPopover() => new RenamePopover(name.ToString(), renamed =>
         {
             this.HidePopover();
             Renamed?.Invoke(renamed);

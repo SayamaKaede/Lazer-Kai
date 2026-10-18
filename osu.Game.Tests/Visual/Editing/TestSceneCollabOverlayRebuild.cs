@@ -3,7 +3,9 @@
 
 using System.Linq;
 using NUnit.Framework;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Testing;
+using osu.Game.Localisation;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Screens.Edit.Collab;
@@ -29,8 +31,22 @@ namespace osu.Game.Tests.Visual.Editing
             AddStep("cut the beatmap in three", () =>
             {
                 double[] times = EditorBeatmap.HitObjects.Select(h => h.StartTime).ToArray();
-                EditorBeatmap.Bookmarks.AddRange(new[] { (int)times[times.Length / 3], (int)times[2 * times.Length / 3] });
+
+                // the stretches are between bookmarks, so the beatmap's two ends are marked as well.
+                EditorBeatmap.Bookmarks.AddRange(new[] { (int)times[0], (int)times[times.Length / 3], (int)times[2 * times.Length / 3], (int)times[^1] });
             });
+        }
+
+        /// <summary>
+        /// The total of what nobody has yet is named in the game's language: it was written out as the English text
+        /// before it reached the screen, so it said "unassigned" in Japanese as well (2026-10-18).
+        /// </summary>
+        [Test]
+        public void TestUnassignedIsTranslated()
+        {
+            AddStep("open the panel", () => collab.Show());
+            AddUntilStep("unassigned is named by its translation",
+                () => collab.ChildrenOfType<CollabTotal>().SelectMany(t => t.ChildrenOfType<SpriteText>()).Any(t => t.Text.Equals(CollabStrings.Unassigned)));
         }
 
         [Test]

@@ -23,54 +23,101 @@ namespace osu.Game.Tests.Editing
         /// The number each collaborator is given has to add back up to the number the beatmap is judged by, or they
         /// are arguing over a figure neither of them can reproduce.
         /// </summary>
+        /// <summary>
+        /// Bookmarks around the whole beatmap give it all out, and then the number each collaborator is given has to
+        /// add back up to the number the beatmap is judged by, or they are arguing over a figure neither of them can
+        /// reproduce.
+        /// </summary>
         [Test]
         public void TestTheBlocksAddBackUpToTheBeatmapsDrainTime()
         {
             var beatmap = withBreaks();
-            var blocks = CollabBlocks.For(beatmap, new[] { 2_400, 5_000, 8_000 });
+            var blocks = CollabBlocks.For(beatmap, new[] { 0, 2_400, 5_000, 8_000, 12_000 });
 
             Assert.That(blocks.Sum(b => b.DrainTime),
                 Is.EqualTo(ComposeStatusDisplay.DrainTimeFor(beatmap)).Within(0.0001));
         }
 
+        /// <summary>
+        /// The stretches are the ones between bookmarks and nothing else (2026-10-18): before the first and after the
+        /// last is nobody's.
+        /// </summary>
         [Test]
-        public void TestOneBlockPerBookmarkPlusTheOneBeforeThem()
+        public void TestOneBlockBetweenEachTwoBookmarks()
+        {
+            var blocks = CollabBlocks.For(withBreaks(), new[] { 8_000, 2_400, 11_000 });
+
+            Assert.That(blocks, Has.Count.EqualTo(2));
+
+            Assert.That(blocks[0].Key, Is.EqualTo(2_400));
+            Assert.That(blocks[0].Start, Is.EqualTo(2_400));
+            Assert.That(blocks[0].End, Is.EqualTo(8_000));
+
+            Assert.That(blocks[1].Key, Is.EqualTo(8_000));
+            Assert.That(blocks[1].Start, Is.EqualTo(8_000));
+            Assert.That(blocks[1].End, Is.EqualTo(11_000));
+        }
+
+        [Test]
+        public void TestOneBookmarkDividesNothing()
+        {
+            Assert.That(CollabBlocks.For(withBreaks(), new[] { 2_400 }), Is.Empty);
+        }
+
+        /// <summary>
+        /// A collaboration is divided before any of it is mapped, so a beatmap with nothing in it yet is divided all the
+        /// same: its stretches are as long as the bookmarks say, and none of them is played yet.
+        /// </summary>
+        [Test]
+        public void TestABeatmapWithNoObjectsIsDividedAllTheSame()
+        {
+            var blocks = CollabBlocks.For(new Beatmap(), new[] { 1_000, 5_000, 9_500 });
+
+            Assert.That(blocks, Has.Count.EqualTo(2));
+            Assert.That(blocks.Select(b => b.Length), Is.EqualTo(new[] { 4_000d, 4_500d }));
+            Assert.That(blocks.Select(b => b.DrainTime), Is.EqualTo(new[] { 0d, 0d }));
+            Assert.That(blocks.Select(b => b.ObjectCount), Is.EqualTo(new[] { 0, 0 }));
+        }
+
+        /// <summary>
+        /// How long a stretch is runs from bookmark to bookmark, rests and all, where its drain time does not.
+        /// </summary>
+        [Test]
+        public void TestTheLengthIsFromBookmarkToBookmark()
         {
             var blocks = CollabBlocks.For(withBreaks(), new[] { 2_400, 8_000 });
 
-            Assert.That(blocks, Has.Count.EqualTo(3));
-            Assert.That(blocks[0].Key, Is.EqualTo(CollabBlock.HEAD));
-            Assert.That(blocks[1].Key, Is.EqualTo(2_400));
-            Assert.That(blocks[2].Key, Is.EqualTo(8_000));
+            Assert.That(blocks.Single().Length, Is.EqualTo(5_600));
+            Assert.That(blocks.Single().DrainTime, Is.LessThan(5_600));
         }
 
         /// <summary>
-        /// A bookmark before the beatmap starts or after it ends has no play on the far side of it to hand over.
-        /// </summary>
-        [Test]
-        public void TestBookmarksOutsideTheBeatmapDoNotCut()
-        {
-            var blocks = CollabBlocks.For(withBreaks(), new[] { -5_000, 500, 20_000 });
-
-            Assert.That(blocks, Has.Count.EqualTo(1));
-        }
-
-        [Test]
-        public void TestABeatmapWithNoObjectsHasNothingToDivide()
-        {
-            Assert.That(CollabBlocks.For(new Beatmap(), new[] { 1_000 }), Is.Empty);
-        }
-
-        /// <summary>
-        /// Every object belongs to exactly one block, counted by where it was hit.
+        /// Every object between the first bookmark and the last belongs to exactly one block, counted by where it was
+        /// hit: one on the last bookmark is the last block's, there being no block after it to take it.
         /// </summary>
         [Test]
         public void TestEveryObjectIsCountedOnce()
         {
             var beatmap = withBreaks();
-            var blocks = CollabBlocks.For(beatmap, new[] { 2_400, 8_000 });
+            var blocks = CollabBlocks.For(beatmap, new[] { 1_000, 2_400, 8_000, 10_000 });
 
             Assert.That(blocks.Sum(b => b.ObjectCount), Is.EqualTo(beatmap.HitObjects.Count));
+        }
+
+        [Test]
+        public void TestTotalsCountTheLengthAsWellAsTheDrainTime()
+        {
+            var blocks = CollabBlocks.For(withBreaks(), new[] { 0, 2_400, 8_000, 12_000 });
+            var project = new CollabProject { Names = { "くろ", "しろ" } };
+
+            project.Assignment[0] = "くろ";
+            project.Assignment[8_000] = "くろ";
+
+            var totals = project.TotalsFor(blocks);
+
+            Assert.That(totals["くろ"].Length, Is.EqualTo(2_400 + 4_000));
+            Assert.That(totals["くろ"].DrainTime, Is.EqualTo(blocks[0].DrainTime + blocks[2].DrainTime));
+            Assert.That(totals["しろ"].Length, Is.Zero);
         }
 
         /// <summary>
@@ -79,11 +126,11 @@ namespace osu.Game.Tests.Editing
         [Test]
         public void TestASplitSurvivesBeingWrittenOutAndReadBack()
         {
-            var blocks = CollabBlocks.For(withBreaks(), new[] { 2_400, 8_000 });
+            var blocks = CollabBlocks.For(withBreaks(), new[] { 0, 2_400, 8_000, 12_000 });
 
             var assignment = new Dictionary<int, string>
             {
-                [CollabBlock.HEAD] = "くろ",
+                [0] = "くろ",
                 [2_400] = "しろ",
                 [8_000] = "くろ",
             };
@@ -96,7 +143,7 @@ namespace osu.Game.Tests.Editing
         [Test]
         public void TestTheBeatmapIsNamedOnTheFirstLine()
         {
-            var blocks = CollabBlocks.For(withBreaks(), new[] { 2_400 });
+            var blocks = CollabBlocks.For(withBreaks(), new[] { 2_400, 8_000 });
             var assignment = new Dictionary<int, string> { [2_400] = "しろ" };
 
             string[] lines = CollabClipboard.Write("Artist - Title [test collab]", blocks, assignment).Split('\n');
@@ -112,9 +159,9 @@ namespace osu.Game.Tests.Editing
         [Test]
         public void TestATimestampNamingNoBlockIsLeftOut()
         {
-            var blocks = CollabBlocks.For(withBreaks(), new[] { 2_400 });
+            var blocks = CollabBlocks.For(withBreaks(), new[] { 2_400, 8_000 });
 
-            var read = CollabClipboard.Read("Artist - Title [test collab]\n0:02:400 - しろ\n0:07:777 - だれか", blocks);
+            var read =CollabClipboard.Read("Artist - Title [test collab]\n0:02:400 - しろ\n0:07:777 - だれか", blocks);
 
             Assert.That(read, Has.Count.EqualTo(1));
             Assert.That(read[2_400], Is.EqualTo("しろ"));

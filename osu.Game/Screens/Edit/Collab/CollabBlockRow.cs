@@ -126,7 +126,8 @@ namespace osu.Game.Screens.Edit.Collab
                             {
                                 Anchor = Anchor.CentreLeft,
                                 Origin = Anchor.CentreLeft,
-                                Text = CollabStrings.BlockSummary(ComposeStatusDisplay.DrainTimeReadout(block.DrainTime), block.ObjectCount),
+                                Text = CollabStrings.BlockSummary(ComposeStatusDisplay.DrainTimeReadout(block.DrainTime), ComposeStatusDisplay.DrainTimeReadout(block.Length),
+                                    block.ObjectCount),
                                 Font = OsuFont.Default.With(size: 14),
                                 Colour = colourProvider.Foreground1,
                             },

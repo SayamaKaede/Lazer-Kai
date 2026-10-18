@@ -9,7 +9,7 @@ namespace osu.Game.Screens.Edit.Collab
     public readonly struct CollabBlock
     {
         /// <summary>
-        /// The bookmark this block opens on, or <see cref="HEAD"/> for the one before the first bookmark.
+        /// The bookmark this block opens on.
         /// </summary>
         /// <remarks>
         /// What an assignment is remembered against. A bookmark's own time is used rather than the block's position in
@@ -27,9 +27,22 @@ namespace osu.Game.Screens.Edit.Collab
         /// <summary>How long of this block is actually played, counted the way the whole beatmap's is.</summary>
         public readonly double DrainTime;
 
+        /// <summary>
+        /// How long the block is from bookmark to bookmark, rests and all: what a collaboration is agreed in before any
+        /// of it is mapped, when <see cref="DrainTime"/> is still nothing.
+        /// </summary>
+        public double Length => End - Start;
+
         /// <summary>How many objects begin inside it.</summary>
         public readonly int ObjectCount;
 
+        /// <summary>
+        /// What the stretch before the first bookmark was remembered against while there was one (until 2026-10-18).
+        /// </summary>
+        /// <remarks>
+        /// No block opens on it any more, but a project saved before then can still hold it, until
+        /// <see cref="CollabProject.DropAssignmentsOutsideOf"/> takes it out.
+        /// </remarks>
         public const int HEAD = int.MinValue;
 
         public CollabBlock(int key, double start, double end, double drainTime, int objectCount)

@@ -16,50 +16,35 @@ namespace osu.Game.Screens.Edit.Collab
     /// The cuts are the beatmap's own bookmarks and nothing else. A collaboration is agreed in timestamps before any
     /// of it is mapped, and those timestamps are already bookmarks — asking for them a second time in a screen of
     /// their own would be asking the same question twice and leaving two answers to disagree.
+    ///
+    /// The stretches are the ones between two bookmarks, so the beatmap's two ends are bookmarked as well (2026-10-18).
+    /// They used to run from the first object to the last instead, which left nothing to divide until the beatmap was
+    /// mapped — and how long each collaborator has is wanted before that, to agree the split in the first place.
     /// </remarks>
     public static class CollabBlocks
     {
         public static List<CollabBlock> For(IBeatmap beatmap, IEnumerable<int> bookmarks)
         {
+            int[] cuts = bookmarks.Distinct().OrderBy(b => b).ToArray();
+
             var blocks = new List<CollabBlock>();
 
-            if (beatmap.HitObjects.Count == 0)
-                return blocks;
-
-            double first = beatmap.HitObjects.Min(h => h.StartTime);
-            double last = beatmap.HitObjects.Max(h => h.GetEndTime());
-
-            // a bookmark outside the beatmap cuts nothing: there is no play on the far side of it to give anyone.
-            int[] cuts = bookmarks.Distinct().Where(b => b > first && b < last).OrderBy(b => b).ToArray();
-
-            double start = first;
-            int key = CollabBlock.HEAD;
-
-            foreach (int cut in cuts)
-            {
-                blocks.Add(block(beatmap, key, start, cut));
-                start = cut;
-                key = cut;
-            }
-
-            blocks.Add(block(beatmap, key, start, last));
+            for (int i = 0; i + 1 < cuts.Length; i++)
+                blocks.Add(block(beatmap, cuts[i], cuts[i + 1], last: i + 2 == cuts.Length));
 
             return blocks;
         }
 
         /// <summary>
         /// Objects are counted by where they begin, so one held across a cut belongs to the block it was hit in. Its
-        /// time on the far side still counts towards that side's drain, which is time the player spends on it.
+        /// time on the far side still counts towards that side's drain, which is time the player spends on it. The last
+        /// block takes an object on the bookmark it ends at as well, there being no block after it to.
         /// </summary>
-        private static CollabBlock block(IBeatmap beatmap, int key, double start, double end)
+        private static CollabBlock block(IBeatmap beatmap, int start, int end, bool last)
         {
-            int count = beatmap.HitObjects.Count(h => h.StartTime >= start && h.StartTime < end);
+            int count = beatmap.HitObjects.Count(h => h.StartTime >= start && (h.StartTime < end || (last && h.StartTime <= end)));
 
-            // the last block has to take the object that ends it, which starts before its own end.
-            if (end >= beatmap.HitObjects.Max(h => h.GetEndTime()))
-                count = beatmap.HitObjects.Count(h => h.StartTime >= start);
-
-            return new CollabBlock(key, start, end, ComposeStatusDisplay.DrainTimeBetween(beatmap, start, end), count);
+            return new CollabBlock(start, start, end, ComposeStatusDisplay.DrainTimeBetween(beatmap, start, end), count);
         }
     }
 }

@@ -51,8 +51,9 @@ namespace osu.Game.Screens.Edit.Collab
         /// Takes every stretch along with its bookmark, when the bookmarks have all moved by the same amount.
         /// </summary>
         /// <remarks>
-        /// That is the division that was agreed, at another time: it is what moving the whole beatmap in time does. The
-        /// stretch before the first bookmark opens on none, and stays as it is.
+        /// That is the division that was agreed, at another time: it is what moving the whole beatmap in time does. An
+        /// assignment of the stretch there used to be before the first bookmark (<see cref="CollabBlock.HEAD"/>) is left
+        /// as it is rather than moved past the smallest number there is.
         /// </remarks>
         public void MoveAssignments(int by) =>
             Assignment = Assignment.ToDictionary(a => a.Key == CollabBlock.HEAD ? a.Key : a.Key + by, a => a.Value);
@@ -86,17 +87,29 @@ namespace osu.Game.Screens.Edit.Collab
         /// <summary>
         /// How long each collaborator is taking, and what is not yet anybody's.
         /// </summary>
-        public Dictionary<string, double> TotalsFor(IEnumerable<CollabBlock> blocks)
+        public Dictionary<string, CollabTime> TotalsFor(IEnumerable<CollabBlock> blocks)
         {
-            var totals = Names.ToDictionary(n => n, _ => 0d);
+            var totals = Names.ToDictionary(n => n, _ => default(CollabTime));
 
             foreach (var block in blocks)
             {
-                if (Assignment.TryGetValue(block.Key, out string? name) && totals.ContainsKey(name))
-                    totals[name] += block.DrainTime;
+                if (Assignment.TryGetValue(block.Key, out string? name) && totals.TryGetValue(name, out var total))
+                    totals[name] = total + CollabTime.Of(block);
             }
 
             return totals;
         }
+    }
+
+    /// <summary>
+    /// How much of a beatmap somebody has, both ways it is counted: from bookmark to bookmark, and as played.
+    /// </summary>
+    public readonly record struct CollabTime(double Length, double DrainTime)
+    {
+        public static CollabTime Of(CollabBlock block) => new CollabTime(block.Length, block.DrainTime);
+
+        public static CollabTime Of(IEnumerable<CollabBlock> blocks) => blocks.Aggregate(default(CollabTime), (total, block) => total + Of(block));
+
+        public static CollabTime operator +(CollabTime a, CollabTime b) => new CollabTime(a.Length + b.Length, a.DrainTime + b.DrainTime);
     }
 }
