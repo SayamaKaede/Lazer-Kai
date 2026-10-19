@@ -645,6 +645,7 @@ namespace osu.Game.Localisation
             [$@"{binding_prefix}:editor_toggle_timeline_volume"] = @"音量の行の表示を切り替え",
             [$@"{binding_prefix}:editor_increase_playback_speed"] = @"再生速度を上げる",
             [$@"{binding_prefix}:editor_decrease_playback_speed"] = @"再生速度を下げる",
+            [$@"{binding_prefix}:editor_toggle_discussion"] = @"ディスカッションを開く",
             [$@"{binding_prefix}:toggle_replay_miss_timeline"] = @"ミスのタイムラインの表示を切り替え",
             [$@"{binding_prefix}:editor_toggle_play_area_border"] = @"プレイ画面の枠の表示を切り替え",
             [$@"{binding_prefix}:editor_toggle_offscreen_detection"] = @"Offscreen検知を切り替え",
@@ -677,6 +678,22 @@ namespace osu.Game.Localisation
             [$@"{collab_prefix}:rename"] = @"名前を変更",
             [$@"{collab_prefix}:collaborator_name"] = @"マッパーの名前",
             [$@"{collab_prefix}:panel_opacity"] = @"透明度",
+
+            // the beatmap's discussion, read in the editor. The three headings are the website's own.
+            [$@"{discussion_prefix}:header"] = @"ディスカッション",
+            [$@"{discussion_prefix}:menu_item"] = @"ディスカッション...",
+            [$@"{discussion_prefix}:reload"] = @"再読み込み",
+            [$@"{discussion_prefix}:timeline"] = @"タイムライン",
+            [$@"{discussion_prefix}:this_difficulty"] = @"全般（この難易度）",
+            [$@"{discussion_prefix}:whole_set"] = @"全般（全難易度）",
+            [$@"{discussion_prefix}:not_uploaded"] = @"アップロードされていない譜面です",
+            [$@"{discussion_prefix}:not_logged_in"] = @"ログインすると表示できます",
+            [$@"{discussion_prefix}:nothing_posted"] = @"まだ投稿はありません",
+            [$@"{discussion_prefix}:load_failed"] = @"読み込めませんでした",
+            [$@"{discussion_prefix}:loading"] = @"読み込み中...",
+            [$@"{discussion_prefix}:show_replies"] = @"返信を表示",
+            [$@"{discussion_prefix}:hide_replies"] = @"返信を非表示",
+            [$@"{discussion_prefix}:no_replies"] = @"返信はありません",
 
             [$@"{editor_prefix}:detect_offscreen_description"] = @"はみ出すと該当のノーツが赤くなります",
             [$@"{editor_prefix}:seek_animation_duration_description"] = @"ホイールなどでタイムラインが動く時のアニメーションの長さ",
@@ -770,6 +787,7 @@ namespace osu.Game.Localisation
         private const string common_prefix = @"osu.Game.Resources.Localisation.Common";
         private const string profile_prefix = @"osu.Game.Resources.Localisation.LazerKaiProfile";
         private const string collab_prefix = @"osu.Game.Resources.Localisation.Collab";
+        private const string discussion_prefix = @"osu.Game.Resources.Localisation.LazerKaiDiscussion";
         private const string export_prefix = @"osu.Game.Resources.Localisation.BeatmapExport";
         private const string stable_compatibility_prefix = @"osu.Game.Resources.Localisation.LazerKaiStableCompatibility";
         private const string saved_lines_prefix = @"osu.Game.Resources.Localisation.LazerKaiSavedLines";

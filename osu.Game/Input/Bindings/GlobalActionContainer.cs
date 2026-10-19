@@ -168,6 +168,7 @@ namespace osu.Game.Input.Bindings
         private static IEnumerable<KeyBinding> lazerKaiOtherKeyBindings => new[]
         {
             new KeyBinding(InputKey.None, GlobalAction.EditorBackupNow),
+            new KeyBinding(InputKey.None, GlobalAction.EditorToggleDiscussion),
         };
 
         private static IEnumerable<KeyBinding> globalKeyBindings => new[]
@@ -821,6 +822,9 @@ namespace osu.Game.Input.Bindings
 
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorDecreasePlaybackSpeed))]
         EditorDecreasePlaybackSpeed,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.EditorToggleDiscussion))]
+        EditorToggleDiscussion,
     }
 
     public enum GlobalActionCategory

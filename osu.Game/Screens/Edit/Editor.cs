@@ -59,6 +59,7 @@ using osu.Game.Screens.Edit.ComboColours;
 using osu.Game.Screens.Edit.Presets;
 using osu.Game.Screens.Edit.DifficultyGraph;
 using osu.Game.Screens.Edit.Collab;
+using osu.Game.Screens.Edit.Discussion;
 using osu.Game.Screens.Edit.Components.Menus;
 using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
 using osu.Game.Screens.Edit.Compose;
@@ -275,6 +276,8 @@ namespace osu.Game.Screens.Edit
         private ComboColourStudioOverlay comboColourStudio;
 
         private CollabOverlay collab;
+
+        private DiscussionOverlay discussion;
 
         private PlacementPresetOverlay placementPresets;
 
@@ -684,6 +687,10 @@ namespace osu.Game.Screens.Edit
                                             new OsuMenuItemSpacer(),
                                             new EditorMenuItem(ComboColourStudioStrings.MenuItem, MenuItemType.Standard, () => comboColourStudio?.ToggleVisibility()),
                                             new EditorMenuItem(CollabStrings.MenuItem, MenuItemType.Standard, () => collab?.ToggleVisibility()),
+                                            new EditorMenuItem(DiscussionStrings.MenuItem, MenuItemType.Standard, () => discussion?.ToggleVisibility())
+                                            {
+                                                Hotkey = new Hotkey(GlobalAction.EditorToggleDiscussion)
+                                            },
                                             placementPresetsMenuItem = new EditorMenuItem(PlacementPresetStrings.MenuItem, MenuItemType.Standard, () => placementPresets?.ToggleVisibility())
                                             {
                                                 Hotkey = new Hotkey(GlobalAction.EditorTogglePlacementPresets)
@@ -883,6 +890,8 @@ namespace osu.Game.Screens.Edit
                     // spans the screen, unlike the studio above it, so that it can tell a click meant for the beatmap
                     // from one meant for itself. Only its own panel takes input.
                     collab = new CollabOverlay { State = { Value = Visibility.Hidden } },
+                    // the same kind of panel as the one above, read alongside the beatmap it is about.
+                    discussion = new DiscussionOverlay { State = { Value = Visibility.Hidden } },
                     // above the screens so that the digits it answers to reach it before the composer's tool
                     // shortcuts underneath, which are the same keys.
                     placementPresets = new PlacementPresetOverlay { State = { Value = Visibility.Hidden } },
@@ -1566,6 +1575,10 @@ namespace osu.Game.Screens.Edit
                         return false;
 
                     placementPresets?.ToggleVisibility();
+                    return true;
+
+                case GlobalAction.EditorToggleDiscussion:
+                    discussion?.ToggleVisibility();
                     return true;
 
                 case GlobalAction.EditorDiscardUnsavedChanges:
@@ -2570,6 +2583,7 @@ namespace osu.Game.Screens.Edit
                 placementPresets?.Hide();
                 comboColourStudio?.Hide();
                 collab?.Hide();
+                discussion?.Hide();
                 difficultyGraphDetail?.Hide();
             }
 

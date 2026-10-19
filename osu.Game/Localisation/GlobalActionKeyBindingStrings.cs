@@ -331,6 +331,11 @@ namespace osu.Game.Localisation
         public static LocalisableString EditorDecreasePlaybackSpeed => new TranslatableString(getKey(@"editor_decrease_playback_speed"), @"Decrease playback speed");
 
         /// <summary>
+        /// "Open the discussion"
+        /// </summary>
+        public static LocalisableString EditorToggleDiscussion => new TranslatableString(getKey(@"editor_toggle_discussion"), @"Open the discussion");
+
+        /// <summary>
         /// "Toggle the miss timeline"
         /// </summary>
         public static LocalisableString ToggleReplayMissTimeline =>
