@@ -5,7 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
+using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Effects;
@@ -17,6 +19,7 @@ using osu.Framework.Input.Events;
 using osu.Framework.IO.Stores;
 using osu.Framework.Localisation;
 using osu.Framework.Platform;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
@@ -45,7 +48,9 @@ namespace osu.Game.Screens.Edit.Discussion
     public partial class DiscussionOverlay : VisibilityContainer, IKeyBindingHandler<GlobalAction>
     {
         private const float panel_width = 480;
-        private const float list_height = 560;
+        private const float header_height = 44;
+        private const float bars_height = 86;
+        private const float list_height = 510;
 
         /// <summary>
         /// How many pages of threads are read before stopping. At 50 a page, more than any beatmapset is given.
@@ -64,12 +69,38 @@ namespace osu.Game.Screens.Edit.Discussion
         [Resolved(canBeNull: true)]
         private Editor? editor { get; set; }
 
+        [Resolved]
+        private DiscussionMarks marks { get; set; } = null!;
+
         private Container panel = null!;
+        private OsuScrollContainer scroll = null!;
         private FillFlowContainer list = null!;
         private OsuSpriteText status = null!;
+        private DiscussionTabs tabs = null!;
+        private UserDropdown users = null!;
 
         private readonly List<APIBeatmapsetDiscussion> discussions = new List<APIBeatmapsetDiscussion>();
         private readonly Dictionary<int, string> names = new Dictionary<int, string>();
+
+        /// <summary>
+        /// Every row made so far, kept while the tabs are switched so that replies already opened stay open.
+        /// </summary>
+        private readonly Dictionary<long, DiscussionRow> rows = new Dictionary<long, DiscussionRow>();
+
+        private readonly Bindable<DiscussionFilter> filter = new Bindable<DiscussionFilter>(DiscussionFilter.All);
+
+        /// <summary>
+        /// Whose threads are listed, or <see cref="UserDropdown.EVERYONE"/>.
+        /// </summary>
+        private readonly Bindable<int> user = new Bindable<int>(UserDropdown.EVERYONE);
+
+        private readonly Bindable<DiscussionSort> sort = new Bindable<DiscussionSort>();
+        private readonly BindableFloat opacity = new BindableFloat(1);
+
+        /// <summary>
+        /// Whether the whole discussion has been read, so that there is something for the tabs to divide.
+        /// </summary>
+        private bool loaded;
 
         private GetBeatmapsetDiscussionsRequest? request;
 
@@ -110,9 +141,11 @@ namespace osu.Game.Screens.Edit.Discussion
         private DiscussionImageStore? ownImages;
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
             RelativeSizeAxes = Axes.Both;
+
+            config.BindWith(OsuSetting.EditorDiscussionOpacity, opacity);
 
             // the same blocker as the collab panel's: a click meant for the panel does not reach the beatmap behind.
             panel = new CollabInputBlocker
@@ -137,17 +170,16 @@ namespace osu.Game.Screens.Edit.Discussion
                         RelativeSizeAxes = Axes.Both,
                         Colour = colourProvider.Background4,
                     },
-                    new FillFlowContainer
+                    new Container
                     {
                         RelativeSizeAxes = Axes.X,
-                        AutoSizeAxes = Axes.Y,
-                        Direction = FillDirection.Vertical,
+                        Height = header_height + bars_height + list_height,
                         Children = new Drawable[]
                         {
-                            createHeader(),
                             new Container
                             {
                                 RelativeSizeAxes = Axes.X,
+                                Y = header_height + bars_height,
                                 Height = list_height,
                                 Children = new Drawable[]
                                 {
@@ -157,7 +189,7 @@ namespace osu.Game.Screens.Edit.Discussion
                                         Origin = Anchor.Centre,
                                         Colour = colourProvider.Foreground1,
                                     },
-                                    new OsuScrollContainer
+                                    scroll = new OsuScrollContainer
                                     {
                                         RelativeSizeAxes = Axes.Both,
                                         Child = list = new FillFlowContainer
@@ -171,6 +203,18 @@ namespace osu.Game.Screens.Edit.Discussion
                                     },
                                 }
                             },
+                            // after the list, so that the user list opening downwards is drawn over it.
+                            new FillFlowContainer
+                            {
+                                RelativeSizeAxes = Axes.X,
+                                AutoSizeAxes = Axes.Y,
+                                Direction = FillDirection.Vertical,
+                                Children = new[]
+                                {
+                                    createHeader(),
+                                    createBars(),
+                                }
+                            },
                         }
                     },
                 }
@@ -178,6 +222,55 @@ namespace osu.Game.Screens.Edit.Discussion
 
             InternalChildren = new Drawable[] { panel, imageViewer };
         }
+
+        private Drawable createBars() => new Container
+        {
+            RelativeSizeAxes = Axes.X,
+            Height = bars_height,
+            Children = new Drawable[]
+            {
+                new Box
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Colour = colourProvider.Background4,
+                },
+                tabs = new DiscussionTabs
+                {
+                    Margin = new MarginPadding { Left = 14, Top = 6 },
+                    Current = { BindTarget = filter },
+                },
+                new Container
+                {
+                    RelativeSizeAxes = Axes.X,
+                    Height = 40,
+                    Y = 36,
+                    Padding = new MarginPadding { Horizontal = 14 },
+                    Children = new Drawable[]
+                    {
+                        users = new UserDropdown(names)
+                        {
+                            Width = 180,
+                            Current = { BindTarget = user },
+                        },
+                        new DiscussionSortSwitch
+                        {
+                            Anchor = Anchor.TopRight,
+                            Origin = Anchor.TopRight,
+                            Margin = new MarginPadding { Top = 12 },
+                            Current = { BindTarget = sort },
+                        },
+                    }
+                },
+                new Box
+                {
+                    Anchor = Anchor.BottomLeft,
+                    Origin = Anchor.BottomLeft,
+                    RelativeSizeAxes = Axes.X,
+                    Height = 1,
+                    Colour = colourProvider.Background3,
+                },
+            }
+        };
 
         private Drawable createHeader() => new HeaderBar(() => panel)
         {
@@ -197,6 +290,33 @@ namespace osu.Game.Screens.Edit.Discussion
                     Margin = new MarginPadding { Left = 14 },
                     Text = DiscussionStrings.Header,
                     Font = OsuFont.Default.With(size: 16, weight: FontWeight.SemiBold),
+                },
+                new FillFlowContainer
+                {
+                    Anchor = Anchor.CentreRight,
+                    Origin = Anchor.CentreRight,
+                    Margin = new MarginPadding { Right = 80 },
+                    AutoSizeAxes = Axes.Both,
+                    Direction = FillDirection.Horizontal,
+                    Spacing = new Vector2(8, 0),
+                    Children = new Drawable[]
+                    {
+                        new OsuSpriteText
+                        {
+                            Anchor = Anchor.CentreLeft,
+                            Origin = Anchor.CentreLeft,
+                            Text = DiscussionStrings.Opacity,
+                            Font = OsuFont.Default.With(size: 12),
+                            Colour = colourProvider.Content2,
+                        },
+                        new RoundedSliderBar<float>
+                        {
+                            Anchor = Anchor.CentreLeft,
+                            Origin = Anchor.CentreLeft,
+                            Current = opacity,
+                            Width = 110,
+                        },
+                    }
                 },
                 new IconButton
                 {
@@ -220,6 +340,39 @@ namespace osu.Game.Screens.Edit.Discussion
             }
         };
 
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            // the panel rather than the whole of this, so that showing and hiding it still fades from nothing to
+            // whatever the mapper set, and an image looked at whole is not faded with it.
+            opacity.BindValueChanged(v => panel.Alpha = v.NewValue, true);
+
+            filter.BindValueChanged(_ => showDiscussions());
+            user.BindValueChanged(_ => showDiscussions());
+            sort.BindValueChanged(_ => showDiscussions());
+
+            marks.Picked += bringIntoView;
+        }
+
+        /// <summary>
+        /// Opens the panel at a thread clicked on the timeline.
+        /// </summary>
+        private void bringIntoView(APIBeatmapsetDiscussion discussion)
+        {
+            Show();
+
+            if (!rows.TryGetValue(discussion.Id, out var row) || row.Parent == null)
+                return;
+
+            // once the list has laid the row out where it is going to be.
+            ScheduleAfterChildren(() =>
+            {
+                scroll.ScrollIntoView(row);
+                row.Flash();
+            });
+        }
+
         /// <summary>
         /// Throws away what has been read and asks for all of it again.
         /// </summary>
@@ -231,7 +384,11 @@ namespace osu.Game.Screens.Edit.Discussion
 
             discussions.Clear();
             names.Clear();
-            list.Clear();
+            clearRows();
+            loaded = false;
+            marks.Timeline.Value = Array.Empty<APIBeatmapsetDiscussion>();
+            tabs.SetCounts(new Dictionary<DiscussionFilter, int>());
+            users.SetUsers(Array.Empty<int>());
 
             int beatmapSetId = editorBeatmap.BeatmapInfo.BeatmapSet?.OnlineID ?? -1;
 
@@ -271,7 +428,11 @@ namespace osu.Game.Screens.Edit.Discussion
                 if (response.CursorString != null && page < max_pages)
                     askFor(beatmapSetId, page + 1);
                 else
+                {
+                    loaded = true;
+                    users.SetUsers(Discussions.ForDifficulty(discussions, editorBeatmap.BeatmapInfo.OnlineID).Select(d => d.UserId));
                     showDiscussions();
+                }
             });
 
             req.Failure += _ => Schedule(() =>
@@ -289,21 +450,39 @@ namespace osu.Game.Screens.Edit.Discussion
 
         private void showDiscussions()
         {
-            list.Clear();
+            if (!loaded)
+                return;
+
+            // the rows are taken out without being thrown away: a row keeps the replies already opened in it.
+            foreach (var child in list.Children.ToArray())
+                list.Remove(child, disposeImmediately: child is not DiscussionRow);
 
             int beatmapId = editorBeatmap.BeatmapInfo.OnlineID;
+            int localUserId = api.LocalUser.Value.Id;
+
+            // the tabs count what is listed for whoever is picked, the way the website's do.
+            var forUser = Discussions.ForDifficulty(discussions, beatmapId)
+                                     .Where(d => user.Value == UserDropdown.EVERYONE || d.UserId == user.Value)
+                                     .ToArray();
+
+            tabs.SetCounts(Enum.GetValues<DiscussionFilter>().ToDictionary(f => f, f => forUser.Count(d => Discussions.Matches(d, f, localUserId))));
+
+            bool listed(APIBeatmapsetDiscussion d) => forUser.Contains(d) && Discussions.Matches(d, filter.Value, localUserId);
+
+            var timeline = Discussions.Timeline(discussions, beatmapId).Where(listed).ToArray();
+            marks.Timeline.Value = timeline;
 
             // the timeline first: it is what is gone through while the beatmap is being changed.
-            addSection(DiscussionStrings.Timeline, Discussions.Timeline(discussions, beatmapId));
-            addSection(DiscussionStrings.ThisDifficulty, Discussions.ThisDifficulty(discussions, beatmapId));
-            addSection(DiscussionStrings.WholeSet, Discussions.WholeSet(discussions));
+            addSection(DiscussionStrings.Timeline, timeline);
+            addSection(DiscussionStrings.ThisDifficulty, Discussions.ThisDifficulty(discussions, beatmapId).Where(listed));
+            addSection(DiscussionStrings.WholeSet, Discussions.WholeSet(discussions).Where(listed));
 
-            showStatus(list.Count == 0 ? DiscussionStrings.NothingPosted : default);
+            showStatus(discussions.Count == 0 ? DiscussionStrings.NothingPosted : default);
         }
 
         private void addSection(LocalisableString title, IEnumerable<APIBeatmapsetDiscussion> section)
         {
-            var threads = section.ToArray();
+            var threads = Discussions.Sort(section, sort.Value).ToArray();
 
             if (threads.Length == 0)
                 return;
@@ -317,7 +496,28 @@ namespace osu.Game.Screens.Edit.Discussion
             });
 
             foreach (var discussion in threads)
-                list.Add(new DiscussionRow(discussion, names.GetValueOrDefault(discussion.UserId, @"?")));
+            {
+                if (!rows.TryGetValue(discussion.Id, out var row))
+                    rows[discussion.Id] = row = new DiscussionRow(discussion, names.GetValueOrDefault(discussion.UserId, @"?"));
+
+                list.Add(row);
+            }
+        }
+
+        /// <summary>
+        /// Throws away every row, including those the tabs have taken out of the list.
+        /// </summary>
+        private void clearRows()
+        {
+            // those taken out by the tabs, which are no longer anybody's child to be thrown away with.
+            var outside = rows.Values.Where(r => r.Parent == null).ToArray();
+
+            list.Clear();
+
+            foreach (var row in outside)
+                row.Dispose();
+
+            rows.Clear();
         }
 
         private void showStatus(LocalisableString text)
@@ -363,6 +563,13 @@ namespace osu.Game.Screens.Edit.Discussion
         protected override void Dispose(bool isDisposing)
         {
             request?.Cancel();
+
+            if (marks.IsNotNull())
+                marks.Picked -= bringIntoView;
+
+            foreach (var row in rows.Values.Where(r => r.Parent == null))
+                row.Dispose();
+
             base.Dispose(isDisposing);
             ownImages?.Dispose();
         }

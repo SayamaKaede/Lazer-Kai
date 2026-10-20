@@ -129,6 +129,9 @@ namespace osu.Game.Screens.Edit.Components.Timelines.Summary
                     RelativeSizeAxes = Axes.Both,
                 },
                 new MarkerPart { RelativeSizeAxes = Axes.Both },
+                // over even the playhead, which takes every press on the strip for seeking: a thread is clicked to
+                // be read as well as gone to.
+                new DiscussionPart { RelativeSizeAxes = Axes.Both },
             };
         }
 

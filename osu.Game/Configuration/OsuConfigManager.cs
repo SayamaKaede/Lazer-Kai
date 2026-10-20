@@ -242,6 +242,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorManiaAdvanceByPreviousSpacingOnPlacement, false);
             SetDefault(OsuSetting.SongSelectOpensEditor, false);
             SetDefault(OsuSetting.SongSelectDateUpdatedSplitsDifficulties, false);
+            SetDefault(OsuSetting.EditorDiscussionOpacity, 1f, 0.2f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorFreehandSliderPlacement, true);
             SetDefault(OsuSetting.EditorAlwaysExpandTimelinePointLabels, false);
             SetDefault(OsuSetting.EditorSelectionColour, EditorSelectionColour.Default);
@@ -1408,5 +1409,10 @@ namespace osu.Game.Configuration
         /// the way stable does, with one set's in a row stacked and the selected set's brought together (2026-10-19).
         /// </summary>
         SongSelectDateUpdatedSplitsDifficulties,
+
+        /// <summary>
+        /// How opaque the editor's discussion panel is drawn, so the beatmap can be seen through it (2026-10-20).
+        /// </summary>
+        EditorDiscussionOpacity,
     }
 }

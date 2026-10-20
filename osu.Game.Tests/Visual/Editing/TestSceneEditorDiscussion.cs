@@ -22,6 +22,7 @@ using osu.Framework.Input.Events;
 using osu.Framework.Input.States;
 using osu.Framework.Localisation;
 using osu.Framework.Testing;
+using osu.Game.Configuration;
 using osu.Game.Extensions;
 using osu.Game.Input.Bindings;
 using osu.Game.Localisation;
@@ -32,6 +33,8 @@ using osu.Game.Rulesets;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu;
+using osu.Game.Screens.Edit.Collab;
+using osu.Game.Screens.Edit.Components.Timelines.Summary.Parts;
 using osu.Game.Screens.Edit.Discussion;
 using osuTK.Input;
 
@@ -291,6 +294,200 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("the discussion stays open", () => overlay.State.Value, () => Is.EqualTo(Visibility.Visible));
         }
 
+        /// <summary>
+        /// The website's tabs, each saying how many threads it lists (2026-10-20 request).
+        /// </summary>
+        [Test]
+        public void TestTheTabsCountAndDivideTheList()
+        {
+            open();
+            AddUntilStep("the list is shown", () => shown().Length, () => Is.GreaterThan(0));
+
+            AddAssert("counted as the website counts", () => Enum.GetValues<DiscussionFilter>().Select(f => tabs.CountOf(f)),
+                () => Is.EqualTo(new[] { 0, 1, 1, 1, 2, 5 }));
+
+            pickTab(DiscussionFilter.Pending);
+            AddAssert("only the problem still open", shown, () => Is.EqualTo(new long[] { 1 }));
+
+            pickTab(DiscussionFilter.Praises);
+            AddAssert("the praise and the hype", shown, () => Is.EqualTo(new long[] { 3, 4 }));
+
+            pickTab(DiscussionFilter.All);
+            AddAssert("everything again", shown, () => Is.EqualTo(new long[] { 2, 1, 3, 4, 6 }));
+        }
+
+        /// <summary>
+        /// A thread's replies stay open while the tabs take it out of the list and put it back.
+        /// </summary>
+        [Test]
+        public void TestSwitchingTabsKeepsRepliesOpen()
+        {
+            open();
+            AddUntilStep("the list is shown", () => shown().Length, () => Is.GreaterThan(0));
+
+            AddStep("show the first thread's replies", () =>
+            {
+                InputManager.MoveMouseTo(row(1).RepliesButton);
+                InputManager.Click(MouseButton.Left);
+            });
+            AddUntilStep("its reply is shown", () => row(1).ChildrenOfType<DiscussionReply>().Count(), () => Is.EqualTo(1));
+
+            pickTab(DiscussionFilter.Praises);
+            pickTab(DiscussionFilter.All);
+
+            AddAssert("still shown", () => row(1).ChildrenOfType<DiscussionReply>().Count(), () => Is.EqualTo(1));
+            AddAssert("asked for once", () => repliesAskedFor, () => Is.EqualTo(new long[] { 1 }));
+        }
+
+        [Test]
+        public void TestPickingAUserListsOnlyTheirs()
+        {
+            open();
+            AddUntilStep("the list is shown", () => shown().Length, () => Is.GreaterThan(0));
+
+            AddAssert("everyone, then each by name", () => overlay.ChildrenOfType<UserDropdown>().Single().Items, () => Is.EqualTo(new[] { UserDropdown.EVERYONE, 3, 2 }));
+
+            AddStep("pick the mapper", () => overlay.ChildrenOfType<UserDropdown>().Single().Current.Value = 3);
+            AddAssert("only the mapper's", shown, () => Is.EqualTo(new long[] { 6 }));
+            AddAssert("counted for the mapper alone", () => tabs.CountOf(DiscussionFilter.All), () => Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TestSortingByLastUpdated()
+        {
+            open();
+            AddUntilStep("the list is shown", () => shown().Length, () => Is.GreaterThan(0));
+
+            AddStep("sort by last updated", () =>
+            {
+                InputManager.MoveMouseTo(overlay.ChildrenOfType<DiscussionSortSwitch>().Single().OptionFor(DiscussionSort.Updated));
+                InputManager.Click(MouseButton.Left);
+            });
+            AddAssert("each part with the last changed first", shown, () => Is.EqualTo(new long[] { 1, 2, 3, 6, 4 }));
+        }
+
+        /// <summary>
+        /// For putting a post into a translator (2026-10-20 request).
+        /// </summary>
+        [Test]
+        public void TestCopyingAPostLeavesItsImagesOut()
+        {
+            open();
+            AddUntilStep("the list is shown", () => shown().Length, () => Is.GreaterThan(0));
+
+            AddStep("copy the praise", () =>
+            {
+                InputManager.MoveMouseTo(row(3).CopyButton);
+                InputManager.Click(MouseButton.Left);
+            });
+            AddAssert("its text alone", () => clipboard.GetText(), () => Is.EqualTo("nice"));
+        }
+
+        [Test]
+        public void TestCopyingAReply()
+        {
+            open();
+            AddUntilStep("the list is shown", () => shown().Length, () => Is.GreaterThan(0));
+
+            AddStep("show the first thread's replies", () =>
+            {
+                InputManager.MoveMouseTo(row(1).RepliesButton);
+                InputManager.Click(MouseButton.Left);
+            });
+            AddUntilStep("its reply is shown", () => row(1).ChildrenOfType<DiscussionReply>().Count(), () => Is.EqualTo(1));
+
+            AddStep("copy the reply", () =>
+            {
+                InputManager.MoveMouseTo(row(1).ChildrenOfType<DiscussionReply>().Single().CopyButton);
+                InputManager.Click(MouseButton.Left);
+            });
+            AddAssert("the reply's text", () => clipboard.GetText(), () => Is.EqualTo("fixed"));
+        }
+
+        /// <summary>
+        /// Where the threads are, along the timeline at the bottom, once the panel has read them; and only those the
+        /// tab lists (2026-10-20 request).
+        /// </summary>
+        [Test]
+        public void TestTheTimelineMarksWhatTheTabLists()
+        {
+            AddAssert("nothing marked before the panel is opened", marked, () => Is.Empty);
+
+            open();
+            AddUntilStep("the threads at a time are marked", marked, () => Is.EquivalentTo(new long[] { 1, 2 }));
+
+            pickTab(DiscussionFilter.Pending);
+            AddAssert("only what is still open", marked, () => Is.EquivalentTo(new long[] { 1 }));
+
+            AddStep("close the panel", () => overlay.Hide());
+            AddAssert("still marked", marked, () => Is.EquivalentTo(new long[] { 1 }));
+        }
+
+        /// <summary>
+        /// A resolved thread is marked the way the website marks it, with a green ring and tick in place of its kind,
+        /// rather than faded (2026-10-20 request).
+        /// </summary>
+        [Test]
+        public void TestAResolvedThreadIsMarkedAsTheWebsiteMarksIt()
+        {
+            open();
+            AddUntilStep("the threads at a time are marked", marked, () => Is.EquivalentTo(new long[] { 1, 2 }));
+
+            AddAssert("its mark is a green ring and tick", () => iconOf(Editor.ChildrenOfType<DiscussionPart.Mark>().Single(m => m.Discussion.Id == 2)),
+                () => Is.EqualTo(FontAwesome.Regular.CheckCircle));
+            AddAssert("its mark is not faded", () => Editor.ChildrenOfType<DiscussionPart.Mark>().Single(m => m.Discussion.Id == 2).Alpha, () => Is.EqualTo(1));
+
+            AddAssert("its row starts with the same", () => iconOf(row(2)), () => Is.EqualTo(FontAwesome.Regular.CheckCircle));
+            // the body of the row; the images and replies under it are hidden while there are none.
+            AddAssert("its row is not faded", () => row(2).ChildrenOfType<FillFlowContainer>().First().Alpha, () => Is.EqualTo(1));
+
+            AddAssert("an open one keeps its kind", () => iconOf(row(1)), () => Is.EqualTo(FontAwesome.Solid.ExclamationCircle));
+        }
+
+        private static IconUsage iconOf(Drawable drawable) => drawable.ChildrenOfType<SpriteIcon>().First().Icon;
+
+        [Test]
+        public void TestClickingAMarkGoesThereAndOpensTheThread()
+        {
+            open();
+            AddUntilStep("the threads at a time are marked", marked, () => Is.EquivalentTo(new long[] { 1, 2 }));
+            AddStep("close the panel", () => overlay.Hide());
+
+            AddStep("click the mark of the second thread", () =>
+            {
+                InputManager.MoveMouseTo(Editor.ChildrenOfType<DiscussionPart.Mark>().Single(m => m.Discussion.Id == 2));
+                InputManager.Click(MouseButton.Left);
+            });
+
+            AddUntilStep("at its time", () => EditorClock.CurrentTime, () => Is.EqualTo((int)earlier.StartTime).Within(1));
+            AddAssert("the panel is open", () => overlay.State.Value, () => Is.EqualTo(Visibility.Visible));
+        }
+
+        [Test]
+        public void TestTheOpacitySetsThePanel()
+        {
+            open();
+            AddStep("set it to half", () => config.SetValue(OsuSetting.EditorDiscussionOpacity, 0.5f));
+            AddAssert("the panel is half there", () => overlay.ChildrenOfType<CollabInputBlocker>().First().Alpha, () => Is.EqualTo(0.5f));
+            AddStep("set it back", () => config.SetValue(OsuSetting.EditorDiscussionOpacity, 1f));
+        }
+
+        [Resolved]
+        private Clipboard clipboard { get; set; } = null!;
+
+        [Resolved]
+        private OsuConfigManager config { get; set; } = null!;
+
+        private DiscussionTabs tabs => overlay.ChildrenOfType<DiscussionTabs>().Single();
+
+        private long[] marked() => Editor.ChildrenOfType<DiscussionPart.Mark>().Select(m => m.Discussion.Id).ToArray();
+
+        private void pickTab(DiscussionFilter filter) => AddStep($"pick {filter}", () =>
+        {
+            InputManager.MoveMouseTo(tabs.TabFor(filter));
+            InputManager.Click(MouseButton.Left);
+        });
+
         private void open() => AddStep("open the discussion", () => overlay.Show());
 
         private void press(GlobalAction action) => AddStep($"press {action}",
@@ -350,7 +547,8 @@ namespace osu.Game.Tests.Visual.Editing
 
         private static APIBeatmapsetDiscussions secondPage() => new APIBeatmapsetDiscussions
         {
-            Discussions = { discussion(6, null, null, "mapper_note", "from the second page") },
+            Discussions = { discussion(6, null, null, "mapper_note", "from the second page", user: 3) },
+            Users = { new APIUser { Id = 3, Username = "the mapper" } },
         };
 
         /// <summary>
@@ -438,15 +636,17 @@ namespace osu.Game.Tests.Visual.Editing
             }
         }
 
-        private static APIBeatmapsetDiscussion discussion(long id, int? beatmapId, int? timestamp, string type, string message, bool resolved = false) => new APIBeatmapsetDiscussion
+        private static APIBeatmapsetDiscussion discussion(long id, int? beatmapId, int? timestamp, string type, string message, bool resolved = false, int user = 2) => new APIBeatmapsetDiscussion
         {
             Id = id,
             BeatmapId = beatmapId,
             Timestamp = timestamp,
             MessageType = type,
             Resolved = resolved,
-            UserId = 2,
-            StartingPost = new APIBeatmapsetDiscussionPost { Id = id * 10, UserId = 2, Message = message },
+            UserId = user,
+            StartingPost = new APIBeatmapsetDiscussionPost { Id = id * 10, UserId = user, Message = message },
+            // the first thread was replied to last, though it comes later in the song.
+            UpdatedAt = new DateTimeOffset(2026, 10, 1, 0, 0, 0, TimeSpan.Zero).AddDays(id == 1 ? 30 : id),
         };
     }
 }

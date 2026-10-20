@@ -9,6 +9,7 @@ using osu.Game.Rulesets.Osu;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Collab;
 using osu.Game.Screens.Edit.Components.Timelines.Summary;
+using osu.Game.Screens.Edit.Discussion;
 using osuTK;
 
 namespace osu.Game.Tests.Visual.Editing
@@ -24,6 +25,12 @@ namespace osu.Game.Tests.Visual.Editing
         /// </summary>
         [Cached]
         private readonly CollabHighlight collabHighlight = new CollabHighlight();
+
+        /// <summary>
+        /// Cached by the editor in the real thing: the strip marks where the discussion panel's threads are.
+        /// </summary>
+        [Cached]
+        private readonly DiscussionMarks discussionMarks = new DiscussionMarks();
 
         public TestSceneEditorSummaryTimeline()
         {

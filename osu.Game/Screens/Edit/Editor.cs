@@ -573,6 +573,7 @@ namespace osu.Game.Screens.Edit
             dependencies.Cache(modRatePreview);
 
             dependencies.Cache(new CollabHighlight());
+            dependencies.Cache(new DiscussionMarks());
 
             OsuMenuItem undoMenuItem;
             OsuMenuItem redoMenuItem;

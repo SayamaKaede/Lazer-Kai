@@ -49,6 +49,15 @@ namespace osu.Game.Screens.Edit.Discussion
 
         public Drawable RepliesButton => repliesButton;
 
+        public DiscussionCopyButton CopyButton { get; private set; } = null!;
+
+        private Box flash = null!;
+
+        /// <summary>
+        /// Lights the row for a moment, so that the one clicked on the timeline is found among the rest.
+        /// </summary>
+        public void Flash() => flash.FadeTo(0.25f).FadeOut(800, Easing.OutQuint);
+
         private FillFlowContainer images = null!;
         private OsuHoverContainer repliesButton = null!;
         private OsuSpriteText repliesText = null!;
@@ -77,7 +86,7 @@ namespace osu.Game.Screens.Edit.Discussion
             Masking = true;
             CornerRadius = 5;
 
-            (IconUsage icon, Color4 colour) = kindOf(Discussion.MessageType, colours, colourProvider);
+            (IconUsage icon, Color4 colour) = MarkOf(Discussion, colours, colourProvider);
 
             InternalChildren = new Drawable[]
             {
@@ -99,8 +108,6 @@ namespace osu.Game.Screens.Edit.Discussion
                     Direction = FillDirection.Vertical,
                     Padding = new MarginPadding { Left = 14, Right = 10, Vertical = 8 },
                     Spacing = new Vector2(0, 4),
-                    // still there to be read, the way the website keeps them, but behind what is still open.
-                    Alpha = Discussion.Resolved ? 0.6f : 1,
                     Children = new Drawable[]
                     {
                         new FillFlowContainer
@@ -132,15 +139,6 @@ namespace osu.Game.Screens.Edit.Discussion
                                     Font = OsuFont.Default.With(size: 13, weight: FontWeight.SemiBold),
                                     Colour = colourProvider.Content2,
                                 },
-                                new SpriteIcon
-                                {
-                                    Anchor = Anchor.CentreLeft,
-                                    Origin = Anchor.CentreLeft,
-                                    Icon = FontAwesome.Solid.Check,
-                                    Size = new Vector2(11),
-                                    Colour = colours.Green,
-                                    Alpha = Discussion.Resolved ? 1 : 0,
-                                },
                             }
                         },
                         Message = new LinkFlowContainer(s => s.Font = OsuFont.Default.With(size: 14))
@@ -171,6 +169,16 @@ namespace osu.Game.Screens.Edit.Discussion
                             Alpha = 0,
                         },
                     }
+                },
+                CopyButton = new DiscussionCopyButton(Discussions.StartingText(Discussion))
+                {
+                    Margin = new MarginPadding { Top = 1, Right = 2 },
+                },
+                flash = new Box
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Colour = colourProvider.Light1,
+                    Alpha = 0,
                 },
             };
 
@@ -214,7 +222,16 @@ namespace osu.Game.Screens.Edit.Discussion
         /// <summary>
         /// The icon and colour the website marks each kind of post with, so that a problem reads as one at a glance.
         /// </summary>
-        private static (IconUsage, Color4) kindOf(string type, OsuColour colours, OverlayColourProvider colourProvider)
+        /// <summary>
+        /// What a thread is marked with: a resolved one with the website's green ring and tick in place of its kind,
+        /// the way the website marks it, and the rest by their kind.
+        /// </summary>
+        internal static (IconUsage, Color4) MarkOf(APIBeatmapsetDiscussion discussion, OsuColour colours, OverlayColourProvider colourProvider)
+            => discussion.Resolved
+                ? (FontAwesome.Regular.CheckCircle, colours.Green)
+                : KindOf(discussion.MessageType, colours, colourProvider);
+
+        internal static (IconUsage, Color4) KindOf(string type, OsuColour colours, OverlayColourProvider colourProvider)
         {
             switch (type)
             {
@@ -332,6 +349,8 @@ namespace osu.Game.Screens.Edit.Discussion
     {
         public readonly APIBeatmapsetDiscussionPost Post;
 
+        public DiscussionCopyButton CopyButton { get; private set; } = null!;
+
         private readonly string author;
 
         public DiscussionReply(APIBeatmapsetDiscussionPost post, string author)
@@ -349,27 +368,34 @@ namespace osu.Game.Screens.Edit.Discussion
             LinkFlowContainer message;
             FillFlowContainer images;
 
-            InternalChild = new FillFlowContainer
+            InternalChildren = new Drawable[]
             {
-                RelativeSizeAxes = Axes.X,
-                AutoSizeAxes = Axes.Y,
-                Direction = FillDirection.Vertical,
-                Spacing = new Vector2(0, 2),
-                Children = new Drawable[]
+                new FillFlowContainer
                 {
-                    new OsuSpriteText
+                    RelativeSizeAxes = Axes.X,
+                    AutoSizeAxes = Axes.Y,
+                    Direction = FillDirection.Vertical,
+                    Spacing = new Vector2(0, 2),
+                    Children = new Drawable[]
                     {
-                        Text = author,
-                        Font = OsuFont.Default.With(size: 12, weight: FontWeight.SemiBold),
-                        Colour = colourProvider.Content2,
-                    },
-                    message = new LinkFlowContainer(s => s.Font = OsuFont.Default.With(size: 13))
-                    {
-                        RelativeSizeAxes = Axes.X,
-                        AutoSizeAxes = Axes.Y,
-                    },
-                    images = DiscussionRow.CreateImages(),
-                }
+                        new OsuSpriteText
+                        {
+                            Text = author,
+                            Font = OsuFont.Default.With(size: 12, weight: FontWeight.SemiBold),
+                            Colour = colourProvider.Content2,
+                        },
+                        message = new LinkFlowContainer(s => s.Font = OsuFont.Default.With(size: 13))
+                        {
+                            RelativeSizeAxes = Axes.X,
+                            AutoSizeAxes = Axes.Y,
+                        },
+                        images = DiscussionRow.CreateImages(),
+                    }
+                },
+                CopyButton = new DiscussionCopyButton(Post.Message)
+                {
+                    Margin = new MarginPadding { Top = -6 },
+                },
             };
 
             DiscussionRow.Write(Post.Message, message, images);

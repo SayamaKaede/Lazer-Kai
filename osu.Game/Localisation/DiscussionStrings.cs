@@ -79,6 +79,66 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString NoReplies => new TranslatableString(getKey(@"no_replies"), @"No replies");
 
+        /// <summary>
+        /// "Mine"
+        /// </summary>
+        public static LocalisableString FilterMine => new TranslatableString(getKey(@"filter_mine"), @"Mine");
+
+        /// <summary>
+        /// "Notes"
+        /// </summary>
+        public static LocalisableString FilterNotes => new TranslatableString(getKey(@"filter_notes"), @"Notes");
+
+        /// <summary>
+        /// "Resolved"
+        /// </summary>
+        public static LocalisableString FilterResolved => new TranslatableString(getKey(@"filter_resolved"), @"Resolved");
+
+        /// <summary>
+        /// "Pending"
+        /// </summary>
+        public static LocalisableString FilterPending => new TranslatableString(getKey(@"filter_pending"), @"Pending");
+
+        /// <summary>
+        /// "Praises"
+        /// </summary>
+        public static LocalisableString FilterPraises => new TranslatableString(getKey(@"filter_praises"), @"Praises");
+
+        /// <summary>
+        /// "All"
+        /// </summary>
+        public static LocalisableString FilterAll => new TranslatableString(getKey(@"filter_all"), @"All");
+
+        /// <summary>
+        /// "Everyone"
+        /// </summary>
+        public static LocalisableString EveryUser => new TranslatableString(getKey(@"every_user"), @"Everyone");
+
+        /// <summary>
+        /// "By time"
+        /// </summary>
+        public static LocalisableString SortDefault => new TranslatableString(getKey(@"sort_default"), @"By time");
+
+        /// <summary>
+        /// "Last updated"
+        /// </summary>
+        public static LocalisableString SortUpdated => new TranslatableString(getKey(@"sort_updated"), @"Last updated");
+
+        /// <summary>
+        /// "Opacity"
+        /// </summary>
+        public static LocalisableString Opacity => new TranslatableString(getKey(@"opacity"), @"Opacity");
+
+        /// <summary>
+        /// "Copy text"
+        /// </summary>
+        public static LocalisableString Copy => new TranslatableString(getKey(@"copy"), @"Copy text");
+
+        /// <summary>
+        /// "Copied"
+        /// </summary>
+        public static LocalisableString Copied => new TranslatableString(getKey(@"copied"), @"Copied");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }
