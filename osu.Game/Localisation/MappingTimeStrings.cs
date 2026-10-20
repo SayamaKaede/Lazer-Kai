@@ -36,10 +36,10 @@ namespace osu.Game.Localisation
         public static LocalisableString Total(LocalisableString time) => new TranslatableString(getKey(@"total"), @"Total {0}", time);
 
         /// <summary>
-        /// "Running {0} · In the editor {1} · Editing time {2}"
+        /// "Running {0} · In the editor {1} · Actual editing time {2}"
         /// </summary>
         public static LocalisableString DayTimes(LocalisableString game, LocalisableString open, LocalisableString edit) =>
-            new TranslatableString(getKey(@"day_times"), @"Running {0} · In the editor {1} · Editing time {2}", game, open, edit);
+            new TranslatableString(getKey(@"day_times"), @"Running {0} · In the editor {1} · Actual editing time {2}", game, open, edit);
 
         /// <summary>
         /// "{0}h {1}m"

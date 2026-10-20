@@ -800,7 +800,7 @@ namespace osu.Game.Localisation
             [$@"{mapping_time_prefix}:month"] = @"{0:yyyy年M月}",
             [$@"{mapping_time_prefix}:day"] = @"{0:M月d日}",
             [$@"{mapping_time_prefix}:total"] = @"合計 {0}",
-            [$@"{mapping_time_prefix}:day_times"] = @"起動 {0} ・ エディター内 {1} ・ 編集時間 {2}",
+            [$@"{mapping_time_prefix}:day_times"] = @"起動 {0} ・ エディター内 {1} ・ 実編集時間 {2}",
             [$@"{mapping_time_prefix}:hours_and_minutes"] = @"{0}時間{1}分",
             [$@"{mapping_time_prefix}:minutes"] = @"{0}分",
             [$@"{mapping_time_prefix}:nothing_this_day"] = @"この日は編集していません",
