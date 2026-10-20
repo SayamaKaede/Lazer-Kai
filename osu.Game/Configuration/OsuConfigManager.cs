@@ -1407,6 +1407,8 @@ namespace osu.Game.Configuration
         /// <summary>
         /// Whether song select, sorted by <see cref="SortMode.DateUpdated"/>, lists each difficulty as a panel of its own
         /// the way stable does, with one set's in a row stacked and the selected set's brought together (2026-10-19).
+        /// By any other sort that keeps sets together, the selected set's difficulties are stacked under its panel (2026-10-20).
+        /// The name is kept from before then, as it is the key the setting is saved under.
         /// </summary>
         SongSelectDateUpdatedSplitsDifficulties,
 

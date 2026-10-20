@@ -419,6 +419,32 @@ namespace osu.Game.Tests.Visual.SongSelect
             Assert.That(results.Select(i => i.StackPosition), Has.All.Zero);
         }
 
+        [Test]
+        public async Task TestOtherSortsStackEachSetsDifficultiesUnderIt()
+        {
+            var two = TestResources.CreateTestBeatmapSetInfo(2);
+            var one = TestResources.CreateTestBeatmapSetInfo(1);
+
+            var criteria = new FilterCriteria
+            {
+                Sort = SortMode.Title,
+                DateUpdatedSplitsDifficulties = true,
+            };
+
+            var results = await runGrouping(criteria, [two, one]);
+            Assert.That(results.Select(i => i.Model is GroupedBeatmapSet), Is.EqualTo(new[] { true, false, false, true, false }));
+            Assert.That(results.Select(i => i.StackPosition), Is.EqualTo(new[] { 0, 1, 2, 0, 1 }));
+
+            criteria.DateUpdatedSplitsDifficulties = false;
+            results = await runGrouping(criteria, [two, one]);
+            Assert.That(results.Select(i => i.StackPosition), Has.All.Zero);
+
+            // split by difficulty already, and left as it is.
+            criteria = new FilterCriteria { Sort = SortMode.Difficulty, DateUpdatedSplitsDifficulties = true };
+            results = await runGrouping(criteria, [two, one]);
+            Assert.That(results.Select(i => i.StackPosition), Has.All.Zero);
+        }
+
         private HashSet<int> favouriteBeatmapSets = [];
 
         private Task<List<CarouselItem>> runGrouping(GroupMode group, List<BeatmapSetInfo> beatmapSets) => runGrouping(new FilterCriteria { Group = group }, beatmapSets);

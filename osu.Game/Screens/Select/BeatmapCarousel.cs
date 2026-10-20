@@ -70,6 +70,17 @@ namespace osu.Game.Screens.Select
             if ((top.Model is GroupDefinition) ^ (bottom.Model is GroupDefinition))
                 return SPACING * 2;
 
+            // tucked behind the panel above (2026-10-19), with only its star rating line showing below it,
+            // selected or not: the set heads its stack with its panel, or with the difficulty saved last whichever of it is chosen.
+            if (bottom.StackPosition > 0)
+            {
+                bottom.StackLevel = top.StackLevel + 1;
+                // measured from the bottom, as a set's panel is taller than its difficulties'.
+                return STACKED_VISIBLE_HEIGHT - bottom.DrawHeight;
+            }
+
+            bottom.StackLevel = 0;
+
             if (grouping.BeatmapSetsGroupedTogether)
             {
                 // Give some space around the expanded beatmap set, at the top..
@@ -86,16 +97,6 @@ namespace osu.Game.Screens.Select
             }
             else
             {
-                // tucked behind the panel above (2026-10-19), with only its star rating line showing below it,
-                // selected or not: the set heads its stack with the difficulty saved last whichever of it is chosen.
-                if (bottom.StackPosition > 0)
-                {
-                    bottom.StackLevel = top.StackLevel + 1;
-                    return STACKED_VISIBLE_HEIGHT - top.DrawHeight;
-                }
-
-                bottom.StackLevel = 0;
-
                 if (CurrentSelection != null && (top == CurrentSelectionItem || bottom == CurrentSelectionItem))
                     return SPACING * 2;
             }

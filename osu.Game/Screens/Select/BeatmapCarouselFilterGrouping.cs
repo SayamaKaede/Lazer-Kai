@@ -145,6 +145,10 @@ namespace osu.Game.Screens.Select
                 if (!BeatmapSetsGroupedTogether && criteria.Sort == SortMode.DateUpdated && criteria.DateUpdatedSplitsDifficulties)
                     markStacks(newItems);
 
+                // by any other sort, a set's difficulties are stacked under its panel instead, whichever set is open (2026-10-20).
+                if (BeatmapSetsGroupedTogether && criteria.DateUpdatedSplitsDifficulties)
+                    markStacksUnderSets(newItems);
+
                 cancellationToken.ThrowIfCancellationRequested();
 
                 Interlocked.Exchange(ref itemMap, newItemMap);
@@ -181,6 +185,17 @@ namespace osu.Game.Screens.Select
                 }
 
                 start = end;
+            }
+        }
+
+        private static void markStacksUnderSets(List<CarouselItem> items)
+        {
+            int position = 0;
+
+            foreach (var item in items)
+            {
+                position = item.Model is GroupedBeatmap ? position + 1 : 0;
+                item.StackPosition = position;
             }
         }
 

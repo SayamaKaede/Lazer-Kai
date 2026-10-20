@@ -228,6 +228,33 @@ namespace osu.Game.Tests.Visual.SongSelect
         }
 
         [Test]
+        public void TestOtherSortsStackTheSelectedSetsDifficultiesUnderIt()
+        {
+            LoadSongSelect();
+            ImportBeatmapForRuleset(0);
+            ImportBeatmapForRuleset(0);
+
+            AddStep("stack difficulties", () => Config.SetValue(OsuSetting.SongSelectDateUpdatedSplitsDifficulties, true));
+            SortBy(SortMode.Title);
+            WaitForFiltering();
+
+            AddStep("choose a difficulty", () => Carousel.CurrentGroupedBeatmap = (GroupedBeatmap)Carousel.GetCarouselItems()!.First(i => i.Model is GroupedBeatmap).Model);
+
+            AddUntilStep("its set heads it, and each difficulty is behind the one above", () => shown().Select(i => i.StackLevel), () => Is.EqualTo(new[] { 0, 1, 2, 3, 0 }));
+            AddUntilStep("each shows its star rating line below the one above", () =>
+            {
+                var items = shown();
+                return Enumerable.Range(1, 3).Select(i => bottomOf(items[i]) - bottomOf(items[i - 1])).ToArray();
+            }, () => Is.EqualTo(Enumerable.Repeat(BeatmapCarousel.STACKED_VISIBLE_HEIGHT, 3)));
+
+            // the config outlives the test, and the others here want a panel for each set.
+            AddStep("a panel for each set again", () => Config.SetValue(OsuSetting.SongSelectDateUpdatedSplitsDifficulties, false));
+
+            CarouselItem[] shown() => Carousel.GetCarouselItems()!.Where(i => i.IsVisible).ToArray();
+            float bottomOf(CarouselItem i) => (float)i.CarouselYPosition + i.DrawHeight;
+        }
+
+        [Test]
         public void TestDateUpdatedSelectsLastSaved()
         {
             LoadSongSelect();

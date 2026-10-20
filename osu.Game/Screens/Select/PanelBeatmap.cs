@@ -45,6 +45,9 @@ namespace osu.Game.Screens.Select
         private OsuSpriteText difficultyText = null!;
         private OsuSpriteText authorText = null!;
         private PanelSaveTime saveTime = null!;
+        private OsuSpriteText stackedDifficultyText = null!;
+        private PanelLocalRankDisplay stackedLocalRank = null!;
+        private bool? showingStacked;
         private FillFlowContainer mainFill = null!;
         private DifficultyModIcons modIcons = null!;
 
@@ -193,11 +196,28 @@ namespace osu.Game.Screens.Select
                                     AutoSizeAxes = Axes.Both,
                                     Children = new Drawable[]
                                     {
+                                        // the rank beside the panel is behind the one above while stacked, and only this line was left showing.
+                                        stackedLocalRank = new PanelLocalRankDisplay
+                                        {
+                                            Scale = new Vector2(0.8f),
+                                            Origin = Anchor.CentreLeft,
+                                            Anchor = Anchor.CentreLeft,
+                                            Alpha = 0,
+                                        },
                                         starRatingDisplay = new StarRatingDisplay(default, StarRatingDisplaySize.Small, animated: true)
                                         {
                                             Origin = Anchor.CentreLeft,
                                             Anchor = Anchor.CentreLeft,
                                             Scale = new Vector2(0.875f),
+                                        },
+                                        // the line above, with the name, is hidden while stacked.
+                                        stackedDifficultyText = new OsuSpriteText
+                                        {
+                                            Font = OsuFont.Style.Body.With(weight: FontWeight.SemiBold),
+                                            Origin = Anchor.CentreLeft,
+                                            Anchor = Anchor.CentreLeft,
+                                            Margin = new MarginPadding { Horizontal = 2 },
+                                            Alpha = 0,
                                         },
                                         starCounter = new StarCounter
                                         {
@@ -237,6 +257,9 @@ namespace osu.Game.Screens.Select
             difficultyText.Text = beatmap.DifficultyName;
             authorText.Text = BeatmapsetsStrings.ShowDetailsMappedBy(beatmap.Metadata.Author.Username);
             saveTime.Saved = beatmap;
+            stackedLocalRank.Beatmap = beatmap;
+            stackedDifficultyText.Text = beatmap.DifficultyName;
+            showingStacked = null;
             modIcons.Beatmap = beatmap;
 
             computeStarRating();
@@ -258,6 +281,7 @@ namespace osu.Game.Screens.Select
             base.FreeAfterUse();
 
             localRank.Beatmap = null;
+            stackedLocalRank.Beatmap = null;
             modIcons.Beatmap = null;
             starDifficultyBindable = null;
 
@@ -292,7 +316,8 @@ namespace osu.Game.Screens.Select
 
             // Dirty hack to make sure we don't take up spacing in parent fill flow when not displaying a rank.
             // I can't find a better way to do this.
-            mainFill.Margin = new MarginPadding { Left = 1 / starRatingDisplay.Scale.X * (localRank.HasRank ? 0 : -3) };
+            // (and none at all for a stacked panel, whose rank is not beside it to space from.)
+            mainFill.Margin = new MarginPadding { Left = 1 / starRatingDisplay.Scale.X * (localRank.HasRank || showingStacked == true ? 0 : -3) };
 
             var diffColour = starRatingDisplay.DisplayedDifficultyColour;
 
@@ -311,6 +336,35 @@ namespace osu.Game.Screens.Select
             {
                 difficultyIcon.Colour = starRatingDisplay.DisplayedDifficultyTextColour;
             }
+
+            updateStacked();
+        }
+
+        protected override bool StaysInPlace => showingStacked == true;
+
+        /// <summary>
+        /// Tucked behind the panel above, under its set's panel (2026-10-20): see <see cref="CarouselItem.StackLevel"/>.
+        /// </summary>
+        private void updateStacked()
+        {
+            bool stacked = Item?.StackLevel > 0;
+
+            if (stacked != showingStacked)
+            {
+                // straight away for a panel just taken from the pool, which is not changing in front of anybody.
+                double duration = showingStacked == null ? 0 : DURATION / 2;
+                showingStacked = stacked;
+
+                stackedDifficultyText.FadeTo(stacked ? 1 : 0, duration, Easing.OutQuint);
+
+                // at once: either takes room in its line while it is there at all.
+                localRank.Alpha = stacked ? 0 : 1;
+
+                RefreshXOffset(animated: duration > 0);
+            }
+
+            // without a rank it would still be spaced from the star rating.
+            stackedLocalRank.Alpha = stacked && stackedLocalRank.HasRank ? 1 : 0;
         }
 
         private void updateKeyCount()
