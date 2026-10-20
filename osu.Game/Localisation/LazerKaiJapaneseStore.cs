@@ -793,6 +793,24 @@ namespace osu.Game.Localisation
             [$@"{welcome_prefix}:body"] = @"Lazer-Kaiは、マッピングのためのosu!lazerです。まず「はじめに」で主な機能を確認してください。それぞれの詳しい説明は説明書にあります。どちらも設定のLazer-Kaiからいつでも開くことができます。",
             [$@"{welcome_prefix}:apply_recommended_settings"] = @"おすすめ設定を適用",
             [$@"{welcome_prefix}:close"] = @"閉じる",
+
+            // the time spent mapping, from the toolbar
+            [$@"{mapping_time_prefix}:title"] = @"統計",
+            [$@"{mapping_time_prefix}:description"] = @"日ごとのマッピング時間と、編集した譜面",
+            [$@"{mapping_time_prefix}:month"] = @"{0:yyyy年M月}",
+            [$@"{mapping_time_prefix}:day"] = @"{0:M月d日}",
+            [$@"{mapping_time_prefix}:total"] = @"合計 {0}",
+            [$@"{mapping_time_prefix}:day_times"] = @"起動 {0} ・ エディター内 {1} ・ 編集時間 {2}",
+            [$@"{mapping_time_prefix}:hours_and_minutes"] = @"{0}時間{1}分",
+            [$@"{mapping_time_prefix}:minutes"] = @"{0}分",
+            [$@"{mapping_time_prefix}:nothing_this_day"] = @"この日は編集していません",
+            [$@"{mapping_time_prefix}:sunday"] = @"日",
+            [$@"{mapping_time_prefix}:monday"] = @"月",
+            [$@"{mapping_time_prefix}:tuesday"] = @"火",
+            [$@"{mapping_time_prefix}:wednesday"] = @"水",
+            [$@"{mapping_time_prefix}:thursday"] = @"木",
+            [$@"{mapping_time_prefix}:friday"] = @"金",
+            [$@"{mapping_time_prefix}:saturday"] = @"土",
         };
 
         private const string editor_prefix = @"osu.Game.Resources.Localisation.Editor";
@@ -815,6 +833,7 @@ namespace osu.Game.Localisation
         private const string mapping_prefix = @"osu.Game.Resources.Localisation.MappingSummary";
         private const string replay_prefix = @"osu.Game.Resources.Localisation.LazerKaiReplay";
         private const string welcome_prefix = @"osu.Game.Resources.Localisation.LazerKaiWelcome";
+        private const string mapping_time_prefix = @"osu.Game.Resources.Localisation.LazerKaiMappingTime";
 
         public LazerKaiJapaneseStore(ILocalisationStore fallback)
         {

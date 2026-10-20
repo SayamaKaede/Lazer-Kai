@@ -157,6 +157,10 @@ namespace osu.Game
 
         private LazerKaiChangelogOverlay lazerKaiChangelogOverlay;
 
+        private MappingTimeOverlay mappingTimeOverlay;
+
+        private RunningTimeRecorder gameTime;
+
         private SkinEditorOverlay skinEditor;
 
         private Container overlayContent;
@@ -1114,6 +1118,12 @@ namespace osu.Game
         {
             base.LoadComplete();
 
+            // the time the game is running, for the statistics to set the time spent mapping against.
+            // cached for the statistics to take it up to the moment they are opened, rather than to the last tick.
+            gameTime = RunningTimeRecorder.ForGame(new MappingTimeStore(Storage), DateTimeOffset.Now);
+            dependencies.CacheAs(gameTime);
+            Scheduler.AddDelayed(() => gameTime.Tick(DateTimeOffset.Now), MappingTimeRecorder.WRITE_INTERVAL.TotalMilliseconds, true);
+
             // The next time this is updated is in UpdateAfterChildren, which occurs too late and results
             // in the cursor being shown for a few frames during the intro.
             // This prevents the cursor from showing until we have a screen with CursorVisible = true
@@ -1282,6 +1292,7 @@ namespace osu.Game
             loadComponentSingleFile(Settings = new SettingsOverlay(), leftFloatingOverlayContent.Add, true);
             loadComponentSingleFile(changelogOverlay = new ChangelogOverlay(), overlayContent.Add, true);
             loadComponentSingleFile(lazerKaiChangelogOverlay = new LazerKaiChangelogOverlay(), overlayContent.Add, true);
+            loadComponentSingleFile(mappingTimeOverlay = new MappingTimeOverlay(), overlayContent.Add, true);
             loadComponentSingleFile(userProfile = new UserProfileOverlay(), overlayContent.Add, true);
             loadComponentSingleFile(beatmapSetOverlay = new BeatmapSetOverlay(), overlayContent.Add, true);
             loadComponentSingleFile(wikiOverlay = new WikiOverlay(), overlayContent.Add, true);
@@ -1338,7 +1349,7 @@ namespace osu.Game
             }
 
             // ensure only one of these overlays are open at once.
-            var singleDisplayOverlays = new OverlayContainer[] { chatOverlay, news, dashboard, beatmapListing, changelogOverlay, lazerKaiChangelogOverlay, rankingsOverlay, wikiOverlay };
+            var singleDisplayOverlays = new OverlayContainer[] { chatOverlay, news, dashboard, beatmapListing, changelogOverlay, lazerKaiChangelogOverlay, mappingTimeOverlay, rankingsOverlay, wikiOverlay };
 
             foreach (var overlay in singleDisplayOverlays)
             {
@@ -1819,6 +1830,9 @@ namespace osu.Game
 
         protected override bool OnExiting()
         {
+            // on every attempt, as any of them may be the last: one that is held off just carries on the same stretch.
+            gameTime?.Stop(DateTimeOffset.Now);
+
             if (ScreenStack.CurrentScreen is Loader)
                 return false;
 

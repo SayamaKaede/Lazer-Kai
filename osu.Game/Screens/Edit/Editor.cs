@@ -392,6 +392,9 @@ namespace osu.Game.Screens.Edit
 
         private SliderVelocityPresetStore sliderVelocityPresetStore => new SliderVelocityPresetStore(storage);
 
+        private MappingTimeRecorder mappingTime;
+        private RunningTimeRecorder openTime;
+
         /// <summary>
         /// This controls the opacity of components like the timelines, sidebars, etc.
         /// In "composer focus" mode the opacity of the aforementioned components is reduced so that the user can focus on the composer better.
@@ -974,6 +977,18 @@ namespace osu.Game.Screens.Edit
         {
             base.LoadComplete();
             setUpClipboardActionAvailability();
+
+            // only what changes the beatmap counts as time spent mapping, so opening one just to look at it never does.
+            // undo and redo count too: they are part of working on it. Subscribed only now, after the state the
+            // beatmap was opened in has been taken.
+            mappingTime = new MappingTimeRecorder(new MappingTimeStore(storage));
+
+            if (changeHandler != null)
+                changeHandler.OnStateChange += () => mappingTime.Changed(editorBeatmap.BeatmapInfo, DateTimeOffset.Now);
+
+            // and the whole time it is open beside that, so how much of it went on changing it can be read off.
+            openTime = RunningTimeRecorder.ForBeatmap(new MappingTimeStore(storage), editorBeatmap.BeatmapInfo, DateTimeOffset.Now);
+            Scheduler.AddDelayed(() => openTime.Tick(DateTimeOffset.Now), MappingTimeRecorder.WRITE_INTERVAL.TotalMilliseconds, true);
 
             // handing the mod screen over has to wait for the update thread: it is moved into the game's own layer.
             modSelect.Beatmap.BindTo(Beatmap);
@@ -1693,6 +1708,10 @@ namespace osu.Game.Screens.Edit
                     return true;
                 }
             }
+
+            // here rather than on suspending: time spent test playing after a change is still part of mapping.
+            mappingTime?.Stop(DateTimeOffset.Now);
+            openTime?.Stop(DateTimeOffset.Now);
 
             realm.Write(r =>
             {
