@@ -11,6 +11,7 @@ using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Database;
+using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Online.Chat;
 using osu.Game.Rulesets.Catch;
@@ -157,6 +158,117 @@ namespace osu.Game.Tests.Visual.SongSelect
             SortBy(SortMode.Length);
             SortBy(SortMode.Difficulty);
             SortBy(SortMode.Source);
+        }
+
+        [Test]
+        public void TestSavingADifficultyBringsItsSetToTheTopWhenSortedByDateUpdated()
+        {
+            LoadSongSelect();
+            ImportBeatmapForRuleset(0);
+            ImportBeatmapForRuleset(0);
+            AddStep("a panel for each set", () => Config.SetValue(OsuSetting.SongSelectDateUpdatedSplitsDifficulties, false));
+            SortBy(SortMode.DateUpdated);
+            WaitForFiltering();
+
+            Guid bottom = default;
+            AddStep("find the bottom set", () => bottom = sets().Last());
+            AddStep("save one of its difficulties", () => Realm.Write(r => r.Find<BeatmapSetInfo>(bottom)!.Beatmaps.First().LastLocalUpdate = DateTimeOffset.Now));
+            WaitForFiltering();
+            AddUntilStep("it is at the top", () => sets().First(), () => Is.EqualTo(bottom));
+
+            Guid[] sets() => Carousel.GetCarouselItems()!.Select(i => i.Model).OfType<GroupedBeatmapSet>().Select(s => s.BeatmapSet.ID).ToArray();
+        }
+
+        [Test]
+        public void TestDateUpdatedGathersTheSelectedSetAndKeepsItStacked()
+        {
+            Guid a = default;
+            Guid b = default;
+
+            LoadSongSelect();
+            ImportBeatmapForRuleset(0);
+            ImportBeatmapForRuleset(0);
+            WaitForFiltering();
+
+            AddStep("save them in turn, newest first: a b a b a b", () =>
+            {
+                var shown = items().Select(setOf).Distinct().ToArray();
+                a = shown[0];
+                b = shown[1];
+
+                Realm.Write(r =>
+                {
+                    var now = DateTimeOffset.Now;
+                    var setA = r.Find<BeatmapSetInfo>(a)!;
+                    var setB = r.Find<BeatmapSetInfo>(b)!;
+
+                    for (int i = 0; i < 3; i++)
+                    {
+                        setA.Beatmaps[i].LastLocalUpdate = now.AddMinutes(-2 * i);
+                        setB.Beatmaps[i].LastLocalUpdate = now.AddMinutes(-2 * i - 1);
+                    }
+                });
+            });
+
+            AddStep("a panel for each difficulty", () => Config.SetValue(OsuSetting.SongSelectDateUpdatedSplitsDifficulties, true));
+            SortBy(SortMode.DateUpdated);
+            WaitForFiltering();
+
+            AddStep("choose b's oldest", () => Carousel.CurrentGroupedBeatmap = (GroupedBeatmap)items().Last(i => setOf(i) == b).Model);
+
+            AddUntilStep("b is together where its newest was", () => items().Select(setOf), () => Is.EqualTo(new[] { a, b, b, b, a, a }));
+            AddAssert("b is newest first", () => items().Where(i => setOf(i) == b).Select(i => ((GroupedBeatmap)i.Model).Beatmap.LastLocalUpdate), () => Is.Ordered.Descending);
+            AddUntilStep("and stacked, the chosen one too", () => items().Select(i => i.StackLevel), () => Is.EqualTo(new[] { 0, 0, 1, 2, 0, 1 }));
+
+            // the config outlives the test, and the others here want a panel for each set.
+            AddStep("a panel for each set again", () => Config.SetValue(OsuSetting.SongSelectDateUpdatedSplitsDifficulties, false));
+
+            CarouselItem[] items() => Carousel.GetCarouselItems()!.Where(i => i.Model is GroupedBeatmap).ToArray();
+            Guid setOf(CarouselItem i) => ((GroupedBeatmap)i.Model).Beatmap.BeatmapSet!.ID;
+        }
+
+        [Test]
+        public void TestDateUpdatedSelectsLastSaved()
+        {
+            LoadSongSelect();
+            ImportBeatmapForRuleset(0);
+            ImportBeatmapForRuleset(0);
+            AddStep("a panel for each set", () => Config.SetValue(OsuSetting.SongSelectDateUpdatedSplitsDifficulties, false));
+            SortBy(SortMode.DateUpdated);
+            WaitForFiltering();
+
+            Guid target = default;
+            Guid other = default;
+            Guid saved = default;
+
+            AddStep("save the hardest of one set", () =>
+            {
+                target = sets().Last();
+                other = sets().First();
+
+                Realm.Write(r =>
+                {
+                    var hardest = r.Find<BeatmapSetInfo>(target)!.Beatmaps.OrderByDescending(b => b.StarRating).First();
+                    hardest.LastLocalUpdate = DateTimeOffset.Now;
+                    saved = hardest.ID;
+                });
+            });
+            WaitForFiltering();
+            AddUntilStep("it is at the top", () => sets().First(), () => Is.EqualTo(target));
+
+            AddStep("choose the other set", () => click(other));
+            AddUntilStep("the other set is selected", () => Beatmap.Value.BeatmapSetInfo.ID, () => Is.EqualTo(other));
+
+            AddStep("choose the saved set", () => click(target));
+            AddUntilStep("the saved difficulty is selected", () => Beatmap.Value.BeatmapInfo.ID, () => Is.EqualTo(saved));
+
+            Guid[] sets() => Carousel.GetCarouselItems()!.Select(i => i.Model).OfType<GroupedBeatmapSet>().Select(s => s.BeatmapSet.ID).ToArray();
+
+            void click(Guid set)
+            {
+                InputManager.MoveMouseTo(Carousel.ChildrenOfType<PanelBeatmapSet>().Single(p => ((GroupedBeatmapSet)p.Item!.Model).BeatmapSet.ID == set));
+                InputManager.Click(MouseButton.Left);
+            }
         }
 
         [Test]

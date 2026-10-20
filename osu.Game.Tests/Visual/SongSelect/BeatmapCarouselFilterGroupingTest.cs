@@ -398,13 +398,36 @@ namespace osu.Game.Tests.Visual.SongSelect
 
         #endregion
 
+        [Test]
+        public async Task TestDateUpdatedStacksRunsOfOneSet()
+        {
+            var four = TestResources.CreateTestBeatmapSetInfo(4);
+            var one = TestResources.CreateTestBeatmapSetInfo(1);
+            var three = TestResources.CreateTestBeatmapSetInfo(3);
+
+            var criteria = new FilterCriteria
+            {
+                Sort = SortMode.DateUpdated,
+                DateUpdatedSplitsDifficulties = true,
+            };
+
+            var results = await runGrouping(criteria, [four, one, three]);
+            Assert.That(results.Select(i => i.StackPosition), Is.EqualTo(new[] { 0, 1, 2, 3, 0, 0, 1, 2 }));
+
+            criteria.DateUpdatedSplitsDifficulties = false;
+            results = await runGrouping(criteria, [four, one, three]);
+            Assert.That(results.Select(i => i.StackPosition), Has.All.Zero);
+        }
+
         private HashSet<int> favouriteBeatmapSets = [];
 
-        private async Task<List<CarouselItem>> runGrouping(GroupMode group, List<BeatmapSetInfo> beatmapSets)
+        private Task<List<CarouselItem>> runGrouping(GroupMode group, List<BeatmapSetInfo> beatmapSets) => runGrouping(new FilterCriteria { Group = group }, beatmapSets);
+
+        private async Task<List<CarouselItem>> runGrouping(FilterCriteria criteria, List<BeatmapSetInfo> beatmapSets)
         {
             var groupingFilter = new BeatmapCarouselFilterGrouping
             {
-                GetCriteria = () => new FilterCriteria { Group = group },
+                GetCriteria = () => criteria,
                 GetCollections = () => new List<BeatmapCollection>(),
                 GetLocalUserTopRanks = _ => new Dictionary<Guid, ScoreRank>(),
                 GetFavouriteBeatmapSets = () => favouriteBeatmapSets,

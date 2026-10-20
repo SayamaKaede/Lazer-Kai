@@ -87,6 +87,11 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString ClearDifficultyMods => new TranslatableString(getKey(@"clear_difficulty_mods"), @"Take this difficulty's mods off");
 
+        /// <summary>
+        /// "Date Updated"
+        /// </summary>
+        public static LocalisableString DateUpdated => new TranslatableString(getKey(@"date_updated"), @"Date Updated");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

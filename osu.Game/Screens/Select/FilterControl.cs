@@ -51,6 +51,9 @@ namespace osu.Game.Screens.Select
         private ShearedDropdown<GroupModeDropdownItem> groupDropdown = null!;
         private readonly Bindable<string> configCollectionFilter = new Bindable<string>();
 
+        // Null until loaded, as criteria can be asked for before then.
+        private Bindable<bool>? dateUpdatedSplitsDifficulties;
+
         /// <summary>
         /// An optional method which can force certain criteria adjustments.
         /// </summary>
@@ -275,6 +278,9 @@ namespace osu.Game.Screens.Select
                     updateCriteria();
             });
 
+            dateUpdatedSplitsDifficulties = config.GetBindable<bool>(OsuSetting.SongSelectDateUpdatedSplitsDifficulties);
+            dateUpdatedSplitsDifficulties.BindValueChanged(_ => updateCriteria());
+
             localUser.BindValueChanged(_ => updateCriteria());
             localUserFavouriteBeatmapSets.BindCollectionChanged((_, _) => updateCriteria());
             ScopedBeatmapSet.BindValueChanged(_ => updateCriteria(clearScopedSet: false));
@@ -305,6 +311,7 @@ namespace osu.Game.Screens.Select
             {
                 SelectedBeatmapSet = ScopedBeatmapSet.Value,
                 Sort = sortDropdown.Current.Value,
+                DateUpdatedSplitsDifficulties = dateUpdatedSplitsDifficulties?.Value == true,
                 Group = groupDropdown.Current.Value?.Value ?? GroupMode.None,
                 AllowConvertedBeatmaps = showConvertedBeatmapsButton.Active.Value,
                 Ruleset = ruleset.Value,

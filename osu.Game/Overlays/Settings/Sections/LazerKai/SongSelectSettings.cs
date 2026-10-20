@@ -25,6 +25,13 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     Keywords = new[] { @"edit", @"play", @"alt" },
                     Current = config.GetBindable<bool>(OsuSetting.SongSelectOpensEditor)
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = LazerKaiSettingsStrings.DateUpdatedSplitsDifficulties,
+                    TooltipText = LazerKaiSettingsStrings.DateUpdatedSplitsDifficultiesDescription,
+                    Keywords = new[] { @"sort", @"stable", @"stack" },
+                    Current = config.GetBindable<bool>(OsuSetting.SongSelectDateUpdatedSplitsDifficulties)
+                },
             };
         }
     }

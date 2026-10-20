@@ -241,6 +241,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorAdvanceByPreviousSpacingOnPlacement, false);
             SetDefault(OsuSetting.EditorManiaAdvanceByPreviousSpacingOnPlacement, false);
             SetDefault(OsuSetting.SongSelectOpensEditor, false);
+            SetDefault(OsuSetting.SongSelectDateUpdatedSplitsDifficulties, false);
             SetDefault(OsuSetting.EditorFreehandSliderPlacement, true);
             SetDefault(OsuSetting.EditorAlwaysExpandTimelinePointLabels, false);
             SetDefault(OsuSetting.EditorSelectionColour, EditorSelectionColour.Default);
@@ -1401,5 +1402,11 @@ namespace osu.Game.Configuration
         /// would open it in the editor: for somebody who goes there to map far more often than to play (2026-10-18).
         /// </summary>
         SongSelectOpensEditor,
+
+        /// <summary>
+        /// Whether song select, sorted by <see cref="SortMode.DateUpdated"/>, lists each difficulty as a panel of its own
+        /// the way stable does, with one set's in a row stacked and the selected set's brought together (2026-10-19).
+        /// </summary>
+        SongSelectDateUpdatedSplitsDifficulties,
     }
 }

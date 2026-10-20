@@ -52,6 +52,17 @@ namespace osu.Game.Graphics.Carousel
         public int DepthLayer { get; set; }
 
         /// <summary>
+        /// How far into a run of panels drawn stacked this item is, 0 for the one heading it or for an item in no stack.
+        /// Decided when filtering (2026-10-19).
+        /// </summary>
+        public int StackPosition { get; set; }
+
+        /// <summary>
+        /// How many panels this one is tucked behind right now. Decided when laying the items out (2026-10-19).
+        /// </summary>
+        public int StackLevel { get; set; }
+
+        /// <summary>
         /// Whether this item is visible or hidden.
         /// </summary>
         public bool IsVisible { get; set; } = true;

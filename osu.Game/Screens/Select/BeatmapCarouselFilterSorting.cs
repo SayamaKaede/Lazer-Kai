@@ -18,10 +18,17 @@ namespace osu.Game.Screens.Select
         public int BeatmapItemsCount { get; private set; }
 
         private readonly Func<FilterCriteria> getCriteria;
+        private readonly Func<Guid?>? getGatheredSet;
 
-        public BeatmapCarouselFilterSorting(Func<FilterCriteria> getCriteria)
+        /// <param name="getCriteria">The criteria to sort by.</param>
+        /// <param name="getGatheredSet">
+        /// The set whose difficulties, each a panel of their own and listed by <see cref="SortMode.DateUpdated"/>,
+        /// are brought together where its newest is, newest first. The selected one's, so that the set being looked at is in one place.
+        /// </param>
+        public BeatmapCarouselFilterSorting(Func<FilterCriteria> getCriteria, Func<Guid?>? getGatheredSet = null)
         {
             this.getCriteria = getCriteria;
+            this.getGatheredSet = getGatheredSet;
         }
 
         public async Task<List<CarouselItem>> Run(IEnumerable<CarouselItem> items, CancellationToken cancellationToken) => await Task.Run(() =>
@@ -31,6 +38,10 @@ namespace osu.Game.Screens.Select
             bool groupedSets = BeatmapCarouselFilterGrouping.ShouldGroupBeatmapsTogether(criteria);
 
             BeatmapItemsCount = items.Count();
+
+            Guid? gathered = !groupedSets && criteria.Sort == SortMode.DateUpdated && criteria.DateUpdatedSplitsDifficulties ? getGatheredSet?.Invoke() : null;
+            var gatheredBeatmaps = items.Select(i => (BeatmapInfo)i.Model).Where(b => b.BeatmapSet!.ID == gathered).ToList();
+            DateTimeOffset gatheredNewest = gatheredBeatmaps.Count > 0 ? gatheredBeatmaps.Max(dateUpdated) : default;
 
             return items.Order(Comparer<CarouselItem>.Create((a, b) =>
             {
@@ -44,6 +55,24 @@ namespace osu.Game.Screens.Select
 
                     // If we're grouping by sets, all fallback sorts need to be aggregates for the set.
                     return compare(ab, bb, criteria.Sort, aggregate: true);
+                }
+
+                if (gatheredBeatmaps.Count > 0)
+                {
+                    bool aGathered = ab.BeatmapSet!.ID == gathered;
+                    bool bGathered = bb.BeatmapSet!.ID == gathered;
+
+                    if (aGathered || bGathered)
+                    {
+                        int comparison = (bGathered ? gatheredNewest : dateUpdated(bb)).CompareTo(aGathered ? gatheredNewest : dateUpdated(ab));
+
+                        // anything else saved at the very moment the set's newest was goes after the whole set, not into it.
+                        if (comparison == 0 && aGathered != bGathered)
+                            comparison = aGathered ? -1 : 1;
+
+                        if (comparison != 0)
+                            return comparison;
+                    }
                 }
 
                 return compare(ab, bb, criteria.Sort, aggregate: false);
@@ -90,6 +119,13 @@ namespace osu.Game.Screens.Select
                     comparison = Nullable.Compare(b.BeatmapSet!.DateSubmitted, a.BeatmapSet!.DateSubmitted);
                     break;
 
+                case SortMode.DateUpdated:
+                    if (aggregate)
+                        comparison = compareUsingAggregateMax(b, a, static b => dateUpdated(b).ToUnixTimeMilliseconds());
+                    else
+                        comparison = dateUpdated(b).CompareTo(dateUpdated(a));
+                    break;
+
                 case SortMode.LastPlayed:
                     if (aggregate)
                         comparison = compareUsingAggregateMax(b, a, static b => (b.LastPlayed ?? DateTimeOffset.MinValue).ToUnixTimeSeconds());
@@ -130,6 +166,8 @@ namespace osu.Game.Screens.Select
 
             return comparison;
         }
+
+        private static DateTimeOffset dateUpdated(BeatmapInfo b) => b.LastLocalUpdate ?? b.BeatmapSet!.DateAdded;
 
         private static int compareDifficulty(BeatmapInfo a, BeatmapInfo b, SortMode sort)
         {

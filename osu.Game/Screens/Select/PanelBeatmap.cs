@@ -44,6 +44,7 @@ namespace osu.Game.Screens.Select
         private PanelLocalRankDisplay localRank = null!;
         private OsuSpriteText difficultyText = null!;
         private OsuSpriteText authorText = null!;
+        private PanelSaveTime saveTime = null!;
         private FillFlowContainer mainFill = null!;
         private DifficultyModIcons modIcons = null!;
 
@@ -175,7 +176,14 @@ namespace osu.Game.Screens.Select
                                             Font = OsuFont.Style.Caption1.With(weight: FontWeight.SemiBold),
                                             Anchor = Anchor.BottomLeft,
                                             Origin = Anchor.BottomLeft
-                                        }
+                                        },
+                                        saveTime = new PanelSaveTime
+                                        {
+                                            Colour = colourProvider.Content2,
+                                            Anchor = Anchor.BottomLeft,
+                                            Origin = Anchor.BottomLeft,
+                                            Margin = new MarginPadding { Left = 8f },
+                                        },
                                     }
                                 },
                                 new FillFlowContainer
@@ -228,6 +236,7 @@ namespace osu.Game.Screens.Select
             localRank.Beatmap = beatmap;
             difficultyText.Text = beatmap.DifficultyName;
             authorText.Text = BeatmapsetsStrings.ShowDetailsMappedBy(beatmap.Metadata.Author.Username);
+            saveTime.Saved = beatmap;
             modIcons.Beatmap = beatmap;
 
             computeStarRating();

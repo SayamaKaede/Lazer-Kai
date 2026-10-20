@@ -990,7 +990,8 @@ namespace osu.Game.Graphics.Carousel
                     continue;
 
                 float normalisedDepth = (float)(Math.Abs(selectedYPos - c.Item.CarouselYPosition) / DrawHeight);
-                Scroll.Panels.ChangeChildDepth(panel, c.Item.DepthLayer + normalisedDepth);
+                // a stacked panel goes behind the one above it, wherever the selection is.
+                Scroll.Panels.ChangeChildDepth(panel, c.Item.DepthLayer + c.Item.StackLevel + normalisedDepth);
 
                 if (c.DrawYPosition != c.Item.CarouselYPosition)
                     c.DrawYPosition = Interpolation.DampContinuously(c.DrawYPosition, c.Item.CarouselYPosition, 50, Time.Elapsed);

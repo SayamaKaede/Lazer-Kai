@@ -91,6 +91,62 @@ namespace osu.Game.Tests.Visual.SongSelect
         }
 
         [Test]
+        public async Task TestSortingDateUpdatedPutsTheSetSavedLastFirst()
+        {
+            var addedEarlier = TestResources.CreateTestBeatmapSetInfo(3);
+            addedEarlier.DateAdded = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+            var addedLongAgoButSavedLately = TestResources.CreateTestBeatmapSetInfo(3);
+            addedLongAgoButSavedLately.DateAdded = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            addedLongAgoButSavedLately.Beatmaps[1].LastLocalUpdate = new DateTimeOffset(2025, 6, 1, 0, 0, 0, TimeSpan.Zero);
+
+            var addedLately = TestResources.CreateTestBeatmapSetInfo(3);
+            addedLately.DateAdded = new DateTimeOffset(2025, 3, 1, 0, 0, 0, TimeSpan.Zero);
+
+            var results = await runSorting(SortMode.DateUpdated, [addedEarlier, addedLongAgoButSavedLately, addedLately]);
+
+            Assert.That(results.Select(b => b.BeatmapSet).Distinct(), Is.EqualTo(new[] { addedLongAgoButSavedLately, addedLately, addedEarlier }));
+        }
+
+        [Test]
+        public async Task TestSortingDateUpdatedOrdersSplitDifficultiesByTheirOwnDates()
+        {
+            var set = TestResources.CreateTestBeatmapSetInfo(3);
+            set.DateAdded = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            set.Beatmaps[1].LastLocalUpdate = new DateTimeOffset(2025, 6, 1, 0, 0, 0, TimeSpan.Zero);
+
+            var other = TestResources.CreateTestBeatmapSetInfo(1);
+            other.DateAdded = new DateTimeOffset(2025, 3, 1, 0, 0, 0, TimeSpan.Zero);
+
+            var results = (await runSorting(SortMode.DateUpdated, [set, other], GroupMode.Difficulty)).ToList();
+
+            Assert.That(results[0], Is.EqualTo(set.Beatmaps[1]));
+            Assert.That(results[1], Is.EqualTo(other.Beatmaps[0]));
+            Assert.That(results.Skip(2), Is.EquivalentTo(new[] { set.Beatmaps[0], set.Beatmaps[2] }));
+        }
+
+        [Test]
+        public async Task TestDateUpdatedSplitsDifficulties()
+        {
+            var set = TestResources.CreateTestBeatmapSetInfo(3);
+            set.DateAdded = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            set.Beatmaps[1].LastLocalUpdate = new DateTimeOffset(2025, 6, 1, 0, 0, 0, TimeSpan.Zero);
+
+            var other = TestResources.CreateTestBeatmapSetInfo(1);
+            other.DateAdded = new DateTimeOffset(2025, 3, 1, 0, 0, 0, TimeSpan.Zero);
+
+            var criteria = new FilterCriteria { Sort = SortMode.DateUpdated, DateUpdatedSplitsDifficulties = true };
+
+            Assert.That(BeatmapCarouselFilterGrouping.ShouldGroupBeatmapsTogether(criteria), Is.False);
+            Assert.That(BeatmapCarouselFilterGrouping.ShouldGroupBeatmapsTogether(new FilterCriteria { Sort = SortMode.Title, DateUpdatedSplitsDifficulties = true }), Is.True);
+
+            var results = (await runSorting(criteria, [set, other])).ToList();
+
+            Assert.That(results[0], Is.EqualTo(set.Beatmaps[1]));
+            Assert.That(results[1], Is.EqualTo(other.Beatmaps[0]));
+        }
+
+        [Test]
         public async Task TestSortByBpmUsesTitleAsTiebreaker()
         {
             List<BeatmapSetInfo> beatmapSets = [];
@@ -205,9 +261,12 @@ namespace osu.Game.Tests.Visual.SongSelect
             Assert.That(results.Select(b => b.BeatmapSet!.DateAdded), Is.Ordered.Descending);
         }
 
-        private static async Task<IEnumerable<BeatmapInfo>> runSorting(SortMode sort, List<BeatmapSetInfo> beatmapSets)
+        private static Task<IEnumerable<BeatmapInfo>> runSorting(SortMode sort, List<BeatmapSetInfo> beatmapSets, GroupMode group = GroupMode.None)
+            => runSorting(new FilterCriteria { Sort = sort, Group = group }, beatmapSets);
+
+        private static async Task<IEnumerable<BeatmapInfo>> runSorting(FilterCriteria criteria, List<BeatmapSetInfo> beatmapSets)
         {
-            var sorter = new BeatmapCarouselFilterSorting(() => new FilterCriteria { Sort = sort });
+            var sorter = new BeatmapCarouselFilterSorting(() => criteria);
             var carouselItems = await sorter.Run(beatmapSets.SelectMany(s => s.Beatmaps.Select(b => new CarouselItem(b))), CancellationToken.None);
             return carouselItems.Select(ci => ci.Model).OfType<BeatmapInfo>();
         }

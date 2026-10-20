@@ -401,11 +401,22 @@ namespace osu.Game.Screens.Select
                 selectionLayer.FadeOut(200, Easing.OutQuint);
         }
 
+        /// <summary>
+        /// Whether choosing this panel leaves it where it is rather than bringing it out to the left: for one tucked behind
+        /// another, whose hidden part would come out from under it (2026-10-19).
+        /// </summary>
+        protected virtual bool StaysInPlace => false;
+
+        /// <summary>
+        /// Moves the panel to where it belongs now that <see cref="StaysInPlace"/> has changed.
+        /// </summary>
+        protected void RefreshXOffset(bool animated) => updateXOffset(animated);
+
         private void updateXOffset(bool animated = true)
         {
             float x = PanelXOffset + CORNER_RADIUS;
 
-            if (!Expanded.Value && !Selected.Value)
+            if (StaysInPlace || (!Expanded.Value && !Selected.Value))
             {
                 if (this is PanelBeatmap || this is PanelBeatmapStandalone)
                     x += active_x_offset * 2;
@@ -413,7 +424,7 @@ namespace osu.Game.Screens.Select
                     x += active_x_offset * 4;
             }
 
-            if (!KeyboardSelected.Value)
+            if (StaysInPlace || !KeyboardSelected.Value)
                 x += active_x_offset;
 
             TopLevelContent.MoveToX(x, animated ? DURATION : 0, Easing.OutQuint);

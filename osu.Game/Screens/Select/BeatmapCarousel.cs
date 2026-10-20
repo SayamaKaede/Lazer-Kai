@@ -31,6 +31,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Online.API;
 using osu.Game.Rulesets;
 using osu.Game.Scoring;
+using osu.Game.Screens.Select.Filter;
 using Realms;
 
 namespace osu.Game.Screens.Select
@@ -85,12 +86,34 @@ namespace osu.Game.Screens.Select
             }
             else
             {
+                // tucked behind the panel above (2026-10-19), with only its star rating line showing below it,
+                // selected or not: the set heads its stack with the difficulty saved last whichever of it is chosen.
+                if (bottom.StackPosition > 0)
+                {
+                    bottom.StackLevel = top.StackLevel + 1;
+                    return STACKED_VISIBLE_HEIGHT - top.DrawHeight;
+                }
+
+                bottom.StackLevel = 0;
+
                 if (CurrentSelection != null && (top == CurrentSelectionItem || bottom == CurrentSelectionItem))
                     return SPACING * 2;
             }
 
             return -SPACING;
         }
+
+        /// <summary>
+        /// How much of a stacked difficulty shows below the one in front of it: its star rating line (decided 2026-10-19).
+        /// </summary>
+        public const float STACKED_VISIBLE_HEIGHT = 24;
+
+        /// <summary>
+        /// How far each stacked difficulty steps right of the one in front of it, up to <see cref="stack_max_steps"/> times (decided 2026-10-19).
+        /// </summary>
+        private const float stack_step = 16;
+
+        private const int stack_max_steps = 12;
 
         public BeatmapCarousel()
         {
@@ -103,7 +126,7 @@ namespace osu.Game.Screens.Select
             Filters = new ICarouselFilter[]
             {
                 new BeatmapCarouselFilterMatching(() => Criteria!),
-                new BeatmapCarouselFilterSorting(() => Criteria!),
+                new BeatmapCarouselFilterSorting(() => Criteria!, () => gatheredSet),
                 grouping = new BeatmapCarouselFilterGrouping
                 {
                     GetCriteria = () => Criteria!,
@@ -460,7 +483,9 @@ namespace osu.Game.Screens.Select
                             // hidden changed, needs re-filter
                             oldBeatmap.Hidden == newBeatmap.Hidden &&
                             // might be used for grouping, returning from gameplay
-                            oldBeatmap.LastPlayed == newBeatmap.LastPlayed;
+                            oldBeatmap.LastPlayed == newBeatmap.LastPlayed &&
+                            // might be used for sorting, returning from the editor
+                            oldBeatmap.LastLocalUpdate == newBeatmap.LastLocalUpdate;
 
                         if (equalForDisplayPurposes)
                             return false;
@@ -765,16 +790,40 @@ namespace osu.Game.Screens.Select
 
         private float selectionFocusOffset;
 
+        /// <summary>
+        /// The set the sort was last told to bring together, see <see cref="BeatmapCarouselFilterSorting"/>.
+        /// </summary>
+        private volatile object? gatheredSetBox;
+
+        private Guid? gatheredSet => (Guid?)gatheredSetBox;
+
         protected override void Update()
         {
             base.Update();
+
+            // choosing a difficulty of another set brings that set together instead, which takes sorting again.
+            if (Criteria is FilterCriteria criteria && criteria.Sort == SortMode.DateUpdated && criteria.DateUpdatedSplitsDifficulties)
+            {
+                Guid? selectedSet = (CurrentSelection as GroupedBeatmap)?.Beatmap.BeatmapSet?.ID;
+
+                if (selectedSet != gatheredSet)
+                {
+                    gatheredSetBox = selectedSet;
+                    FilterAsync();
+                }
+            }
 
             selectionFocusOffset = (float)Interpolation.DampContinuously(selectionFocusOffset, VisuallyFocusSelected ? 300 : 0, 100, Time.Elapsed);
         }
 
         protected override float GetPanelXOffset(Drawable panel)
         {
-            return base.GetPanelXOffset(panel) + (((ICarouselPanel)panel).Selected.Value ? 0 : selectionFocusOffset);
+            var carouselPanel = (ICarouselPanel)panel;
+
+            // each panel tucked behind another steps right of it.
+            float stackOffset = carouselPanel.Item is CarouselItem item ? Math.Min(item.StackLevel, stack_max_steps) * stack_step : 0;
+
+            return base.GetPanelXOffset(panel) + stackOffset + (carouselPanel.Selected.Value ? 0 : selectionFocusOffset);
         }
 
         #endregion

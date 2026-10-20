@@ -141,6 +141,10 @@ namespace osu.Game.Screens.Select
                     }
                 }
 
+                // a run of one set's difficulties, each a panel of its own, is stacked (2026-10-19).
+                if (!BeatmapSetsGroupedTogether && criteria.Sort == SortMode.DateUpdated && criteria.DateUpdatedSplitsDifficulties)
+                    markStacks(newItems);
+
                 cancellationToken.ThrowIfCancellationRequested();
 
                 Interlocked.Exchange(ref itemMap, newItemMap);
@@ -149,6 +153,35 @@ namespace osu.Game.Screens.Select
                 BeatmapItemsCount = displayedBeatmapsCount;
                 return newItems;
             }, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// How many of one set's difficulties in a row are stacked: any run at all (decided 2026-10-19).
+        /// </summary>
+        private const int stack_minimum = 2;
+
+        private static void markStacks(List<CarouselItem> items)
+        {
+            int start = 0;
+
+            while (start < items.Count)
+            {
+                int end = start + 1;
+
+                if (items[start].Model is GroupedBeatmap first)
+                {
+                    while (end < items.Count && items[end].Model is GroupedBeatmap next && next.Beatmap.BeatmapSet!.ID == first.Beatmap.BeatmapSet!.ID)
+                        end++;
+
+                    if (end - start >= stack_minimum)
+                    {
+                        for (int i = start; i < end; i++)
+                            items[i].StackPosition = i - start;
+                    }
+                }
+
+                start = end;
+            }
         }
 
         public static bool ShouldGroupBeatmapsTogether(FilterCriteria criteria)
@@ -160,6 +193,9 @@ namespace osu.Game.Screens.Select
             if (criteria.Sort == SortMode.LastPlayed && criteria.Group == GroupMode.LastPlayed)
                 return false;
             if (criteria.Group == GroupMode.RankAchieved)
+                return false;
+            // stable lists every difficulty on its own (2026-10-19).
+            if (criteria.Sort == SortMode.DateUpdated && criteria.DateUpdatedSplitsDifficulties)
                 return false;
 
             // In the majority case we group sets together for display.

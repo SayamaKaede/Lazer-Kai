@@ -26,6 +26,12 @@ namespace osu.Game.Screens.Select.Filter
         [LocalisableDescription(typeof(SongSelectStrings), nameof(SongSelectStrings.DateSubmitted))]
         DateSubmitted,
 
+        /// <summary>
+        /// When a difficulty was last saved in the editor, or for one never saved here, when its set was added.
+        /// </summary>
+        [LocalisableDescription(typeof(LazerKaiSongSelectStrings), nameof(LazerKaiSongSelectStrings.DateUpdated))]
+        DateUpdated,
+
         [LocalisableDescription(typeof(SongSelectStrings), nameof(SongSelectStrings.Difficulty))]
         Difficulty,
 

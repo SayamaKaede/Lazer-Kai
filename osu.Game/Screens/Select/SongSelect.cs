@@ -52,6 +52,7 @@ using osu.Game.Screens.Footer;
 using osu.Game.Screens.Menu;
 using osu.Game.Screens.Play;
 using osu.Game.Screens.Ranking;
+using osu.Game.Screens.Select.Filter;
 using osu.Game.Skinning;
 using osu.Game.Utils;
 using osuTK;
@@ -333,7 +334,10 @@ namespace osu.Game.Screens.Select
             });
 
             showConvertedBeatmaps = config.GetBindable<bool>(OsuSetting.ShowConvertedBeatmaps);
+            sortMode = config.GetBindable<SortMode>(OsuSetting.SongSelectSortingMode);
         }
+
+        private Bindable<SortMode> sortMode = null!;
 
         // Colour scheme for mod overlay is left as default (green) to match mods button.
         // Not sure about this, but we'll iterate based on feedback.
@@ -344,6 +348,18 @@ namespace osu.Game.Screens.Select
 
         private void requestRecommendedSelection(IEnumerable<GroupedBeatmap> groupedBeatmaps)
         {
+            // listed by when they were saved, the difficulty saved last is the one being worked on (2026-10-19).
+            if (sortMode.Value == SortMode.DateUpdated)
+            {
+                var lastSaved = groupedBeatmaps.Where(gb => gb.Beatmap.LastLocalUpdate != null).MaxBy(gb => gb.Beatmap.LastLocalUpdate);
+
+                if (lastSaved != null)
+                {
+                    queueBeatmapSelection(lastSaved);
+                    return;
+                }
+            }
+
             var recommendedBeatmap = difficultyRecommender?.GetRecommendedBeatmap(groupedBeatmaps.Select(gb => gb.Beatmap)) ?? groupedBeatmaps.First().Beatmap;
             queueBeatmapSelection(groupedBeatmaps.First(bug => bug.Beatmap.Equals(recommendedBeatmap)));
         }

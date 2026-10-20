@@ -20,6 +20,11 @@ namespace osu.Game.Screens.Select
         public GroupMode Group;
         public SortMode Sort;
 
+        /// <summary>
+        /// See <see cref="Configuration.OsuSetting.SongSelectDateUpdatedSplitsDifficulties"/>.
+        /// </summary>
+        public bool DateUpdatedSplitsDifficulties;
+
         public BeatmapSetInfo? SelectedBeatmapSet;
 
         public OptionalRange<double> StarDifficulty;
@@ -297,6 +302,7 @@ namespace osu.Game.Screens.Select
                 //
                 // This makes things very slow when typing a text search, and we probably want to consider a way to optimise things going forward.
                 case SortMode.LastPlayed:
+                case SortMode.DateUpdated:
                 case SortMode.BPM:
                 case SortMode.Length:
                 case SortMode.Difficulty:

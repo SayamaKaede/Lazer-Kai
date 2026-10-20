@@ -452,6 +452,18 @@ namespace osu.Game.Localisation
         public static LocalisableString SongSelectOpensEditorDescription => new TranslatableString(getKey(@"song_select_opens_editor_description"),
             @"Clicking the selected difficulty, Enter and the logo open it in the editor. Alt-click to play it.");
 
+        /// <summary>
+        /// "A panel for each difficulty when sorted by Date Updated"
+        /// </summary>
+        public static LocalisableString DateUpdatedSplitsDifficulties => new TranslatableString(getKey(@"date_updated_splits_difficulties"),
+            @"A panel for each difficulty when sorted by Date Updated");
+
+        /// <summary>
+        /// "Like stable, each difficulty is listed where its own save puts it. One set's in a row are stacked, and the selected set's are brought together."
+        /// </summary>
+        public static LocalisableString DateUpdatedSplitsDifficultiesDescription => new TranslatableString(getKey(@"date_updated_splits_difficulties_description"),
+            @"Like stable, each difficulty is listed where its own save puts it. One set's in a row are stacked, and the selected set's are brought together.");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }
