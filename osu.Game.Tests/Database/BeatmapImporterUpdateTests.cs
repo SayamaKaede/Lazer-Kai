@@ -330,6 +330,44 @@ namespace osu.Game.Tests.Database
         }
 
         [Test]
+        public void TestModifiedDifficultyCountsAsUpdatedNowAndTheRestKeepTheirDates()
+        {
+            RunTestWithRealmAsync(async (realm, storage) =>
+            {
+                var importer = new BeatmapImporter(storage, realm);
+                using var rulesets = new RealmRulesetStore(realm, storage);
+
+                using var __ = getBeatmapArchive(out string pathOriginal);
+                using var _ = getBeatmapArchiveWithModifications(out string pathModified, directory =>
+                {
+                    var firstOsuFile = directory.GetFiles("*.osu").First();
+                    File.WriteAllText(firstOsuFile.FullName, File.ReadAllText(firstOsuFile.FullName) + "\n# I am new content");
+                });
+
+                var importBeforeUpdate = await importer.Import(new ImportTask(pathOriginal));
+                Debug.Assert(importBeforeUpdate != null);
+
+                var savedEarlier = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
+                importBeforeUpdate.PerformWrite(s =>
+                {
+                    foreach (var b in s.Beatmaps)
+                        b.LastLocalUpdate = savedEarlier;
+                });
+
+                var beforeUpdate = DateTimeOffset.Now;
+                var importAfterUpdate = await importer.ImportAsUpdate(new ProgressNotification(), new ImportTask(pathModified), importBeforeUpdate.Value);
+                Debug.Assert(importAfterUpdate != null);
+
+                realm.Run(r => r.Refresh());
+
+                var dates = importAfterUpdate.Value.Beatmaps.Select(b => b.LastLocalUpdate).ToArray();
+
+                Assert.That(dates.Count(d => d >= beforeUpdate), Is.EqualTo(1), () => "the modified difficulty is the newest");
+                Assert.That(dates.Count(d => d == savedEarlier), Is.EqualTo(count_beatmaps - 1), () => "the others keep when they were saved");
+            });
+        }
+
+        [Test]
         public void TestExistingDifficultyRemoved()
         {
             RunTestWithRealmAsync(async (realm, storage) =>

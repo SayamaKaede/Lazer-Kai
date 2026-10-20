@@ -89,6 +89,15 @@ namespace osu.Game.Beatmaps
 
                     transferCollectionReferences(realm, original, updated);
 
+                    // When each difficulty last changed here, which song select can list by: one the update left as it was
+                    // keeps its date, and one it changed or brought in has changed now. Updating used to leave them all
+                    // without one, so the difficulties just updated sank to where the set was added (2026-10-19 report).
+                    foreach (var updatedBeatmap in updated.Beatmaps)
+                    {
+                        var unchanged = original.Beatmaps.FirstOrDefault(b => b.Hash == updatedBeatmap.Hash);
+                        updatedBeatmap.LastLocalUpdate = unchanged != null ? unchanged.LastLocalUpdate : DateTimeOffset.Now;
+                    }
+
                     foreach (var beatmap in original.Beatmaps.ToArray())
                     {
                         var updatedBeatmap = updated.Beatmaps.FirstOrDefault(b => b.Hash == beatmap.Hash);
