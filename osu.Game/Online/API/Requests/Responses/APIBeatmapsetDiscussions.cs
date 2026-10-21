@@ -14,6 +14,13 @@ namespace osu.Game.Online.API.Requests.Responses
         [JsonProperty(@"discussions")]
         public List<APIBeatmapsetDiscussion> Discussions { get; set; } = new List<APIBeatmapsetDiscussion>();
 
+        /// <summary>
+        /// The issues raised in the reviews among <see cref="Discussions"/>: threads of their own, which the website
+        /// hands out apart from the page and never among it.
+        /// </summary>
+        [JsonProperty(@"included_discussions")]
+        public List<APIBeatmapsetDiscussion> IncludedDiscussions { get; set; } = new List<APIBeatmapsetDiscussion>();
+
         [JsonProperty(@"users")]
         public List<APIUser> Users { get; set; } = new List<APIUser>();
 

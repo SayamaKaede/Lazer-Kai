@@ -421,6 +421,8 @@ namespace osu.Game.Screens.Edit.Discussion
                     return;
 
                 discussions.AddRange(response.Discussions);
+                // the issues raised in the page's reviews, which never come among the page itself.
+                discussions.AddRange(response.IncludedDiscussions);
 
                 foreach (var user in response.Users)
                     names[user.Id] = user.Username;

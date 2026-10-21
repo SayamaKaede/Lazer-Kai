@@ -58,6 +58,9 @@ namespace osu.Game.Tests.Visual.Editing
         private readonly List<int> pagesAskedFor = new List<int>();
         private readonly List<long> repliesAskedFor = new List<long>();
 
+        /// <summary>Whether the first page carries a review, with its issue among the included discussions.</summary>
+        private bool withReview;
+
         /// <summary>The object the first discussion names, by its time and its number in its combo.</summary>
         private HitObject named = null!;
 
@@ -86,6 +89,7 @@ namespace osu.Game.Tests.Visual.Editing
             {
                 pagesAskedFor.Clear();
                 repliesAskedFor.Clear();
+                withReview = false;
                 localImages.Renew();
 
                 earlier = EditorBeatmap.HitObjects[1];
@@ -446,6 +450,21 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("an open one is not darkened", () => row(1).ChildrenOfType<FillFlowContainer>().First().Alpha, () => Is.EqualTo(1));
         }
 
+        /// <summary>
+        /// The issues a review raises are threads of their own, which the website hands out apart from the page,
+        /// among its included discussions; they are listed with the rest (2026-10-21 report).
+        /// </summary>
+        [Test]
+        public void TestTheIssuesOfAReviewAreListed()
+        {
+            AddStep("a review on the first page", () => withReview = true);
+            open();
+            AddUntilStep("the review is listed", () => overlay.ChildrenOfType<DiscussionRow>().Any(r => r.Discussion.Id == 7));
+
+            AddAssert("its issue is marked on the timeline", marked, () => Does.Contain(8L));
+            AddAssert("its issue is listed", () => overlay.ChildrenOfType<DiscussionRow>().Any(r => r.Discussion.Id == 8));
+        }
+
         private static IconUsage iconOf(Drawable drawable) => drawable.ChildrenOfType<SpriteIcon>().First().Icon;
 
         [Test]
@@ -532,6 +551,20 @@ namespace osu.Game.Tests.Visual.Editing
         {
             int here = EditorBeatmap.BeatmapInfo.OnlineID;
 
+            var page = makeFirstPage(here);
+
+            if (withReview)
+            {
+                // as the website hands a review out: its text and a block naming its issue, which comes apart.
+                page.Discussions.Add(discussion(7, null, null, "review", @"[{""type"":""paragraph"",""text"":""a review""},{""type"":""embed"",""discussion_id"":8}]"));
+                page.IncludedDiscussions.Add(discussion(8, here, (int)earlier.StartTime, "problem", "raised in the review"));
+            }
+
+            return page;
+        }
+
+        private APIBeatmapsetDiscussions makeFirstPage(int here)
+        {
             return new APIBeatmapsetDiscussions
             {
                 Discussions =
