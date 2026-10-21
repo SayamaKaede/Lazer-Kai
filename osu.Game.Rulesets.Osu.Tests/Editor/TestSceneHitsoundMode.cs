@@ -802,9 +802,11 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             switchToHitsounds();
 
             AddStep("select the last circle", () => EditorBeatmap.SelectedHitObjects.Add(last));
-            AddStep("click below the buttons", () =>
+            AddStep("click beside the buttons", () =>
             {
-                InputManager.MoveMouseTo(panel.ToScreenSpace(new Vector2(panel.DrawWidth / 2, panel.DrawHeight - 20)));
+                // beside rather than below: with the stable-format notice up (2026-10-15) the last row of buttons reaches
+                // nearly to the bottom, so the middle of the bottom edge is a button.
+                InputManager.MoveMouseTo(panel.ToScreenSpace(new Vector2(panel.DrawWidth - 20, panel.DrawHeight - 20)));
                 InputManager.Click(MouseButton.Left);
             });
 

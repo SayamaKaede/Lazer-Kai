@@ -84,7 +84,8 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                 double first = EditorBeatmap.HitObjects.Min(h => h.StartTime);
                 double last = EditorBeatmap.HitObjects.Max(h => h.GetEndTime());
 
-                EditorBeatmap.Bookmarks.Add(bookmark = (int)((first + last) / 2));
+                // the stretches are between bookmarks (2026-10-18), so the beatmap's two ends are marked as well.
+                EditorBeatmap.Bookmarks.AddRange(new[] { (int)first, bookmark = (int)((first + last) / 2), (int)last });
             });
 
             AddStep("open the panel", openFromMenu);
@@ -111,7 +112,7 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                 double first = EditorBeatmap.HitObjects.Min(h => h.StartTime);
                 double last = EditorBeatmap.HitObjects.Max(h => h.GetEndTime());
 
-                EditorBeatmap.Bookmarks.Add((int)((first + last) / 2));
+                EditorBeatmap.Bookmarks.AddRange(new[] { (int)first, (int)((first + last) / 2), (int)last });
             });
 
             // the strip belongs to the editor, not to this panel: it answers the pointer only while a split is open.
@@ -141,7 +142,7 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                 double first = EditorBeatmap.HitObjects.Min(h => h.StartTime);
                 double last = EditorBeatmap.HitObjects.Max(h => h.GetEndTime());
 
-                EditorBeatmap.Bookmarks.Add((int)((first + last) / 2));
+                EditorBeatmap.Bookmarks.AddRange(new[] { (int)first, (int)((first + last) / 2), (int)last });
             });
 
             AddStep("open the panel", openFromMenu);
@@ -188,7 +189,7 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
                 double first = EditorBeatmap.HitObjects.Min(h => h.StartTime);
                 double last = EditorBeatmap.HitObjects.Max(h => h.GetEndTime());
 
-                EditorBeatmap.Bookmarks.Add((int)((first + last) / 2));
+                EditorBeatmap.Bookmarks.AddRange(new[] { (int)first, (int)((first + last) / 2), (int)last });
             });
 
             AddStep("open the panel", openFromMenu);
