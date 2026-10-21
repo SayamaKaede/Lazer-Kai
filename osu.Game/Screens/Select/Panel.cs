@@ -96,9 +96,23 @@ namespace osu.Game.Screens.Select
         [Resolved]
         private BeatmapCarousel? carousel { get; set; }
 
+        /// <summary>
+        /// How much darker the stacked difficulties that are not selected are drawn, so the selected one stands out
+        /// among them. Settled against the real thing through a tuning slider, together with
+        /// <see cref="stacked_selected_x_offset"/> (2026-10-21).
+        /// </summary>
+        private const float stacked_unselected_dim = 0.4f;
+
+        /// <summary>
+        /// How far the selected one of a stack comes out to the left: a little, where any other panel comes all the
+        /// way out, so that the stack stays a stack (2026-10-21).
+        /// </summary>
+        private const float stacked_selected_x_offset = 8;
+
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colourProvider, OsuColour colours)
         {
+
             Anchor = Anchor.TopRight;
             Origin = Anchor.TopRight;
 
@@ -283,6 +297,16 @@ namespace osu.Game.Screens.Select
             }, true);
         }
 
+        /// <summary>
+        /// Darkens a stacked panel that is not selected (2026-10-21). The selected one of a stack cannot come out the
+        /// way other panels do, and its glow is behind the panel above it, so it was barely told apart from the rest.
+        /// </summary>
+        private void updateStackedDim(bool animated)
+        {
+            float brightness = StaysInPlace && !Selected.Value ? 1 - stacked_unselected_dim : 1;
+            TopLevelContent.FadeColour(new Color4(brightness, brightness, brightness, 1), animated ? DURATION / 2 : 0, Easing.OutQuint);
+        }
+
         protected override void PrepareForUse()
         {
             base.PrepareForUse();
@@ -399,6 +423,8 @@ namespace osu.Game.Screens.Select
                 selectionLayer.FadeIn(100, Easing.OutQuint);
             else
                 selectionLayer.FadeOut(200, Easing.OutQuint);
+
+            updateStackedDim(animated);
         }
 
         /// <summary>
@@ -410,7 +436,11 @@ namespace osu.Game.Screens.Select
         /// <summary>
         /// Moves the panel to where it belongs now that <see cref="StaysInPlace"/> has changed.
         /// </summary>
-        protected void RefreshXOffset(bool animated) => updateXOffset(animated);
+        protected void RefreshXOffset(bool animated)
+        {
+            updateXOffset(animated);
+            updateStackedDim(animated);
+        }
 
         private void updateXOffset(bool animated = true)
         {
@@ -426,6 +456,9 @@ namespace osu.Game.Screens.Select
 
             if (StaysInPlace || !KeyboardSelected.Value)
                 x += active_x_offset;
+
+            if (StaysInPlace && Selected.Value)
+                x -= stacked_selected_x_offset;
 
             TopLevelContent.MoveToX(x, animated ? DURATION : 0, Easing.OutQuint);
         }
