@@ -88,6 +88,9 @@ namespace osu.Game.Screens.Edit.Discussion
 
             (IconUsage icon, Color4 colour) = MarkOf(Discussion, colours, colourProvider);
 
+            // a resolved thread darkened, so the ones still open stand out among all of them (2026-10-21).
+            float alpha = Discussion.Resolved ? 0.45f : 1;
+
             InternalChildren = new Drawable[]
             {
                 new Box
@@ -100,9 +103,11 @@ namespace osu.Game.Screens.Edit.Discussion
                     RelativeSizeAxes = Axes.Y,
                     Width = 4,
                     Colour = colour,
+                    Alpha = alpha,
                 },
                 new FillFlowContainer
                 {
+                    Alpha = alpha,
                     RelativeSizeAxes = Axes.X,
                     AutoSizeAxes = Axes.Y,
                     Direction = FillDirection.Vertical,
@@ -125,11 +130,28 @@ namespace osu.Game.Screens.Edit.Discussion
                                     Size = new Vector2(12),
                                     Colour = colour,
                                 },
-                                TimeLink = new LinkFlowContainer(s => s.Font = OsuFont.Default.With(size: 13, weight: FontWeight.SemiBold))
+                                new Container
                                 {
                                     Anchor = Anchor.CentreLeft,
                                     Origin = Anchor.CentreLeft,
                                     AutoSizeAxes = Axes.Both,
+                                    Masking = true,
+                                    CornerRadius = 4,
+                                    Children = new Drawable[]
+                                    {
+                                        // framed like a button, as clicking it goes there (2026-10-21).
+                                        new Box
+                                        {
+                                            RelativeSizeAxes = Axes.Both,
+                                            Colour = colourProvider.Background5,
+                                            Alpha = Discussion.Timestamp != null ? 1 : 0,
+                                        },
+                                        TimeLink = new LinkFlowContainer(s => s.Font = OsuFont.Default.With(size: 13, weight: FontWeight.SemiBold))
+                                        {
+                                            AutoSizeAxes = Axes.Both,
+                                            Padding = Discussion.Timestamp != null ? new MarginPadding { Horizontal = 6, Vertical = 1 } : new MarginPadding(),
+                                        },
+                                    }
                                 },
                                 new OsuSpriteText
                                 {

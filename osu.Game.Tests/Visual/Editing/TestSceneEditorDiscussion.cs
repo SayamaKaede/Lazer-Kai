@@ -424,8 +424,9 @@ namespace osu.Game.Tests.Visual.Editing
         }
 
         /// <summary>
-        /// A resolved thread is marked the way the website marks it, with a green ring and tick in place of its kind,
-        /// rather than faded (2026-10-20 request).
+        /// A resolved thread is marked the way the website marks it, with a green ring and tick in place of its kind
+        /// (2026-10-20 request). Its row is darkened as well, so the ones still open stand out among all of them
+        /// (2026-10-21, chosen by the user); its mark on the timeline is not.
         /// </summary>
         [Test]
         public void TestAResolvedThreadIsMarkedAsTheWebsiteMarksIt()
@@ -439,9 +440,10 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddAssert("its row starts with the same", () => iconOf(row(2)), () => Is.EqualTo(FontAwesome.Regular.CheckCircle));
             // the body of the row; the images and replies under it are hidden while there are none.
-            AddAssert("its row is not faded", () => row(2).ChildrenOfType<FillFlowContainer>().First().Alpha, () => Is.EqualTo(1));
+            AddAssert("its row is darkened", () => row(2).ChildrenOfType<FillFlowContainer>().First().Alpha, () => Is.LessThan(1));
 
             AddAssert("an open one keeps its kind", () => iconOf(row(1)), () => Is.EqualTo(FontAwesome.Solid.ExclamationCircle));
+            AddAssert("an open one is not darkened", () => row(1).ChildrenOfType<FillFlowContainer>().First().Alpha, () => Is.EqualTo(1));
         }
 
         private static IconUsage iconOf(Drawable drawable) => drawable.ChildrenOfType<SpriteIcon>().First().Icon;
