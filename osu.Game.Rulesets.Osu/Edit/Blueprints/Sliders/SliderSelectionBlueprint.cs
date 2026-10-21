@@ -53,6 +53,9 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
         private IEditorChangeHandler? changeHandler { get; set; }
 
         [Resolved]
+        private EditorAsmr? asmr { get; set; }
+
+        [Resolved]
         private BindableBeatDivisor? beatDivisor { get; set; }
 
         [Resolved(CanBeNull = true)]
@@ -306,6 +309,8 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             HitObject.SliderVelocityMultiplier = proposedVelocity;
             HitObject.Path.ExpectedDistance.Value = proposedDistance;
             editorBeatmap?.Update(HitObject);
+
+            asmr?.Play(AsmrSound.SliderLength, HitObject.EndPosition.X, EditorAsmr.PitchForLength(proposedDistance));
         }
 
         /// <summary>

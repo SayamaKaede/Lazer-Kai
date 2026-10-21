@@ -57,6 +57,14 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
         [Resolved]
         private OsuSliderVelocityToolboxGroup? sliderVelocityToolbox { get; set; }
 
+        [Resolved]
+        private EditorAsmr? asmr { get; set; }
+
+        /// <summary>
+        /// The length the slider being placed was last snapped to, for the click of each step it is stretched by.
+        /// </summary>
+        private double lastSnappedLength;
+
         private Bindable<bool> limitedDistanceSnap { get; set; } = null!;
 
         private Bindable<bool> freehandPlacement { get; set; } = null!;
@@ -347,6 +355,7 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
         {
             BeginPlacement(commitStart: true);
             state = SliderPlacementState.ControlPoints;
+            asmr?.Play(AsmrSound.SliderStart, HitObject.Position.X);
         }
 
         private void endCurve()
@@ -472,10 +481,35 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
             return !lastPiece.IsHovered && (last is null || Vector2.DistanceSquared(last.Position, getCursorPosition()) > 1f);
         }
 
+        /// <summary>
+        /// Clicks each time the length crosses a snap, drawn freehand or not: a freehand path is not snapped as it is
+        /// drawn, so the step is worked out here the same way.
+        /// </summary>
+        private void clickOnLengthStep()
+        {
+            if (state != SliderPlacementState.ControlPoints && state != SliderPlacementState.Drawing)
+                return;
+
+            double length = distanceSnapProvider?.FindSnappedDistance((float)HitObject.Path.CalculatedDistance, HitObject.StartTime, HitObject)
+                            ?? HitObject.Path.CalculatedDistance;
+
+            if (Precision.AlmostEquals(length, lastSnappedLength))
+                return;
+
+            lastSnappedLength = length;
+
+            if (length > 0)
+                asmr?.Play(AsmrSound.SliderLength, HitObject.EndPosition.X, EditorAsmr.PitchForLength(length));
+        }
+
         private void placeNewControlPoint()
         {
             // Place a new point by detatching the current cursor.
             updateCursor();
+
+            if (cursor != null)
+                asmr?.Play(AsmrSound.SliderPoint, HitObject.Position.X + cursor.Position.X);
+
             cursor = null;
         }
 
@@ -485,6 +519,8 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders
                 HitObject.Path.ExpectedDistance.Value = (float)HitObject.Path.CalculatedDistance;
             else
                 HitObject.Path.ExpectedDistance.Value = distanceSnapProvider?.FindSnappedDistance((float)HitObject.Path.CalculatedDistance, HitObject.StartTime, HitObject) ?? (float)HitObject.Path.CalculatedDistance;
+
+            clickOnLengthStep();
 
             bodyPiece.UpdateFrom(HitObject);
             headCirclePiece.UpdateFrom(HitObject.HeadCircle);

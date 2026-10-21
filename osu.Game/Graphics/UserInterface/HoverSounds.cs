@@ -9,6 +9,7 @@ using osu.Framework.Audio.Sample;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Game.Audio;
+using osu.Game.Screens.Edit;
 
 namespace osu.Game.Graphics.UserInterface
 {
@@ -37,10 +38,22 @@ namespace osu.Game.Graphics.UserInterface
                           ?? audio.Samples.Get($@"UI/{HoverSampleSet.Default.GetResourceName()}-hover");
         }
 
+        /// <summary>
+        /// The editor's ASMR mode, which stands in for these sounds inside the editor while it is on.
+        /// </summary>
+        [Resolved(CanBeNull = true)]
+        protected EditorAsmr Asmr { get; private set; }
+
         public override void PlayHoverSample()
         {
             if (!Enabled.Value)
                 return;
+
+            if (Asmr?.PlaysInterface == true)
+            {
+                Asmr.PlayInterface(AsmrSound.UiHover, this);
+                return;
+            }
 
             SamplePlaybackHelper.PlayWithRandomPitch(sampleHover, pitchVariation: 0.02);
         }

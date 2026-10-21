@@ -7,6 +7,7 @@ using osu.Framework.Audio;
 using osu.Framework.Audio.Sample;
 using osu.Framework.Input.Events;
 using osu.Game.Audio;
+using osu.Game.Screens.Edit;
 using osuTK.Input;
 
 namespace osu.Game.Graphics.UserInterface
@@ -54,7 +55,16 @@ namespace osu.Game.Graphics.UserInterface
             return base.OnClick(e);
         }
 
-        public void PlayClickSample() =>
+        public void PlayClickSample()
+        {
+            if (Asmr?.PlaysInterface == true)
+            {
+                // what opens a menu in the editor is what pins, moves and folds its toolbox groups.
+                Asmr.PlayInterface(SampleSet == HoverSampleSet.MenuOpen ? AsmrSound.UiPin : AsmrSound.UiClick, this, Enabled.Value ? 1 : 0.75);
+                return;
+            }
+
             SamplePlaybackHelper.PlayWithRandomPitch(Enabled.Value ? sampleClick : sampleClickDisabled, pitchVariation: 0.01);
+        }
     }
 }

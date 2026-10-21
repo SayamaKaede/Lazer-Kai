@@ -94,6 +94,7 @@ namespace osu.Game.Overlays.Settings.Sections
             {
                 new EditorBeatmapSkinSettings(),
                 new EditorHitsoundSettings(),
+                new EditorAsmrSettings(),
                 new EditorManiaSettings(),
                 new EditorInputSettings(),
                 new EditorOtherCustomisationSettings(),

@@ -73,9 +73,15 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
         public LocalisableString TooltipText { get; }
 
+        [Resolved(CanBeNull = true)]
+        private EditorAsmr? asmr { get; set; }
+
         public void TriggerAction()
         {
             Circle.FlashColour(Colours.GrayF, 300);
+
+            // these have no click sound of their own; the ASMR mode gives them one (2026-10-21).
+            asmr?.PlayInterface(AsmrSound.UiClick, this);
 
             TriggerOperationStarted();
             Action?.Invoke();

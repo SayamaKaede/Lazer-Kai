@@ -2,10 +2,12 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Game.Rulesets.Edit.Tools;
+using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Components.RadioButtons;
 
 namespace osu.Game.Rulesets.Edit
@@ -41,6 +43,9 @@ namespace osu.Game.Rulesets.Edit
     {
         public new CompositionTool<TAction> Tool => (CompositionTool<TAction>)base.Tool;
 
+        [Resolved(CanBeNull = true)]
+        private EditorAsmr? asmr { get; set; }
+
         public HitObjectCompositionToolButton(CompositionTool<TAction> tool, Action<CompositionTool>? action)
             : base(tool, action)
         {
@@ -51,6 +56,8 @@ namespace osu.Game.Rulesets.Edit
             if (Nullable.Equals(e.Action, Tool.Action) && Enabled.Value && ShortcutEnabled.Value)
             {
                 TriggerClick();
+                // a key makes no click sound of its own; the ASMR mode wants one either way (2026-10-21).
+                asmr?.PlayInterface(AsmrSound.UiClick, this);
                 return true;
             }
 

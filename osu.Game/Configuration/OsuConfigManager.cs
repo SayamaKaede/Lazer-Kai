@@ -243,6 +243,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.SongSelectOpensEditor, false);
             SetDefault(OsuSetting.SongSelectDateUpdatedSplitsDifficulties, false);
             SetDefault(OsuSetting.EditorDiscussionOpacity, 1f, 0.2f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorAsmrSounds, false);
+            SetDefault(OsuSetting.EditorAsmrVolume, 0.6f, 0f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorFreehandSliderPlacement, true);
             SetDefault(OsuSetting.EditorAlwaysExpandTimelinePointLabels, false);
             SetDefault(OsuSetting.EditorSelectionColour, EditorSelectionColour.Default);
@@ -1416,5 +1418,16 @@ namespace osu.Game.Configuration
         /// How opaque the editor's discussion panel is drawn, so the beatmap can be seen through it (2026-10-20).
         /// </summary>
         EditorDiscussionOpacity,
+
+        /// <summary>
+        /// Whether the editor makes a soft sound for each thing done to the objects while the track is stopped: the
+        /// ASMR mode (2026-10-21).
+        /// </summary>
+        EditorAsmrSounds,
+
+        /// <summary>
+        /// How loud <see cref="EditorAsmrSounds"/> are.
+        /// </summary>
+        EditorAsmrVolume,
     }
 }

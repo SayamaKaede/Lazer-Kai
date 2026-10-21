@@ -56,6 +56,10 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
         [Resolved(CanBeNull = true)]
         private IDistanceSnapProvider distanceSnapProvider { get; set; }
 
+        [Resolved(CanBeNull = true)]
+        [CanBeNull]
+        private EditorAsmr asmr { get; set; }
+
         private Bindable<bool> limitedDistanceSnap { get; set; } = null!;
 
         public PathControlPointVisualiser(T hitObject, bool allowSelection)
@@ -572,6 +576,9 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
                 hitObject.Path.ControlPoints[i].Type = dragPathTypes[i];
 
             EnsureValidPathTypes();
+
+            if (hitObject.Position != oldPosition || !hitObject.Path.ControlPoints.Select(cp => cp.Position).SequenceEqual(oldControlPoints))
+                asmr?.Play(AsmrSound.SliderShape, hitObject.Position.X + hitObject.Path.ControlPoints[draggedControlPointIndex].Position.X);
         }
 
         /// <summary>

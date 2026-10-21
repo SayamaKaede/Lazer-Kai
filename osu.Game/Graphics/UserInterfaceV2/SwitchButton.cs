@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Game.Overlays;
+using osu.Game.Screens.Edit;
 using osuTK;
 using osuTK.Graphics;
 
@@ -91,8 +92,20 @@ namespace osu.Game.Graphics.UserInterfaceV2
             PlaySample(value);
         }
 
+        /// <summary>
+        /// The editor's ASMR mode, which stands in for these sounds inside the editor while it is on.
+        /// </summary>
+        [Resolved(CanBeNull = true)]
+        private EditorAsmr? asmr { get; set; }
+
         public void PlaySample(bool value)
         {
+            if (asmr?.PlaysInterface == true)
+            {
+                asmr.PlayInterface(AsmrSound.UiToggle, this, value ? 1.12 : 0.88);
+                return;
+            }
+
             if (value)
                 sampleChecked?.Play();
             else

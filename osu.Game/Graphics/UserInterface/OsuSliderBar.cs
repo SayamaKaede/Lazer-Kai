@@ -11,6 +11,7 @@ using osu.Framework.Localisation;
 using osu.Framework.Utils;
 using osu.Game.Extensions;
 using osu.Game.Input;
+using osu.Game.Screens.Edit;
 
 namespace osu.Game.Graphics.UserInterface
 {
@@ -42,6 +43,9 @@ namespace osu.Game.Graphics.UserInterface
 
         private double lastSampleTime;
         private T lastSampleValue;
+
+        [Resolved(CanBeNull = true)]
+        private EditorAsmr? asmr { get; set; }
 
         [BackgroundDependencyLoader]
         private void load(AudioManager audio)
@@ -77,6 +81,14 @@ namespace osu.Game.Graphics.UserInterface
 
             lastSampleValue = value;
             lastSampleTime = Clock.CurrentTime;
+
+            // in the editor's ASMR mode its own tick stands in, so a bar that turns or stretches the objects is
+            // heard once, as what it did to them (2026-10-21).
+            if (asmr?.PlaysInterface == true)
+            {
+                asmr.PlayInterface(AsmrSound.UiSlider, this, 0.9 + NormalizedValue * 0.3);
+                return;
+            }
 
             var channel = sample.GetChannel();
 

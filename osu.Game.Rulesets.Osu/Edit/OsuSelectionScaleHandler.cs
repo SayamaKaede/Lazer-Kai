@@ -51,6 +51,9 @@ namespace osu.Game.Rulesets.Osu.Edit
         [Resolved(CanBeNull = true)]
         private StreamConversionPanel? streamPanel { get; set; }
 
+        [Resolved(CanBeNull = true)]
+        private EditorAsmr? asmr { get; set; }
+
         private BindableList<HitObject> selectedItems { get; } = new BindableList<HitObject>();
 
         private readonly Bindable<bool> allowOutsidePlayArea = new Bindable<bool>();
@@ -122,6 +125,9 @@ namespace osu.Game.Rulesets.Osu.Edit
             Vector2 actualOrigin = origin ?? defaultOrigin.Value;
             scale = clampScaleToAdjustAxis(scale, adjustAxis);
 
+            // every object and anchor, not only the first: scaling from the first object leaves it where it was.
+            var shapeBefore = OsuSelectionHandler.ShapeOf(objectsInScale.Keys);
+
             // for the time being, allow resizing of slider paths only if the slider is
             // the only hit object selected. with a group selection, it's likely the user
             // is not looking to change the duration of the slider but expand the whole pattern.
@@ -156,6 +162,9 @@ namespace osu.Game.Rulesets.Osu.Edit
                         composer.PutPathOnWholeCoordinatesIfAsked(scaledSlider);
                 }
             }
+
+            if (!OsuSelectionHandler.ShapeOf(objectsInScale.Keys).SequenceEqual(shapeBefore))
+                asmr?.Play(AsmrSound.Transform, objectsInScale.Keys.FirstOrDefault()?.Position.X);
         }
 
         public override void Commit()

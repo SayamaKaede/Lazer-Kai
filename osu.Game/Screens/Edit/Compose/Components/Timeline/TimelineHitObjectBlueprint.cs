@@ -1081,6 +1081,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             [Resolved(canBeNull: true)]
             private Editor? editor { get; set; }
 
+            [Resolved(canBeNull: true)]
+            private EditorAsmr? asmr { get; set; }
+
             protected override bool OnMouseDown(MouseDownEvent e)
             {
                 // only the button that drags an end takes hold of it. Everything else a button does here is about the
@@ -1238,6 +1241,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
                                     repeatHitObject.RepeatCount = proposedCount;
                                     beatmap.Update(hitObject);
+
+                                    asmr?.Play(AsmrSound.SliderRepeat, (hitObject as IHasXPosition)?.X, EditorAsmr.PitchForRepeats(proposedCount));
                                 }
 
                                 break;
@@ -1256,6 +1261,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                                     (obj as IHasDuration)!.Duration = snappedTime - obj.StartTime;
                                     beatmap.Update(obj);
                                 }
+
+                                asmr?.Play(AsmrSound.SliderLength, (hitObject as IHasXPosition)?.X, EditorAsmr.PitchForDuration(endTimeHitObject.Duration));
 
                                 break;
                         }

@@ -28,6 +28,9 @@ namespace osu.Game.Rulesets.Osu.Edit
         [Resolved(CanBeNull = true)]
         private StreamConversionPanel? streamPanel { get; set; }
 
+        [Resolved(CanBeNull = true)]
+        private EditorAsmr? asmr { get; set; }
+
         private BindableList<HitObject> selectedItems { get; } = new BindableList<HitObject>();
 
         [BackgroundDependencyLoader]
@@ -84,6 +87,9 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             Vector2 actualOrigin = origin ?? DefaultOrigin.Value;
 
+            // every object and anchor, not only the first: turning about the first object leaves it where it was.
+            var shapeBefore = OsuSelectionHandler.ShapeOf(objectsInRotation);
+
             foreach (var ho in objectsInRotation)
             {
                 // on every step of the turn, from where it was before it, so that what is shown while turning is where
@@ -103,6 +109,9 @@ namespace osu.Game.Rulesets.Osu.Edit
                 if (ho is Slider slider)
                     composer?.PutPathOnWholeCoordinatesIfAsked(slider);
             }
+
+            if (!OsuSelectionHandler.ShapeOf(objectsInRotation).SequenceEqual(shapeBefore))
+                asmr?.Play(AsmrSound.Transform, objectsInRotation.FirstOrDefault()?.Position.X);
         }
 
         public override void Commit()

@@ -21,6 +21,7 @@ using osu.Game.Rulesets.Osu.Beatmaps;
 using osu.Game.Rulesets.Osu.Edit.Blueprints;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.UI;
+using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Compose.Components;
 using osu.Game.Utils;
 using osuTK;
@@ -38,6 +39,18 @@ namespace osu.Game.Rulesets.Osu.Edit
 
         [Resolved(CanBeNull = true)]
         private StreamConversionPanel? streamPanel { get; set; }
+
+        [Resolved(CanBeNull = true)]
+        private EditorAsmr? asmr { get; set; }
+
+        /// <summary>
+        /// Where each object and each of its anchors is, to tell whether a turn or a stretch moved anything at all.
+        /// </summary>
+        internal static Vector2[] ShapeOf(IEnumerable<OsuHitObject> objects) =>
+            objects.SelectMany(h => h is IHasPath withPath
+                       ? withPath.Path.ControlPoints.Select(c => h.Position + c.Position).Prepend(h.Position)
+                       : new[] { h.Position })
+                   .ToArray();
 
         /// <summary>
         /// Puts the selection on whole coordinates, as one piece.
@@ -209,11 +222,17 @@ namespace osu.Game.Rulesets.Osu.Edit
             if (hitObjects.Any(h => Precision.AlmostEquals(localDelta, -h.StackOffset)))
                 return true;
 
+            var first = hitObjects.FirstOrDefault();
+            Vector2? firstBefore = first?.Position;
+
             moveObjects(hitObjects, localDelta);
 
             // on every step of a drag rather than once it is over, so that what is held is drawn where letting go
             // leaves it (2026-10-05).
             RoundPositionsIfAsked(snappedPoint);
+
+            if (first != null && first.Position != firstBefore)
+                asmr?.Play(AsmrSound.Move, first.Position.X);
 
             return true;
         }
@@ -269,6 +288,7 @@ namespace osu.Game.Rulesets.Osu.Edit
                 composer?.PutPathOnWholeCoordinatesIfAsked(shape);
 
                 streamPanel.ShapeReversed();
+                asmr?.Play(AsmrSound.Transform, shape.Position.X);
                 return true;
             }
 
@@ -308,6 +328,8 @@ namespace osu.Game.Rulesets.Osu.Edit
 
             for (int i = 0; i < hitObjects.Count; ++i)
                 hitObjects[i].NewCombo = newComboOrder[i];
+
+            asmr?.Play(AsmrSound.Transform, hitObjects.FirstOrDefault()?.Position.X);
 
             return true;
         }
@@ -378,6 +400,9 @@ namespace osu.Game.Rulesets.Osu.Edit
                         composer.PutPathOnWholeCoordinatesIfAsked(wholeSlider);
                 }
             }
+
+            if (didFlip)
+                asmr?.Play(AsmrSound.Transform, hitObjects.FirstOrDefault()?.Position.X);
 
             return didFlip;
         }

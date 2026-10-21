@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Humanizer;
+using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -603,6 +604,9 @@ namespace osu.Game.Rulesets.Edit
             });
         }
 
+        [Resolved(CanBeNull = true)]
+        private EditorAsmr? asmr { get; set; }
+
         /// <summary>
         /// Set the new combo state of all selected <see cref="HitObject"/>s.
         /// </summary>
@@ -612,6 +616,8 @@ namespace osu.Game.Rulesets.Edit
         {
             if (EditorBeatmap.SelectedHitObjects.OfType<IHasComboInformation>().All(h => h.NewCombo == state))
                 return;
+
+            asmr?.Play(AsmrSound.NewCombo, EditorBeatmap.SelectedHitObjects.OfType<IHasXPosition>().FirstOrDefault()?.X);
 
             EditorBeatmap.PerformOnSelection(h =>
             {

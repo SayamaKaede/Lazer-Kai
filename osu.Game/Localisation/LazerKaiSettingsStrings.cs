@@ -464,6 +464,27 @@ namespace osu.Game.Localisation
         public static LocalisableString DateUpdatedSplitsDifficultiesDescription => new TranslatableString(getKey(@"date_updated_splits_difficulties_description"),
             @"By Date Updated, like stable, each difficulty is listed where its own save puts it. One set's in a row are stacked, and the selected set's are brought together. By any other sort but Difficulty, the selected set's difficulties are stacked under its panel.");
 
+        /// <summary>
+        /// "ASMR mode"
+        /// </summary>
+        public static LocalisableString AsmrHeader => new TranslatableString(getKey(@"asmr_header"), @"ASMR mode");
+
+        /// <summary>
+        /// "Sounds while editing"
+        /// </summary>
+        public static LocalisableString EditorAsmrSounds => new TranslatableString(getKey(@"editor_asmr_sounds"), @"Sounds while editing");
+
+        /// <summary>
+        /// "Plays a soft sound each time objects are placed, deleted, selected or moved, from the side of the playfield they are on. Not while the track is playing."
+        /// </summary>
+        public static LocalisableString EditorAsmrSoundsDescription => new TranslatableString(getKey(@"editor_asmr_sounds_description"),
+            @"Plays a soft sound each time objects are placed, deleted, selected or moved, from the side of the playfield they are on. Not while the track is playing.");
+
+        /// <summary>
+        /// "Volume"
+        /// </summary>
+        public static LocalisableString EditorAsmrVolume => new TranslatableString(getKey(@"editor_asmr_volume"), @"Volume");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

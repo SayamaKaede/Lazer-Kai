@@ -313,6 +313,8 @@ namespace osu.Game.Screens.Edit
         [CanBeNull] // Should be non-null once it can support custom rulesets.
         private EditorChangeHandler changeHandler;
 
+        private EditorAsmr asmr;
+
         private DependencyContainer dependencies;
 
         private bool isNewBeatmap;
@@ -574,6 +576,9 @@ namespace osu.Game.Screens.Edit
             var modRatePreview = new EditorModRatePreview();
             AddInternal(modRatePreview);
             dependencies.Cache(modRatePreview);
+
+            AddInternal(asmr = new EditorAsmr());
+            dependencies.Cache(asmr);
 
             dependencies.Cache(new CollabHighlight());
             dependencies.Cache(new DiscussionMarks());
@@ -1913,9 +1918,21 @@ namespace osu.Game.Screens.Edit
 
         #endregion
 
-        protected void Undo() => changeHandler?.RestoreState(-1);
+        protected void Undo()
+        {
+            if (changeHandler?.CanUndo.Value == true)
+                asmr.Play(AsmrSound.Undo);
 
-        protected void Redo() => changeHandler?.RestoreState(1);
+            changeHandler?.RestoreState(-1);
+        }
+
+        protected void Redo()
+        {
+            if (changeHandler?.CanRedo.Value == true)
+                asmr.Play(AsmrSound.Redo);
+
+            changeHandler?.RestoreState(1);
+        }
 
         protected void DiscardUnsavedChanges()
         {
@@ -2839,6 +2856,9 @@ namespace osu.Game.Screens.Edit
                     clock.SeekBackward(true, amount);
                 else
                     clock.SeekForward(true, amount);
+
+                // a little to the side it went, and a little lower going back (2026-10-21).
+                asmr.Play(AsmrSound.Seek, direction < 1 ? 200 : 312, direction < 1 ? 0.94 : 1.06);
 
                 return;
             }

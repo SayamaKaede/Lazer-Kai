@@ -192,7 +192,13 @@ namespace osu.Game.Screens.Edit.Components.TernaryButtons
                     Current.Value = TernaryState.False;
                     break;
             }
+
+            // here rather than on the click, so a switch flipped by its key is heard too.
+            asmr?.PlayInterface(AsmrSound.UiToggle, this, Current.Value == TernaryState.True ? 1.12 : 0.88);
         }
+
+        [Resolved(CanBeNull = true)]
+        private EditorAsmr? asmr { get; set; }
 
         private void updateSelectionState()
         {

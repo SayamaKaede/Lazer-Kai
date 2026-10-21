@@ -559,6 +559,8 @@ namespace osu.Game.Rulesets.Osu.Edit
             if (editorBeatmap.SelectedHitObjects.Count == preview.Circles.Count)
                 return;
 
+            using var _ = asmr?.Quiet();
+
             editorBeatmap.SelectedHitObjects.Clear();
             editorBeatmap.SelectedHitObjects.AddRange(preview.Circles);
         }
@@ -755,10 +757,16 @@ namespace osu.Game.Rulesets.Osu.Edit
             Scheduler.AddOnce(rebuild);
         }
 
+        [Resolved(canBeNull: true)]
+        private EditorAsmr? asmr { get; set; }
+
         private void rebuild()
         {
             if (!changing || source == null)
                 return;
+
+            // the control being moved is what is heard; the circles it lays out again are not (2026-10-21).
+            using var _ = asmr?.Quiet();
 
             countTheStretches();
 
