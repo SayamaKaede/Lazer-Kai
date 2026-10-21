@@ -65,6 +65,8 @@ namespace osu.Game.Overlays.MappingTime
 
             var strip = new Container
             {
+                // only on days something was mapped, so an empty month is not a page of lines (2026-10-21).
+                Alpha = total == TimeSpan.Zero ? 0 : 1,
                 Anchor = Anchor.BottomLeft,
                 Origin = Anchor.BottomLeft,
                 RelativeSizeAxes = Axes.X,
@@ -112,8 +114,9 @@ namespace osu.Game.Overlays.MappingTime
                     new Box
                     {
                         RelativeSizeAxes = Axes.Both,
-                        Colour = colourProvider.Colour4,
-                        Alpha = total == TimeSpan.Zero ? 0 : 0.15f + 0.45f * (float)Math.Min(total.TotalHours / full_hours, 1),
+                        // the accent, as the overlay's own colours are too close to the cell's to tell the days apart (2026-10-21).
+                        Colour = colourProvider.Highlight1,
+                        Alpha = total == TimeSpan.Zero ? 0 : 0.08f + 0.42f * (float)Math.Min(total.TotalHours / full_hours, 1),
                     },
                     new Container
                     {

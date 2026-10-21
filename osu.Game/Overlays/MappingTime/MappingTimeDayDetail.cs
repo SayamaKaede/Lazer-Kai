@@ -7,6 +7,7 @@ using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Game.Graphics;
@@ -192,15 +193,38 @@ namespace osu.Game.Overlays.MappingTime
                 updateOpened();
             }
 
-            private static Drawable createLine(string name, float left, TimeSpan changed, TimeSpan open, float size, FontWeight weight, osuTK.Graphics.Color4 colour)
+            private Drawable createLine(string name, float left, TimeSpan changed, TimeSpan open, float size, FontWeight weight, osuTK.Graphics.Color4 colour)
             {
                 var (times, share) = describe(changed, open);
+                float ratio = open > TimeSpan.Zero ? (float)Math.Min(changed / open, 1) : 0;
+
+                // the row's background filled as far as its share, behind the whole row from its indent, so the rows
+                // compare without reading their numbers (2026-10-21).
+                Drawable bar = new Container
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Padding = new MarginPadding { Left = left - 6, Vertical = 2 },
+                    Child = new Container
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Masking = true,
+                        CornerRadius = 3,
+                        Child = new Box
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Width = ratio,
+                            Colour = colourProvider.Highlight1,
+                            Alpha = 0.18f,
+                        },
+                    },
+                };
 
                 return new Container
                 {
                     RelativeSizeAxes = Axes.Both,
                     Children = new Drawable[]
                     {
+                        bar,
                         new Container
                         {
                             RelativeSizeAxes = Axes.Both,
