@@ -42,6 +42,9 @@ namespace osu.Game.Overlays.MappingTime
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
+        [Resolved]
+        private OsuColour colours { get; set; } = null!;
+
         public MappingTimeDayCell(DateTime day, bool inMonth, bool selected, bool today, IReadOnlyList<MappingDayPiece> pieces, Action<DateTime> select)
         {
             Day = day;
@@ -122,7 +125,7 @@ namespace osu.Game.Overlays.MappingTime
                             {
                                 Text = Day.Day.ToString(),
                                 Font = OsuFont.GetFont(size: 14, weight: today ? FontWeight.Bold : FontWeight.SemiBold),
-                                Colour = today ? colourProvider.Highlight1 : colourProvider.Light1,
+                                Colour = today ? colourProvider.Highlight1 : MappingTimeCalendar.WeekdayColour(Day.DayOfWeek, colours) ?? colourProvider.Light1,
                             },
                             new OsuSpriteText
                             {

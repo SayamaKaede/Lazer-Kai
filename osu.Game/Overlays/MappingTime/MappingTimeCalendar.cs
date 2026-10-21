@@ -13,6 +13,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Localisation;
 using osu.Game.Screens.Edit;
+using osuTK.Graphics;
 
 namespace osu.Game.Overlays.MappingTime
 {
@@ -51,6 +52,19 @@ namespace osu.Game.Overlays.MappingTime
 
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
+
+        [Resolved]
+        private OsuColour colours { get; set; } = null!;
+
+        /// <summary>
+        /// Saturday in blue and Sunday in red, as Japanese calendars mark them; null on weekdays.
+        /// </summary>
+        public static Color4? WeekdayColour(DayOfWeek day, OsuColour colours) => day switch
+        {
+            DayOfWeek.Saturday => colours.Blue1,
+            DayOfWeek.Sunday => colours.Red1,
+            _ => null,
+        };
 
         [BackgroundDependencyLoader]
         private void load()
@@ -117,7 +131,7 @@ namespace osu.Game.Overlays.MappingTime
                             Origin = Anchor.Centre,
                             Text = MappingTimeStrings.Weekday((DayOfWeek)d),
                             Font = OsuFont.GetFont(size: 12, weight: FontWeight.SemiBold),
-                            Colour = colourProvider.Foreground1,
+                            Colour = WeekdayColour((DayOfWeek)d, colours) ?? colourProvider.Foreground1,
                         }).ToArray()
                     }
                 },
