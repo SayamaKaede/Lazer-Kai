@@ -119,6 +119,20 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                     Current = config.GetBindable<float>(OsuSetting.EditorSliderEndDragMarkerOpacity),
                     DisplayAsPercentage = true,
                 }),
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.DistanceSnapGridThickness,
+                    HintText = EditorStrings.DistanceSnapGridThicknessDescription,
+                    Current = config.GetBindable<float>(OsuSetting.EditorDistanceSnapGridThickness),
+                    DisplayAsPercentage = true,
+                }),
+                new SettingsItemV2(new FormSliderBar<float>
+                {
+                    Caption = EditorStrings.DistanceSnapGridOpacity,
+                    HintText = EditorStrings.DistanceSnapGridOpacityDescription,
+                    Current = config.GetBindable<float>(OsuSetting.EditorDistanceSnapGridOpacity),
+                    DisplayAsPercentage = true,
+                }),
             };
         }
     }

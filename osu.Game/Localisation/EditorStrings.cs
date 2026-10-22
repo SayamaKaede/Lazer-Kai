@@ -1594,6 +1594,28 @@ namespace osu.Game.Localisation
         public static LocalisableString SliderEndDragMarkerOpacityDescription => new TranslatableString(getKey(@"slider_end_drag_marker_opacity_description"), @"How solid the half circle on a slider's end is.");
 
         /// <summary>
+        /// "Distance snap ring thickness"
+        /// </summary>
+        public static LocalisableString DistanceSnapGridThickness => new TranslatableString(getKey(@"distance_snap_grid_thickness"), @"Distance snap ring thickness");
+
+        /// <summary>
+        /// "The thickness of the rings drawn around an object while distance snap is on."
+        /// </summary>
+        public static LocalisableString DistanceSnapGridThicknessDescription => new TranslatableString(getKey(@"distance_snap_grid_thickness_description"),
+            @"The thickness of the rings drawn around an object while distance snap is on.");
+
+        /// <summary>
+        /// "Distance snap ring opacity"
+        /// </summary>
+        public static LocalisableString DistanceSnapGridOpacity => new TranslatableString(getKey(@"distance_snap_grid_opacity"), @"Distance snap ring opacity");
+
+        /// <summary>
+        /// "How solid the rings drawn around an object while distance snap is on are."
+        /// </summary>
+        public static LocalisableString DistanceSnapGridOpacityDescription => new TranslatableString(getKey(@"distance_snap_grid_opacity_description"),
+            @"How solid the rings drawn around an object while distance snap is on are.");
+
+        /// <summary>
         /// "After an object is placed the playhead moves on by the gap before it, so the wheel is not needed between placements. osu!mania has a setting of its own, off unless it is turned on from the editor's Edit menu."
         /// </summary>
         public static LocalisableString AdvanceByPreviousSpacingOnPlacementDescription => new TranslatableString(getKey(@"advance_by_previous_spacing_on_placement_description"), @"After an object is placed the playhead moves on by the gap before it, so the wheel is not needed between placements. osu!mania has a setting of its own, off unless it is turned on from the editor's Edit menu.");

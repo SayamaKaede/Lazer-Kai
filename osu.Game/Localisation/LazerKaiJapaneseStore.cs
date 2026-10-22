@@ -490,6 +490,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:slider_end_drag_marker_colour"] = @"スライダー伸縮ハンドルの色",
             [$@"{editor_prefix}:slider_end_drag_marker_scale"] = @"スライダー伸縮ハンドルの太さ",
             [$@"{editor_prefix}:slider_end_drag_marker_opacity"] = @"スライダー伸縮ハンドルの不透明度",
+            [$@"{editor_prefix}:distance_snap_grid_thickness"] = @"距離スナップの円の太さ",
+            [$@"{editor_prefix}:distance_snap_grid_opacity"] = @"距離スナップの円の不透明度",
             [$@"{editor_prefix}:hide_selection_buttons"] = @"ショートカットボタンの非表示",
             [$@"{editor_prefix}:hide_rotation_handles"] = @"回転ハンドルの非表示",
             [$@"{editor_prefix}:hide_rotation_handles_description"] = @"選択時の四隅に出る回転させられるハンドルを非表示",
@@ -731,6 +733,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:slider_end_drag_marker_colour_description"] = @"スライダーの尻尾に付く、掴んで縮めたりできる半円の色",
             [$@"{editor_prefix}:slider_end_drag_marker_scale_description"] = @"スライダーの尻尾に付く、掴んで縮めたりできる半円の太さ",
             [$@"{editor_prefix}:slider_end_drag_marker_opacity_description"] = @"スライダーの尻尾に付く、掴んで縮めたりできる半円の不透明度",
+            [$@"{editor_prefix}:distance_snap_grid_thickness_description"] = @"Distance Snap をオンにしたとき、ノーツの周りに表示される円の太さ",
+            [$@"{editor_prefix}:distance_snap_grid_opacity_description"] = @"Distance Snap をオンにしたとき、ノーツの周りに表示される円の不透明度",
             [$@"{editor_prefix}:advance_by_previous_spacing_on_placement_description"] = @"ノーツを配置後、自動で直前のノーツとの間隔ぶん、自動で移動します。毎回のホイール操作が不要になります。maniaでは別の設定で、エディターの編集メニューから切り替えます（既定はオフ）",
             [$@"{editor_prefix}:freehand_slider_placement_description"] = @"スライダーを置くときに誤爆しがちな場合はオフに",
             // profile

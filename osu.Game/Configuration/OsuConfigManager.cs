@@ -371,6 +371,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSliderEndDragMarkerColour, EditorSelectionColour.Default);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerScale, 1f, 0.5f, 2f, 0.01f);
             SetDefault(OsuSetting.EditorSliderEndDragMarkerOpacity, 1f, 0.1f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorDistanceSnapGridThickness, 1f, 0.25f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorDistanceSnapGridOpacity, 1f, 0.1f, 1f, 0.01f);
 
             // the hitsound screen's own: what is placed shows faintly through it, and what is selected on the timeline is
             // what it changes, so its outline can be made to stand out there more than everywhere else.
@@ -1429,5 +1431,15 @@ namespace osu.Game.Configuration
         /// How loud <see cref="EditorAsmrSounds"/> are.
         /// </summary>
         EditorAsmrVolume,
+
+        /// <summary>
+        /// The thickness of the rings drawn while distance snap is on, as a share of the stock thickness (2026-10-22).
+        /// </summary>
+        EditorDistanceSnapGridThickness,
+
+        /// <summary>
+        /// How opaque the rings drawn while distance snap is on are (2026-10-22).
+        /// </summary>
+        EditorDistanceSnapGridOpacity,
     }
 }

@@ -125,6 +125,11 @@ namespace osu.Game.Screens.Edit.Compose.Components
         }
 
         /// <summary>
+        /// Has the content made again on the next update, for a change the grid cannot see on its own, such as a setting.
+        /// </summary>
+        protected void InvalidateContent() => gridCache.Invalidate();
+
+        /// <summary>
         /// Creates the content which visualises the grid ticks.
         /// </summary>
         protected abstract void CreateContent();

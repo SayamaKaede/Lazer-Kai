@@ -3,10 +3,12 @@
 
 using System;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Objects.Types;
 using osuTK;
@@ -19,6 +21,24 @@ namespace osu.Game.Screens.Edit.Compose.Components
         protected CircularDistanceSnapGrid(Vector2 startPosition, double startTime, double? endTime = null, IHasSliderVelocity? sliderVelocitySource = null)
             : base(startPosition, startTime, endTime, sliderVelocitySource)
         {
+        }
+
+        private readonly Bindable<float> ringThickness = new Bindable<float>(1);
+        private readonly Bindable<float> ringOpacity = new Bindable<float>(1);
+
+        [BackgroundDependencyLoader]
+        private void load(OsuConfigManager config)
+        {
+            config.BindWith(OsuSetting.EditorDistanceSnapGridThickness, ringThickness);
+            config.BindWith(OsuSetting.EditorDistanceSnapGridOpacity, ringOpacity);
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            ringThickness.BindValueChanged(_ => InvalidateContent());
+            ringOpacity.BindValueChanged(_ => InvalidateContent());
         }
 
         protected override void CreateContent()
@@ -60,7 +80,8 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
             for (int i = 0; i < requiredCircles; i++)
             {
-                const float thickness = 4;
+                // the user's setting scales the stock thickness of 4 (2026-10-22).
+                float thickness = 4 * ringThickness.Value;
                 float diameter = (offset + (i + 1) * DistanceBetweenTicks + thickness / 2) * 2;
 
                 AddInternal(new Ring(StartTime, GetColourForIndexFromPlacement(i), SliderVelocitySource)
@@ -68,7 +89,8 @@ namespace osu.Game.Screens.Edit.Compose.Components
                     Position = StartPosition,
                     Origin = Anchor.Centre,
                     Size = new Vector2(diameter),
-                    InnerRadius = thickness * 1f / diameter,
+                    InnerRadius = thickness / diameter,
+                    Alpha = ringOpacity.Value,
                 });
             }
         }
