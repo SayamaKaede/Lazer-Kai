@@ -196,6 +196,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
         private Sample? menuOpenSample;
         private Sample? menuCloseSample;
 
+        [Resolved(canBeNull: true)]
+        private EditorAsmr? asmr { get; set; }
+
         private readonly Bindable<HitsoundChangeSound> changeSound = new Bindable<HitsoundChangeSound>();
 
         private readonly Bindable<bool> advanceByPreviousSpacing = new Bindable<bool>();
@@ -1736,6 +1739,8 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 case HitsoundChangeSound.Hitsound:
                     preview.Samples = points[0].Samples.Cast<ISampleInfo>().ToArray();
                     preview.Play();
+                    // the hitsound is the sound of the change; the ASMR mode's click for the key or button is not (2026-10-21).
+                    asmr?.LeaveThisFrameToAnotherSound();
                     break;
 
                 // a button makes its own sound as it is pressed; a key makes none, which left a change by key unheard.

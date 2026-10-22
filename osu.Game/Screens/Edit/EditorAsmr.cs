@@ -210,6 +210,15 @@ namespace osu.Game.Screens.Edit
             return new InvokeOnDisposal(() => quiet--);
         }
 
+        private bool otherSoundThisFrame;
+
+        /// <summary>
+        /// Hears nothing asked for in this frame, before or after: for a change that is heard as something else, such as
+        /// a hitsound changed and played on the hitsound screen, where the key or button behind it would be heard over
+        /// it (2026-10-21).
+        /// </summary>
+        public void LeaveThisFrameToAnotherSound() => otherSoundThisFrame = true;
+
         // across: from 0 at the left to 1 at the right, or null for straight ahead.
         private void enqueue(AsmrSound sound, float? across, double pitch)
         {
@@ -275,6 +284,12 @@ namespace osu.Game.Screens.Edit
         protected override void Update()
         {
             base.Update();
+
+            if (otherSoundThisFrame)
+            {
+                otherSoundThisFrame = false;
+                pending.Clear();
+            }
 
             if (pending.Count == 0)
                 return;

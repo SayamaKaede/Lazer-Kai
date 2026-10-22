@@ -18,6 +18,7 @@ using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Compose.Components.Timeline;
+using osu.Game.Screens.Edit.Hitsounds;
 using osu.Game.Tests.Visual;
 using osuTK;
 using osuTK.Input;
@@ -54,6 +55,7 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         public void TurnOff()
         {
             AddStep("turn the sounds off", () => config.SetValue(OsuSetting.EditorAsmrSounds, false));
+            AddStep("hear hitsound changes as the menu", () => config.SetValue(OsuSetting.EditorHitsoundChangeSound, HitsoundChangeSound.Menu));
         }
 
         [Test]
@@ -318,6 +320,49 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         {
             AddStep("step forwards", () => InputManager.Key(Key.Right));
             AddUntilStep("a step was heard", () => played.Select(p => p.sound), () => Does.Contain(AsmrSound.Seek));
+        }
+
+        /// <summary>
+        /// The hitsound screen lets a change be heard as the hitsound itself when asked to, and the mode's sound for the
+        /// key or button would be heard over it (2026-10-21).
+        /// </summary>
+        [Test]
+        public void TestAChangeHeardAsItsHitsoundIsNotAlsoTheModes()
+        {
+            changeSoundOnTheHitsoundScreen(HitsoundChangeSound.Hitsound, onAnObject: true);
+            AddStep("press W", () => InputManager.Key(Key.W));
+            AddWaitStep("let it through", 5);
+            AddAssert("nothing of the mode's was heard", () => played, () => Is.Empty);
+        }
+
+        [Test]
+        public void TestAChangeHeardAsTheMenuIsStillTheModes()
+        {
+            changeSoundOnTheHitsoundScreen(HitsoundChangeSound.Menu, onAnObject: true);
+            AddStep("press W", () => InputManager.Key(Key.W));
+            AddUntilStep("a switch was heard", () => played.Select(p => p.sound), () => Does.Contain(AsmrSound.UiToggle));
+        }
+
+        /// <summary>
+        /// With nothing at the playhead the buttons are for the next circle placed, and no hitsound is heard.
+        /// </summary>
+        [Test]
+        public void TestAChoiceForPlacingIsStillTheModes()
+        {
+            changeSoundOnTheHitsoundScreen(HitsoundChangeSound.Hitsound, onAnObject: false);
+            AddStep("press W", () => InputManager.Key(Key.W));
+            AddUntilStep("a switch was heard", () => played.Select(p => p.sound), () => Does.Contain(AsmrSound.UiToggle));
+        }
+
+        private void changeSoundOnTheHitsoundScreen(HitsoundChangeSound changeSound, bool onAnObject)
+        {
+            AddStep($"hear a change as {changeSound}", () => config.SetValue(OsuSetting.EditorHitsoundChangeSound, changeSound));
+            AddStep("switch to the hitsound screen", () => Editor.Mode.Value = EditorScreenMode.Hitsounds);
+            AddUntilStep("the buttons are up", () => Editor.ChildrenOfType<HitsoundPanel>().Single().Alpha, () => Is.EqualTo(1));
+            AddStep("seek", () => EditorClock.Seek(EditorBeatmap.HitObjects.First().StartTime + (onAnObject ? 0 : 100)));
+            AddUntilStep("arrived", () => EditorClock.IsSeeking, () => Is.False);
+            AddWaitStep("let it settle", 2);
+            AddStep("forget it", () => played.Clear());
         }
 
         private void selectFirstTwo()
