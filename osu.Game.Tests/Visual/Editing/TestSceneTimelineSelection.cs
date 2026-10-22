@@ -395,6 +395,58 @@ namespace osu.Game.Tests.Visual.Editing
                                                                                      .All(b => b.IsSelected));
         }
 
+        /// <summary>
+        /// A long stretch selected on the timeline is pasted whole. Part of it went missing on osu! (reported 2026-10-22).
+        /// </summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TestALongStretchSelectedOnTheTimelineIsPastedWhole(bool playing)
+        {
+            const double spacing = 80;
+
+            var addedObjects = Enumerable.Range(0, 110).Select(i => (HitObject)(i % 10 == 9
+                ? new Spinner { StartTime = 1000 + i * spacing, EndTime = 1000 + i * spacing + 40 }
+                : i % 2 == 0
+                    ? new HitCircle { StartTime = 1000 + i * spacing, Position = new Vector2(i % 400, 100), NewCombo = i % 4 == 0 }
+                    : new Slider
+                    {
+                        StartTime = 1000 + i * spacing,
+                        Position = new Vector2(i % 400, 200),
+                        RepeatCount = i % 3,
+                        SliderVelocityMultiplier = 0.5 + i % 4 * 0.25,
+                        Path = new SliderPath(i % 3 == 0 ? PathType.BEZIER : PathType.PERFECT_CURVE, new[] { Vector2.Zero, new Vector2(40, -30), new Vector2(80, 0) })
+                    })).ToArray();
+
+            AddStep("add hitobjects", () => EditorBeatmap.AddRange(addedObjects));
+            AddStep("go to the start", () => EditorClock.Seek(1000));
+
+            AddStep("move mouse before the first", () => InputManager.MoveMouseTo(getPosition(addedObjects[0]) - new Vector2(20, 0)));
+            AddStep("mouse down", () => InputManager.PressButton(MouseButton.Left));
+            AddStep("start drag", () => InputManager.MoveMouseTo(getPosition(addedObjects[1])));
+
+            if (playing)
+            {
+                AddStep("play", () => EditorClock.Start());
+                AddUntilStep("past the last", () => EditorClock.CurrentTime, () => Is.GreaterThan(addedObjects.Last().GetEndTime() + 500));
+                AddStep("stop", () => EditorClock.Stop());
+            }
+            else
+            {
+                // a frame of playback at a time.
+                AddRepeatStep("scroll forward", () => EditorClock.Seek(EditorClock.CurrentTime + 20), 500);
+            }
+
+            AddStep("end drag", () => InputManager.ReleaseButton(MouseButton.Left));
+
+            AddAssert("everything was selected", () => EditorBeatmap.SelectedHitObjects.Count, () => Is.EqualTo(addedObjects.Length));
+
+            AddStep("copy", () => Editor.Copy());
+            AddStep("go back to the start", () => EditorClock.Seek(0));
+            AddStep("paste", () => Editor.Paste());
+
+            AddAssert("everything was pasted", () => EditorBeatmap.HitObjects.Count, () => Is.EqualTo(addedObjects.Length * 2));
+        }
+
         [Test]
         public void TestDragSelectionDuringPlacement()
         {

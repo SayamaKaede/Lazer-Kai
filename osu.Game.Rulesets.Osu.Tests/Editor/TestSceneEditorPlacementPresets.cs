@@ -3,11 +3,14 @@
 
 #nullable disable
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Testing;
+using osu.Game.Graphics.UserInterface;
 using osu.Game.Rulesets.Edit;
+using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Objects;
@@ -212,7 +215,72 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             AddAssert("nothing was placed this time", () => EditorBeatmap.HitObjects.Count, () => Is.Zero);
         }
 
-        private object currentTool => Editor.ChildrenOfType<ComposeBlueprintContainer>().Single().CurrentTool;
+        /// <summary>
+        /// What arrives is moved by distance snap like anything else selected. It was not, until Alt was pressed once
+        /// (reported 2026-10-22).
+        /// </summary>
+        [Test]
+        public void TestWhatArrivesIsMovedByDistanceSnap()
+        {
+            double start = 0;
+
+            AddStep("keep two circles", () =>
+            {
+                start = EditorBeatmap.ControlPointInfo.TimingPoints.First().Time;
+
+                var kept = new HitCircle { StartTime = start + 3000, Position = new Vector2(20, 20) };
+                var keptToo = new HitCircle { StartTime = start + 3500, Position = new Vector2(120, 20) };
+                EditorBeatmap.AddRange(new[] { kept, keptToo });
+                EditorBeatmap.SelectedHitObjects.AddRange(new[] { kept, keptToo });
+                overlay.Show();
+                overlay.KeepSelection();
+                overlay.VisibleList.Assign(overlay.VisibleList.Presets.Single(), 1);
+                EditorBeatmap.Clear();
+            });
+
+            AddStep("put a circle before it", () => EditorBeatmap.Add(new HitCircle { StartTime = start, Position = new Vector2(100, 192) }));
+            AddStep("turn distance snap on", () => composer.DistanceSnapProvider.DistanceSnapToggle.Value = TernaryState.True);
+            AddStep("go a beat later", () => EditorClock.Seek(start + 1000));
+
+            AddStep("press 1", () => InputManager.Key(Key.Number1));
+            AddStep("close the list", () => overlay.Hide());
+
+            AddUntilStep("the rings are drawn", () => composer.ChildrenOfType<OsuDistanceSnapGrid>().Any());
+
+            Vector2 straightAfterPlacing = default;
+            Vector2 afterAlt = default;
+
+            drag();
+            AddStep("note where it went", () => straightAfterPlacing = arrivedPosition);
+            AddStep("undo the drag", () => Editor.Undo());
+
+            AddStep("press and let go of alt", () => InputManager.Key(Key.AltLeft));
+
+            drag();
+            AddStep("note where it went", () => afterAlt = arrivedPosition);
+
+
+            AddAssert("the drag went to the same place without alt", () => straightAfterPlacing, () => Is.EqualTo(afterAlt));
+
+            void drag()
+            {
+                AddStep("drag what arrived", () =>
+                {
+                    var arrived = EditorBeatmap.HitObjects[1];
+                    var blueprint = composer.ChildrenOfType<SelectionBlueprint<HitObject>>().Single(b => b.Item == arrived);
+                    InputManager.MoveMouseTo(blueprint.ScreenSpaceSelectionPoint);
+                    InputManager.PressButton(MouseButton.Left);
+                });
+                AddStep("move it off the rings", () => InputManager.MoveMouseTo(InputManager.CurrentState.Mouse.Position + new Vector2(23, 31)));
+                AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
+            }
+        }
+
+        private Vector2 arrivedPosition => ((OsuHitObject)EditorBeatmap.HitObjects[1]).Position;
+
+        private OsuHitObjectComposer composer => Editor.ChildrenOfType<OsuHitObjectComposer>().Single();
+
+        private object currentTool =>Editor.ChildrenOfType<ComposeBlueprintContainer>().Single().CurrentTool;
 
         private IEnumerable<HitObjectCompositionToolButton> toolButtons => Editor.ChildrenOfType<HitObjectCompositionToolButton>();
     }
