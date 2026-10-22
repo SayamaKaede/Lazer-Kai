@@ -432,8 +432,8 @@ namespace osu.Game.Tests.Visual.Editing
             }
             else
             {
-                // a frame of playback at a time.
-                AddRepeatStep("scroll forward", () => EditorClock.Seek(EditorClock.CurrentTime + 20), 500);
+                // a little at a time, the way a wheel moves it.
+                AddRepeatStep("scroll forward", () => EditorClock.Seek(EditorClock.CurrentTime + 100), 100);
             }
 
             AddStep("end drag", () => InputManager.ReleaseButton(MouseButton.Left));
