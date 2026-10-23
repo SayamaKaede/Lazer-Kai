@@ -101,14 +101,14 @@ namespace osu.Game.Screens.Edit
         private void keep(byte[] file, string when)
         {
             string directory = DirectoryFor(editorBeatmap.BeatmapInfo);
-            string filename = $"{DateTimeOffset.Now:yyyy-MM-dd_HH-mm-ss}.osu";
+            var time = DateTimeOffset.Now;
 
             Task.Run(() =>
             {
                 try
                 {
                     string? newest = storage.ExistsDirectory(directory)
-                        ? storage.GetFiles(directory, "*.osu").OrderByDescending(f => f).FirstOrDefault()
+                        ? storage.GetFiles(directory, "*.osu").OrderByDescending(f => f, StringComparer.Ordinal).FirstOrDefault()
                         : null;
 
                     if (newest != null)
@@ -120,8 +120,7 @@ namespace osu.Game.Screens.Edit
                         }
                     }
 
-                    using (var stream = storage.CreateFileSafely(Path.Combine(directory, filename)))
-                        stream.Write(file);
+                    write(directory, time, stream => stream.Write(file));
 
                     prune(directory);
                 }
@@ -179,7 +178,7 @@ namespace osu.Game.Screens.Edit
             lastWrittenHash = hash;
 
             string directory = DirectoryFor(editorBeatmap.BeatmapInfo);
-            string filename = $"{DateTimeOffset.Now:yyyy-MM-dd_HH-mm-ss}.osu";
+            var time = DateTimeOffset.Now;
 
             // written away from the update thread: this is a whole beatmap being serialised and flushed to disk, and
             // nothing on screen is waiting for the result.
@@ -187,12 +186,14 @@ namespace osu.Game.Screens.Edit
             {
                 try
                 {
-                    using (var stream = storage.CreateFileSafely(Path.Combine(directory, filename)))
-                    using (var writer = new StreamWriter(stream, Encoding.UTF8))
+                    write(directory, time, stream =>
                     {
-                        writer.NewLine = "\r\n";
-                        writer.Write(content);
-                    }
+                        using (var writer = new StreamWriter(stream, Encoding.UTF8, leaveOpen: true))
+                        {
+                            writer.NewLine = "\r\n";
+                            writer.Write(content);
+                        }
+                    });
 
                     prune(directory);
 
@@ -204,6 +205,31 @@ namespace osu.Game.Screens.Edit
                     Logger.Error(e, "Could not write a beatmap backup");
                 }
             });
+        }
+
+        private static readonly object naming = new object();
+
+        /// <summary>
+        /// Writes a backup under the time it was taken, to the second. A second backup in the same second is given
+        /// "_2" and on after the time, rather than written over the first (2026-10-23): the copy kept on opening and a
+        /// backup asked for straight after landed on one name. The underscore sorts after the full stop, so ordering by
+        /// name still puts it after the first.
+        /// </summary>
+        private void write(string directory, DateTimeOffset time, Action<Stream> content)
+        {
+            string stamp = $"{time:yyyy-MM-dd_HH-mm-ss}";
+
+            // the name is chosen and the file put there as one step, so two backups at once cannot pick the same one.
+            lock (naming)
+            {
+                string path = Path.Combine(directory, $"{stamp}.osu");
+
+                for (int i = 2; storage.Exists(path); i++)
+                    path = Path.Combine(directory, $"{stamp}_{i}.osu");
+
+                using (var stream = storage.CreateFileSafely(path))
+                    content(stream);
+            }
         }
 
         private void announce(LocalisableString what) => notifications?.Post(new SimpleNotification
@@ -233,8 +259,9 @@ namespace osu.Game.Screens.Edit
                 return;
 
             var existing = storage.GetFiles(directory, "*.osu")
-                                  // the names are timestamps in a sortable layout, so ordering by name orders by age.
-                                  .OrderByDescending(f => f)
+                                  // the names are timestamps in a sortable layout, so ordering by name orders by age. By
+                                  // character code, which puts "_2" after the full stop whatever the culture.
+                                  .OrderByDescending(f => f, StringComparer.Ordinal)
                                   .Skip(keepCount.Value)
                                   .ToArray();
 
@@ -260,9 +287,14 @@ namespace osu.Game.Screens.Edit
         /// <summary>
         /// A folder per difficulty, so restoring means picking the newest file in an obvious place.
         /// </summary>
+        /// <remarks>
+        /// The start of the difficulty's ID follows the names (2026-10-23): a copy of a set, or another version of it,
+        /// has the same names, and sharing a folder each counted the other's backups as its own and deleted them as
+        /// the oldest. Backups from before are left in the folder without it.
+        /// </remarks>
         private static string folderNameFor(BeatmapInfo info)
         {
-            string name = $"{info.Metadata.Artist} - {info.Metadata.Title} [{info.DifficultyName}]";
+            string name = $"{info.Metadata.Artist} - {info.Metadata.Title} [{info.DifficultyName}] ({info.ID.ToString("N")[..8]})";
 
             return name.GetValidFilename();
         }

@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.IO;
 using NUnit.Framework;
 using osu.Game.Beatmaps;
@@ -18,9 +19,25 @@ namespace osu.Game.Tests.Editing
         [Test]
         public void TestDirectoryIsTheDifficultysOwnFolder()
         {
-            string directory = EditorAutoBackup.DirectoryFor(beatmap("Nanahira", "Fukkura Fuwaama Cake", "Hard"));
+            var info = beatmap("Nanahira", "Fukkura Fuwaama Cake", "Hard");
+            info.ID = Guid.Parse("1a2b3c4d-0000-0000-0000-000000000000");
 
-            Assert.That(directory, Is.EqualTo(Path.Combine(EditorAutoBackup.BACKUP_DIRECTORY, "Nanahira - Fukkura Fuwaama Cake [Hard]")));
+            string directory = EditorAutoBackup.DirectoryFor(info);
+
+            Assert.That(directory, Is.EqualTo(Path.Combine(EditorAutoBackup.BACKUP_DIRECTORY, "Nanahira - Fukkura Fuwaama Cake [Hard] (1a2b3c4d)")));
+        }
+
+        /// <summary>
+        /// A copy of a beatmap set, or another version of it, has the same names. Sharing a folder, each would count the
+        /// other's backups among its own and delete them as the oldest (2026-10-23).
+        /// </summary>
+        [Test]
+        public void TestDifficultiesWithTheSameNamesDoNotShareAFolder()
+        {
+            string one = EditorAutoBackup.DirectoryFor(beatmap("Nanahira", "Fukkura Fuwaama Cake", "Hard"));
+            string copy = EditorAutoBackup.DirectoryFor(beatmap("Nanahira", "Fukkura Fuwaama Cake", "Hard"));
+
+            Assert.That(one, Is.Not.EqualTo(copy));
         }
 
         /// <summary>

@@ -1,11 +1,13 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Extensions;
+using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Database;
@@ -114,6 +116,48 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddUntilStep("five are left", () => copies().Length, () => Is.EqualTo(5));
             AddAssert("the newest is the file", () => read(copies().OrderByDescending(f => f).First()), () => Is.EqualTo(originalFile()));
+        }
+
+        /// <summary>
+        /// The names are the time to the second, so a backup asked for in the same second as the copy kept on opening
+        /// was written over it (2026-10-23). Files are put in under the names of the next few seconds, which the backup
+        /// would otherwise take one of.
+        /// </summary>
+        [Test]
+        public void TestABackupInTheSameSecondWritesOverNothing()
+        {
+            string[] taken = null!;
+            string opened = null!;
+
+            AddUntilStep("one copy is kept", () => copies().Length, () => Is.EqualTo(1));
+            AddStep("take the names of the next seconds", () =>
+            {
+                opened = copies().Single();
+                Game.LocalConfig.SetValue(OsuSetting.EditorAutoBackupKeepCount, 10);
+
+                var now = DateTimeOffset.Now;
+
+                // the copy kept on opening may hold the first of them already.
+                taken = Enumerable.Range(0, 4).Select(i => Path.Combine(directory(), $"{now.AddSeconds(i):yyyy-MM-dd_HH-mm-ss}.osu")).Where(f => f != opened).ToArray();
+
+                foreach (string file in taken)
+                {
+                    using (var stream = Game.Storage.CreateFileSafely(file))
+                        stream.Write(new byte[] { 1 });
+                }
+            });
+            AddStep("back up", () => Editor.ChildrenOfType<EditorAutoBackup>().Single().Backup(true));
+
+            AddUntilStep("written beside them", () => copies().Length, () => Is.EqualTo(1 + taken.Length + 1));
+            AddAssert("they are as they were", () => taken.Select(read), () => Is.All.EqualTo(new byte[] { 1 }));
+            AddAssert("the copy kept on opening is as it was", () => read(opened), () => Is.EqualTo(originalFile()));
+            // the oldest are deleted by name, so the backup has to sort after the file of its second that came first.
+            AddAssert("it sorts after the file of its second", () =>
+            {
+                string written = copies().Except(taken).Except(new[] { opened }).Single();
+                string sameSecond = taken.Append(opened).Single(f => Path.GetFileName(written).StartsWith(Path.GetFileNameWithoutExtension(f), StringComparison.Ordinal));
+                return string.CompareOrdinal(Path.GetFileName(written), Path.GetFileName(sameSecond));
+            }, () => Is.Positive);
         }
 
         private string directory() => EditorAutoBackup.DirectoryFor(Game.BeatmapManager.QueryBeatmap(b => b.ID == imported.ID)!);
