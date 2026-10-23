@@ -6,6 +6,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Overlays;
@@ -113,12 +114,12 @@ namespace osu.Game.Screens.Edit.Compose.Components
             });
         }
 
-        protected void AddValue(string value)
+        protected void AddValue(LocalisableString value)
         {
             if (Compact)
             {
                 if (!compactSkipping)
-                    addRunOn($"{value} ", colourProvider.Content1, FontWeight.SemiBold);
+                    addRunOn(LocalisableString.Interpolate($"{value} "), colourProvider.Content1, FontWeight.SemiBold);
 
                 return;
             }
@@ -131,7 +132,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
             });
         }
 
-        private void addRunOn(string text, ColourInfo colour, FontWeight weight)
+        private void addRunOn(LocalisableString text, ColourInfo colour, FontWeight weight)
         {
             anyCompactText = true;
 

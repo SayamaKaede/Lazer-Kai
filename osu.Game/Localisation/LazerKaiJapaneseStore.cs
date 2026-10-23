@@ -46,7 +46,9 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:live_mod_preview"] = @"編集中もModの表示を更新",
 
             // composing
-            [$@"{editor_prefix}:advance_by_previous_spacing_on_placement"] = @"オブジェクト配置後に自動で次へシーク",
+            [$@"{editor_prefix}:advance_by_previous_spacing_on_placement"] = @"配置後、直前の間隔ぶん進む",
+            // upstream's, which sits beside it in the view menu and was translated almost the same.
+            [$@"{editor_prefix}:auto_seek_on_placement"] = @"配置したノーツの時刻へシーク",
             [$@"{editor_prefix}:freehand_slider_placement"] = @"ドラッグでスライダーを描く",
             [$@"{editor_prefix}:auto_new_combo"] = @"自動New Combo",
             [$@"{editor_prefix}:auto_new_combo_description"] = @"小節を開くノーツに、置いた時点でNew Comboを付けます。すでに置いてあるものは変更しません",
@@ -793,6 +795,26 @@ namespace osu.Game.Localisation
             [$@"{combo_colour_preset_prefix}:preset_name"] = @"プリセットの名前",
             [$@"{combo_colour_preset_prefix}:save"] = @"登録",
             [$@"{combo_colour_preset_prefix}:overwrite"] = @"上書き",
+
+            // the combo colour studio, from the view menu. Its name and the modes stay as Mapping Tools has them (the
+            // user's choice, 2026-10-23).
+            [$@"{combo_colour_studio_prefix}:no_points_yet"] = @"カラーポイントはありません",
+            [$@"{combo_colour_studio_prefix}:add_point_at_current_time"] = @"現在の時刻にカラーポイントを追加",
+            [$@"{combo_colour_studio_prefix}:use_current_time"] = @"現在の時刻を使う",
+            [$@"{combo_colour_studio_prefix}:add_colour"] = @"色を追加",
+            [$@"{combo_colour_studio_prefix}:remove_colour"] = @"最後の色を削除",
+            [$@"{combo_colour_studio_prefix}:remove_point"] = @"このカラーポイントを削除",
+            [$@"{combo_colour_studio_prefix}:mode_normal"] = @"Normal",
+            [$@"{combo_colour_studio_prefix}:mode_burst"] = @"Burst",
+            [$@"{combo_colour_studio_prefix}:max_burst_length"] = @"Burstにするコンボの最大の長さ",
+            [$@"{combo_colour_studio_prefix}:max_burst_length_description"] = @"これより長いコンボには、Burstのカラーポイントを適用しません。",
+            [$@"{combo_colour_studio_prefix}:copy_from_another_difficulty"] = @"ほかの難易度からコピー",
+            [$@"{combo_colour_studio_prefix}:apply"] = @"譜面に適用",
+            [$@"{combo_colour_studio_prefix}:apply_confirmation_header"] = @"コンボカラーの配置を適用しますか？",
+            [$@"{combo_colour_studio_prefix}:apply_confirmation_body"] = @"この難易度のコンボカラースキップを、手動で設定したものも含めてすべて置き換えます。",
+            [$@"{combo_colour_studio_prefix}:apply_confirmation_accept"] = @"適用",
+            [$@"{combo_colour_studio_prefix}:cannot_apply"] = @"適用できません",
+            [$@"{combo_colour_studio_prefix}:based_on_mapping_tools"] = @"OliBombyのMapping ToolsにあるCombo Colour Studioを基にしています",
             [$@"{binding_prefix}:editor_toggle_auto_cursor"] = @"Autoのカーソルの表示を切り替え",
 
             // the volume row on its own
@@ -822,6 +844,26 @@ namespace osu.Game.Localisation
             [$@"{mapping_time_prefix}:thursday"] = @"木",
             [$@"{mapping_time_prefix}:friday"] = @"金",
             [$@"{mapping_time_prefix}:saturday"] = @"土",
+
+            [$@"{update_prefix}:release_available"] = @"Lazer-Kai {0} が公開されました。クリックするとダウンロードページを開きます",
+
+            // upstream's own, which its Japanese translation does not cover yet
+            [$@"{editor_prefix}:edit_externally"] = @"外部で編集...",
+            [$@"{editor_prefix}:open_info_page"] = @"譜面の情報ページを開く",
+            [$@"{editor_prefix}:open_discussion_page"] = @"譜面のディスカッションページを開く",
+            [$@"{editor_prefix}:show_storyboard"] = @"ストーリーボードを表示",
+            [$@"{editor_prefix}:limit_placement_to_current_time"] = @"配置を現在の時刻に制限",
+            [$@"{editor_prefix}:adjust_existing_objects_on_timing_changes"] = @"タイミングの変更に合わせて、配置済みのノーツを移動する",
+            [$@"{editor_prefix}:playback_speed_driven_by_mods"] = @"速度を変更するModを反映している間は、再生速度を変更できません。",
+            [$@"{editor_prefix}:select_closest_to_current_time"] = @"現在の時刻に最も近いポイントを選択",
+            [$@"{editor_prefix}:add_at_current_time"] = @"+ 現在の時刻に追加",
+            [$@"{editor_prefix}:clone_to_current_time"] = @"+ 現在の時刻に複製",
+            [$@"{editor_prefix}:use_current_time"] = @"現在の時刻を使う",
+            [$@"{editor_prefix}:no_selection"] = @"選択なし",
+            [$@"{editor_prefix}:status_from_the_last_save"] = @"最後に保存した譜面の値です。保存すると更新されます",
+            [$@"{editor_setup_prefix}:sync_metadata_with_all_difficulties"] = @"メタデータをすべての難易度と同期",
+            // the name stays as mappers say it, like Addition bank and New Combo
+            [$@"{osu_editor_setup_prefix}:stack_leniency_description"] = @"プレイ中、同じ位置にあるノーツは自動でスタックされます。値を大きくすると、時間の離れたノーツもスタックされやすくなります。",
         };
 
         private const string editor_prefix = @"osu.Game.Resources.Localisation.Editor";
@@ -845,6 +887,10 @@ namespace osu.Game.Localisation
         private const string replay_prefix = @"osu.Game.Resources.Localisation.LazerKaiReplay";
         private const string welcome_prefix = @"osu.Game.Resources.Localisation.LazerKaiWelcome";
         private const string mapping_time_prefix = @"osu.Game.Resources.Localisation.LazerKaiMappingTime";
+        private const string combo_colour_studio_prefix = @"osu.Game.Resources.Localisation.ComboColourStudio";
+        private const string update_prefix = @"osu.Game.Resources.Localisation.LazerKaiUpdate";
+        private const string editor_setup_prefix = @"osu.Game.Resources.Localisation.EditorSetup";
+        private const string osu_editor_setup_prefix = @"osu.Game.Resources.Localisation.Osu.OsuEditorSetupStrings";
 
         public LazerKaiJapaneseStore(ILocalisationStore fallback)
         {

@@ -8,6 +8,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Extensions.ObjectExtensions;
 using System.Linq;
 using osu.Framework.Threading;
+using osu.Game.Localisation;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 
@@ -149,7 +150,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
             switch (objects.Length)
             {
                 case 0:
-                    AddValue("No selection");
+                    AddValue(EditorStrings.NoSelection);
                     break;
 
                 case 1:

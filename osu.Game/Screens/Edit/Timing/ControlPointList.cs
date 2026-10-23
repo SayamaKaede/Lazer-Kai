@@ -13,6 +13,7 @@ using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Graphics;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osuTK;
 
@@ -76,7 +77,7 @@ namespace osu.Game.Screens.Edit.Timing
                             {
                                 new RoundedButton
                                 {
-                                    Text = "Select closest to current time",
+                                    Text = EditorStrings.SelectClosestToCurrentTime,
                                     Action = SelectClosestTimingPoint,
                                     Size = new Vector2(220, 30),
                                     Anchor = Anchor.CentreLeft,
@@ -129,8 +130,8 @@ namespace osu.Game.Screens.Edit.Timing
                 deleteButton.Enabled.Value = selected.NewValue != null;
 
                 addButton.Text = selected.NewValue != null
-                    ? "+ Clone to current time"
-                    : "+ Add at current time";
+                    ? EditorStrings.CloneToCurrentTime
+                    : EditorStrings.AddAtCurrentTime;
             }, true);
         }
 

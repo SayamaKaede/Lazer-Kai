@@ -68,7 +68,7 @@ namespace osu.Game.Screens.Edit.Timing
                         },
                         button = new RoundedButton
                         {
-                            Text = "Use current time",
+                            Text = EditorStrings.UseCurrentTime,
                             RelativeSizeAxes = Axes.X,
                             Action = () => changeSelectedGroupTime(clock.CurrentTime)
                         }

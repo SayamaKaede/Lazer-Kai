@@ -1636,6 +1636,37 @@ namespace osu.Game.Localisation
         public static LocalisableString ShowNightcoreCymbalsDescription => new TranslatableString(getKey(@"show_nightcore_cymbals_description"),
             @"Marks the top timeline where nightcore's cymbal falls: on each red line, and every four bars after it.");
 
+        /// <summary>
+        /// "Select closest to current time"
+        /// </summary>
+        public static LocalisableString SelectClosestToCurrentTime => new TranslatableString(getKey(@"select_closest_to_current_time"), @"Select closest to current time");
+
+        /// <summary>
+        /// "+ Add at current time"
+        /// </summary>
+        public static LocalisableString AddAtCurrentTime => new TranslatableString(getKey(@"add_at_current_time"), @"+ Add at current time");
+
+        /// <summary>
+        /// "+ Clone to current time"
+        /// </summary>
+        public static LocalisableString CloneToCurrentTime => new TranslatableString(getKey(@"clone_to_current_time"), @"+ Clone to current time");
+
+        /// <summary>
+        /// "Use current time"
+        /// </summary>
+        public static LocalisableString UseCurrentTime => new TranslatableString(getKey(@"use_current_time"), @"Use current time");
+
+        /// <summary>
+        /// "The value for the beatmap as last saved. Saving brings it up to date."
+        /// </summary>
+        public static LocalisableString StatusFromTheLastSave => new TranslatableString(getKey(@"status_from_the_last_save"),
+            @"The value for the beatmap as last saved. Saving brings it up to date.");
+
+        /// <summary>
+        /// "No selection"
+        /// </summary>
+        public static LocalisableString NoSelection => new TranslatableString(getKey(@"no_selection"), @"No selection");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

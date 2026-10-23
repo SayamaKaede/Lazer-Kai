@@ -10,10 +10,10 @@ namespace osu.Game.Localisation
         private const string prefix = @"osu.Game.Resources.Localisation.LazerKaiUpdate";
 
         /// <summary>
-        /// "Lazer-Kai {0} が公開されました。クリックするとダウンロードページを開きます"
+        /// "Lazer-Kai {0} is out. Click to open the download page."
         /// </summary>
         public static LocalisableString ReleaseAvailable(string version) => new TranslatableString(getKey(@"release_available"),
-            @"Lazer-Kai {0} が公開されました。クリックするとダウンロードページを開きます", version);
+            @"Lazer-Kai {0} is out. Click to open the download page.", version);
 
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
