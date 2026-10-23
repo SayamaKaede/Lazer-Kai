@@ -7,8 +7,10 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Development;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics;
@@ -18,6 +20,7 @@ using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Logging;
+using osu.Framework.Platform;
 using osu.Framework.Testing;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
@@ -148,7 +151,7 @@ namespace osu.Game.Rulesets.Edit
             dependencies = new DependencyContainer(base.CreateChildDependencies(parent));
 
         [BackgroundDependencyLoader(true)]
-        private void load(OsuConfigManager config, Editor? editor, ReadableKeyCombinationProvider keyCombinationProvider, IEditorChangeHandler? changeHandler)
+        private void load(OsuConfigManager config, Editor? editor, ReadableKeyCombinationProvider keyCombinationProvider, IEditorChangeHandler? changeHandler, GameHost gameHost)
         {
             host = editor;
             this.changeHandler = changeHandler;
@@ -184,7 +187,7 @@ namespace osu.Game.Rulesets.Edit
             EditingLocked = previewMods.Any(ChangesObjects);
 
             // must happen before the drawable ruleset is constructed so that hit objects are already in their modded state.
-            applyBeatmapPreviewMods();
+            applyBeatmapPreviewModsOnUpdateThread(gameHost);
 
             Config = Dependencies.Get<IRulesetConfigCache>().GetConfigFor(Ruleset);
 
@@ -815,6 +818,57 @@ namespace osu.Game.Rulesets.Edit
 
             foreach (var hitObject in EditorBeatmap.PlayableBeatmap.HitObjects)
                 hitObject.ApplyDefaults(EditorBeatmap.ControlPointInfo, EditorBeatmap.PlayableBeatmap.Difficulty);
+        }
+
+        /// <summary>
+        /// <see cref="applyBeatmapPreviewMods"/>, from a load that may be running off the update thread.
+        /// </summary>
+        /// <remarks>
+        /// The objects it rebuilds are the beatmap's own, which the timeline, the difficulty graph and the rest read on
+        /// the update thread while this composer loads. Rebuilt from the load thread, a slider's nested objects changed
+        /// while the graph was writing the beatmap out, and the editor went down as it opened (DOTNET-B). So the work is
+        /// handed to the update thread and waited for; the load goes on once the objects are in their modded state.
+        /// </remarks>
+        private void applyBeatmapPreviewModsOnUpdateThread(GameHost gameHost)
+        {
+            if (EditingLocked || !previewMods.OfType<IApplicableToBeatmap>().Any())
+                return;
+
+            if (ThreadSafety.IsUpdateThread)
+            {
+                applyBeatmapPreviewMods();
+                return;
+            }
+
+            using var done = new ManualResetEventSlim();
+            Exception? failure = null;
+
+            gameHost.UpdateThread.Scheduler.Add(() =>
+            {
+                try
+                {
+                    applyBeatmapPreviewMods();
+                }
+                catch (Exception e)
+                {
+                    failure = e;
+                }
+                finally
+                {
+                    done.Set();
+                }
+            });
+
+            // an update thread that never comes round to it is one the game is closing on; the preview is not worth
+            // holding the load for.
+            if (!done.Wait(TimeSpan.FromSeconds(10)))
+            {
+                Logger.Log(@"The preview mods could not be put into the beatmap before the composer loaded.");
+                return;
+            }
+
+            if (failure != null)
+                throw failure;
         }
 
         /// <summary>

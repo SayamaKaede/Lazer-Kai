@@ -6,7 +6,10 @@ using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Development;
 using osu.Framework.Extensions.ObjectExtensions;
+using osu.Game.Rulesets.Objects;
+using osu.Game.Rulesets.Objects.Types;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
@@ -464,6 +467,59 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
             Editor.ChildrenOfType<ModFlashlight<OsuHitObject>.Flashlight>().SingleOrDefault();
 
         private HitCircle circle() => (HitCircle)EditorBeatmap.PlayableBeatmap.HitObjects.Single(h => h.StartTime == 10500);
+
+        /// <summary>
+        /// The composer is loaded off the update thread, while the timeline, the difficulty graph and the rest read the
+        /// beatmap's objects on it. Putting the preview mods into those objects from the load rebuilt them under the
+        /// readers' feet: the graph writing the beatmap out found a slider's nested objects changed mid-enumeration and
+        /// took the editor down as it opened (DOTNET-B, with hidden previewed).
+        /// </summary>
+        [Test]
+        public void TestPreviewModsPutIntoTheBeatmapOnTheUpdateThread()
+        {
+            var threads = new List<bool>();
+
+            void record(HitObject _)
+            {
+                lock (threads)
+                    threads.Add(ThreadSafety.IsUpdateThread);
+            }
+
+            AddStep("add a slider", () => EditorBeatmap.Add(new Slider
+            {
+                StartTime = 1000,
+                Path = new SliderPath(PathType.LINEAR, new[] { Vector2.Zero, new Vector2(100, 0) }),
+            }));
+            AddStep("preview test play mods", () => config.SetValue(OsuSetting.EditorApplyTestPlayModsToComposer, true));
+            waitForComposerReload();
+
+            AddStep("watch the objects being rebuilt", () =>
+            {
+                foreach (var hitObject in EditorBeatmap.HitObjects)
+                    hitObject.DefaultsApplied += record;
+            });
+            AddStep("select hidden", () => Editor.TestPlayMods.Mods.Value = new Mod[] { new OsuModHidden() });
+
+            AddUntilStep("rebuilt at least once", () =>
+            {
+                lock (threads)
+                    return threads.Count > 0;
+            });
+            AddWaitStep("let the composer finish loading", 10);
+            AddAssert("only ever on the update thread", () =>
+            {
+                lock (threads)
+                    return threads.All(onUpdateThread => onUpdateThread);
+            });
+
+            AddStep("stop watching", () =>
+            {
+                foreach (var hitObject in EditorBeatmap.HitObjects)
+                    hitObject.DefaultsApplied -= record;
+            });
+            AddStep("clear mods", () => Editor.TestPlayMods.Mods.Value = []);
+            AddStep("stop previewing test play mods", () => config.SetValue(OsuSetting.EditorApplyTestPlayModsToComposer, false));
+        }
 
         private void waitForComposerReload() =>
             AddUntilStep("composer rebuilt", () => Editor.ChildrenOfType<HitObjectComposer>().SingleOrDefault()?.IsLoaded == true);
