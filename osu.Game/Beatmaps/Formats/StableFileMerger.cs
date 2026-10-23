@@ -107,7 +107,7 @@ namespace osu.Game.Beatmaps.Formats
                 if (hitObject is not IHasSliderVelocity withVelocity)
                     continue;
 
-                double at = Math.Floor(hitObject.StartTime);
+                double at = HeadWrittenAt(hitObject.StartTime, Math.Floor(hitObject.StartTime), withVelocity.SliderVelocityMultiplier, timing.FirstOrDefault()?.Time);
                 var inEffect = TimingLine.ActiveAt(timing, at);
 
                 if (inEffect == null)
@@ -119,6 +119,28 @@ namespace osu.Game.Beatmaps.Formats
             }
 
             return timing.Select(l => l.Raw).ToList();
+        }
+
+        /// <summary>
+        /// Where a slider's head is written: where stable's format cuts it down to, unless that is before the first line
+        /// while the slider itself is not.
+        /// </summary>
+        /// <remarks>
+        /// A first red line at a fraction of a millisecond, with a slider on it, has the slider cut down to before it. Before
+        /// the first line a slider is read at the velocity of 1, whatever line there is, so one that is faster or slower
+        /// could not be kept in stable's format (#18 of the 2026-10 review). It goes to the first whole millisecond after
+        /// the line instead, where a line can carry its velocity.
+        /// </remarks>
+        /// <param name="startTime">The slider's time in the editor.</param>
+        /// <param name="cutDown">Its time as stable's format writes it.</param>
+        /// <param name="velocity">Its velocity.</param>
+        /// <param name="firstLine">The time of the first line, if there is one.</param>
+        public static double HeadWrittenAt(double startTime, double cutDown, double velocity, double? firstLine)
+        {
+            if (firstLine is double first && cutDown < first && startTime >= first && Math.Abs(velocity - 1) > 0.0005)
+                return Math.Ceiling(first);
+
+            return cutDown;
         }
 
         public byte[]? Merge()
@@ -186,10 +208,11 @@ namespace osu.Game.Beatmaps.Formats
             if (!objectsOrSoundsChanged)
                 return sections.Write();
 
-            if (!mergeHitObjects(sections, before.GetValueOrDefault(@"HitObjects"), after.GetValueOrDefault(@"HitObjects")))
-                return fail(Failure ?? @"the objects could not be lined up with the file's");
-
             var timing = sections.Find(@"TimingPoints");
+            double? firstLine = (timingLines != null ? TimingLine.ReadAll(timingLines) : timing != null ? TimingLine.ReadAll(timing) : null)?.FirstOrDefault()?.Time;
+
+            if (!mergeHitObjects(sections, before.GetValueOrDefault(@"HitObjects"), after.GetValueOrDefault(@"HitObjects"), firstLine))
+                return fail(Failure ?? @"the objects could not be lined up with the file's");
 
             if (timing == null)
                 return fail(@"the file has no timing points");
@@ -498,7 +521,7 @@ namespace osu.Game.Beatmaps.Formats
 
         private static string describe(HitSampleInfo sample) => $@"{sample.Name}/{sample.Bank}";
 
-        private bool mergeHitObjects(SourceFile sections, List<string>? before, List<string>? after)
+        private bool mergeHitObjects(SourceFile sections, List<string>? before, List<string>? after, double? firstLine)
         {
             var section = sections.Find(@"HitObjects");
 
@@ -512,7 +535,7 @@ namespace osu.Game.Beatmaps.Formats
             if (original.Count != before.Count)
                 return failed($@"the file has {original.Count} objects where the beatmap as opened had {before.Count}");
 
-            var converted = convertedForStable();
+            var converted = convertedForStable(firstLine);
 
             if (converted == null || converted.Count != after.Count)
                 return failed(@"the objects could not be converted for stable");
@@ -546,7 +569,8 @@ namespace osu.Game.Beatmaps.Formats
         /// <summary>
         /// The beatmap's objects written the way an export for stable writes them, in the order this game encodes them.
         /// </summary>
-        private List<string>? convertedForStable()
+        /// <param name="firstLine">The time of the file's first line, if it has one.</param>
+        private List<string>? convertedForStable(double? firstLine)
         {
             try
             {
@@ -557,7 +581,15 @@ namespace osu.Game.Beatmaps.Formats
                 var decoded = new LegacyBeatmapDecoder(LegacyBeatmapEncoder.FIRST_LAZER_VERSION).Decode(reader);
                 var playable = new FlatWorkingBeatmap(decoded).GetPlayableBeatmap(beatmap.BeatmapInfo.Ruleset);
 
+                var unconverted = playable.HitObjects.Select(h => h.StartTime).ToList();
+
                 LegacyBeatmapExporter.ConvertForStable(playable);
+
+                for (int i = 0; i < playable.HitObjects.Count; i++)
+                {
+                    if (playable.HitObjects[i] is IHasSliderVelocity withVelocity)
+                        playable.HitObjects[i].StartTime = HeadWrittenAt(unconverted[i], playable.HitObjects[i].StartTime, withVelocity.SliderVelocityMultiplier, firstLine);
+                }
 
                 var builder = new StringBuilder();
 

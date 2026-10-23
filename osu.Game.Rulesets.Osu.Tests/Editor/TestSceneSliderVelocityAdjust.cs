@@ -43,9 +43,8 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         /// <summary>
         /// These cover the toolbox and the save as lazer has them. With stable compatibility on, which it is from the
         /// start (2026-10-23), the velocity follows the green line at the playhead instead, as stable's does, and that is
-        /// covered with the green lines. Saving a slider whose velocity was changed this way also stopped at "there is no
-        /// line before" where the beatmap is kept in stable's format, which is a fault of its own and is followed up
-        /// there rather than hidden here.
+        /// covered with the green lines. Saving a slider whose velocity was changed this way, with the beatmap kept in
+        /// stable's format, is <see cref="TestVelocityChangeKeepsStableFormat"/>.
         /// </summary>
         public override void SetUpSteps()
         {
@@ -106,6 +105,39 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
 
             AddStep("seek to slider", () => editorClock.Seek(slider!.StartTime));
             AddAssert("slider has correct velocity", () => slider!.Velocity, () => Is.EqualTo(velocity));
+        }
+
+        /// <summary>
+        /// The same change with stable compatibility on: the beatmap is in stable's format, and has to stay in it (#18 of
+        /// the 2026-10 review, "there is no line before 2558").
+        /// </summary>
+        [Test]
+        public void TestVelocityChangeKeepsStableFormat()
+        {
+            AddStep("stable compatibility on", () => Game.LocalConfig.SetValue(OsuSetting.StableCompatibility, true));
+
+            AddStep("enter editor", () => Game.ScreenStack.Push(new EditorLoader()));
+            AddUntilStep("wait for editor load", () => editor?.ReadyForUse, () => Is.True);
+
+            AddStep("seek to first control point", () => editorClock.Seek(editorBeatmap.ControlPointInfo.TimingPoints.First().Time));
+            AddStep("enter slider placement mode", () => InputManager.Key(Key.Number3));
+
+            AddStep("move mouse to centre", () => InputManager.MoveMouseTo(editor.ChildrenOfType<Playfield>().First().ScreenSpaceDrawQuad.Centre));
+            AddStep("start placement", () => InputManager.Click(MouseButton.Left));
+
+            AddStep("move mouse to bottom right", () => InputManager.MoveMouseTo(editor.ChildrenOfType<Playfield>().First().ScreenSpaceDrawQuad.BottomRight - new Vector2(10)));
+            AddStep("end placement", () => InputManager.Click(MouseButton.Right));
+
+            AddStep("exit placement mode", () => InputManager.Key(Key.Number1));
+            AddAssert("slider placed", () => slider, () => Is.Not.Null);
+            AddStep("select slider", () => editorBeatmap.SelectedHitObjects.Add(slider));
+
+            AddStep("open velocity adjust panel", () => difficultyPointPiece.TriggerClick());
+            AddStep("change velocity", () => velocityControl.Current.Value = 2);
+
+            AddStep("save", () => InputManager.Keys(PlatformAction.Save));
+            AddWaitStep("let the save finish", 5);
+            AddAssert("no dialog about stable's format", () => Game.ChildrenOfType<CannotStayStableDialog>().Any(), () => Is.False);
         }
 
         [Test]

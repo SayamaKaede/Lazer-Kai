@@ -88,6 +88,43 @@ namespace osu.Game.Tests.Editing
             Assert.That(shown, Is.EqualTo(saved));
         }
 
+        /// <summary>
+        /// A slider on a first red line at a fraction of a millisecond, made faster (#18 of the 2026-10 review: "there is
+        /// no line before 2558"). Cut down to the whole millisecond it would be before the line, where it can only be read
+        /// at the velocity of 1; it goes to the millisecond after instead. On a line at a whole millisecond, it stays.
+        /// </summary>
+        [TestCase(2558.8215, 2559)]
+        [TestCase(2558, 2558)]
+        public void TestASliderOnTheFirstRedLineKeepsItsVelocity(double redLine, double writtenAt)
+        {
+            string onlyRed = "osu file format v14\r\n\r\n[General]\r\nAudioFilename: audio.mp3\r\nMode: 0\r\n\r\n[Metadata]\r\nTitle:t\r\nVersion:v\r\n\r\n"
+                             + "[Difficulty]\r\nHPDrainRate:5\r\nCircleSize:4\r\nOverallDifficulty:5\r\nApproachRate:5\r\nSliderMultiplier:1.4\r\nSliderTickRate:1\r\n\r\n"
+                             + "[TimingPoints]\r\n" + redLine.ToString(System.Globalization.CultureInfo.InvariantCulture) + ",500,4,2,0,60,1,0\r\n\r\n"
+                             + "[HitObjects]\r\n100,100,5000,1,0,0:0:0:0:\r\n";
+
+            var beatmap = open(out byte[] file, onlyRed);
+            var keeper = new StableFileKeeper(file, beatmap, null, null);
+
+            add(beatmap, redLine, 2);
+            ((Beatmap<OsuHitObject>)beatmap).HitObjects.Sort((a, b) => a.StartTime.CompareTo(b.StartTime));
+
+            byte[]? written = keeper.Write(beatmap, null, null, null, out _);
+            Assert.That(written, Is.Not.Null, "could not be kept in stable's format: " + keeper.LastFailure);
+
+            Beatmap readBack;
+
+            using (var reader = new LineBufferedReader(new MemoryStream(written!)))
+                readBack = new LegacyBeatmapDecoder().Decode(reader);
+
+            var slider = readBack.HitObjects.OfType<IHasSliderVelocity>().Cast<HitObject>().Single();
+            Assert.That(slider.StartTime, Is.EqualTo(writtenAt));
+            Assert.That(((IHasSliderVelocity)slider).SliderVelocityMultiplier, Is.EqualTo(2).Within(0.0005));
+            Assert.That(readBack.ControlPointInfo.TimingPoints.Single().Time, Is.EqualTo(redLine), "the red line is where it was");
+
+            var shown = StableFileMerger.WithVelocityLines(new[] { redLine.ToString(System.Globalization.CultureInfo.InvariantCulture) + ",500,4,2,0,60,1,0" }, beatmap);
+            Assert.That(SavedTimingLines.Parse(shown.Last())!.Value.Time, Is.EqualTo(writtenAt), "the line shown is the line saved");
+        }
+
         private static string[] lines() => new[] { "0,500,4,2,0,60,1,0", "0,-111.11111111111111,4,2,0,60,0,0" };
 
         private static void add(IBeatmap beatmap, double time, double velocity)
@@ -106,9 +143,9 @@ namespace osu.Game.Tests.Editing
                 hitObject.ApplyDefaults(beatmap.ControlPointInfo, beatmap.Difficulty);
         }
 
-        private static IBeatmap open(out byte[] bytes)
+        private static IBeatmap open(out byte[] bytes, string text = file_start)
         {
-            bytes = Encoding.UTF8.GetBytes(file_start);
+            bytes = Encoding.UTF8.GetBytes(text);
             Beatmap decoded;
 
             using (var reader = new LineBufferedReader(new MemoryStream(bytes)))
