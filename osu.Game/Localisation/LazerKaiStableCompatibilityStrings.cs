@@ -10,9 +10,9 @@ namespace osu.Game.Localisation
         private const string prefix = @"osu.Game.Resources.Localisation.LazerKaiStableCompatibility";
 
         /// <summary>
-        /// "Improve compatibility with stable (experimental)"
+        /// "Improve compatibility with stable"
         /// </summary>
-        public static LocalisableString ImproveCompatibility => new TranslatableString(getKey(@"improve_compatibility"), @"Improve compatibility with stable (experimental)");
+        public static LocalisableString ImproveCompatibility => new TranslatableString(getKey(@"improve_compatibility"), @"Improve compatibility with stable");
 
         /// <summary>
         /// "Beatmaps in stable's format (v14 and earlier) are saved with every line that was not edited kept as it was, and exported for stable as they are."

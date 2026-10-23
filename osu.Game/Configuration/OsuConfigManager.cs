@@ -331,7 +331,10 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorTimelineInspector, false);
             SetDefault(OsuSetting.EditorIntegerPositions, true);
             SetDefault(OsuSetting.EditorVolumeGraphIgnoreFivePercent, false);
-            SetDefault(OsuSetting.StableCompatibility, false);
+            // on from the start (2026-10-23): without it a stable beatmap opened and saved here has its green lines put
+            // where its objects are, and somebody new would only find out once it had happened. Somebody already using
+            // Lazer-Kai keeps what they had, since the settings file says it either way.
+            SetDefault(OsuSetting.StableCompatibility, true);
             SetDefault(OsuSetting.EditorTimelineShowSavedLines, false);
             SetDefault(OsuSetting.EditorStatusShowSaveFormat, true);
             SetDefault(OsuSetting.ErrorReporting, true);

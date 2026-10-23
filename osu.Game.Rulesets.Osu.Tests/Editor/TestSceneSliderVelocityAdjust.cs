@@ -7,6 +7,7 @@ using osu.Framework.Input;
 using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Objects;
@@ -38,6 +39,25 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         private SliderVelocityAdjustmentControl velocityControl => Game.ChildrenOfType<DifficultyPointPiece.DifficultyEditPopover>().First().ChildrenOfType<SliderVelocityAdjustmentControl>().First();
 
         protected override IBeatmap CreateBeatmap(RulesetInfo ruleset) => new TestBeatmap(ruleset, false);
+
+        /// <summary>
+        /// These cover the toolbox and the save as lazer has them. With stable compatibility on, which it is from the
+        /// start (2026-10-23), the velocity follows the green line at the playhead instead, as stable's does, and that is
+        /// covered with the green lines. Saving a slider whose velocity was changed this way also stopped at "there is no
+        /// line before" where the beatmap is kept in stable's format, which is a fault of its own and is followed up
+        /// there rather than hidden here.
+        /// </summary>
+        public override void SetUpSteps()
+        {
+            base.SetUpSteps();
+            AddStep("stable compatibility off", () => Game.LocalConfig.SetValue(OsuSetting.StableCompatibility, false));
+        }
+
+        public override void TearDownSteps()
+        {
+            AddStep("stable compatibility back", () => Game.LocalConfig.GetBindable<bool>(OsuSetting.StableCompatibility).SetDefault());
+            base.TearDownSteps();
+        }
 
         [TestCase(true)]
         [TestCase(false)]

@@ -40,6 +40,8 @@ namespace osu.Game.Tests.Visual.Editing
             OsuSetting.EditorStatusShowKiai,
             OsuSetting.EditorStatusShowCombo,
             OsuSetting.EditorStatusShowMods,
+            // there while stable compatibility is on, which it is from the start (2026-10-23).
+            OsuSetting.EditorStatusShowSaveFormat,
         };
 
         [SetUpSteps]

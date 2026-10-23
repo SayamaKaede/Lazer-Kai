@@ -506,7 +506,12 @@ namespace osu.Game.Screens.Edit
 
             savedInStableFormat.Value = savedFile != null && StableFileKeeper.IsStableFile(savedFile);
 
-            bool keepingStableFile = canSave && savedInStableFormat.Value && config.Get<bool>(OsuSetting.StableCompatibility);
+            // not osu!taiko or osu!catch (2026-10-23): stable compatibility is on from the start, and there an edit to an object
+            // cannot stay in stable's format, so every first save of a session asked about lazer's instead, test play
+            // included, for nothing kept in exchange. osu!mania keeps it: a difficulty hitsounded in stable is turned into
+            // a hitsound difficulty from the file as stable wrote it.
+            bool keepingStableFile = canSave && savedInStableFormat.Value && config.Get<bool>(OsuSetting.StableCompatibility)
+                                     && editorBeatmap.BeatmapInfo.Ruleset.OnlineID is 0 or mania_ruleset_id;
 
             // the presets kept beside the file, where they are newer than the file's own: always, for a file kept in
             // stable's format, which has no line for them. Put back before the first state is taken, so that having them

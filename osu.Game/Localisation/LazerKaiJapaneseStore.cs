@@ -230,7 +230,7 @@ namespace osu.Game.Localisation
             [$@"{export_prefix}:export_set"] = @"このセットを出力",
 
             // keeping stable's own files
-            [$@"{stable_compatibility_prefix}:improve_compatibility"] = @"Stableとの互換性を強化する（試験的）",
+            [$@"{stable_compatibility_prefix}:improve_compatibility"] = @"Stableとの互換性を強化する",
             [$@"{stable_compatibility_prefix}:improve_compatibility_description"] = @"Stable形式（v14以前）の譜面を、編集していない行は元のまま保存し、Stable向けにはそのまま書き出します",
             [$@"{stable_compatibility_prefix}:notice_header"] = @"Stableとの互換性の強化について",
             [$@"{stable_compatibility_prefix}:notice_supported_modes"] = @"・現在はstandardモードのみしか対応していません",
