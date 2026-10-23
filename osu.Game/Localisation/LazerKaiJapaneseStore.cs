@@ -383,6 +383,8 @@ namespace osu.Game.Localisation
             [$@"{hitsound_prefix}:copy_from_header"] = @"ほかの難易度からHSをコピー",
             [$@"{hitsound_prefix}:copy_from_source"] = @"コピー元",
             [$@"{hitsound_prefix}:copy_from_button"] = @"この難易度にコピー",
+            [$@"{hitsound_prefix}:always_copy_from"] = @"常に適用",
+            [$@"{hitsound_prefix}:always_copy_from_hint"] = @"オンにした時点でHSを一度コピーし、以後は配置したノーツと時間を変更したノーツにもコピーします。難易度ごとに保存します。",
             [$@"{hitsound_prefix}:copy_from_unavailable"] = @"「Stableとの互換性を強化する」がオンのとき、Stable形式（v14以前）のosu!の譜面で、同じセットにほかのosu!の難易度があると使用できます",
             [$@"{hitsound_prefix}:could_not_read_difficulty"] = @"コピー元の難易度のファイルを読み取れませんでした",
             [$@"{hitsound_prefix}:near_lines_header"] = @"Unsnapかもしれない緑線",

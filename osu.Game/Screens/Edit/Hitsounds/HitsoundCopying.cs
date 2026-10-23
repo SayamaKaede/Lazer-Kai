@@ -69,10 +69,81 @@ namespace osu.Game.Screens.Edit.Hitsounds
             target.BeginChange();
 
             copyLines(lines, lineEditing, source.Lines);
-            copyPoints(target, lineEditing, source.Beatmap);
+            CopyPointsOnto(target, lineEditing, new SourcePoints(source.Beatmap), target.HitObjects);
 
             lineEditing.Confirm();
             target.EndChange();
+        }
+
+        /// <summary>
+        /// The points a difficulty plays sounds at, in time order, ready to be looked up again and again.
+        /// </summary>
+        public class SourcePoints
+        {
+            public readonly IBeatmap Beatmap;
+
+            internal readonly HitPoint[] Points;
+
+            internal readonly double[] Times;
+
+            public SourcePoints(IBeatmap beatmap)
+            {
+                Beatmap = beatmap;
+                Points = beatmap.HitObjects.SelectMany(h => HitPoints.Of(h, true)).OrderBy(p => p.Time).ToArray();
+                Times = Points.Select(p => p.Time).ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Gives <paramref name="hitObjects"/> the sounds <paramref name="source"/> plays at their times, leaving the lines
+        /// as they are: for objects placed or moved once the lines were copied (2026-10-23).
+        /// </summary>
+        public static void CopyPointsOnto(EditorBeatmap target, GreenLineEditing lineEditing, SourcePoints source, IEnumerable<HitObject> hitObjects)
+        {
+            var sourcePoints = source.Points;
+            double[] sourceTimes = source.Times;
+
+            foreach (var hitObject in hitObjects)
+            {
+                bool changed = false;
+
+                foreach (var point in HitPoints.Of(hitObject, true))
+                {
+                    var line = lineEditing.InEffectAt(point.Time + LegacyBeatmapDecoder.CONTROL_POINT_LENIENCY);
+
+                    if (line == null)
+                        continue;
+
+                    var heard = heardAt(sourcePoints, sourceTimes, point.Time);
+
+                    // where the other plays nothing, the sampleset follows the line, as it does in stable with 0 for it.
+                    var samples = heard.Count > 0
+                        ? HitsoundEditing.WithHitsound(point.Samples, HitsoundEditing.HitsoundOf(heard), bankOf(line.Value))
+                        : HitsoundEditing.WithHitsound(point.Samples, new PointHitsound(HitObjectComposer.HIT_BANK_AUTO, null, Array.Empty<string>()), bankOf(line.Value));
+
+                    changed |= set(point, followingLine(samples, line.Value));
+                }
+
+                if (hitObject is IHasRepeats && hitObject.Samples.Count > 0)
+                {
+                    var body = new HitPoint(hitObject, null, hitObject.StartTime);
+                    var line = lineEditing.InEffectAt(hitObject.StartTime + LegacyBeatmapDecoder.CONTROL_POINT_LENIENCY + 1);
+
+                    if (line != null)
+                    {
+                        var sourceBody = source.Beatmap.HitObjects.FirstOrDefault(h => h is IHasRepeats && Math.Abs(h.StartTime - hitObject.StartTime) <= HitPoints.LENIENCY);
+
+                        var hitsound = sourceBody != null
+                            ? HitsoundEditing.HitsoundOf(new[] { new HitPoint(sourceBody, null, sourceBody.StartTime) })
+                            : HitsoundEditing.HitsoundOf(new[] { body }) with { Bank = HitObjectComposer.HIT_BANK_AUTO };
+
+                        changed |= set(body, followingLine(HitsoundEditing.WithHitsound(body.Samples, hitsound, bankOf(line.Value)), line.Value));
+                    }
+                }
+
+                if (changed)
+                    target.Update(hitObject);
+            }
         }
 
         /// <remarks>
@@ -109,54 +180,6 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
         private static SavedTimingLine withSoundsOf(SavedTimingLine line, SavedTimingLine sounds) =>
             sameSounds(line, sounds) ? line : line.WithSampleSet(sounds.SampleSet).WithSampleIndex(sounds.SampleIndex).WithVolume(sounds.Volume);
-
-        private static void copyPoints(EditorBeatmap target, GreenLineEditing lineEditing, IBeatmap source)
-        {
-            var sourcePoints = source.HitObjects.SelectMany(h => HitPoints.Of(h, true)).OrderBy(p => p.Time).ToArray();
-            double[] sourceTimes = sourcePoints.Select(p => p.Time).ToArray();
-
-            foreach (var hitObject in target.HitObjects)
-            {
-                bool changed = false;
-
-                foreach (var point in HitPoints.Of(hitObject, true))
-                {
-                    var line = lineEditing.InEffectAt(point.Time + LegacyBeatmapDecoder.CONTROL_POINT_LENIENCY);
-
-                    if (line == null)
-                        continue;
-
-                    var heard = heardAt(sourcePoints, sourceTimes, point.Time);
-
-                    // where the other plays nothing, the sampleset follows the line, as it does in stable with 0 for it.
-                    var samples = heard.Count > 0
-                        ? HitsoundEditing.WithHitsound(point.Samples, HitsoundEditing.HitsoundOf(heard), bankOf(line.Value))
-                        : HitsoundEditing.WithHitsound(point.Samples, new PointHitsound(HitObjectComposer.HIT_BANK_AUTO, null, Array.Empty<string>()), bankOf(line.Value));
-
-                    changed |= set(point, followingLine(samples, line.Value));
-                }
-
-                if (hitObject is IHasRepeats && hitObject.Samples.Count > 0)
-                {
-                    var body = new HitPoint(hitObject, null, hitObject.StartTime);
-                    var line = lineEditing.InEffectAt(hitObject.StartTime + LegacyBeatmapDecoder.CONTROL_POINT_LENIENCY + 1);
-
-                    if (line != null)
-                    {
-                        var sourceBody = source.HitObjects.FirstOrDefault(h => h is IHasRepeats && Math.Abs(h.StartTime - hitObject.StartTime) <= HitPoints.LENIENCY);
-
-                        var hitsound = sourceBody != null
-                            ? HitsoundEditing.HitsoundOf(new[] { new HitPoint(sourceBody, null, sourceBody.StartTime) })
-                            : HitsoundEditing.HitsoundOf(new[] { body }) with { Bank = HitObjectComposer.HIT_BANK_AUTO };
-
-                        changed |= set(body, followingLine(HitsoundEditing.WithHitsound(body.Samples, hitsound, bankOf(line.Value)), line.Value));
-                    }
-                }
-
-                if (changed)
-                    target.Update(hitObject);
-            }
-        }
 
         /// <summary>
         /// The points of <paramref name="sorted"/> heard with one at <paramref name="time"/>: those at the time nearest to

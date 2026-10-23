@@ -21,6 +21,7 @@ using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Framework.Platform;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Formats;
@@ -178,6 +179,34 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
         private FormDropdown<string> copySource = null!;
         private RoundedButton copyFromButton = null!;
+        private FormCheckBox alwaysCopyFromBox = null!;
+
+        /// <summary>
+        /// Whether the difficulty to copy from is copied onto every object placed or moved in time (2026-10-23).
+        /// </summary>
+        private readonly Bindable<bool> alwaysCopyFrom = new Bindable<bool>();
+
+        /// <summary>
+        /// What is copied while <see cref="alwaysCopyFrom"/> is on, read once when it is turned on.
+        /// </summary>
+        private HitsoundCopying.SourcePoints? followed;
+
+        /// <summary>
+        /// The time each object was last seen at, to tell an object moved in time from one changed some other way: one
+        /// whose hitsounds were changed by hand keeps them.
+        /// </summary>
+        private readonly Dictionary<HitObject, double> followedTimes = new Dictionary<HitObject, double>();
+
+        /// <summary>
+        /// Whether what was kept is being put back as the panel loads, which turns following on without copying again.
+        /// </summary>
+        private bool restoringFollow;
+
+        [Resolved]
+        private Storage storage { get; set; } = null!;
+
+        [Resolved(canBeNull: true)]
+        private IEditorChangeHandler? changeHandler { get; set; }
 
         private StableFormatPart nearLinesHeading = null!;
         private Drawable nearLinesScroll = null!;
@@ -652,6 +681,12 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                     Height = 40,
                                     Action = copyFromDifficulty,
                                 },
+                                alwaysCopyFromBox = new FormCheckBox
+                                {
+                                    Caption = LazerKaiHitsoundStrings.AlwaysCopyFrom,
+                                    HintText = LazerKaiHitsoundStrings.AlwaysCopyFromHint,
+                                    Current = alwaysCopyFrom,
+                                },
                             }),
                         },
                     }
@@ -711,6 +746,35 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 // the one most likely made for its hitsounds, by its name.
                 copySource.Current.Value = sources.FirstOrDefault(n => n.Contains(@"hitsound", StringComparison.OrdinalIgnoreCase) || n.Equals(@"HS", StringComparison.OrdinalIgnoreCase))
                                            ?? sources[0];
+            }
+
+            editorBeatmap.HitObjectAdded += followAdded;
+            editorBeatmap.HitObjectUpdated += followUpdated;
+            editorBeatmap.HitObjectRemoved += followRemoved;
+
+            alwaysCopyFrom.BindValueChanged(a =>
+            {
+                if (a.NewValue)
+                    startFollowing(!restoringFollow);
+                else
+                    stopFollowing();
+            });
+
+            // a difficulty to copy from chosen while following is copied from instead, as if it was turned on again.
+            copySource.Current.BindValueChanged(_ =>
+            {
+                if (alwaysCopyFrom.Value && !restoringFollow)
+                    startFollowing(true);
+            });
+
+            string? keptSource = new HitsoundFollowStore(storage).Load(editorBeatmap.BeatmapInfo);
+
+            if (keptSource != null && sources.Contains(keptSource))
+            {
+                restoringFollow = true;
+                copySource.Current.Value = keptSource;
+                alwaysCopyFrom.Value = true;
+                restoringFollow = false;
             }
 
             if (editor != null)
@@ -856,6 +920,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
             bool canCopyFrom = linesEditable && copySource.Items.Any();
             copyFromButton.Enabled.Value = canCopyFrom;
             copyFromButton.TooltipText = canCopyFrom ? default : LazerKaiHitsoundStrings.CopyFromUnavailable;
+
+            // left to be turned off where it was on, so that it is not stuck on.
+            alwaysCopyFromBox.Current.Disabled = !canCopyFrom && !alwaysCopyFrom.Value;
         }
 
         /// <summary>
@@ -1398,6 +1465,80 @@ namespace osu.Game.Screens.Edit.Hitsounds
             HitsoundCopying.CopyOnto(editorBeatmap, savedTimingLines!, lineEditing!, source.Value);
             stale = true;
         }
+
+        /// <summary>
+        /// Reads the difficulty to copy from and goes on copying it onto what is placed or moved, having copied it all
+        /// once if <paramref name="copyAll"/>, which brings the lines in line with it (2026-10-23).
+        /// </summary>
+        private void startFollowing(bool copyAll)
+        {
+            followed = null;
+            followedTimes.Clear();
+
+            var info = copySources().FirstOrDefault(b => b.DifficultyName == copySource.Current.Value);
+            byte[]? file = info == null || editor == null ? null : editor.ReadStoredFileOf(info);
+            var source = file == null ? null : HitsoundCopying.Read(file);
+
+            if (source == null || !linesEditable)
+            {
+                if (source == null && info != null)
+                    notifications?.Post(new SimpleErrorNotification { Text = LazerKaiHitsoundStrings.CouldNotReadDifficulty });
+
+                Schedule(() => alwaysCopyFrom.Value = false);
+                return;
+            }
+
+            if (copyAll)
+                HitsoundCopying.CopyOnto(editorBeatmap, savedTimingLines!, lineEditing!, source.Value);
+
+            followed = new HitsoundCopying.SourcePoints(source.Value.Beatmap);
+
+            foreach (var hitObject in editorBeatmap.HitObjects)
+                followedTimes[hitObject] = hitObject.StartTime;
+
+            new HitsoundFollowStore(storage).Save(editorBeatmap.BeatmapInfo, info!.DifficultyName);
+            stale = true;
+        }
+
+        private void stopFollowing()
+        {
+            if (followed == null)
+                return;
+
+            followed = null;
+            followedTimes.Clear();
+            new HitsoundFollowStore(storage).Save(editorBeatmap.BeatmapInfo, null);
+        }
+
+        /// <summary>
+        /// Whether objects added now are put back by an undo or redo, rather than placed.
+        /// </summary>
+        private bool undoing => (changeHandler as EditorChangeHandler)?.IsRestoring == true;
+
+        private void followAdded(HitObject hitObject)
+        {
+            if (followed == null)
+                return;
+
+            followedTimes[hitObject] = hitObject.StartTime;
+
+            if (!undoing && linesEditable)
+                HitsoundCopying.CopyPointsOnto(editorBeatmap, lineEditing!, followed, new[] { hitObject });
+        }
+
+        private void followUpdated(HitObject hitObject)
+        {
+            if (followed == null)
+                return;
+
+            bool moved = followedTimes.TryGetValue(hitObject, out double before) && before != hitObject.StartTime;
+            followedTimes[hitObject] = hitObject.StartTime;
+
+            if (moved && !undoing && linesEditable)
+                HitsoundCopying.CopyPointsOnto(editorBeatmap, lineEditing!, followed, new[] { hitObject });
+        }
+
+        private void followRemoved(HitObject hitObject) => followedTimes.Remove(hitObject);
 
         /// <summary>
         /// How far from a sound a green line is listed as close to it.
@@ -2489,6 +2630,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 editorBeatmap.HitObjectAdded -= markStale;
                 editorBeatmap.HitObjectRemoved -= markStale;
                 editorBeatmap.HitObjectUpdated -= markStale;
+                editorBeatmap.HitObjectAdded -= followAdded;
+                editorBeatmap.HitObjectUpdated -= followUpdated;
+                editorBeatmap.HitObjectRemoved -= followRemoved;
                 editorBeatmap.SelectedHitObjects.CollectionChanged -= selectionChanged;
             }
 

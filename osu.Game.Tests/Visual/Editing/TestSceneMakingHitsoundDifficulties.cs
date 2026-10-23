@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using osu.Framework.Extensions;
+using osu.Framework.Input;
 using osu.Framework.Testing;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
@@ -369,6 +370,145 @@ namespace osu.Game.Tests.Visual.Editing
             });
             AddAssert("the first circle sounds as it did", () => describe(objectAt(matched)), () => Is.EqualTo(samplesBefore));
         }
+
+        /// <summary>
+        /// With "always apply" on, the hitsound difficulty is copied once, and then onto every object placed or moved in
+        /// time; an object whose hitsounds are changed by hand keeps them, through an undo and a redo too (2026-10-23).
+        /// </summary>
+        [Test]
+        public void TestAlwaysApplyCopiesOntoWhatIsPlacedAndMoved()
+        {
+            double matched = 0;
+            double other = 0;
+            double moved = 0;
+
+            AddStep("note three circles", () =>
+            {
+                var circles = EditorBeatmap.HitObjects.OfType<HitCircle>().ToArray();
+                matched = circles[10].StartTime;
+                other = circles[11].StartTime;
+                moved = circles[12].StartTime;
+            });
+
+            makeAHitsoundDifficultyWithAClapAt(() => matched);
+
+            AddAssert("the circle here has no clap", () => describe(objectAt(matched)), () => Has.None.Contains("hitclap:drum"));
+            AddStep("turn always apply on", () => alwaysApply.Current.Value = true);
+            AddAssert("the clap is copied at once", () => string.Join(' ', describe(objectAt(matched))), () => Does.Contain("hitclap:drum"));
+
+            AddStep("take the circle out", () => EditorBeatmap.Remove(objectAt(matched)));
+            AddStep("place one where it was", () => EditorBeatmap.Add(new HitCircle
+            {
+                StartTime = matched,
+                Position = new Vector2(256, 192),
+                Samples = new List<HitSampleInfo> { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) },
+            }));
+            AddUntilStep("the placed one claps", () => string.Join(' ', describe(objectAt(matched))), () => Does.Contain("hitclap:drum"));
+
+            AddStep("take it out again", () => EditorBeatmap.Remove(objectAt(matched)));
+            AddStep("move another circle there", () =>
+            {
+                var circle = objectAt(moved);
+                circle.StartTime = matched;
+                EditorBeatmap.Update(circle);
+            });
+            AddUntilStep("the moved one claps", () => string.Join(' ', describe(objectAt(matched))), () => Does.Contain("hitclap:drum"));
+
+            // a finish, which the hitsound difficulty does not play there: one it does would be kept either way.
+            AddAssert("another has no finish", () => describe(objectAt(other)), () => Has.None.StartsWith(HitSampleInfo.HIT_FINISH));
+            AddStep("give it a finish by hand", () =>
+            {
+                // as one change to undo, as the buttons make it.
+                EditorBeatmap.BeginChange();
+                var circle = objectAt(other);
+                HitsoundEditing.SetAddition(new[] { new HitPoint(circle, null, circle.StartTime) }, HitSampleInfo.HIT_FINISH, true, HitSampleInfo.BANK_NORMAL);
+                EditorBeatmap.Update(circle);
+                EditorBeatmap.EndChange();
+            });
+            AddWaitStep("let the update go through", 2);
+            AddAssert("it keeps the finish", () => describe(objectAt(other)), () => Has.Some.StartsWith(HitSampleInfo.HIT_FINISH));
+
+            AddStep("undo", () => InputManager.Keys(PlatformAction.Undo));
+            AddAssert("the finish is gone", () => describe(objectAt(other)), () => Has.None.StartsWith(HitSampleInfo.HIT_FINISH));
+            AddStep("redo", () => InputManager.Keys(PlatformAction.Redo));
+            AddAssert("the finish is back", () => describe(objectAt(other)), () => Has.Some.StartsWith(HitSampleInfo.HIT_FINISH));
+        }
+
+        /// <summary>
+        /// "Always apply" is kept for the difficulty, and is on again the next time it is opened, without copying
+        /// everything again (2026-10-23).
+        /// </summary>
+        [Test]
+        public void TestAlwaysApplyIsKeptForTheDifficulty()
+        {
+            double matched = 0;
+
+            AddStep("note a circle", () => matched = EditorBeatmap.HitObjects.OfType<HitCircle>().ToArray()[10].StartTime);
+
+            makeAHitsoundDifficultyWithAClapAt(() => matched);
+
+            AddStep("turn always apply on", () => alwaysApply.Current.Value = true);
+            AddStep("save", () => Editor.Save());
+
+            AddStep("switch to the hitsound difficulty", () => Editor.SwitchToDifficulty(Game.BeatmapManager.QueryBeatmap(b => b.DifficultyName == "Hitsounds")!));
+            AddUntilStep("the editor opens it", () => Editor?.ReadyForUse == true && EditorBeatmap.BeatmapInfo.DifficultyName == "Hitsounds");
+            AddStep("switch to the hitsound screen", () => Editor.Mode.Value = EditorScreenMode.Hitsounds);
+            waitForPanel();
+            AddAssert("off there", () => alwaysApply.Current.Value, () => Is.False);
+
+            AddStep("switch back", () => Editor.SwitchToDifficulty(Game.BeatmapManager.QueryBeatmap(b => b.ID == imported.ID)!));
+            AddUntilStep("the editor opens it", () => Editor?.ReadyForUse == true && EditorBeatmap.BeatmapInfo.ID == imported.ID);
+            AddStep("switch to the hitsound screen", () => Editor.Mode.Value = EditorScreenMode.Hitsounds);
+            waitForPanel();
+            AddAssert("on again here", () => alwaysApply.Current.Value, () => Is.True);
+            AddWaitStep("let anything copied go through", 2);
+            AddAssert("nothing to undo: not copied again", () => ((EditorChangeHandler)Editor.Dependencies.Get(typeof(IEditorChangeHandler))).CanUndo.Value, () => Is.False);
+
+            AddStep("take the circle out", () => EditorBeatmap.Remove(objectAt(matched)));
+            AddStep("place one where it was", () => EditorBeatmap.Add(new HitCircle
+            {
+                StartTime = matched,
+                Position = new Vector2(256, 192),
+                Samples = new List<HitSampleInfo> { new HitSampleInfo(HitSampleInfo.HIT_NORMAL) },
+            }));
+            AddUntilStep("the placed one claps", () => string.Join(' ', describe(objectAt(matched))), () => Does.Contain("hitclap:drum"));
+
+            AddStep("turn it off", () => alwaysApply.Current.Value = false);
+            AddStep("save", () => Editor.Save());
+            AddStep("switch to the hitsound difficulty", () => Editor.SwitchToDifficulty(Game.BeatmapManager.QueryBeatmap(b => b.DifficultyName == "Hitsounds")!));
+            AddUntilStep("the editor opens it", () => Editor?.ReadyForUse == true && EditorBeatmap.BeatmapInfo.DifficultyName == "Hitsounds");
+            AddStep("switch back", () => Editor.SwitchToDifficulty(Game.BeatmapManager.QueryBeatmap(b => b.ID == imported.ID)!));
+            AddUntilStep("the editor opens it", () => Editor?.ReadyForUse == true && EditorBeatmap.BeatmapInfo.ID == imported.ID);
+            AddStep("switch to the hitsound screen", () => Editor.Mode.Value = EditorScreenMode.Hitsounds);
+            waitForPanel();
+            AddAssert("still off", () => alwaysApply.Current.Value, () => Is.False);
+        }
+
+        /// <summary>
+        /// Makes a hitsound difficulty, gives its circle at a time a clap from drum, saves it and goes back to this one,
+        /// on the hitsound screen.
+        /// </summary>
+        private void makeAHitsoundDifficultyWithAClapAt(Func<double> time)
+        {
+            make(true);
+
+            AddStep("give the circle a clap from drum", () =>
+            {
+                var circle = objectAt(time());
+                HitsoundEditing.SetHitsound(new[] { new HitPoint(circle, null, circle.StartTime) },
+                    new PointHitsound(HitSampleInfo.BANK_SOFT, HitSampleInfo.BANK_DRUM, new[] { HitSampleInfo.HIT_CLAP }));
+                EditorBeatmap.Update(circle);
+            });
+            AddStep("save", () => Editor.Save());
+
+            AddStep("switch back", () => Editor.SwitchToDifficulty(Game.BeatmapManager.QueryBeatmap(b => b.ID == imported.ID)!));
+            AddUntilStep("the editor opens it", () => Editor?.ReadyForUse == true && EditorBeatmap.BeatmapInfo.ID == imported.ID);
+            AddStep("switch to the hitsound screen", () => Editor.Mode.Value = EditorScreenMode.Hitsounds);
+            waitForPanel();
+            AddAssert("the hitsound difficulty is the one to copy from", () => panel.ChildrenOfType<FormDropdown<string>>().Single().Current.Value, () => Is.EqualTo("Hitsounds"));
+        }
+
+        private FormCheckBox alwaysApply => panel.ChildrenOfType<FormCheckBox>().Single(c => c.Caption == LazerKaiHitsoundStrings.AlwaysCopyFrom);
 
         /// <summary>
         /// The green lines a few milliseconds from a sound are listed, with whether it takes them: stable reads a sound's

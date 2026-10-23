@@ -170,6 +170,17 @@ namespace osu.Game.Localisation
         public static LocalisableString CopyFromButton => new TranslatableString(getKey(@"copy_from_button"), @"Copy onto this difficulty");
 
         /// <summary>
+        /// "Always apply"
+        /// </summary>
+        public static LocalisableString AlwaysCopyFrom => new TranslatableString(getKey(@"always_copy_from"), @"Always apply");
+
+        /// <summary>
+        /// "Copies the hitsounds once when turned on, then onto every object placed or moved in time. Kept for each difficulty."
+        /// </summary>
+        public static LocalisableString AlwaysCopyFromHint => new TranslatableString(getKey(@"always_copy_from_hint"),
+            @"Copies the hitsounds once when turned on, then onto every object placed or moved in time. Kept for each difficulty.");
+
+        /// <summary>
         /// "For an osu! beatmap in v14 format, while improved stable compatibility is on, with another osu! difficulty in the set"
         /// </summary>
         public static LocalisableString CopyFromUnavailable => new TranslatableString(getKey(@"copy_from_unavailable"),

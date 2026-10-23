@@ -39,6 +39,11 @@ namespace osu.Game.Screens.Edit
 
         private bool isRestoring;
 
+        /// <summary>
+        /// Whether an undo or redo is putting a saved state back: objects added meanwhile are that state's, not new ones.
+        /// </summary>
+        public bool IsRestoring => isRestoring;
+
         public const int MAX_SAVED_STATES = 50;
 
         public override void BeginChange()
