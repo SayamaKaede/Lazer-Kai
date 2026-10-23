@@ -10,11 +10,13 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Cursor;
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Graphics;
+using osu.Game.Localisation;
 using osu.Game.Utils;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Rulesets.Objects;
@@ -121,6 +123,7 @@ namespace osu.Game.Screens.Edit.Compose.Components
         private readonly Bindable<bool> showSaveFormatRow = new Bindable<bool>();
         private readonly Bindable<bool> stableCompatibility = new Bindable<bool>();
         private readonly Bindable<int?> keptStableVersion = new Bindable<int?>();
+        private readonly Bindable<bool> unsavedChanges = new Bindable<bool>();
 
         /// <summary>
         /// Says whether the next save keeps the beatmap in stable's format or writes it in lazer's.
@@ -343,15 +346,49 @@ namespace osu.Game.Screens.Edit.Compose.Components
 
         private static Drawable createRow(LocalisableString label, out OsuSpriteText value, ColourInfo valueColour)
         {
-            OsuSpriteText valueText;
+            var row = new StatusRow(label, valueColour);
+            value = row.Value;
+            return row;
+        }
 
-            var row = new Container
+        /// <summary>
+        /// A label on the left and its value on the right.
+        /// </summary>
+        /// <remarks>
+        /// A value too wide for the space beside its label is made smaller rather than run into the label: SCORE V1's
+        /// eight digits otherwise touched it, and "SCORE V1 6,761,354" read as "SCORE V 16,761,354" (2026-10-23).
+        /// </remarks>
+        private partial class StatusRow : Container, IHasTooltip
+        {
+            private const float min_gap = 6;
+
+            public readonly OsuSpriteText Value;
+
+            private readonly OsuSpriteText label;
+
+            public LocalisableString TooltipText { get; private set; }
+
+            /// <summary>
+            /// Shows the value as one that may be out of date: one read from the file as last saved, while there are
+            /// changes since.
+            /// </summary>
+            public bool FromTheLastSave
             {
-                RelativeSizeAxes = Axes.X,
-                AutoSizeAxes = Axes.Y,
+                set
+                {
+                    Value.Alpha = value ? 0.4f : 1;
+                    TooltipText = value ? EditorStrings.StatusFromTheLastSave : default;
+                }
+            }
+
+            public StatusRow(LocalisableString label, ColourInfo valueColour)
+            {
+                RelativeSizeAxes = Axes.X;
+                AutoSizeAxes = Axes.Y;
+
                 Children = new Drawable[]
                 {
-                    new OsuSpriteText
+                    this.label = new OsuSpriteText
                     {
                         Text = label,
                         Font = OsuFont.Default.With(size: 12, weight: FontWeight.SemiBold),
@@ -359,18 +396,25 @@ namespace osu.Game.Screens.Edit.Compose.Components
                         Anchor = Anchor.CentreLeft,
                         Origin = Anchor.CentreLeft,
                     },
-                    valueText = new OsuSpriteText
+                    Value = new OsuSpriteText
                     {
                         Font = OsuFont.Default.With(size: 12, weight: FontWeight.Bold, fixedWidth: true),
                         Colour = valueColour,
                         Anchor = Anchor.CentreRight,
                         Origin = Anchor.CentreRight,
                     }
-                }
-            };
+                };
+            }
 
-            value = valueText;
-            return row;
+            protected override void Update()
+            {
+                base.Update();
+
+                float room = DrawWidth - label.DrawWidth - min_gap;
+                float width = Value.DrawWidth;
+
+                Value.Scale = new Vector2(width > room && room > 0 ? room / width : 1);
+            }
         }
 
         protected override void LoadComplete()
@@ -397,7 +441,19 @@ namespace osu.Game.Screens.Edit.Compose.Components
             showModsRow.BindValueChanged(_ => updateModsRow(), true);
 
             if (editor != null)
+            {
                 ((IBindable<int?>)keptStableVersion).BindTo(editor.KeptStableVersion);
+
+                // these are worked out from the file on disk, so until a save they are the last save's (2026-10-23).
+                var fromTheFile = new[] { starRating, maxPerformance, maxScore, maxLegacyScore }.Select(t => (StatusRow)t.Parent!).ToArray();
+
+                ((IBindable<bool>)unsavedChanges).BindTo(editor.UnsavedChanges);
+                unsavedChanges.BindValueChanged(unsaved =>
+                {
+                    foreach (var row in fromTheFile)
+                        row.FromTheLastSave = unsaved.NewValue;
+                }, true);
+            }
 
             showSaveFormatRow.BindValueChanged(_ => updateSaveFormatRow());
             stableCompatibility.BindValueChanged(_ => updateSaveFormatRow());

@@ -4,12 +4,15 @@
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Cursor;
 using osu.Framework.Testing;
 using osu.Game.Configuration;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Mods;
+using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Compose.Components;
 
@@ -102,5 +105,24 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddUntilStep("nothing is left", () => visibleRows, () => Is.Zero);
         }
+
+        /// <summary>
+        /// The star rating, pp and scores are read from the file on disk, so after a change they are the last save's
+        /// until the next. That is shown, rather than left to look like the beatmap being edited (2026-10-23).
+        /// </summary>
+        [Test]
+        public void TestValuesFromTheLastSaveAreShownAsSuch()
+        {
+            AddStep("save", () => Editor.Save());
+            AddUntilStep("nothing is marked", () => markedRows, () => Is.Zero);
+
+            AddStep("place a circle", () => EditorBeatmap.Add(new HitCircle { StartTime = 500 }));
+            AddUntilStep("the four read from the file are marked", () => markedRows, () => Is.EqualTo(4));
+
+            AddStep("save", () => Editor.Save());
+            AddUntilStep("nothing is marked again", () => markedRows, () => Is.Zero);
+        }
+
+        private int markedRows => status.ChildrenOfType<Drawable>().OfType<IHasTooltip>().Count(r => !string.IsNullOrEmpty(r.TooltipText.ToString()));
     }
 }

@@ -219,6 +219,13 @@ namespace osu.Game.Screens.Edit
 
         private readonly Bindable<int?> keptStableVersion = new Bindable<int?>();
 
+        /// <summary>
+        /// Whether anything has changed since the last save, as the editor works it out every frame anyway.
+        /// </summary>
+        public IBindable<bool> UnsavedChanges => unsavedChanges;
+
+        private readonly Bindable<bool> unsavedChanges = new Bindable<bool>();
+
         private readonly SavedTimingLines savedTimingLines = new SavedTimingLines();
 
         /// <summary>
@@ -1336,7 +1343,10 @@ namespace osu.Game.Screens.Edit
             base.Update();
             clock.ProcessFrame();
 
-            discardChangesMenuItem.Action.Disabled = !HasUnsavedChanges;
+            bool unsaved = HasUnsavedChanges;
+
+            discardChangesMenuItem.Action.Disabled = !unsaved;
+            unsavedChanges.Value = unsaved;
 
             // asked once, on whichever of the first frames the composer has finished loading on, and then never
             // again: walking for it every frame to answer a question whose answer cannot change is not worth it.
