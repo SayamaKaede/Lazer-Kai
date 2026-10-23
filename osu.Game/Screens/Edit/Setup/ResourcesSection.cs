@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using osu.Framework.Allocation;
@@ -15,6 +16,7 @@ using osu.Game.Configuration;
 using osu.Game.Localisation;
 using osu.Game.Models;
 using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Screens.Backgrounds;
 using osu.Game.Screens.Edit.Components;
 using osu.Game.Storyboards;
@@ -49,6 +51,9 @@ namespace osu.Game.Screens.Edit.Setup
 
         [Resolved]
         private OsuConfigManager config { get; set; } = null!;
+
+        [Resolved]
+        private INotificationOverlay? notifications { get; set; }
 
         private SetupScreenBackgroundPreview backgroundPreview = null!;
         private SetupScreenVideoPreview videoPreview = null!;
@@ -276,6 +281,8 @@ namespace osu.Game.Screens.Edit.Setup
 
             if (applyToAllDifficulties)
             {
+                var leftAsTheyWere = new List<string>();
+
                 foreach (var b in otherBeatmaps)
                 {
                     // save the difficulty to re-encode the .osu file, updating any reference of the old filename.
@@ -285,8 +292,12 @@ namespace osu.Game.Screens.Edit.Setup
                     var beatmapWorking = beatmaps.GetWorkingBeatmap(b);
 
                     // a difficulty still in stable's format stays in it, with only the line naming the file changed.
-                    StableFileSaving.Save(beatmaps, beatmapWorking, config.Get<bool>(OsuSetting.StableCompatibility), _ => writeNewFilenameTo(beatmapWorking, newFilename));
+                    if (!StableFileSaving.Save(beatmaps, beatmapWorking, config.Get<bool>(OsuSetting.StableCompatibility), _ => writeNewFilenameTo(beatmapWorking, newFilename)))
+                        leftAsTheyWere.Add(b.DifficultyName);
                 }
+
+                if (leftAsTheyWere.Count > 0)
+                    notifications?.Post(new SimpleNotification { Text = LazerKaiStableCompatibilityStrings.OtherDifficultiesLeftAsTheyWere(string.Join(@", ", leftAsTheyWere)) });
             }
 
             writeNewFilenameTo(currentWorkingBeatmap.Value, newFilename);

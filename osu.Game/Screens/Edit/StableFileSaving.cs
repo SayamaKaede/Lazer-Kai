@@ -25,7 +25,17 @@ namespace osu.Game.Screens.Edit
         /// <param name="working">The difficulty.</param>
         /// <param name="keepStableFiles">Whether stable compatibility is on.</param>
         /// <param name="change">The change to make to the difficulty, once what it was has been taken note of.</param>
-        public static void Save(BeatmapManager beatmaps, WorkingBeatmap working, bool keepStableFiles, Action<IBeatmap> change)
+        /// <returns>
+        /// Whether it was saved: one still in stable's format that cannot stay in it is left as it was (2026-10-23). Saved
+        /// in lazer's format, its green lines went where its objects are, without the mapper having opened it or been
+        /// asked; the difficulty open in the editor asks first, and this one is not even on screen.
+        /// </returns>
+        /// <remarks>
+        /// Nothing these changes touch moves an object or a sound, so the only way one cannot stay is a file without the
+        /// section or the line the change goes in. That also means a difficulty left as it was by a new background, video or song
+        /// for every difficulty never named the old one, which is taken out of the set before this is called.
+        /// </remarks>
+        public static bool Save(BeatmapManager beatmaps, WorkingBeatmap working, bool keepStableFiles, Action<IBeatmap> change)
         {
             var info = working.BeatmapInfo;
             var playable = working.GetPlayableBeatmap(info.Ruleset);
@@ -45,15 +55,16 @@ namespace osu.Game.Screens.Edit
                 if (written != null)
                 {
                     beatmaps.SaveFile(info, playable, written);
-                    return;
+                    return true;
                 }
 
-                Logger.Log($@"{info.GetDisplayTitle()} could not be kept in stable's format: {keeper.LastFailure ?? @"no reason given"}");
+                Logger.Log($@"{info.GetDisplayTitle()} could not be kept in stable's format, and was left as it was: {keeper.LastFailure ?? @"no reason given"}");
+                return false;
             }
-            else
-                change(playable);
 
+            change(playable);
             beatmaps.Save(info, playable, skin, storyboard);
+            return true;
         }
 
         private static byte[]? readFile(WorkingBeatmap working)

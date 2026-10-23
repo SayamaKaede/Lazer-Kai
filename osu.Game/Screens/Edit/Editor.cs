@@ -1965,6 +1965,7 @@ namespace osu.Game.Screens.Edit
 
                 int[] sourceBookmarks = editorBeatmap.Bookmarks.ToArray();
                 int sourcePreviewTime = editorBeatmap.BeatmapInfo.Metadata.PreviewTime;
+                var leftAsTheyWere = new List<string>();
 
                 foreach (var beatmapInfo in Beatmap.Value.BeatmapSetInfo.Beatmaps)
                 {
@@ -1974,9 +1975,10 @@ namespace osu.Game.Screens.Edit
                     try
                     {
                         var targetWorking = beatmapManager.GetWorkingBeatmap(beatmapInfo);
+                        int previewTimeBefore = beatmapInfo.Metadata.PreviewTime;
 
                         // a difficulty still in stable's format stays in it, with only the lines that change written.
-                        StableFileSaving.Save(beatmapManager, targetWorking, osuConfig.Get<bool>(OsuSetting.StableCompatibility), playable =>
+                        bool saved = StableFileSaving.Save(beatmapManager, targetWorking, osuConfig.Get<bool>(OsuSetting.StableCompatibility), playable =>
                         {
                             if (syncBookmarks)
                                 playable.Bookmarks = sourceBookmarks;
@@ -1984,6 +1986,14 @@ namespace osu.Game.Screens.Edit
                             if (syncPreviewPoint)
                                 beatmapInfo.Metadata.PreviewTime = sourcePreviewTime;
                         });
+
+                        // back to what its file says, in the set held here as well, which the save below writes to the
+                        // database whole.
+                        if (!saved)
+                        {
+                            beatmapInfo.Metadata.PreviewTime = previewTimeBefore;
+                            leftAsTheyWere.Add(beatmapInfo.DifficultyName);
+                        }
                     }
                     catch (Exception e)
                     {
@@ -1991,6 +2001,9 @@ namespace osu.Game.Screens.Edit
                         return;
                     }
                 }
+
+                if (leftAsTheyWere.Count > 0)
+                    notifications?.Post(new SimpleNotification { Text = LazerKaiStableCompatibilityStrings.OtherDifficultiesLeftAsTheyWere(string.Join(@", ", leftAsTheyWere)) });
 
                 SaveAndReload(withDialog: false);
             }));

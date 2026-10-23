@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -14,6 +15,7 @@ using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
 using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Resources.Localisation.Web;
 
 namespace osu.Game.Screens.Edit.Setup
@@ -47,6 +49,9 @@ namespace osu.Game.Screens.Edit.Setup
 
         [Resolved]
         private IDialogOverlay? dialogOverlay { get; set; }
+
+        [Resolved]
+        private INotificationOverlay? notifications { get; set; }
 
         [Resolved]
         private OsuConfigManager config { get; set; } = null!;
@@ -90,6 +95,7 @@ namespace osu.Game.Screens.Edit.Setup
             var set = working.Value.BeatmapSetInfo;
             var current = Beatmap.BeatmapInfo;
             var source = Beatmap.Metadata;
+            var leftAsTheyWere = new List<string>();
 
             foreach (var b in set.Beatmaps)
             {
@@ -99,6 +105,7 @@ namespace osu.Game.Screens.Edit.Setup
                 try
                 {
                     var targetWorking = beatmaps.GetWorkingBeatmap(b);
+                    var before = b.Metadata.DeepClone();
 
                     // a difficulty still in stable's format stays in it, with only the lines of its metadata rewritten.
                     // Saved as any other, it was written in lazer's format without a word, its green lines put where its
@@ -107,12 +114,22 @@ namespace osu.Game.Screens.Edit.Setup
                     // The metadata is changed in there, after what the difficulty was has been taken note of, and on each
                     // of the three that may or may not be one: what is written to the file, what is saved to the database,
                     // and the set the editor holds.
-                    StableFileSaving.Save(beatmaps, targetWorking, config.Get<bool>(OsuSetting.StableCompatibility), playable =>
+                    bool saved = StableFileSaving.Save(beatmaps, targetWorking, config.Get<bool>(OsuSetting.StableCompatibility), playable =>
                     {
-                        copyTo(playable.BeatmapInfo.Metadata);
-                        copyTo(targetWorking.BeatmapInfo.Metadata);
-                        copyTo(b.Metadata);
+                        copy(source, playable.BeatmapInfo.Metadata);
+                        copy(source, targetWorking.BeatmapInfo.Metadata);
+                        copy(source, b.Metadata);
                     });
+
+                    // one left as it was goes back to what its file says, in the set the editor holds as well: the save of
+                    // the difficulty being edited writes the whole set to the database, and would write this one's new
+                    // metadata over a file that does not have it.
+                    if (!saved)
+                    {
+                        copy(before, targetWorking.BeatmapInfo.Metadata);
+                        copy(before, b.Metadata);
+                        leftAsTheyWere.Add(b.DifficultyName);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -121,14 +138,17 @@ namespace osu.Game.Screens.Edit.Setup
                 }
             }
 
-            void copyTo(BeatmapMetadata target)
+            if (leftAsTheyWere.Count > 0)
+                notifications?.Post(new SimpleNotification { Text = LazerKaiStableCompatibilityStrings.OtherDifficultiesLeftAsTheyWere(string.Join(@", ", leftAsTheyWere)) });
+
+            static void copy(BeatmapMetadata from, BeatmapMetadata target)
             {
-                target.ArtistUnicode = source.ArtistUnicode;
-                target.Artist = source.Artist;
-                target.TitleUnicode = source.TitleUnicode;
-                target.Title = source.Title;
-                target.Source = source.Source;
-                target.Tags = source.Tags;
+                target.ArtistUnicode = from.ArtistUnicode;
+                target.Artist = from.Artist;
+                target.TitleUnicode = from.TitleUnicode;
+                target.Title = from.Title;
+                target.Source = from.Source;
+                target.Tags = from.Tags;
             }
 
             // Persist the current difficulty and align with how resource changes re-save the current beatmap.

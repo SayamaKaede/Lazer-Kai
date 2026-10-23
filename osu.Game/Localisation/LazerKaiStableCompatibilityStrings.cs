@@ -60,6 +60,12 @@ namespace osu.Game.Localisation
             @"The dropped file ""{0}"" could not be kept in stable's format, so it was saved in lazer's.", name);
 
         /// <summary>
+        /// "{0} could not be kept in stable's format, so it was left as it was."
+        /// </summary>
+        public static LocalisableString OtherDifficultiesLeftAsTheyWere(string names) => new TranslatableString(getKey(@"other_difficulties_left_as_they_were"),
+            @"{0} could not be kept in stable's format, so it was left as it was.", names);
+
+        /// <summary>
         /// "Convert"
         /// </summary>
         public static LocalisableString Convert => new TranslatableString(getKey(@"convert"), @"Convert");

@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -184,6 +185,37 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddUntilStep("saved in lazer's format", () => shownSaveFormat(), () => Is.EqualTo("Lazer"));
             AddUntilStep("the stable file is kept", () => keptFiles().Select(readStored), () => Has.Some.EqualTo(originalFile()));
+        }
+
+        /// <summary>
+        /// Another difficulty of the set is written to as well, by syncing the bookmarks, the metadata or a background to
+        /// it. Where that cannot stay in stable's format it is left as it was: saved in lazer's format without a word, its
+        /// green lines went where its objects are (2026-10-23).
+        /// </summary>
+        [Test]
+        public void TestAnotherDifficultyThatCannotStayStableIsLeftAsItWas()
+        {
+            Guid other = Guid.Empty;
+            string? hashBefore = null;
+            bool saved = true;
+
+            AddStep("pick another difficulty", () =>
+            {
+                other = Game.Realm.Run(r => r.Find<BeatmapInfo>(imported.ID)!.BeatmapSet!.Beatmaps.First(b => b.ID != imported.ID).ID);
+                hashBefore = Game.Realm.Run(r => r.Find<BeatmapInfo>(other)!.MD5Hash);
+            });
+
+            AddStep("write to it what cannot stay stable", () =>
+            {
+                var working = Game.BeatmapManager.GetWorkingBeatmap(Game.Realm.Run(r => r.Find<BeatmapInfo>(other)!.Detach()));
+
+                saved = StableFileSaving.Save(Game.BeatmapManager, working, true, _ =>
+                    working.Storyboard.GetLayer(@"Background").Add(new osu.Game.Storyboards.StoryboardSprite(osu.Game.Storyboards.StoryboardElementSource.Beatmap,
+                        @"sprite.png", osu.Framework.Graphics.Anchor.Centre, osuTK.Vector2.Zero)));
+            });
+
+            AddAssert("said it was not saved", () => saved, () => Is.False);
+            AddAssert("its file is as it was", () => Game.Realm.Run(r => r.Find<BeatmapInfo>(other)!.MD5Hash), () => Is.EqualTo(hashBefore));
         }
 
         /// <summary>
