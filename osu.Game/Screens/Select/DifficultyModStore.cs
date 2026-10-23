@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game.Beatmaps;
+using osu.Game.IO;
 using osu.Game.Online.API;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
@@ -29,6 +30,11 @@ namespace osu.Game.Screens.Select
         public event Action? Changed;
 
         private readonly Storage storage;
+
+        /// <summary>
+        /// Whether the file could not be read and is still where it was, so that a save would write over it.
+        /// </summary>
+        private bool stuck;
         private readonly Dictionary<string, Entry> entries;
 
         public DifficultyModStore(Storage storage)
@@ -79,6 +85,7 @@ namespace osu.Game.Screens.Select
             catch (Exception e)
             {
                 Logger.Error(e, "Could not read the mods set on difficulties");
+                stuck = !UnreadableFile.SetAside(storage, FILENAME);
                 return new Dictionary<string, Entry>();
             }
         }
@@ -87,6 +94,9 @@ namespace osu.Game.Screens.Select
         {
             try
             {
+                if (stuck)
+                    return;
+
                 using (var stream = storage.CreateFileSafely(FILENAME))
                 using (var writer = new StreamWriter(stream))
                     writer.Write(JsonConvert.SerializeObject(entries, Formatting.Indented));

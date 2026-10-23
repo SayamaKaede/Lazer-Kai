@@ -2,12 +2,14 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game.Extensions;
+using osu.Game.IO;
 
 namespace osu.Game.Screens.Edit.ComboColours
 {
@@ -25,6 +27,11 @@ namespace osu.Game.Screens.Edit.ComboColours
         private const string filename = "project.json";
 
         private readonly Storage storage;
+
+        /// <summary>
+        /// Files that could not be read and are still where they were, which a save would write over.
+        /// </summary>
+        private readonly HashSet<string> stuck = new HashSet<string>();
 
         public ComboColourProjectStore(Storage storage)
         {
@@ -65,6 +72,10 @@ namespace osu.Game.Screens.Edit.ComboColours
             {
                 // a layout that cannot be read is not worth stopping the editor for; start from an empty one.
                 Logger.Error(e, "Could not read the combo colour layout");
+
+                if (!UnreadableFile.SetAside(storage, path))
+                    stuck.Add(path);
+
                 return new ComboColourProject();
             }
         }
@@ -75,6 +86,9 @@ namespace osu.Game.Screens.Edit.ComboColours
 
             try
             {
+                if (stuck.Contains(path))
+                    return;
+
                 using (var stream = storage.CreateFileSafely(path))
                 using (var writer = new StreamWriter(stream))
                     writer.Write(JsonConvert.SerializeObject(project, Formatting.Indented));

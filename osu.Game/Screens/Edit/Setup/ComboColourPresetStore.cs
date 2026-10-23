@@ -6,6 +6,7 @@ using System.IO;
 using Newtonsoft.Json;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osu.Game.IO;
 
 namespace osu.Game.Screens.Edit.Setup
 {
@@ -21,6 +22,11 @@ namespace osu.Game.Screens.Edit.Setup
         public const string FILENAME = "combo-colour-presets.json";
 
         private readonly Storage storage;
+
+        /// <summary>
+        /// Whether the file could not be read and is still where it was, so that a save would write over it.
+        /// </summary>
+        private bool stuck;
 
         public ComboColourPresetStore(Storage storage)
         {
@@ -47,6 +53,7 @@ namespace osu.Game.Screens.Edit.Setup
             {
                 // a list that cannot be read is not worth stopping the editor for; carry on without it.
                 Logger.Error(e, "Could not read the combo colour presets");
+                stuck = !UnreadableFile.SetAside(storage, FILENAME);
                 return new ComboColourPresetList();
             }
         }
@@ -55,6 +62,9 @@ namespace osu.Game.Screens.Edit.Setup
         {
             try
             {
+                if (stuck)
+                    return;
+
                 using (var stream = storage.CreateFileSafely(FILENAME))
                 using (var writer = new StreamWriter(stream))
                     writer.Write(JsonConvert.SerializeObject(list, Formatting.Indented));

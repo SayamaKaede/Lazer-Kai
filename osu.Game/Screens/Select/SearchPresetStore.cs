@@ -8,6 +8,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osu.Game.IO;
 
 namespace osu.Game.Screens.Select
 {
@@ -49,9 +50,15 @@ namespace osu.Game.Screens.Select
             catch (Exception e)
             {
                 Logger.Error(e, "Could not read the search presets");
+                stuck = !UnreadableFile.SetAside(storage, FILENAME);
                 return Array.Empty<SearchPreset>();
             }
         }
+
+        /// <summary>
+        /// Whether the file could not be read and is still where it was, so that a save would write over it.
+        /// </summary>
+        private bool stuck;
 
         /// <summary>
         /// Keeps <paramref name="query"/> under <paramref name="name"/>, or under the query itself if no name is given.
@@ -89,6 +96,9 @@ namespace osu.Game.Screens.Select
 
         private void write(IEnumerable<SearchPreset> presets)
         {
+            if (stuck)
+                return;
+
             try
             {
                 using (var stream = storage.CreateFileSafely(FILENAME))

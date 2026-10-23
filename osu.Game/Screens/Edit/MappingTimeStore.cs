@@ -8,6 +8,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osu.Game.IO;
 
 namespace osu.Game.Screens.Edit
 {
@@ -83,9 +84,15 @@ namespace osu.Game.Screens.Edit
             catch (Exception e)
             {
                 Logger.Error(e, "Could not read the time spent mapping");
+                stuck = !UnreadableFile.SetAside(storage, FILENAME);
                 return Array.Empty<MappingSpan>();
             }
         }
+
+        /// <summary>
+        /// Whether the file could not be read and is still where it was, so that a save would write over it.
+        /// </summary>
+        private bool stuck;
 
         /// <summary>
         /// Keeps <paramref name="span"/>, in place of the one with its <see cref="MappingSpan.ID"/> if there is one already.
@@ -99,6 +106,9 @@ namespace osu.Game.Screens.Edit
                 spans[existing] = span;
             else
                 spans.Add(span);
+
+            if (stuck)
+                return;
 
             try
             {

@@ -2,12 +2,14 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game.Beatmaps;
 using osu.Game.Extensions;
+using osu.Game.IO;
 
 namespace osu.Game.Screens.Edit.Hitsounds
 {
@@ -25,6 +27,11 @@ namespace osu.Game.Screens.Edit.Hitsounds
         private const string filename = "lanes.json";
 
         private readonly Storage storage;
+
+        /// <summary>
+        /// Files that could not be read and are still where they were, which a save would write over.
+        /// </summary>
+        private readonly HashSet<string> stuck = new HashSet<string>();
 
         public LaneSoundProjectStore(Storage storage)
         {
@@ -63,6 +70,10 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 // lanes that cannot be read are not worth stopping the editor for; the difficulty is still one made to
                 // hitsound in, and starts with none.
                 Logger.Error(e, "Could not read the sounds of the lanes");
+
+                if (!UnreadableFile.SetAside(storage, path))
+                    stuck.Add(path);
+
                 return new LaneSoundProject();
             }
         }
@@ -73,6 +84,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
             try
             {
+                if (stuck.Contains(path))
+                    return;
+
                 using (var stream = storage.CreateFileSafely(path))
                 using (var writer = new StreamWriter(stream))
                     writer.Write(JsonConvert.SerializeObject(project, Formatting.Indented));

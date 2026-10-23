@@ -10,6 +10,7 @@ using osu.Framework.Extensions;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game.Extensions;
+using osu.Game.IO;
 
 namespace osu.Game.Configuration
 {
@@ -28,6 +29,11 @@ namespace osu.Game.Configuration
         private const string before_applying = ".before-applying";
 
         private readonly Storage storage;
+
+        /// <summary>
+        /// Files that could not be read and are still where they were, which a save would write over.
+        /// </summary>
+        private readonly HashSet<string> stuck = new HashSet<string>();
 
         public LazerKaiSettingsPresetStore(Storage storage)
         {
@@ -95,6 +101,10 @@ namespace osu.Game.Configuration
             catch (Exception e)
             {
                 Logger.Error(e, "Could not read a settings preset");
+
+                if (!UnreadableFile.SetAside(storage, path))
+                    stuck.Add(path);
+
                 return null;
             }
         }
@@ -103,6 +113,9 @@ namespace osu.Game.Configuration
         {
             try
             {
+                if (stuck.Contains(path))
+                    return;
+
                 using (var stream = storage.CreateFileSafely(path))
                 using (var writer = new StreamWriter(stream))
                     writer.Write(JsonConvert.SerializeObject(preset.Values.ToDictionary(v => v.Key.ToString(), v => v.Value), Formatting.Indented));

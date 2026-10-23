@@ -6,6 +6,7 @@ using System.IO;
 using Newtonsoft.Json;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osu.Game.IO;
 
 namespace osu.Game.Screens.Edit.Hitsounds
 {
@@ -21,6 +22,11 @@ namespace osu.Game.Screens.Edit.Hitsounds
         public const string FILENAME = "hitsound-lane-presets.json";
 
         private readonly Storage storage;
+
+        /// <summary>
+        /// Whether the file could not be read and is still where it was, so that a save would write over it.
+        /// </summary>
+        private bool stuck;
 
         public LaneSoundPresetStore(Storage storage)
         {
@@ -47,6 +53,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
             {
                 // a list that cannot be read is not worth stopping the editor for; carry on without it.
                 Logger.Error(e, "Could not read the presets of lane sounds");
+                stuck = !UnreadableFile.SetAside(storage, FILENAME);
                 return new LaneSoundPresetList();
             }
         }
@@ -55,6 +62,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
         {
             try
             {
+                if (stuck)
+                    return;
+
                 using (var stream = storage.CreateFileSafely(FILENAME))
                 using (var writer = new StreamWriter(stream))
                     writer.Write(JsonConvert.SerializeObject(list, Formatting.Indented));

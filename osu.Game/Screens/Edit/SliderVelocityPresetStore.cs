@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
@@ -10,6 +11,7 @@ using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game.Beatmaps;
 using osu.Game.Extensions;
+using osu.Game.IO;
 
 namespace osu.Game.Screens.Edit
 {
@@ -35,6 +37,11 @@ namespace osu.Game.Screens.Edit
         public static double[] Default => new Beatmap().SliderVelocityPresets;
 
         private readonly Storage storage;
+
+        /// <summary>
+        /// Files that could not be read and are still where they were, which a save would write over.
+        /// </summary>
+        private readonly HashSet<string> stuck = new HashSet<string>();
 
         public SliderVelocityPresetStore(Storage storage)
         {
@@ -72,6 +79,10 @@ namespace osu.Game.Screens.Edit
             {
                 // presets that cannot be read are not worth stopping the editor for; the beatmap's own are used.
                 Logger.Error(e, "Could not read the slider velocity presets");
+
+                if (!UnreadableFile.SetAside(storage, path))
+                    stuck.Add(path);
+
                 return null;
             }
         }
@@ -104,6 +115,9 @@ namespace osu.Game.Screens.Edit
             try
             {
                 if (ordered.SequenceEqual(Default) && !storage.Exists(path))
+                    return;
+
+                if (stuck.Contains(path))
                     return;
 
                 using (var stream = storage.CreateFileSafely(path))

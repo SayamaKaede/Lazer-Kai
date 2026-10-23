@@ -2,12 +2,14 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 using osu.Framework.Extensions;
 using osu.Game.Extensions;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osu.Game.IO;
 
 namespace osu.Game.Screens.Edit.Collab
 {
@@ -26,6 +28,11 @@ namespace osu.Game.Screens.Edit.Collab
         private const string filename = "project.json";
 
         private readonly Storage storage;
+
+        /// <summary>
+        /// Files that could not be read and are still where they were, which a save would write over.
+        /// </summary>
+        private readonly HashSet<string> stuck = new HashSet<string>();
 
         public CollabProjectStore(Storage storage)
         {
@@ -71,6 +78,10 @@ namespace osu.Game.Screens.Edit.Collab
             {
                 // a split that cannot be read is not worth stopping the editor for; start from an empty one.
                 Logger.Error(e, "Could not read the collaboration split");
+
+                if (!UnreadableFile.SetAside(storage, path))
+                    stuck.Add(path);
+
                 return new CollabProject();
             }
         }
@@ -81,6 +92,9 @@ namespace osu.Game.Screens.Edit.Collab
 
             try
             {
+                if (stuck.Contains(path))
+                    return;
+
                 using (var stream = storage.CreateFileSafely(path))
                 using (var writer = new StreamWriter(stream))
                     writer.Write(JsonConvert.SerializeObject(project, Formatting.Indented));
