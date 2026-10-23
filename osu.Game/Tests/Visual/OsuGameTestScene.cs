@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Development;
@@ -77,6 +78,10 @@ namespace osu.Game.Tests.Visual
 
             AddUntilStep("Wait for load", () => Game.IsLoaded);
             AddUntilStep("Wait for intro", () => Game.ScreenStack.CurrentScreen is IntroScreen);
+
+            // the overlays load one after another after the game itself, and tests look the dialog overlay up in the
+            // game's children: before it was there, one in a few such tests failed on finding none (2026-10-23).
+            AddUntilStep("Wait for dialog overlay", () => Game.ChildrenOfType<DialogOverlay>().Any());
         }
 
         [TearDownSteps]
