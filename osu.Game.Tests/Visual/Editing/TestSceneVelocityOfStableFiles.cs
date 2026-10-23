@@ -91,6 +91,42 @@ namespace osu.Game.Tests.Visual.Editing
             AddUntilStep("0.5x", () => toolbox.SliderVelocity.Value, () => Is.EqualTo(0.5).Within(0.001));
         }
 
+        /// <summary>
+        /// A line that changes the sounds alone, saying the velocity of the file's line before it, does not count as another
+        /// line: copying a hitsound difficulty puts many in, and each turned the velocity chosen back (2026-10-23).
+        /// </summary>
+        [Test]
+        public void TestALineForTheSoundsAloneLeavesTheVelocityChosen()
+        {
+            AddStep("a line at 33000 saying 2x, at another volume", () => addLine("33000,-50,4,2,0,80,0,0"));
+
+            AddStep("to 32000", () => clock.Seek(32000));
+            AddUntilStep("2x", () => toolbox.SliderVelocity.Value, () => Is.EqualTo(2).Within(0.001));
+            AddStep("choose 1.2x", () => toolbox.AdjustVelocity(-0.8));
+
+            AddStep("on to 34000, past the line for the sounds", () => clock.Seek(34000));
+            AddWaitStep("give it time", 5);
+            AddAssert("still 1.2x", () => toolbox.SliderVelocity.Value, () => Is.EqualTo(1.2).Within(0.001));
+
+            AddStep("to 41000, a line changing the velocity", () => clock.Seek(41000));
+            AddUntilStep("0.5x", () => toolbox.SliderVelocity.Value, () => Is.EqualTo(0.5).Within(0.001));
+        }
+
+        /// <summary>
+        /// After a slider placed at a velocity of its own, a line for the sounds alone leaves the next at that velocity
+        /// too, rather than the file's (2026-10-23).
+        /// </summary>
+        [Test]
+        public void TestALineForTheSoundsAloneLeavesThePlacedSlidersVelocity()
+        {
+            AddStep("a line at 33000 saying 2x, at another volume", () => addLine("33000,-50,4,2,0,80,0,0"));
+            AddStep("a 1.4x slider at 31000", () => EditorBeatmap.Add(slider(31000, 1.4)));
+
+            AddStep("to 34000, past the line for the sounds", () => clock.Seek(34000));
+            AddWaitStep("give it time", 5);
+            AddAssert("1.4x", () => toolbox.SliderVelocity.Value, () => Is.EqualTo(1.4).Within(0.001));
+        }
+
         [Test]
         public void TestTheLineASaveWillPutInIsShownAtOnce()
         {

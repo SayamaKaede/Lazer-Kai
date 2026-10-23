@@ -1,6 +1,8 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using osu.Framework.Allocation;
@@ -190,8 +192,7 @@ namespace osu.Game.Rulesets.Osu.Edit
                     sliderControl.ObjectsToAdjust.Clear();
                     sliderControl.ObjectsToAdjust.AddRange(selectedHitObjects.OfType<Slider>());
                 }
-                else if (savedTimingLines?.ShowsVelocityLines == true
-                         && savedTimingLines.Shown.Where(l => l.Time <= editorClock.CurrentTime).Cast<SavedTimingLine?>().LastOrDefault() is SavedTimingLine line)
+                else if (savedTimingLines?.ShowsVelocityLines == true && velocityLineAt(editorClock.CurrentTime) is SavedTimingLine line)
                 {
                     sliderControl.ObjectsToAdjust.Clear();
 
@@ -245,6 +246,26 @@ namespace osu.Game.Rulesets.Osu.Edit
 
                 sliderVelocitySource.Validate();
             }
+        }
+
+        /// <summary>
+        /// The line the velocity is taken from at a time: the last one shown at or before it, passing over the file's
+        /// green lines that say the velocity of the file's line before them. Those change the sounds alone, and copying a
+        /// hitsound difficulty puts many in: each turned the velocity chosen, or that of the slider before, back to the
+        /// file's (2026-10-23).
+        /// </summary>
+        private SavedTimingLine? velocityLineAt(double time)
+        {
+            var file = savedTimingLines!.Lines;
+            var forTheSounds = new HashSet<SavedTimingLine>();
+
+            for (int i = 1; i < file.Count; i++)
+            {
+                if (!file[i].Uninherited && Math.Abs(file[i].SliderVelocity - file[i - 1].SliderVelocity) < 0.0005)
+                    forTheSounds.Add(file[i]);
+            }
+
+            return savedTimingLines.Shown.Where(l => l.Time <= time && !forTheSounds.Contains(l)).Cast<SavedTimingLine?>().LastOrDefault();
         }
 
         protected override void Dispose(bool isDisposing)
