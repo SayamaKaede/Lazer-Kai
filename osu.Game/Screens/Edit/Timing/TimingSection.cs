@@ -34,9 +34,9 @@ namespace osu.Game.Screens.Edit.Timing
                 new TapTimingControl(),
                 timeSignature = new LabelledTimeSignature
                 {
-                    Label = "Time Signature"
+                    Label = EditorStrings.TimeSignature
                 },
-                omitBarLine = new LabelledSwitchButton { Label = "Skip Bar Line" },
+                omitBarLine = new LabelledSwitchButton { Label = EditorStrings.SkipBarLine },
             });
         }
 

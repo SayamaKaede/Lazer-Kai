@@ -860,6 +860,12 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:clone_to_current_time"] = @"+ 現在の時刻に複製",
             [$@"{editor_prefix}:use_current_time"] = @"現在の時刻を使う",
             [$@"{editor_prefix}:no_selection"] = @"選択なし",
+            [$@"{editor_prefix}:time_signature"] = @"拍子",
+            [$@"{editor_prefix}:skip_bar_line"] = @"小節線を省略",
+            [$@"{editor_prefix}:no_bar_line"] = @"小節線なし",
+            [$@"{editor_prefix}:scroll_speed"] = @"スクロール速度",
+            [$@"{editor_prefix}:locked"] = @"固定",
+            [$@"{editor_prefix}:multiple"] = @"（複数）",
             [$@"{editor_prefix}:status_from_the_last_save"] = @"最後に保存した譜面の値です。保存すると更新されます",
             [$@"{editor_setup_prefix}:sync_metadata_with_all_difficulties"] = @"メタデータをすべての難易度と同期",
             // the name stays as mappers say it, like Addition bank and New Combo

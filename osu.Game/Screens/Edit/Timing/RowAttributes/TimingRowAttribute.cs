@@ -8,6 +8,7 @@ using osu.Framework.Graphics;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Beatmaps.Timing;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Localisation;
 using osu.Game.Overlays;
 
 namespace osu.Game.Screens.Edit.Timing.RowAttributes
@@ -34,7 +35,7 @@ namespace osu.Game.Screens.Edit.Timing.RowAttributes
             Content.AddRange(new[]
             {
                 text = new AttributeText(Point),
-                omitBarLineBubble = new AttributeText(Point) { Text = "no barline" },
+                omitBarLineBubble = new AttributeText(Point) { Text = EditorStrings.NoBarLine },
             });
 
             Background.Colour = colourProvider.Background4;

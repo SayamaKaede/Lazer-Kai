@@ -16,6 +16,7 @@ using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osuTK;
 using osuTK.Graphics;
@@ -267,7 +268,7 @@ namespace osu.Game.Screens.Edit.Timing
                             text = new OsuSpriteText
                             {
                                 Colour = colours.GrayF,
-                                Text = "Locked",
+                                Text = EditorStrings.Locked,
                                 Margin = new MarginPadding(5),
                                 Shadow = false,
                                 Font = OsuFont.Default.With(size: 12, weight: FontWeight.SemiBold),

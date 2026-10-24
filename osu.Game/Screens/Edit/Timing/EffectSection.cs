@@ -6,6 +6,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Localisation;
 
 namespace osu.Game.Screens.Edit.Timing
 {
@@ -23,7 +24,7 @@ namespace osu.Game.Screens.Edit.Timing
                 kiai = new FormCheckBox { Caption = "Kiai Time" },
                 scrollSpeedSlider = new FormSliderBar<double>
                 {
-                    Caption = "Scroll Speed",
+                    Caption = EditorStrings.ScrollSpeed,
                     Current = new EffectControlPoint().ScrollSpeedBindable,
                     KeyboardStep = 0.1f,
                     TransferValueOnCommit = true,

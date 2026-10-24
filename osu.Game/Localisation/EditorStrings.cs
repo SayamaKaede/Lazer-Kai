@@ -1667,6 +1667,36 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString NoSelection => new TranslatableString(getKey(@"no_selection"), @"No selection");
 
+        /// <summary>
+        /// "Time Signature"
+        /// </summary>
+        public static LocalisableString TimeSignature => new TranslatableString(getKey(@"time_signature"), @"Time Signature");
+
+        /// <summary>
+        /// "Skip Bar Line"
+        /// </summary>
+        public static LocalisableString SkipBarLine => new TranslatableString(getKey(@"skip_bar_line"), @"Skip Bar Line");
+
+        /// <summary>
+        /// "no barline"
+        /// </summary>
+        public static LocalisableString NoBarLine => new TranslatableString(getKey(@"no_bar_line"), @"no barline");
+
+        /// <summary>
+        /// "Scroll Speed"
+        /// </summary>
+        public static LocalisableString ScrollSpeed => new TranslatableString(getKey(@"scroll_speed"), @"Scroll Speed");
+
+        /// <summary>
+        /// "Locked"
+        /// </summary>
+        public static LocalisableString Locked => new TranslatableString(getKey(@"locked"), @"Locked");
+
+        /// <summary>
+        /// "(multiple)"
+        /// </summary>
+        public static LocalisableString Multiple => new TranslatableString(getKey(@"multiple"), @"(multiple)");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }
