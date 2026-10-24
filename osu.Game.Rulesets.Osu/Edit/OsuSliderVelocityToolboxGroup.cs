@@ -254,14 +254,34 @@ namespace osu.Game.Rulesets.Osu.Edit
         /// hitsound difficulty puts many in: each turned the velocity chosen, or that of the slider before, back to the
         /// file's (2026-10-23).
         /// </summary>
+        /// <remarks>
+        /// A slider's own line, the one a save puts in at its start for its velocity, is passed over when comparing: once
+        /// saved it stands between the lines a hitsound difficulty put in and the line they were copied from, and each
+        /// of them then turned the velocity back to the one they were copied in with (2026-10-24).
+        /// </remarks>
         private SavedTimingLine? velocityLineAt(double time)
         {
             var file = savedTimingLines!.Lines;
             var forTheSounds = new HashSet<SavedTimingLine>();
+            // looked up once per line: this runs on every frame the playhead moves.
+            var sliderStarts = editorBeatmap.HitObjects.OfType<Slider>()
+                                            .Select(s => (Math.Floor(s.StartTime), Math.Round(s.SliderVelocityMultiplier, 3)))
+                                            .ToHashSet();
+
+            bool isSlidersOwn(SavedTimingLine line) =>
+                !line.Uninherited && sliderStarts.Contains((Math.Floor(line.Time), Math.Round(line.SliderVelocity, 3)));
 
             for (int i = 1; i < file.Count; i++)
             {
-                if (!file[i].Uninherited && Math.Abs(file[i].SliderVelocity - file[i - 1].SliderVelocity) < 0.0005)
+                if (file[i].Uninherited)
+                    continue;
+
+                int before = i - 1;
+
+                while (before > 0 && isSlidersOwn(file[before]))
+                    before--;
+
+                if (Math.Abs(file[i].SliderVelocity - file[before].SliderVelocity) < 0.0005)
                     forTheSounds.Add(file[i]);
             }
 

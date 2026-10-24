@@ -127,6 +127,25 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("1.4x", () => toolbox.SliderVelocity.Value, () => Is.EqualTo(1.4).Within(0.001));
         }
 
+        /// <summary>
+        /// The same once saved: the slider's line is in the file then, and the line for the sounds after it, still saying
+        /// the velocity it was copied in with, no longer says that of the file's line before it. Reported on 2026-10-24
+        /// with "always apply" on: the velocity went back to 1x past each line the hitsound difficulty put in.
+        /// </summary>
+        [Test]
+        public void TestALineForTheSoundsAloneLeavesThePlacedSlidersVelocityOnceSaved()
+        {
+            AddStep("a line at 33000 saying 2x, at another volume", () => addLine("33000,-50,4,2,0,80,0,0"));
+            AddStep("a 1.4x slider at 31000", () => EditorBeatmap.Add(slider(31000, 1.4)));
+
+            SaveEditor();
+            AddAssert("the slider's line in the file", () => savedLines.Lines.Any(l => l.Time == 31000 && System.Math.Abs(l.SliderVelocity - 1.4) < 0.001));
+
+            AddStep("to 34000, past the line for the sounds", () => clock.Seek(34000));
+            AddWaitStep("give it time", 5);
+            AddAssert("1.4x", () => toolbox.SliderVelocity.Value, () => Is.EqualTo(1.4).Within(0.001));
+        }
+
         [Test]
         public void TestTheLineASaveWillPutInIsShownAtOnce()
         {
