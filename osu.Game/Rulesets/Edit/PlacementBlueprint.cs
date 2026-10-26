@@ -3,6 +3,7 @@
 
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Game.Input.Bindings;
@@ -15,7 +16,7 @@ namespace osu.Game.Rulesets.Edit
     /// <summary>
     /// A blueprint which governs the placement of something.
     /// </summary>
-    public abstract partial class PlacementBlueprint : VisibilityContainer, IKeyBindingHandler<GlobalAction>
+    public abstract partial class PlacementBlueprint : VisibilityContainer, IKeyBindingHandler<GlobalAction>, IKeyBindingHandler<PlatformAction>
     {
         /// <summary>
         /// Whether the <see cref="HitObject"/> is currently mid-placement, but has not necessarily finished being placed.
@@ -95,6 +96,22 @@ namespace osu.Game.Rulesets.Edit
         }
 
         public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
+        {
+        }
+
+        /// <summary>
+        /// Undoing while something is half placed throws it away, as stable does, rather than undoing the change before it.
+        /// </summary>
+        public bool OnPressed(KeyBindingPressEvent<PlatformAction> e)
+        {
+            if (e.Action != PlatformAction.Undo || PlacementActive != PlacementState.Active)
+                return false;
+
+            EndPlacement(false);
+            return true;
+        }
+
+        public void OnReleased(KeyBindingReleaseEvent<PlatformAction> e)
         {
         }
 
