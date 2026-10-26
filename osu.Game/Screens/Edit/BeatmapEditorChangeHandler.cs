@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -63,7 +64,25 @@ namespace osu.Game.Screens.Edit
             var (previousBeatmap, _) = split(previousState);
             var (newBeatmap, newLines) = split(newState);
 
-            patcher.Patch(previousBeatmap, newBeatmap);
+            // As in stable, what undo or redo puts back stays selected. The patcher puts a changed object back as a new
+            // one, which would otherwise leave the selection empty.
+            var putBack = new List<HitObject>();
+            editorBeatmap.HitObjectAdded += putBack.Add;
+
+            try
+            {
+                patcher.Patch(previousBeatmap, newBeatmap);
+            }
+            finally
+            {
+                editorBeatmap.HitObjectAdded -= putBack.Add;
+            }
+
+            if (putBack.Count > 0)
+            {
+                editorBeatmap.SelectedHitObjects.Clear();
+                editorBeatmap.SelectedHitObjects.AddRange(putBack);
+            }
 
             if (timingLines == null || newLines == null)
                 return;

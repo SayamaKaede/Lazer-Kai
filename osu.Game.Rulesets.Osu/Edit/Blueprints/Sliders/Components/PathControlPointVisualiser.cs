@@ -269,6 +269,12 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
             {
                 case PlatformAction.Delete:
                     return DeleteSelected();
+
+                // undoing in the middle of a drag throws the drag away, the same as in the middle of placing something.
+                case PlatformAction.Undo when draggedControlPointIndex >= 0 && changeHandler is EditorChangeHandler handler:
+                    draggedControlPointIndex = -1;
+                    handler.DiscardChange();
+                    return true;
             }
 
             return false;
@@ -497,6 +503,10 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
 
         public void DragInProgress(DragEvent e)
         {
+            // the drag was thrown away by undo.
+            if (draggedControlPointIndex < 0)
+                return;
+
             Vector2[] oldControlPoints = hitObject.Path.ControlPoints.Select(cp => cp.Position).ToArray();
             Vector2 oldPosition = hitObject.Position;
             double oldStartTime = hitObject.StartTime;
@@ -605,6 +615,10 @@ namespace osu.Game.Rulesets.Osu.Edit.Blueprints.Sliders.Components
 
         public void DragEnded()
         {
+            // the drag was thrown away by undo, which ended the change already.
+            if (draggedControlPointIndex < 0)
+                return;
+
             changeHandler?.EndChange();
             draggedControlPointIndex = -1;
         }

@@ -277,6 +277,14 @@ namespace osu.Game.Screens.Edit.Compose.Components
                 case PlatformAction.SelectAll:
                     SelectAll();
                     return true;
+
+                // undoing in the middle of a drag throws the drag away, the same as in the middle of placing something.
+                case PlatformAction.Undo when isDraggingBlueprint && changeHandler is EditorChangeHandler handler:
+                    isDraggingBlueprint = false;
+                    finishSelectionMovement();
+                    DragOperationCompleted();
+                    handler.DiscardChange();
+                    return true;
             }
 
             return false;

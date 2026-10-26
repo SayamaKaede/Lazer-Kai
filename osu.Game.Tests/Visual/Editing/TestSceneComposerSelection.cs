@@ -655,6 +655,70 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("one hitobject in beatmap", () => EditorBeatmap.HitObjects.Count, () => Is.EqualTo(1));
         }
 
+        /// <summary>
+        /// As in stable, an object put back by undo or redo stays selected, rather than the selection going with the
+        /// copy the change replaced.
+        /// </summary>
+        [Test]
+        public void TestUndoAndRedoKeepWhatTheyPutBackSelected()
+        {
+            AddStep("add hitobject", () => EditorBeatmap.Add(new HitCircle { StartTime = 0, Position = new Vector2(200, 200) }));
+
+            moveMouseToObject(() => EditorBeatmap.HitObjects[0]);
+            AddStep("drag it", () =>
+            {
+                InputManager.PressButton(MouseButton.Left);
+                InputManager.MoveMouseTo(InputManager.CurrentState.Mouse.Position + new Vector2(100, 0));
+            });
+            AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
+            AddAssert("it moved", () => ((HitCircle)EditorBeatmap.HitObjects[0]).Position, () => Is.Not.EqualTo(new Vector2(200, 200)));
+
+            AddStep("press ctrl+z", () => pressWithControl(Key.Z));
+            AddAssert("it is back", () => ((HitCircle)EditorBeatmap.HitObjects[0]).Position, () => Is.EqualTo(new Vector2(200, 200)));
+            AddAssert("and still selected", () => EditorBeatmap.SelectedHitObjects, () => Is.EquivalentTo(EditorBeatmap.HitObjects));
+
+            AddStep("press ctrl+y", () => pressWithControl(Key.Y));
+            AddAssert("it moved again", () => ((HitCircle)EditorBeatmap.HitObjects[0]).Position, () => Is.Not.EqualTo(new Vector2(200, 200)));
+            AddAssert("and is still selected", () => EditorBeatmap.SelectedHitObjects, () => Is.EquivalentTo(EditorBeatmap.HitObjects));
+        }
+
+        /// <summary>
+        /// Undoing in the middle of a drag throws the drag away, rather than doing nothing until the button is let go.
+        /// The change before it is left alone, the same as undoing in the middle of placing something.
+        /// </summary>
+        [Test]
+        public void TestUndoInTheMiddleOfADragPutsTheObjectBack()
+        {
+            AddStep("add hitobject", () => EditorBeatmap.Add(new HitCircle { StartTime = 0, Position = new Vector2(200, 200) }));
+            AddStep("add another", () => EditorBeatmap.Add(new HitCircle { StartTime = 1000, Position = new Vector2(300, 300) }));
+
+            moveMouseToObject(() => EditorBeatmap.HitObjects[0]);
+            AddStep("start dragging it", () =>
+            {
+                InputManager.PressButton(MouseButton.Left);
+                InputManager.MoveMouseTo(InputManager.CurrentState.Mouse.Position + new Vector2(100, 0));
+            });
+            AddAssert("it is moving", () => ((HitCircle)EditorBeatmap.HitObjects[0]).Position, () => Is.Not.EqualTo(new Vector2(200, 200)));
+
+            AddStep("press ctrl+z", () => pressWithControl(Key.Z));
+            AddAssert("it is back", () => ((HitCircle)EditorBeatmap.HitObjects[0]).Position, () => Is.EqualTo(new Vector2(200, 200)));
+            AddAssert("the other is still there", () => EditorBeatmap.HitObjects.Count, () => Is.EqualTo(2));
+
+            AddStep("keep moving the mouse", () => InputManager.MoveMouseTo(InputManager.CurrentState.Mouse.Position + new Vector2(0, 80)));
+            AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
+            AddAssert("it stays back", () => ((HitCircle)EditorBeatmap.HitObjects[0]).Position, () => Is.EqualTo(new Vector2(200, 200)));
+
+            AddStep("press ctrl+z", () => pressWithControl(Key.Z));
+            AddAssert("the drag left nothing to undo: the other goes", () => EditorBeatmap.HitObjects.Count, () => Is.EqualTo(1));
+        }
+
+        private void pressWithControl(Key key)
+        {
+            InputManager.PressKey(Key.ControlLeft);
+            InputManager.Key(key);
+            InputManager.ReleaseKey(Key.ControlLeft);
+        }
+
         [Test]
         public void TestShiftModifierMaintainsAspectRatio()
         {

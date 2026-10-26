@@ -87,6 +87,37 @@ namespace osu.Game.Screens.Edit
             }
         }
 
+        /// <summary>
+        /// Ends a change begun with <see cref="TransactionalCommitComponent.BeginChange"/> and puts back the state from
+        /// before it, so that it leaves nothing to undo. For undoing in the middle of a drag.
+        /// </summary>
+        public void DiscardChange()
+        {
+            ensureStateSaved();
+
+            // through the end of the change as well: what was put back can write a little differently from the saved
+            // state (a green line made up from a sample), and must not be taken for a new change, as with an undo.
+            isRestoring = true;
+
+            try
+            {
+                using (var stream = new MemoryStream())
+                {
+                    WriteCurrentStateToStream(stream);
+                    byte[] current = stream.ToArray();
+
+                    if (!current.SequenceEqual(savedStates[currentState]))
+                        ApplyStateChange(current, savedStates[currentState]);
+                }
+
+                EndChange();
+            }
+            finally
+            {
+                isRestoring = false;
+            }
+        }
+
         public void RestoreState(int direction)
         {
             if (TransactionActive)
