@@ -1205,6 +1205,15 @@ namespace osu.Game.Screens.Edit
                 return false;
             }
 
+            // what the green line panel has pending would be written while the state saved alongside it is the one
+            // from before -- cancelling it afterwards left the file with lines the editor no longer showed, and nothing
+            // unsaved to ask about on the way out (2026-10-27). Stopped as moving the whole beatmap is.
+            if (greenLinePanel?.Pending == true)
+            {
+                notifications?.Post(new SimpleNotification { Text = LazerKaiGreenLineStrings.WholeOffsetPending });
+                return false;
+            }
+
             try
             {
                 if (stableFileKeeper != null)

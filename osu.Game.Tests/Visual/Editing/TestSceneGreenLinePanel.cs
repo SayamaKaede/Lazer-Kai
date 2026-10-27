@@ -217,6 +217,36 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("the slider is as it was", () => slider(2274).SliderVelocityMultiplier, () => Is.EqualTo(1).Within(0.001));
         }
 
+        /// <summary>
+        /// Saving while something is pending, then cancelling it, used to leave the cancelled line in the file while the
+        /// editor showed the lines without it -- and with nothing unsaved to ask about on the way out (2026-10-27).
+        /// </summary>
+        [Test]
+        public void TestSavingWhilePendingLeavesTheFileAsTheEditorShows()
+        {
+            openAt(2109);
+            AddStep("turn it down to 30", () => panel.Volume.Value = 30);
+            AddAssert("it is pending", () => panel.Pending);
+
+            SaveEditor();
+            AddWaitStep("let a save go through", 10);
+
+            AddStep("cancel", () => panel.Cancel());
+
+            AddAssert("the file has the lines the editor shows", () => section(savedText(), "TimingPoints"), () => Is.EqualTo(editorLines()));
+        }
+
+        [Test]
+        public void TestSavingAfterConfirmingStillSaves()
+        {
+            openAt(2109);
+            AddStep("turn it down to 30", () => panel.Volume.Value = 30);
+            AddStep("confirm", () => panel.Confirm());
+            saveAndWait();
+
+            AddAssert("the file has the line", () => section(savedText(), "TimingPoints"), () => Is.EqualTo(editorLines()));
+        }
+
         [Test]
         public void TestWhatIsConfirmedIsOneStepToUndo()
         {
