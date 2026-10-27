@@ -94,6 +94,19 @@ namespace osu.Game.Tests.Visual.Editing
         }
 
         [Test]
+        public void TestRenamingTheDifficultyIsSaved()
+        {
+            AddStep("rename the difficulty", () => EditorBeatmap.BeatmapInfo.DifficultyName = "Renamed");
+
+            SaveEditor();
+            AddUntilStep("saved", () => EditorBeatmap.BeatmapInfo.MD5Hash, () => Is.Not.EqualTo(new MemoryStream(originalFile()).ComputeMD5Hash()));
+
+            AddAssert("the database has the new name", () => Game.BeatmapManager.QueryBeatmap(b => b.ID == imported.ID)!.DifficultyName, () => Is.EqualTo("Renamed"));
+            AddAssert("the file has the new name", () => Game.BeatmapManager.GetWorkingBeatmap(Game.BeatmapManager.QueryBeatmap(b => b.ID == imported.ID), true).Beatmap.BeatmapInfo.DifficultyName,
+                () => Is.EqualTo("Renamed"));
+        }
+
+        [Test]
         public void TestExportingForStableWithoutEditingGivesTheFileAsItWas()
         {
             AddAssert("exported file is the original, byte for byte", () => exportedFile(), () => Is.EqualTo(originalFile()));

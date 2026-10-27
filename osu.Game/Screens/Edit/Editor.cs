@@ -1268,6 +1268,12 @@ namespace osu.Game.Screens.Edit
         /// <returns>Whether it saved: a save that cannot stay in stable's format asks first, and saves nothing yet.</returns>
         private bool saveKeepingStableFile()
         {
+            // the metadata is edited on the editor's beatmap info, and the playable beatmap only takes it on in the save
+            // itself: written before that, a renamed difficulty came out as the file already was, the save found nothing
+            // to write, and the name went back on reopening (2026-10-27). Done as the save does it, difficulty first.
+            editorBeatmap.PlayableBeatmap.Difficulty.CopyTo(editorBeatmap.BeatmapInfo.Difficulty);
+            editorBeatmap.PlayableBeatmap.BeatmapInfo = editorBeatmap.BeatmapInfo;
+
             var lines = savedTimingLines.Edited ? savedTimingLines.Lines.Select(l => l.Raw).ToArray() : null;
             byte[] file = stableFileKeeper.Write(editorBeatmap.PlayableBeatmap, editorBeatmap.BeatmapSkin, editorBeatmap.Storyboard, lines, out string current);
 
