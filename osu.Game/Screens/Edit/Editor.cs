@@ -724,6 +724,8 @@ namespace osu.Game.Screens.Edit
                                             new OsuMenuItemSpacer(),
                                             removeUnneededGreenLinesMenuItem = new EditorMenuItem(LazerKaiGreenLineStrings.RemoveUnneeded, MenuItemType.Destructive,
                                                 ConfirmRemoveUnneededGreenLines),
+                                            removeGreenLinesUnusedHereMenuItem = new EditorMenuItem(LazerKaiGreenLineStrings.RemoveUnusedHere, MenuItemType.Destructive,
+                                                ConfirmRemoveGreenLinesUnusedHere),
                                         }
                                     },
                                     new MenuItem(CommonStrings.MenuBarView)
@@ -943,7 +945,12 @@ namespace osu.Game.Screens.Edit
 
             // only where the lines are the file's to keep: in lazer's format they are made up again on every save.
             keptStableVersion.BindValueChanged(v =>
-                removeUnneededGreenLinesMenuItem.Action.Disabled = v.NewValue == null || editorBeatmap.BeatmapInfo.Ruleset.OnlineID != 0, true);
+            {
+                removeUnneededGreenLinesMenuItem.Action.Disabled = v.NewValue == null || editorBeatmap.BeatmapInfo.Ruleset.OnlineID != 0;
+
+                // osu! alone: elsewhere a velocity is the scroll speed, read with or without a slider under it.
+                removeGreenLinesUnusedHereMenuItem.Action.Disabled = removeUnneededGreenLinesMenuItem.Action.Disabled;
+            }, true);
 
             stableCompatibility = config.GetBindable<bool>(OsuSetting.StableCompatibility);
             stableCompatibility.BindValueChanged(_ => updateConvertToStableFormat());
@@ -2153,6 +2160,25 @@ namespace osu.Game.Screens.Edit
                     Text = removed > 0 ? LazerKaiGreenLineStrings.Removed(removed) : LazerKaiGreenLineStrings.NoneRemoved,
                 });
             }));
+        }
+
+        private EditorMenuItem removeGreenLinesUnusedHereMenuItem;
+
+        /// <summary>
+        /// Asks whether to take out the green lines this difficulty does not use, and does, saying how many went and how
+        /// many had their velocity set back (2026-10-27).
+        /// </summary>
+        internal void ConfirmRemoveGreenLinesUnusedHere()
+        {
+            dialogOverlay.Push(new RemoveUnneededGreenLinesDialog(() =>
+            {
+                var (removed, setBack) = GreenLineCleanup.RemoveUnusedHere(editorBeatmap, savedTimingLines);
+
+                notifications?.Post(new SimpleNotification
+                {
+                    Text = removed > 0 || setBack > 0 ? LazerKaiGreenLineStrings.RemovedUnusedHere(removed, setBack) : LazerKaiGreenLineStrings.NoneUnusedHere,
+                });
+            }, LazerKaiGreenLineStrings.RemoveUnusedHereHeader, LazerKaiGreenLineStrings.RemoveUnusedHereBody));
         }
 
         internal EditorMenuItem ConvertToStableFormatMenuItem { get; private set; }

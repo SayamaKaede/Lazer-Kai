@@ -122,6 +122,33 @@ namespace osu.Game.Localisation
         public static LocalisableString NoneRemoved => new TranslatableString(getKey(@"none_removed"), @"There were no unneeded green lines.");
 
         /// <summary>
+        /// "Remove green lines this difficulty does not use"
+        /// </summary>
+        public static LocalisableString RemoveUnusedHere => new TranslatableString(getKey(@"remove_unused_here"), @"Remove green lines this difficulty does not use");
+
+        /// <summary>
+        /// "Remove the green lines this difficulty does not use?"
+        /// </summary>
+        public static LocalisableString RemoveUnusedHereHeader => new TranslatableString(getKey(@"remove_unused_here_header"), @"Remove the green lines this difficulty does not use?");
+
+        /// <summary>
+        /// "Green lines that change nothing this difficulty plays are removed, including ones kept for the hitsounds of other difficulties: a volume or sampleset no note sounds before the next line, and a velocity no slider starts under. Under a slider or spinner, a change of volume stays. A line that stays takes the velocity of the line before it when no slider starts under it. It can be undone."
+        /// </summary>
+        public static LocalisableString RemoveUnusedHereBody => new TranslatableString(getKey(@"remove_unused_here_body"),
+            @"Green lines that change nothing this difficulty plays are removed, including ones kept for the hitsounds of other difficulties: a volume or sampleset no note sounds before the next line, and a velocity no slider starts under. Under a slider or spinner, a change of volume stays. A line that stays takes the velocity of the line before it when no slider starts under it. It can be undone.");
+
+        /// <summary>
+        /// "Removed {0} green lines and set the velocity of {1} back to the line before."
+        /// </summary>
+        public static LocalisableString RemovedUnusedHere(int removed, int setBack) => new TranslatableString(getKey(@"removed_unused_here"),
+            @"Removed {0} green lines and set the velocity of {1} back to the line before.", removed, setBack);
+
+        /// <summary>
+        /// "There were no green lines this difficulty does not use."
+        /// </summary>
+        public static LocalisableString NoneUnusedHere => new TranslatableString(getKey(@"none_unused_here"), @"There were no green lines this difficulty does not use.");
+
+        /// <summary>
         /// "All"
         /// </summary>
         public static LocalisableString FilterAll => new TranslatableString(getKey(@"filter_all"), @"All");

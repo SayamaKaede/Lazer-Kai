@@ -162,6 +162,79 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("and nothing else changed", () => timingLines.Lines.Count, () => Is.EqualTo(before + 2));
         }
 
+        /// <summary>
+        /// Taken out as unused in this difficulty, a line nothing here reads goes, though it may be kept for the sounds of
+        /// another difficulty (2026-10-27). One turning kiai off stays, and red lines do.
+        /// </summary>
+        [Test]
+        public void TestALineNothingReadsGoesAsUnusedHere()
+        {
+            addLine("130000,-100,4,2,0,20,0,0");
+            cleanUpUnusedHere();
+
+            AddAssert("it is gone", () => editorLines(), () => Has.None.StartsWith("130000,"));
+            AddAssert("the kiai line stays", () => editorLines(), () => Does.Contain("74719,-100,4,2,0,70,0,0"));
+            AddAssert("every red line is there", () => timingLines.Lines.Count(l => l.Uninherited), () => Is.EqualTo(4));
+        }
+
+        /// <summary>
+        /// A volume under a spinner or a slider is heard through it, so a line changing it there stays.
+        /// </summary>
+        [Test]
+        public void TestAVolumeUnderASpinnerStaysAsUsedHere()
+        {
+            cleanUpUnusedHere();
+
+            AddAssert("the line under the spinner stays", () => editorLines(), () => Does.Contain("120296,-100,4,2,0,60,0,0"));
+        }
+
+        /// <summary>
+        /// A sampleset under a slider, with nothing sounding before the next line, changes nothing, so the line goes; and
+        /// the one after it, now saying what the red line does, goes too.
+        /// </summary>
+        [Test]
+        public void TestASampleSetUnderASliderGoesAsUnusedHere()
+        {
+            addLine("2300,-100,4,1,0,60,0,0");
+            addLine("2350,-100,4,2,0,60,0,0");
+            cleanUpUnusedHere();
+
+            AddAssert("both are gone", () => editorLines(), () => Has.None.StartsWith("2300,").And.None.StartsWith("2350,"));
+        }
+
+        /// <summary>
+        /// A line kept for its sounds, with no slider starting under it, takes the velocity of the line before it: one
+        /// copied from a hitsound difficulty would otherwise show the old velocity among the new ones (2026-10-27).
+        /// </summary>
+        [Test]
+        public void TestAVelocityNoSliderReadsIsSetBack()
+        {
+            addLine("2109,-50,4,2,0,30,0,0");
+            addLine("2200,-100,4,2,0,60,0,0");
+            cleanUpUnusedHere();
+
+            AddAssert("the line is kept, with the red line's velocity", () => editorLines(), () => Does.Contain("2109,-100,4,2,0,30,0,0").And.None.StartsWith("2109,-50"));
+            AddAssert("the line after it is kept", () => editorLines(), () => Does.Contain("2200,-100,4,2,0,60,0,0"));
+        }
+
+        [Test]
+        public void TestUnusedHereIsSaidAndOneStepToUndo()
+        {
+            string[] before = null!;
+
+            addLine("130000,-100,4,2,0,20,0,0");
+            addLine("2109,-50,4,2,0,30,0,0");
+            addLine("2200,-100,4,2,0,60,0,0");
+            AddStep("note the lines", () => before = editorLines());
+            cleanUpUnusedHere();
+
+            AddUntilStep("it says what was done", () => Game.ChildrenOfType<SimpleNotification>().Any(n => n.Text.ToString().StartsWith("Removed ", System.StringComparison.Ordinal)
+                                                                                                       && n.Text.ToString().Contains("set the velocity of 1 back")));
+
+            AddStep("undo", () => ((EditorChangeHandler)Editor.Dependencies.Get(typeof(IEditorChangeHandler))).RestoreState(-1));
+            AddAssert("the lines are as they were", () => editorLines(), () => Is.EqualTo(before));
+        }
+
         private SavedTimingLines timingLines => Editor.ChildrenOfType<SavedTimingLines>().Single();
 
         private string[] editorLines() => timingLines.Lines.Select(l => l.Raw).ToArray();
@@ -193,6 +266,16 @@ namespace osu.Game.Tests.Visual.Editing
         private void cleanUp()
         {
             AddStep("ask to remove the unneeded lines", () => Editor.ConfirmRemoveUnneededGreenLines());
+            AddUntilStep("the dialog is up", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog is DangerousActionDialog);
+            AddStep("confirm", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog!.PerformAction<PopupDialogDangerousButton>());
+        }
+
+        /// <summary>
+        /// Asks from the editor for the lines this difficulty does not use to be taken out, and confirms it.
+        /// </summary>
+        private void cleanUpUnusedHere()
+        {
+            AddStep("ask to remove the lines unused here", () => Editor.ConfirmRemoveGreenLinesUnusedHere());
             AddUntilStep("the dialog is up", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog is DangerousActionDialog);
             AddStep("confirm", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog!.PerformAction<PopupDialogDangerousButton>());
         }
