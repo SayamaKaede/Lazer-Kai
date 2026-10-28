@@ -320,6 +320,11 @@ namespace osu.Game.Screens.Edit
         [CanBeNull] // Should be non-null once it can support custom rulesets.
         private EditorChangeHandler changeHandler;
 
+        /// <summary>
+        /// What is done here written down to a file, when <see cref="OsuSetting.EditorOperationLog"/> is on.
+        /// </summary>
+        internal EditorOperationLog OperationLog { get; private set; }
+
         private EditorAsmr asmr;
 
         private DependencyContainer dependencies;
@@ -543,6 +548,10 @@ namespace osu.Game.Screens.Edit
             {
                 changeHandler = new BeatmapEditorChangeHandler(editorBeatmap, savedTimingLines);
                 dependencies.CacheAs<IEditorChangeHandler>(changeHandler);
+
+                // for working on this game, and never in a distributed build, where the setting is not offered (2026-10-28).
+                if (config.Get<bool>(OsuSetting.EditorOperationLog))
+                    AddInternal(OperationLog = new EditorOperationLog(editorBeatmap, changeHandler, clock));
             }
 
             beatDivisor.SetArbitraryDivisor(editorBeatmap.BeatmapInfo.BeatDivisor);

@@ -376,6 +376,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.EditorSliderEndDragMarkerOpacity, 1f, 0.1f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorDistanceSnapGridThickness, 1f, 0.25f, 1f, 0.01f);
             SetDefault(OsuSetting.EditorDistanceSnapGridOpacity, 1f, 0.1f, 1f, 0.01f);
+            SetDefault(OsuSetting.EditorOperationLog, false);
 
             // the hitsound screen's own: what is placed shows faintly through it, and what is selected on the timeline is
             // what it changes, so its outline can be made to stand out there more than everywhere else.
@@ -1444,5 +1445,11 @@ namespace osu.Game.Configuration
         /// How opaque the rings drawn while distance snap is on are (2026-10-22).
         /// </summary>
         EditorDistanceSnapGridOpacity,
+
+        /// <summary>
+        /// Whether the editor writes down every change and input to a file in the game's folder, for working on this
+        /// game (2026-10-28). Offered only in builds that are not distributed.
+        /// </summary>
+        EditorOperationLog,
     }
 }

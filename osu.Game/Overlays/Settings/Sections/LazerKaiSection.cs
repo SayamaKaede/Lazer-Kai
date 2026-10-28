@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using osu.Framework;
+using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
@@ -144,6 +145,14 @@ namespace osu.Game.Overlays.Settings.Sections
                 new SongSelectSettings(),
                 new ExternalToolSettings(),
             };
+        }
+
+        [BackgroundDependencyLoader]
+        private void load(OsuGameBase? game)
+        {
+            // for working on this game: never in a build that is distributed (2026-10-28).
+            if (game == null || !DevelopmentSettings.IsDistributedVersion(game.Version))
+                Add(new DevelopmentSettings());
         }
     }
 }

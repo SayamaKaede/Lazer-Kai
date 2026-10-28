@@ -46,6 +46,16 @@ namespace osu.Game.Screens.Edit
 
         public const int MAX_SAVED_STATES = 50;
 
+        /// <summary>
+        /// The state now shown, as last saved; null before the first.
+        /// </summary>
+        public byte[]? CurrentState => currentState < 0 ? null : savedStates[currentState];
+
+        /// <summary>
+        /// How the last state came about: 0 for a change, -1 for an undo, 1 for a redo.
+        /// </summary>
+        public int LastStep { get; private set; }
+
         public override void BeginChange()
         {
             ensureStateSaved();
@@ -81,6 +91,7 @@ namespace osu.Game.Screens.Edit
                 savedStates.Add(newState);
 
                 currentState = savedStates.Count - 1;
+                LastStep = 0;
 
                 OnStateChange?.Invoke();
                 updateBindables();
@@ -134,6 +145,7 @@ namespace osu.Game.Screens.Edit
 
             ApplyStateChange(savedStates[currentState], savedStates[newState]);
 
+            LastStep = newState > currentState ? 1 : -1;
             currentState = newState;
 
             isRestoring = false;

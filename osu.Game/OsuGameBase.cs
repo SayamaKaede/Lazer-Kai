@@ -442,6 +442,10 @@ namespace osu.Game
             });
 
             base.Content.Add(new TouchInputInterceptor());
+
+            OperationInputWatcher operationInputWatcher;
+            dependencies.Cache(operationInputWatcher = new OperationInputWatcher());
+            base.Content.Add(operationInputWatcher);
             base.Content.Add(hitErrorTracker);
 
             KeyBindingStore = new RealmKeyBindingStore(realm, keyCombinationProvider);

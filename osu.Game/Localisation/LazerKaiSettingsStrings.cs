@@ -485,6 +485,27 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString EditorAsmrVolume => new TranslatableString(getKey(@"editor_asmr_volume"), @"Volume");
 
+        /// <summary>
+        /// "Development"
+        /// </summary>
+        public static LocalisableString DevelopmentHeader => new TranslatableString(getKey(@"development_header"), @"Development");
+
+        /// <summary>
+        /// "Write down editor operations"
+        /// </summary>
+        public static LocalisableString EditorOperationLog => new TranslatableString(getKey(@"editor_operation_log"), @"Write down editor operations");
+
+        /// <summary>
+        /// "Writes every change, click, key and scroll in the editor to a file, for working on Lazer-Kai. Takes effect the next time a difficulty is opened. Not in distributed builds."
+        /// </summary>
+        public static LocalisableString EditorOperationLogDescription => new TranslatableString(getKey(@"editor_operation_log_description"),
+            @"Writes every change, click, key and scroll in the editor to a file, for working on Lazer-Kai. Takes effect the next time a difficulty is opened. Not in distributed builds.");
+
+        /// <summary>
+        /// "Open the operation logs"
+        /// </summary>
+        public static LocalisableString OpenOperationLogs => new TranslatableString(getKey(@"open_operation_logs"), @"Open the operation logs");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }
