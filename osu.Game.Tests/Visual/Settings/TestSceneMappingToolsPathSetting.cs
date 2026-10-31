@@ -4,8 +4,10 @@
 using System;
 using System.Linq;
 using NUnit.Framework;
+using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Testing;
+using osu.Game.Overlays;
 using osu.Game.Overlays.Settings;
 using osu.Game.Overlays.Settings.Sections.LazerKai;
 using osu.Game.Screens.Edit;
@@ -20,6 +22,10 @@ namespace osu.Game.Tests.Visual.Settings
     {
         private MappingToolsPathTextBox setting = null!;
         private ExternalToolSettings subsection = null!;
+
+        // the line under each of this fork's subsection headers takes its colour from here (2026-09-05).
+        [Cached]
+        private readonly OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Purple);
 
         [SetUpSteps]
         public void SetUpSteps()
