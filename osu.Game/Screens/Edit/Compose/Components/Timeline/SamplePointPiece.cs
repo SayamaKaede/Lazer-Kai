@@ -322,6 +322,11 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
         public partial class SampleEditPopover : OsuPopover
         {
+            /// <summary>
+            /// What a bank's dropdown shows when the objects it is for are on different banks. It is not a bank.
+            /// </summary>
+            private const string multiple_banks = "(multiple)";
+
             private readonly HitObject hitObject;
 
             private FormDropdown<string> bank = null!;
@@ -472,7 +477,9 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 updatePrimaryBankState();
                 bank.Current.BindValueChanged(val =>
                 {
-                    if (string.IsNullOrEmpty(val.NewValue))
+                    // the dropdown is set to it when the banks come to differ, which was then written onto every sound
+                    // as a bank of that name, and they no longer played.
+                    if (string.IsNullOrEmpty(val.NewValue) || val.NewValue == multiple_banks)
                         return;
 
                     setBank(val.NewValue);
@@ -482,7 +489,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 updateAdditionBankState();
                 additionBank.Current.BindValueChanged(val =>
                 {
-                    if (string.IsNullOrEmpty(val.NewValue))
+                    if (string.IsNullOrEmpty(val.NewValue) || val.NewValue == multiple_banks)
                         return;
 
                     setAdditionBank(val.NewValue);
@@ -579,13 +586,13 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             private void updatePrimaryBankState()
             {
                 string? commonBank = getCommonBank();
-                bank.Current.Value = !string.IsNullOrEmpty(commonBank) ? commonBank : "(multiple)";
+                bank.Current.Value = !string.IsNullOrEmpty(commonBank) ? commonBank : multiple_banks;
             }
 
             private void updateAdditionBankState()
             {
                 string? commonAdditionBank = getCommonAdditionBank();
-                additionBank.Current.Value = !string.IsNullOrEmpty(commonAdditionBank) ? commonAdditionBank : "(multiple)";
+                additionBank.Current.Value = !string.IsNullOrEmpty(commonAdditionBank) ? commonAdditionBank : multiple_banks;
 
                 bool anyAdditions = allRelevantSamples.Any(o => o.samples.Any(s => s.Name != HitSampleInfo.HIT_NORMAL));
                 if (anyAdditions)

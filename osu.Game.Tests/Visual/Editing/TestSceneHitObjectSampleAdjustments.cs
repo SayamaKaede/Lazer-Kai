@@ -288,6 +288,30 @@ namespace osu.Game.Tests.Visual.Editing
             samplePopoverHasSingleBank(HitSampleInfo.BANK_NORMAL);
         }
 
+        /// <summary>
+        /// One of two selected objects has an addition and the other has none, on a different bank. Adding a sound to
+        /// both leaves their additions on banks that differ, which the popover shows as "(multiple)": that is only
+        /// what is shown, and is not written onto the additions as a bank (2026-10-30).
+        /// </summary>
+        [Test]
+        public void TestAddingASoundToObjectsWhoseAdditionBanksEndUpDifferent()
+        {
+            AddStep("give the first a drum clap", () =>
+            {
+                var first = EditorBeatmap.HitObjects[0];
+                first.Samples.Add(new HitSampleInfo(HitSampleInfo.HIT_CLAP, HitSampleInfo.BANK_DRUM, volume: 80, editorAutoBank: false));
+                EditorBeatmap.Update(first);
+            });
+            AddStep("select both objects", () => EditorBeatmap.SelectedHitObjects.AddRange(EditorBeatmap.HitObjects));
+            clickSamplePiece(0);
+
+            toggleAdditionViaPopover(0);
+
+            hitObjectHasSamples(1, HitSampleInfo.HIT_NORMAL, HitSampleInfo.HIT_WHISTLE);
+            hitObjectHasSampleAdditionBank(0, HitSampleInfo.BANK_DRUM);
+            hitObjectHasSampleAdditionBank(1, HitSampleInfo.BANK_SOFT);
+        }
+
         [Test]
         public void TestPopoverAddSampleAddition()
         {
