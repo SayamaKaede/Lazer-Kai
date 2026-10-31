@@ -196,13 +196,18 @@ namespace osu.Game.Screens.Edit.Setup
                 {
                     working.BeatmapInfo.Metadata.AudioFile = name.AsNonNull();
 
-                    if (!string.IsNullOrWhiteSpace(artist))
+                    // the tags only fill in what nobody has written yet. Over a written artist they lost what the mapper
+                    // typed, and a Hangul-only tag left no romanised artist at all (2026-11-01).
+                    bool artistWritten = !string.IsNullOrWhiteSpace(working.BeatmapInfo.Metadata.Artist) || !string.IsNullOrWhiteSpace(working.BeatmapInfo.Metadata.ArtistUnicode);
+                    bool titleWritten = !string.IsNullOrWhiteSpace(working.BeatmapInfo.Metadata.Title) || !string.IsNullOrWhiteSpace(working.BeatmapInfo.Metadata.TitleUnicode);
+
+                    if (!artistWritten && !string.IsNullOrWhiteSpace(artist))
                     {
                         working.BeatmapInfo.Metadata.ArtistUnicode = artist;
                         working.BeatmapInfo.Metadata.Artist = MetadataUtils.StripNonRomanisedCharacters(working.BeatmapInfo.Metadata.ArtistUnicode);
                     }
 
-                    if (!string.IsNullOrEmpty(title))
+                    if (!titleWritten && !string.IsNullOrEmpty(title))
                     {
                         working.BeatmapInfo.Metadata.TitleUnicode = title;
                         working.BeatmapInfo.Metadata.Title = MetadataUtils.StripNonRomanisedCharacters(working.BeatmapInfo.Metadata.TitleUnicode);

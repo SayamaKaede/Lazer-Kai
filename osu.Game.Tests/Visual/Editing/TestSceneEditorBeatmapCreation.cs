@@ -123,6 +123,53 @@ namespace osu.Game.Tests.Visual.Editing
             AddUntilStep("wait for track playing", () => EditorClock.IsRunning);
         }
 
+        /// <summary>
+        /// A new song's tags fill in an artist and title nobody has typed yet, as they always have.
+        /// </summary>
+        [Test]
+        public void TestChangingAudioFillsInAnEmptyArtistAndTitle()
+        {
+            AddStep("enter setup mode", () => Editor.Mode.Value = EditorScreenMode.SongSetup);
+            AddUntilStep("wait for load", () => Editor.ChildrenOfType<SetupScreen>().Any());
+
+            AddStep("empty the artist and title", () =>
+            {
+                var metadata = Beatmap.Value.BeatmapInfo.Metadata;
+                metadata.Artist = metadata.ArtistUnicode = metadata.Title = metadata.TitleUnicode = string.Empty;
+            });
+
+            AddAssert("set audio", () => setAudio(applyToAllDifficulties: true, expected: "audio.mp3"));
+
+            AddAssert("the artist is filled in", () => Beatmap.Value.BeatmapInfo.Metadata.ArtistUnicode, () => Is.Not.Empty);
+            AddAssert("and the title", () => Beatmap.Value.BeatmapInfo.Metadata.TitleUnicode, () => Is.Not.Empty);
+        }
+
+        /// <summary>
+        /// Swapping the song of a beatmap whose artist and title are already written leaves them as they are. The tags
+        /// wrote over them, and an artist written in Hangul alone came out with no romanised artist at all (2026-11-01).
+        /// </summary>
+        [Test]
+        public void TestChangingAudioKeepsAnArtistAndTitleAlreadyWritten()
+        {
+            AddStep("enter setup mode", () => Editor.Mode.Value = EditorScreenMode.SongSetup);
+            AddUntilStep("wait for load", () => Editor.ChildrenOfType<SetupScreen>().Any());
+
+            AddStep("write an artist and title", () =>
+            {
+                var metadata = Beatmap.Value.BeatmapInfo.Metadata;
+                metadata.Artist = @"S.I.D-Sound";
+                metadata.ArtistUnicode = @"시드 사운드";
+                metadata.Title = metadata.TitleUnicode = @"Prayer";
+            });
+
+            AddAssert("set audio", () => setAudio(applyToAllDifficulties: true, expected: "audio.mp3"));
+
+            AddAssert("the artist is kept", () => Beatmap.Value.BeatmapInfo.Metadata.Artist, () => Is.EqualTo(@"S.I.D-Sound"));
+            AddAssert("and its unicode form", () => Beatmap.Value.BeatmapInfo.Metadata.ArtistUnicode, () => Is.EqualTo(@"시드 사운드"));
+            AddAssert("the title is kept", () => Beatmap.Value.BeatmapInfo.Metadata.Title, () => Is.EqualTo(@"Prayer"));
+            AddAssert("and its unicode form", () => Beatmap.Value.BeatmapInfo.Metadata.TitleUnicode, () => Is.EqualTo(@"Prayer"));
+        }
+
         [Test]
         public void TestCreateNewDifficulty([Values] bool sameRuleset)
         {
