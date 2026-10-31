@@ -289,6 +289,35 @@ namespace osu.Game.Tests.Visual.Editing
 
         private FormNumberBox indexBox => panel.ChildrenOfType<FormNumberBox>().Single();
 
+        /// <summary>
+        /// While the map plays, what is being typed into the custom index stays until it is entered, rather than going
+        /// back to what the line says on the next frame (2026-10-30).
+        /// </summary>
+        [Test]
+        public void TestTypingACustomIndexWhilePlaying()
+        {
+            AddStep("switch to the hitsound screen", () => Editor.Mode.Value = EditorScreenMode.Hitsounds);
+            waitForPanel();
+            AddStep("seek to an object", () => clock.Seek(EditorBeatmap.HitObjects.OfType<HitCircle>().ElementAt(10).StartTime));
+            AddUntilStep("its custom index is shown as Default", () => indexBox.Current.Value, () => Is.Empty);
+
+            AddStep("play", () => clock.Start());
+            AddStep("start typing 7", () =>
+            {
+                InputManager.MoveMouseTo(indexBox);
+                InputManager.Click(MouseButton.Left);
+                indexBox.Current.Value = "7";
+            });
+            AddWaitStep("while it plays on", 5);
+            AddAssert("7 is still in the box", () => indexBox.Current.Value, () => Is.EqualTo(@"7"));
+
+            AddStep("enter it", () => InputManager.Key(Key.Enter));
+            AddStep("stop", () => clock.Stop());
+            AddAssert("the line where it was entered says 7", () => indexAt(clock.CurrentTime), () => Is.EqualTo(7));
+        }
+
+        private EditorClock clock => (EditorClock)Editor.Dependencies.Get(typeof(EditorClock));
+
         private int indexAt(double time) => lines().Last(l => l.Time <= time + 5).SampleIndex;
 
         /// <summary>

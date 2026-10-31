@@ -262,7 +262,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
         private readonly Bindable<GreenLineSampleSet> lineSampleSet = new Bindable<GreenLineSampleSet>();
 
-        private FormNumberBox lineIndexBox = null!;
+        private IndexBox lineIndexBox = null!;
         private FillFlowContainer<PresetButton> indexPresets = null!;
         private FillFlowContainer<PresetButton> volumePresets = null!;
 
@@ -881,7 +881,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
                 if (Enum.IsDefined(typeof(GreenLineSampleSet), line.Value.SampleSet))
                     lineSampleSet.Value = (GreenLineSampleSet)line.Value.SampleSet;
 
-                lineIndexBox.Current.Value = line.Value.SampleIndex == 0 ? string.Empty : line.Value.SampleIndex.ToString(CultureInfo.InvariantCulture);
+                // while playing this runs every frame, and would put back what the line says over what is being typed.
+                if (!lineIndexBox.BeingTyped)
+                    lineIndexBox.Current.Value = line.Value.SampleIndex == 0 ? string.Empty : line.Value.SampleIndex.ToString(CultureInfo.InvariantCulture);
                 lineVolume.Value = line.Value.Volume;
 
                 double place = linePlace();
@@ -2169,7 +2171,14 @@ namespace osu.Game.Screens.Edit.Hitsounds
         /// </summary>
         private partial class IndexBox : FormNumberBox
         {
-            internal override InnerTextBox CreateTextBox() => new InnerIndexBox { SelectAllOnFocus = true };
+            private InnerIndexBox? inner;
+
+            /// <summary>
+            /// Whether a number is being typed into it, which is left alone until it is entered.
+            /// </summary>
+            public bool BeingTyped => inner?.Focused.Value == true;
+
+            internal override InnerTextBox CreateTextBox() => inner = new InnerIndexBox { SelectAllOnFocus = true };
 
             private partial class InnerIndexBox : InnerNumberBox
             {
