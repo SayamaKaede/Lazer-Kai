@@ -1179,9 +1179,15 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 this.FadeTo(IsHovered || hasMouseDown ? 1f : 0.9f, 200, Easing.OutQuint);
             }
 
+            /// <summary>
+            /// Whether a drag has begun a change that its end has not closed yet.
+            /// </summary>
+            private bool dragging;
+
             protected override bool OnDragStart(DragStartEvent e)
             {
                 changeHandler?.BeginChange();
+                dragging = true;
 
                 var selectionItems = beatmap.SelectedHitObjects;
 
@@ -1273,13 +1279,32 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
             protected override void OnDragEnd(DragEndEvent e)
             {
                 base.OnDragEnd(e);
+                endDrag();
+            }
 
+            private void endDrag()
+            {
                 dragOperation?.Cancel();
                 dragOperation = null;
+
+                if (!dragging)
+                    return;
+
+                dragging = false;
 
                 changeHandler?.EndChange();
                 OnDragHandled?.Invoke(null);
                 objsToAdjust.Clear();
+            }
+
+            protected override void Dispose(bool isDisposing)
+            {
+                // the object can go while its end is held: deleted, or scrolled out of the timeline. The drag then never
+                // ends here, which left the change open, so that undo did nothing from then on, and left the timeline
+                // scrolling whenever the cursor came near its ends.
+                endDrag();
+
+                base.Dispose(isDisposing);
             }
         }
 
