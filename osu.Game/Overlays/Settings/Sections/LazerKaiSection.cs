@@ -144,6 +144,7 @@ namespace osu.Game.Overlays.Settings.Sections
                 new BackupSettings(),
                 new SongSelectSettings(),
                 new ExternalToolSettings(),
+                new BugReportSettings(),
             };
         }
 

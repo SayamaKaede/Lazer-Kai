@@ -186,6 +186,11 @@ namespace osu.Game.Localisation
         public static LocalisableString ExternalToolHeader => new TranslatableString(getKey(@"external_tool_header"), @"External tools");
 
         /// <summary>
+        /// "Reporting problems"
+        /// </summary>
+        public static LocalisableString BugReportHeader => new TranslatableString(getKey(@"bug_report_header"), @"Reporting problems");
+
+        /// <summary>
         /// "Mapping Tools"
         /// </summary>
         public static LocalisableString MappingToolsPath => new TranslatableString(getKey(@"mapping_tools_path"), @"Mapping Tools");

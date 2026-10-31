@@ -609,6 +609,7 @@ namespace osu.Game.Localisation
             [$@"{settings_prefix}:editor_beatmap_hitsounds"] = @"譜面のヒットサウンド",
             [$@"{settings_prefix}:editor_beatmap_hitsounds_description"] = @"現在の譜面のヒットサウンドを強制します",
             [$@"{settings_prefix}:external_tool_header"] = @"外部ツール",
+            [$@"{settings_prefix}:bug_report_header"] = @"不具合の報告",
             [$@"{settings_prefix}:mapping_tools_path"] = @"Mapping Tools",
             [$@"{settings_prefix}:mapping_tools_path_description"] = @"Mapping Tools.exe の場所。空欄なら通常のインストール先を使用します",
             [$@"{settings_prefix}:mapping_tools_not_detected"] = @"Mapping Tools が見つかりません",

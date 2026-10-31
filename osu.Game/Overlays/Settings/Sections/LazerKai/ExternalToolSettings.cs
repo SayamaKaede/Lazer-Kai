@@ -1,21 +1,12 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
-using System.Globalization;
-using System.IO;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
-using osu.Framework.Extensions;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
-using osu.Framework.Logging;
-using osu.Framework.Platform;
 using osu.Game.Configuration;
 using osu.Game.Localisation;
-using osu.Game.Overlays.Notifications;
-using osu.Game.Utils;
 
 namespace osu.Game.Overlays.Settings.Sections.LazerKai
 {
@@ -24,15 +15,6 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
         protected override LocalisableString Header => LazerKaiSettingsStrings.ExternalToolHeader;
 
         private readonly BindableBool shown = new BindableBool();
-
-        [Resolved]
-        private Storage storage { get; set; } = null!;
-
-        [Resolved]
-        private GameHost gameHost { get; set; } = null!;
-
-        [Resolved(canBeNull: true)]
-        private INotificationOverlay? notifications { get; set; }
 
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
@@ -52,26 +34,10 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 Action = () => shown.Toggle(),
             };
 
-            var export = new SettingsButton
-            {
-                // straight after another button, which it would otherwise touch.
-                Margin = new MarginPadding { Top = BUTTON_GAP },
-                Text = LazerKaiSettingsStrings.ExportLogs,
-                TooltipText = LazerKaiSettingsStrings.ExportLogsDescription,
-                Action = exportLogs,
-            };
-
             Children = new Drawable[]
             {
                 reveal,
                 path,
-                export,
-                new SettingsCheckbox
-                {
-                    LabelText = LazerKaiSettingsStrings.ErrorReporting,
-                    TooltipText = LazerKaiSettingsStrings.ErrorReportingDescription,
-                    Current = config.GetBindable<bool>(OsuSetting.ErrorReporting),
-                },
             };
 
             // out of sight until it is asked for. A path very often carries the account name of whoever is at
@@ -83,40 +49,6 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 path.Alpha = s.NewValue ? 1 : 0;
                 reveal.Text = s.NewValue ? LazerKaiSettingsStrings.HideMappingToolsPath : LazerKaiSettingsStrings.ShowMappingToolsPath;
             }, true);
-        }
-
-        /// <summary>
-        /// Writes copies of the recent logs with the account name taken out, and opens the folder they went to.
-        /// </summary>
-        private void exportLogs()
-        {
-            try
-            {
-                (string destination, int written) = LogExport.WriteForSending(storage, Logger.Storage);
-
-                notifications?.Post(new SimpleNotification
-                {
-                    Icon = FontAwesome.Solid.FileExport,
-                    Text = LazerKaiSettingsStrings.ExportedLogs(written.ToString(NumberFormatInfo.CurrentInfo)),
-                    Activated = () =>
-                    {
-                        gameHost.OpenFileExternally(destination.TrimDirectorySeparator() + Path.DirectorySeparatorChar);
-                        return true;
-                    },
-                });
-
-                gameHost.OpenFileExternally(destination.TrimDirectorySeparator() + Path.DirectorySeparatorChar);
-            }
-            catch (Exception ex)
-            {
-                Logger.Log(PathDisplay.MaskIn($@"Failed to export logs: {ex}"), LoggingTarget.Runtime);
-
-                notifications?.Post(new SimpleErrorNotification
-                {
-                    Icon = FontAwesome.Solid.ExclamationTriangle,
-                    Text = LazerKaiSettingsStrings.ExportLogsFailed,
-                });
-            }
         }
     }
 }
