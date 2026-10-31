@@ -34,11 +34,13 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 {
                     Caption = EditorStrings.LeftToolboxWidth,
                     Current = config.GetBindable<float>(OsuSetting.EditorLeftToolboxWidth),
+                    LabelFormat = v => $"{v:N0} px",
                 }),
                 new SettingsItemV2(new FormSliderBar<float>
                 {
                     Caption = EditorStrings.RightToolboxWidth,
                     Current = config.GetBindable<float>(OsuSetting.EditorRightToolboxWidth),
+                    LabelFormat = v => $"{v:N0} px",
                 }),
             };
         }

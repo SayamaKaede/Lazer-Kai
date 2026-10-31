@@ -64,6 +64,7 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 {
                     Caption = EditorStrings.VolumeGraphThickness,
                     Current = config.GetBindable<float>(OsuSetting.EditorVolumeGraphThickness),
+                    LabelFormat = v => $"{v:0.#} px",
                 }),
                 new SettingsItemV2(new FormSliderBar<float>
                 {
