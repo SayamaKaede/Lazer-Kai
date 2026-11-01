@@ -68,11 +68,13 @@ namespace osu.Game.Beatmaps.Formats
         /// <param name="name">What the new difficulty is called.</param>
         /// <param name="circles">The circles, in the order of their times.</param>
         /// <param name="volumes">The volume from each of these times on, in the order of their times.</param>
-        public static string FromLanes(string file, string name, IReadOnlyList<LaneSoundConversion.Circle> circles, IReadOnlyList<(double Time, int Volume)> volumes)
+        /// <param name="lineBank">The sample set every red and green line says.</param>
+        public static string FromLanes(string file, string name, IReadOnlyList<LaneSoundConversion.Circle> circles, IReadOnlyList<(double Time, int Volume)> volumes,
+                                       string lineBank)
         {
             var hitObjects = circles.Select(c => circle(wholeTime(c.Time), sound(c), $"{bank(c.NormalBank)}:{bank(c.AdditionBank)}:0:0:")).ToArray();
 
-            return rewrite(file, name, hitObjects, timingLines(file, circles, volumes));
+            return rewrite(file, name, hitObjects, timingLines(file, circles, volumes, bank(lineBank).ToString(CultureInfo.InvariantCulture)));
         }
 
         /// <summary>
@@ -181,7 +183,12 @@ namespace osu.Game.Beatmaps.Formats
         /// The red lines of <paramref name="file"/>, and a green line wherever the custom index of
         /// <paramref name="circles"/> or the volume of <paramref name="volumes"/> is other than the line before says.
         /// </summary>
-        private static IReadOnlyList<string> timingLines(string file, IReadOnlyList<LaneSoundConversion.Circle> circles, IReadOnlyList<(double Time, int Volume)> volumes)
+        /// <remarks>
+        /// Every line says <paramref name="sampleSet"/>, whatever the lines of <paramref name="file"/> said: the circles say
+        /// their own, and the lines are the mapper's sound under them, as in stable (2026-11-01).
+        /// </remarks>
+        private static IReadOnlyList<string> timingLines(string file, IReadOnlyList<LaneSoundConversion.Circle> circles, IReadOnlyList<(double Time, int Volume)> volumes,
+                                                         string sampleSet)
         {
             var redLines = file.Replace("\r\n", "\n").Split('\n')
                                .SkipWhile(l => l.Trim() != "[TimingPoints]").Skip(1)
@@ -238,7 +245,6 @@ namespace osu.Game.Beatmaps.Formats
             var lines = new List<string>();
 
             string meter = "4";
-            string sampleSet = "0";
             (int index, int volume) said = (0, 100);
             (int? index, int? volume) want = default;
 
@@ -254,7 +260,9 @@ namespace osu.Game.Beatmaps.Formats
                     string[] fields = (string[])redLines[red].fields.Clone();
 
                     meter = fields.ElementAtOrDefault(2)?.Trim() ?? meter;
-                    sampleSet = fields.ElementAtOrDefault(3)?.Trim() ?? sampleSet;
+
+                    if (fields.Length > 3)
+                        fields[3] = sampleSet;
 
                     // a red line says a custom index and a volume as a green one does, so it says what is wanted where
                     // it is, rather than what the file had it say and a green line on top of it to say otherwise.

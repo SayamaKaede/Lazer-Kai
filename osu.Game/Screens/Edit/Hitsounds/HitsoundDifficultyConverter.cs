@@ -161,11 +161,11 @@ namespace osu.Game.Screens.Edit.Hitsounds
             if (inTheWay.Length > 0 && dialogOverlay != null)
             {
                 dialogOverlay.Push(new ConfirmDialog(LazerKaiHitsoundStrings.ReplaceSoundFiles(string.Join(@", ", inTheWay.Select(f => f.Filename))),
-                    () => write(result, files, file, volumes)));
+                    () => write(result, files, file, volumes, fallback.Bank)));
                 return;
             }
 
-            write(result, files, file, volumes);
+            write(result, files, file, volumes, fallback.Bank);
         }
 
         /// <summary>
@@ -176,7 +176,8 @@ namespace osu.Game.Screens.Edit.Hitsounds
         /// <param name="Open">What is in it.</param>
         private record SoundToWrite(string Name, string Hash, Func<Stream> Open);
 
-        private void write(LaneSoundConversion.Result result, IReadOnlyList<SoundToWrite> files, Func<string> file, IReadOnlyList<(double Time, int Volume)> volumes)
+        private void write(LaneSoundConversion.Result result, IReadOnlyList<SoundToWrite> files, Func<string> file, IReadOnlyList<(double Time, int Volume)> volumes,
+                           string lineBank)
         {
             var written = new Dictionary<string, string>();
 
@@ -210,7 +211,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
             string difficultyName = before?.DifficultyName ?? NamingUtils.GetNextBestName(set.Beatmaps.Select(b => b.DifficultyName), CONVERTED_NAME);
 
-            string text = HitsoundDifficultyWriter.FromLanes(file(), difficultyName, result.Circles, project.ConvertVolumes ? volumes : volumesOf(before));
+            string text = HitsoundDifficultyWriter.FromLanes(file(), difficultyName, result.Circles, project.ConvertVolumes ? volumes : volumesOf(before), lineBank);
 
             if (project.MuteSliderBodies)
             {

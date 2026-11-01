@@ -108,7 +108,7 @@ namespace osu.Game.Tests.Editing
             var read = StableManiaHitsounds.From(text, fileOf);
             var result = LaneSoundConversion.Convert(read.Notes, read.Sounds, read.Fallback, f => f.Length > 0);
 
-            string[] written = HitsoundDifficultyWriter.FromLanes(text, "Hitsounds", result.Circles, read.Volumes).Replace("\r\n", "\n").Split('\n');
+            string[] written = HitsoundDifficultyWriter.FromLanes(text, "Hitsounds", result.Circles, read.Volumes, read.Fallback.Bank).Replace("\r\n", "\n").Split('\n');
 
             Assert.That(written, Does.Contain("Mode: 0"));
             Assert.That(written, Does.Contain("CircleSize:4"));

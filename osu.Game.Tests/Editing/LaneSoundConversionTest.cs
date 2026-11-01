@@ -352,7 +352,7 @@ namespace osu.Game.Tests.Editing
                 new LaneSoundConversion.Circle(1000, HitSampleInfo.BANK_NORMAL, HitSampleInfo.BANK_SOFT, true, false, true, 1),
                 new LaneSoundConversion.Circle(1500.4, HitSampleInfo.BANK_DRUM, HitSampleInfo.BANK_DRUM, false, false, false, 1),
                 new LaneSoundConversion.Circle(1999.9999999, HitSampleInfo.BANK_SOFT, HitSampleInfo.BANK_DRUM, false, true, false, 1),
-            }, Array.Empty<(double, int)>());
+            }, Array.Empty<(double, int)>(), HitSampleInfo.BANK_SOFT);
 
             Assert.That(section(written, "[HitObjects]"), Is.EqualTo(new[]
             {
@@ -380,7 +380,7 @@ namespace osu.Game.Tests.Editing
                 circleUnder(2000, 2),
                 circleUnder(2500, 2),
                 circleUnder(3500, 2),
-            }, new[] { (1000.0, 50), (1750.0, 70) });
+            }, new[] { (1000.0, 50), (1750.0, 70) }, HitSampleInfo.BANK_SOFT);
 
             Assert.That(section(written, "[TimingPoints]"), Is.EqualTo(new[]
             {
@@ -398,7 +398,7 @@ namespace osu.Game.Tests.Editing
         public void TestTheVolumeIsTheRedLinesWhereNoneIsSaid()
         {
             string written = HitsoundDifficultyWriter.FromLanes(string.Join("\r\n", file), "Hitsounds", new[] { circleUnder(1500, 1), circleUnder(2000, 1) },
-                Array.Empty<(double, int)>());
+                Array.Empty<(double, int)>(), HitSampleInfo.BANK_SOFT);
 
             Assert.That(section(written, "[TimingPoints]"), Is.EqualTo(new[]
             {
@@ -416,13 +416,39 @@ namespace osu.Game.Tests.Editing
         public void TestWhatIsWantedBeforeTheFirstRedLineIsSaidByIt()
         {
             string written = HitsoundDifficultyWriter.FromLanes(string.Join("\r\n", file), "Hitsounds", new[] { circleUnder(500, 1), circleUnder(2000, 1) },
-                new[] { (200.0, 60) });
+                new[] { (200.0, 60) }, HitSampleInfo.BANK_SOFT);
 
             Assert.That(section(written, "[TimingPoints]"), Is.EqualTo(new[]
             {
                 "1000,500,4,2,1,60,1,0",
                 "3000,400,4,2,1,60,1,0",
             }));
+        }
+
+        /// <summary>
+        /// Every red and green line says the sample set chosen for the sound of a circle with no hit sound of its own,
+        /// whatever the lines of the difficulty hitsounded in said. A circle says its own sample sets, so the snare of a
+        /// lane put under normal-hitnormal is still heard where the lines say soft (2026-11-01).
+        /// </summary>
+        [TestCase(HitSampleInfo.BANK_SOFT, "2")]
+        [TestCase(HitSampleInfo.BANK_DRUM, "3")]
+        [TestCase(HitSampleInfo.BANK_NORMAL, "1")]
+        public void TestEveryLineSaysTheSampleSetChosenForTheFallback(string fallbackBank, string set)
+        {
+            string[] normalLines = file.Select(l => l.Replace(",4,2,", ",4,1,")).ToArray();
+
+            string written = HitsoundDifficultyWriter.FromLanes(string.Join("\r\n", normalLines), "Hitsounds", new[]
+            {
+                new LaneSoundConversion.Circle(1000, HitSampleInfo.BANK_NORMAL, HitSampleInfo.BANK_SOFT, false, false, false, 1),
+                new LaneSoundConversion.Circle(1500, HitSampleInfo.BANK_DRUM, HitSampleInfo.BANK_DRUM, false, false, false, 2),
+                new LaneSoundConversion.Circle(3500, HitSampleInfo.BANK_SOFT, HitSampleInfo.BANK_SOFT, false, false, false, 1),
+            }, new[] { (2000.0, 70) }, fallbackBank);
+
+            string[] lines = section(written, "[TimingPoints]");
+
+            Assert.That(lines, Has.Length.GreaterThan(2));
+            Assert.That(lines.Select(l => l.Split(',')[3]), Is.All.EqualTo(set));
+            Assert.That(section(written, "[HitObjects]").Select(l => l.Split(',')[5]), Is.EqualTo(new[] { "1:2:0:0:", "3:3:0:0:", "2:2:0:0:" }));
         }
 
         private static LaneSoundConversion.Circle circleUnder(double time, int customIndex) =>
