@@ -136,6 +136,10 @@ namespace osu.Game.Screens.Edit
             using (var reader = new LineBufferedReader(stream))
                 beatmap = Decoder.GetDecoder<Beatmap>(reader).Decode(reader);
 
+            // as the editor has it, made of its ruleset's objects. As decoded, an osu!mania note has its position where
+            // the encoder looks for its column, and written again the notes ended up in other columns (2026-11-02).
+            beatmap = new FlatWorkingBeatmap(beatmap).GetPlayableBeatmap(beatmap.BeatmapInfo.Ruleset);
+
             using (var stream = File.OpenRead(path))
             using (var reader = new LineBufferedReader(stream))
                 configuration = new LegacySkinDecoder().Decode(reader);

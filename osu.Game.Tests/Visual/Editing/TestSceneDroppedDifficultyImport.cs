@@ -12,6 +12,7 @@ using osu.Framework.Extensions;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Rulesets;
+using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Screens.Edit;
 using osu.Game.Skinning;
@@ -223,6 +224,54 @@ namespace osu.Game.Tests.Visual.Editing
             new Color4(1, 254, 3, 255),
             new Color4(2, 3, 254, 255),
         };
+
+        /// <remarks>
+        /// Written again in lazer's format, an osu!mania note's position was taken for its column (2026-11-02): one at
+        /// x 14 of 18 columns came out in the fifteenth, and every one further right in the last.
+        /// </remarks>
+        [Test]
+        public void TestManiaNotesStayInTheirColumns()
+        {
+            string path = null!;
+            int[] positions = { 14, 42, 71, 99, 497 };
+
+            AddStep("write an 18 key file in lazer's format", () =>
+            {
+                path = Path.Combine(dropDirectory, $"drop-{written++}.osu");
+
+                var contents = new StringBuilder();
+
+                contents.AppendLine(@"osu file format v128");
+                contents.AppendLine();
+                contents.AppendLine(@"[General]");
+                contents.AppendLine(@"Mode: 3");
+                contents.AppendLine();
+                contents.AppendLine(@"[Metadata]");
+                contents.AppendLine(@"Version:Hitsounds (mania)");
+                contents.AppendLine();
+                contents.AppendLine(@"[Difficulty]");
+                contents.AppendLine(@"CircleSize:18");
+                contents.AppendLine();
+                contents.AppendLine(@"[TimingPoints]");
+                contents.AppendLine(@"0,500,4,2,0,100,1,0");
+                contents.AppendLine();
+                contents.AppendLine(@"[HitObjects]");
+
+                for (int i = 0; i < positions.Length; i++)
+                    contents.AppendLine($@"{positions[i]},192,{1000 + i * 500},1,0,0:0:0:0:");
+
+                File.WriteAllText(path, contents.ToString());
+            });
+
+            AddStep("drop", () => Editor.ImportDroppedDifficulties(new[] { path }));
+
+            AddUntilStep("difficulty added to set", () => Beatmap.Value.BeatmapSetInfo.Beatmaps.Any(b => b.DifficultyName == "Hitsounds (mania)"));
+            AddAssert("the notes are where they were", () =>
+            {
+                var info = Beatmap.Value.BeatmapSetInfo.Beatmaps.Single(b => b.DifficultyName == "Hitsounds (mania)");
+                return beatmaps.GetWorkingBeatmap(info, true).Beatmap.HitObjects.Select(h => (int)((IHasXPosition)h).X);
+            }, () => Is.EqualTo(positions));
+        }
 
         private IReadOnlyList<Color4>? coloursIn(Guid difficultyID)
         {
