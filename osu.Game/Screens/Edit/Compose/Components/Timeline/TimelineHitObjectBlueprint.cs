@@ -18,6 +18,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
 using osu.Framework.Threading;
 using osu.Framework.Utils;
+using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
@@ -434,7 +435,11 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                 updateColour();
             });
 
-            referenceDifficulty?.Beatmap.BindValueChanged(_ => updateSizing());
+            // a copy of its own, so that a piece thrown away as the timeline scrolls stops listening with it.
+            if (referenceDifficulty != null)
+                referenceBeatmap.BindTo(referenceDifficulty.Beatmap);
+
+            referenceBeatmap.BindValueChanged(_ => updateSizing());
 
             useSkin.BindValueChanged(_ => updateSkinPieces());
 
@@ -452,6 +457,8 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
         private readonly Bindable<EditorTimelineStyle> timelineStyle = new Bindable<EditorTimelineStyle>();
 
         private readonly BindableBool useSkin = new BindableBool();
+
+        private readonly Bindable<IBeatmap?> referenceBeatmap = new Bindable<IBeatmap?>();
 
 
         /// <summary>

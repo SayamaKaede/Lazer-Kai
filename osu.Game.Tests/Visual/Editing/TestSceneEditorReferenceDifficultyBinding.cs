@@ -4,7 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Input.States;
@@ -129,6 +131,36 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("menu item carries the hotkey",
                 () => findMenuItem()?.Hotkey.GlobalAction,
                 () => Is.EqualTo(GlobalAction.EditorToggleReferenceDifficulty));
+        }
+
+        /// <remarks>
+        /// The timeline makes and throws away an object's piece as it scrolls in and out of view. One that went on
+        /// listening to which difficulty is ghosted was kept alive by it, and laid out again on every switch.
+        /// </remarks>
+        [Test]
+        public void TestTimelinePiecesStopListeningWhenThrownAway()
+        {
+            HitObject[] objects = null!;
+            int listening = 0;
+
+            AddStep("remove every object", () =>
+            {
+                objects = EditorBeatmap.HitObjects.ToArray();
+                EditorBeatmap.Clear();
+            });
+            AddStep("count what listens with none", () => listening = listenersOf(reference.Beatmap));
+
+            AddStep("put them back", () => EditorBeatmap.AddRange(objects));
+            AddUntilStep("the timeline has pieces for them", () => Editor.ChildrenOfType<Screens.Edit.Compose.Components.Timeline.TimelineHitObjectBlueprint>().Any());
+
+            AddStep("remove every object again", () => EditorBeatmap.Clear());
+            AddAssert("no more listen than before", () => listenersOf(reference.Beatmap), () => Is.EqualTo(listening));
+        }
+
+        private static int listenersOf(Bindable<IBeatmap?> bindable)
+        {
+            var handlers = (Delegate?)typeof(Bindable<IBeatmap?>).GetField(nameof(bindable.ValueChanged), BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(bindable);
+            return handlers?.GetInvocationList().Length ?? 0;
         }
 
         private void press(GlobalAction action) => AddStep($"press {action}",
