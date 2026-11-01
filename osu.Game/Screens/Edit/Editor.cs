@@ -1752,7 +1752,9 @@ namespace osu.Game.Screens.Edit
                     return true;
                 }
 
-                if (isNewBeatmap || HasUnsavedChanges)
+                // what the green line panel has pending is not in the state compared against the saved one, and leaving
+                // threw it away without a word (2026-11-01). Saving from the dialog asks for it to be settled first.
+                if (isNewBeatmap || HasUnsavedChanges || greenLinePanel?.Pending == true)
                 {
                     updateSampleDisabledState();
                     dialogOverlay?.Push(new PromptForSaveDialog(confirmExit, confirmExitWithSave, cancelExit));

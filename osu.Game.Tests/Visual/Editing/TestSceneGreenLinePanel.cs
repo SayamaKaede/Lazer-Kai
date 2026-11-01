@@ -11,6 +11,7 @@ using NUnit.Framework;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Input;
+using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
@@ -234,6 +235,23 @@ namespace osu.Game.Tests.Visual.Editing
             AddStep("cancel", () => panel.Cancel());
 
             AddAssert("the file has the lines the editor shows", () => section(savedText(), "TimingPoints"), () => Is.EqualTo(editorLines()));
+        }
+
+        /// <remarks>
+        /// What is pending is not in the state compared against the saved one, so leaving with only that threw it away
+        /// without a word.
+        /// </remarks>
+        [Test]
+        public void TestLeavingWhilePendingAsksFirst()
+        {
+            openAt(2109);
+            AddStep("turn it down to 30", () => panel.Volume.Value = 30);
+            AddAssert("it is pending", () => panel.Pending);
+
+            AddStep("leave", () => Editor.Exit());
+
+            AddUntilStep("it asks whether to save", () => Game.ChildrenOfType<DialogOverlay>().Single().CurrentDialog is PromptForSaveDialog);
+            AddAssert("the editor is still open", () => Editor.IsCurrentScreen());
         }
 
         [Test]
