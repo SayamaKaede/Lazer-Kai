@@ -17,7 +17,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
     /// is opened (2026-10-23).
     /// </summary>
     /// <remarks>
-    /// A folder per difficulty, named the way the backups and the slider velocity presets are. Nothing is written for a
+    /// A folder per difficulty, named by its ID (2026-11-01). It was named by the artist, title and difficulty name, so
+    /// a copy of the set or another version of it took the same hitsounds, and renaming the difficulty lost them. What
+    /// was kept that way is taken over by the first difficulty to look for it, and set aside. Nothing is written for a
     /// difficulty that has never had it turned on.
     /// </remarks>
     public class HitsoundFollowStore
@@ -33,7 +35,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
             this.storage = storage;
         }
 
-        public static string PathFor(BeatmapInfo info) =>
+        public static string PathFor(BeatmapInfo info) => Path.Combine(DIRECTORY, info.ID.ToString("N"), filename);
+
+        private static string pathByNamesFor(BeatmapInfo info) =>
             Path.Combine(DIRECTORY, $"{info.Metadata.Artist} - {info.Metadata.Title} [{info.DifficultyName}]".GetValidFilename(), filename);
 
         /// <summary>
@@ -44,8 +48,36 @@ namespace osu.Game.Screens.Edit.Hitsounds
             string path = PathFor(info);
 
             if (!storage.Exists(path))
+                return takeOverByNames(info);
+
+            return read(path);
+        }
+
+        private string? takeOverByNames(BeatmapInfo info)
+        {
+            string old = pathByNamesFor(info);
+
+            if (!storage.Exists(old))
                 return null;
 
+            string? source = read(old);
+
+            Save(info, source);
+
+            try
+            {
+                storage.Move(old, $"{old}.taken");
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Could not set aside which difficulty's hitsounds were taken");
+            }
+
+            return source;
+        }
+
+        private string? read(string path)
+        {
             try
             {
                 using (var stream = storage.GetStream(path))
