@@ -7,6 +7,7 @@ using osu.Game.Configuration;
 using osu.Game.Rulesets.Mania.Beatmaps;
 using osu.Game.Rulesets.Mania.UI;
 using System.Collections.Generic;
+using osuTK;
 
 namespace osu.Game.Rulesets.Mania.Edit
 {
@@ -30,6 +31,13 @@ namespace osu.Game.Rulesets.Mania.Edit
         {
             config.BindWith(OsuSetting.EditorManiaStageSpacing, stageSpacing);
         }
+
+        // where a time is, and what time a place is, as the lanes draw their notes. The playfield's own container, which
+        // these otherwise ask, is not what draws them and is not as tall as a lane's: a box dragged over the lanes went on
+        // faster than the notes as the wheel seeked, and took the notes before where it was begun (2026-11-01).
+        public override double TimeAtScreenSpacePosition(Vector2 screenSpacePosition) => GetColumn(0).HitObjectContainer.TimeAtScreenSpacePosition(screenSpacePosition);
+
+        public override Vector2 ScreenSpacePositionAtTime(double time) => GetColumn(0).HitObjectContainer.ScreenSpacePositionAtTime(time);
 
         protected override void UpdateAfterChildren()
         {

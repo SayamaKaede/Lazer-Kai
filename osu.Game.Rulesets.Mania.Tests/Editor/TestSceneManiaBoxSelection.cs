@@ -22,6 +22,13 @@ namespace osu.Game.Rulesets.Mania.Tests.Editor
     {
         protected override Ruleset CreateEditorRuleset() => new ManiaRuleset();
 
+        public override void SetUpSteps()
+        {
+            // a test that failed holding the button would leave it held for the next.
+            AddStep("let go of the mouse", () => InputManager.ReleaseButton(MouseButton.Left));
+            base.SetUpSteps();
+        }
+
         /// <summary>
         /// What the box has selected stays selected once it is no longer drawn. A note that had just stopped being drawn
         /// was asked where it was through what had drawn it, which by then was nowhere: it was found outside the box and
@@ -95,6 +102,68 @@ namespace osu.Game.Rulesets.Mania.Tests.Editor
 
                 return EditorBeatmap.HitObjects.Where(h => h.StartTime >= first && h.StartTime <= last).Except(EditorBeatmap.SelectedHitObjects);
             }, () => Is.Empty);
+        }
+
+        /// <summary>
+        /// Nothing before where the box was begun is taken into it as the wheel seeks on. The note just before it was
+        /// found selected after a while of seeking, and a paste of the stretch then went a beat later (2026-11-01).
+        /// </summary>
+        [TestCase(1)]
+        [TestCase(3)]
+        [TestCase(6)]
+        public void TestNothingBeforeWhereTheBoxBeganIsTakenAsItGoesOn(int ticksAtATime)
+        {
+            double firstTaken = 0;
+
+            AddStep("put notes on every half beat, in all but the outer lanes", () =>
+            {
+                var timing = EditorBeatmap.ControlPointInfo.TimingPoints.First();
+                int lanes = this.ChildrenOfType<Column>().Count();
+
+                EditorBeatmap.Clear();
+                EditorBeatmap.BeginChange();
+
+                for (int i = 0; i < 300; i++)
+                    EditorBeatmap.Add(new Note { Column = 1 + i % (lanes - 2), StartTime = timing.Time + i * timing.BeatLength / 2 });
+
+                EditorBeatmap.EndChange();
+            });
+
+            AddStep("seek to a little way in", () => EditorClock.Seek(EditorBeatmap.HitObjects[20].StartTime));
+            AddUntilStep("seeking is over", () => !EditorClock.IsSeeking);
+            AddStep("take the selection tool", () => InputManager.Key(Key.Number1));
+
+            AddStep("press in the last lane", () =>
+            {
+                var lane = this.ChildrenOfType<Column>().OrderBy(c => c.Index).Last().ScreenSpaceDrawQuad;
+                var at = new Vector2(lane.Centre.X, lane.TopLeft.Y + lane.Height * 0.7f);
+
+                InputManager.MoveMouseTo(at);
+                InputManager.PressButton(MouseButton.Left);
+            });
+
+            AddStep("drag to the first lane, further up", () =>
+            {
+                var lane = this.ChildrenOfType<Column>().OrderBy(c => c.Index).First().ScreenSpaceDrawQuad;
+
+                InputManager.MoveMouseTo(new Vector2(lane.Centre.X, lane.TopLeft.Y + lane.Height * 0.3f));
+            });
+
+            AddWaitStep("let the box take what is in it", 3);
+            AddStep("note the first note it took", () => firstTaken = EditorBeatmap.SelectedHitObjects.Min(h => h.StartTime));
+
+            for (int i = 0; i < 360 / ticksAtATime; i++)
+            {
+                AddStep("turn the wheel", () =>
+                {
+                    for (int tick = 0; tick < ticksAtATime; tick++)
+                        InputManager.ScrollVerticalBy(-1);
+                });
+                AddWaitStep("a frame or two", 2);
+                AddAssert("nothing before it", () => EditorBeatmap.SelectedHitObjects.Where(h => h.StartTime < firstTaken).Select(h => h.StartTime), () => Is.Empty);
+            }
+
+            AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
         }
 
         private HitObjectComposer composer => Editor.ChildrenOfType<HitObjectComposer>().Single();
