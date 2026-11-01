@@ -47,6 +47,7 @@ namespace osu.Game.Screens.Edit
             processTimingPoints(() => newBeatmap ??= readBeatmap(newState));
             processBreaks(() => newBeatmap ??= readBeatmap(newState));
             processBookmarks(() => newBeatmap ??= readBeatmap(newState));
+            processPreviewTime(() => newBeatmap ??= readBeatmap(newState));
             processHitObjectLocalData(() => newBeatmap ??= readBeatmap(newState));
             editorBeatmap.EndChange();
         }
@@ -128,6 +129,18 @@ namespace osu.Game.Screens.Edit
                 if (idx < 0)
                     editorBeatmap.Bookmarks.Insert(~idx, newBookmark);
             }
+        }
+
+        /// <summary>
+        /// The preview point. Left out, an undo kept it where the step undone had put it, and moving the whole beatmap in
+        /// time again after an undo took it twice as far as everything else (2026-11-01).
+        /// </summary>
+        private void processPreviewTime(Func<IBeatmap> getNewBeatmap)
+        {
+            int newPreviewTime = getNewBeatmap().BeatmapInfo.Metadata.PreviewTime;
+
+            if (editorBeatmap.PreviewTime.Value != newPreviewTime)
+                editorBeatmap.PreviewTime.Value = newPreviewTime;
         }
 
         /// <summary>

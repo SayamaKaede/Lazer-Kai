@@ -216,6 +216,34 @@ namespace osu.Game.Tests.Visual.Editing
             AddAssert("and the objects", () => EditorBeatmap.HitObjects.Select(h => h.StartTime), () => Is.EqualTo(starts).Within(0.001));
         }
 
+        /// <summary>
+        /// The preview point is undone with the rest. Left where the move put it, a move made again after an undo took
+        /// it twice as far as everything else (2026-11-01, +201 gave +402).
+        /// </summary>
+        [Test]
+        public void TestThePreviewPointIsUndoneWithTheRest()
+        {
+            AddStep("a preview point", () => EditorBeatmap.PreviewTime.Value = 60000);
+
+            AddStep("move it 201 ms later", () => move(201));
+            AddAssert("the preview point went", () => EditorBeatmap.PreviewTime.Value, () => Is.EqualTo(60201));
+
+            AddStep("undo", () => changeHandler.RestoreState(-1));
+            AddAssert("the preview point is back", () => EditorBeatmap.PreviewTime.Value, () => Is.EqualTo(60000));
+
+            AddStep("redo", () => changeHandler.RestoreState(1));
+            AddAssert("the preview point went again", () => EditorBeatmap.PreviewTime.Value, () => Is.EqualTo(60201));
+
+            AddStep("undo, and move it 201 ms later once more", () =>
+            {
+                changeHandler.RestoreState(-1);
+                move(201);
+            });
+            AddAssert("it went as far as the rest", () => EditorBeatmap.PreviewTime.Value, () => Is.EqualTo(60201));
+        }
+
+        private EditorChangeHandler changeHandler => (EditorChangeHandler)Editor.Dependencies.Get(typeof(IEditorChangeHandler));
+
         [Test]
         public void TestWhatIsTypedInTheWindowIsApplied()
         {
