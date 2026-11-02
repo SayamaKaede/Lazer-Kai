@@ -736,7 +736,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:always_expand_timeline_point_labels_description"] = @"オフだとボリュームのラベルがランダムに閉じたり開いたりします",
             [$@"{editor_prefix}:timeline_drag_area_scale_description"] = @"スライダーの尻尾で、ドラッグできる部分の大きさです。スキンが有効になっている場合は変わりません",
             [$@"{editor_prefix}:hide_selection_buttons_description"] = @"選択時の左右反転や上下反転など、5つのボタンを非表示",
-            [$@"{editor_prefix}:selectable_after_end_time_description"] = @"本家だと明らかに見えていないノーツが選択可能になって巻き込みやすくなっています。200ms辺りから調整してみてください",
+            [$@"{editor_prefix}:selectable_after_end_time_description"] = @"本家では、見えていないノーツも選択できるため、範囲選択に含まれやすくなっています。200ms辺りから調整してみてください",
             [$@"{editor_prefix}:selection_colour_description"] = @"選択時の四角い範囲を表している枠の色",
             [$@"{editor_prefix}:selection_thickness_description"] = @"選択時の四角い範囲を表している枠の太さ",
             [$@"{editor_prefix}:selection_opacity_description"] = @"選択時の四角い範囲を表している枠の不透明度",
