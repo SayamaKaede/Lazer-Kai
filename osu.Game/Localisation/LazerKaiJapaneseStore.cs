@@ -183,9 +183,9 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:timeline_drag_to_seek"] = @"上部を掴んでドラッグで再生位置を移動",
             [$@"{editor_prefix}:timeline_drag_to_seek_description"] = @"手のひらツールのように掴めますが、誤爆が多い場合はオフに",
             [$@"{editor_prefix}:timeline_drag_area_scale"] = @"リバースの大きさ",
-            [$@"{editor_prefix}:timeline_hide_points"] = @"SV・ボリュームの帯を非表示",
-            [$@"{editor_prefix}:timeline_point_rows"] = @"タイムラインのSV・ボリュームの帯",
-            [$@"{editor_prefix}:timeline_volume_row"] = @"ボリュームの行",
+            [$@"{editor_prefix}:timeline_hide_points"] = @"SV・ボリュームのラベルを非表示",
+            [$@"{editor_prefix}:timeline_point_rows"] = @"タイムラインのSV・ボリュームのラベル",
+            [$@"{editor_prefix}:timeline_volume_row"] = @"ボリュームのラベル",
             [$@"{editor_prefix}:shown"] = @"表示",
             [$@"{editor_prefix}:hidden"] = @"非表示",
             [$@"{editor_prefix}:timeline_repeat_drag_threshold"] = @"リバーススライダーの感度",
@@ -829,7 +829,7 @@ namespace osu.Game.Localisation
 
             // the volume row on its own
             [$@"{editor_prefix}:hide_timeline_volume"] = @"ボリュームのラベルを非表示",
-            [$@"{editor_prefix}:hide_timeline_volume_description"] = @"空いた分だけノーツが大きくなります。SVの行はそのままです",
+            [$@"{editor_prefix}:hide_timeline_volume_description"] = @"空いた分だけノーツが大きくなります。SVのラベルはそのままです",
 
             // shown once the first-run setup is out of the way
             [$@"{welcome_prefix}:header"] = @"Lazer-Kaiへようこそ",
