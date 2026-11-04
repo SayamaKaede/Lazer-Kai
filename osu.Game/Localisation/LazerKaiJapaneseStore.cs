@@ -40,13 +40,13 @@ namespace osu.Game.Localisation
 
             // test play
             [$@"{editor_prefix}:carry_over_song_select_mods"] = @"曲選択画面とエディターでのMod情報を共有する",
-            [$@"{editor_prefix}:carry_over_song_select_mods_description"] = @"テストプレイが曲選択画面で選んだModから始まり、ここで選んだModは出たあとも選ばれたままになります",
+            [$@"{editor_prefix}:carry_over_song_select_mods_description"] = @"テストプレイは曲選択画面で選んだModから始まり、エディターで選んだModはエディターを終了したあとも選ばれたままになります",
             [$@"{editor_prefix}:apply_test_play_mods_to_composer"] = @"編集画面にもModを反映",
             [$@"{editor_prefix}:editing_locked_by_preview_mods"] = @"オブジェクトを変更するModを反映している間は、編集できません",
             [$@"{editor_prefix}:live_mod_preview"] = @"編集中もModの表示を更新",
 
             // composing
-            [$@"{editor_prefix}:advance_by_previous_spacing_on_placement"] = @"配置後、直前の間隔ぶん進む",
+            [$@"{editor_prefix}:advance_by_previous_spacing_on_placement"] = @"配置後、直前の間隔ぶん再生位置を進める",
             // upstream's, which sits beside it in the view menu and was translated almost the same.
             [$@"{editor_prefix}:auto_seek_on_placement"] = @"配置したノーツの時刻へシーク",
             [$@"{editor_prefix}:freehand_slider_placement"] = @"ドラッグでスライダーを描く",
@@ -189,7 +189,7 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:shown"] = @"表示",
             [$@"{editor_prefix}:hidden"] = @"非表示",
             [$@"{editor_prefix}:timeline_repeat_drag_threshold"] = @"リバーススライダーの感度",
-            [$@"{editor_prefix}:timeline_repeat_drag_threshold_description"] = @"スライダーの尻尾を掴んでリバースを作るときに、どのくらいでリバースが増えるかの感度です",
+            [$@"{editor_prefix}:timeline_repeat_drag_threshold_description"] = @"スライダーの尻尾を掴んでリバースを作るときに、リバースが1つ増えるまでにドラッグする距離です",
             [$@"{editor_prefix}:seek_animation_duration"] = @"シークのアニメーション",
             [$@"{editor_prefix}:editor_colour_scheme"] = @"エディターのテーマ色",
 
@@ -355,10 +355,10 @@ namespace osu.Game.Localisation
             [$@"{hitsound_prefix}:mute_slider_bodies"] = @"スライダーボディの音を無音にする",
             [$@"{hitsound_prefix}:mute_slider_bodies_hint"] = @"HS diffの赤線・緑線が使うサンプルセットとカスタム番号の組ごとに、無音のsliderslideを書き出します。同じ名前のファイルがすでにある場合は、そのまま残します",
             [$@"{hitsound_prefix}:lane_volume"] = @"ボリューム（再生位置から）",
-            [$@"{hitsound_prefix}:fallback_sound"] = @"normalの音が無いサークルの音",
+            [$@"{hitsound_prefix}:fallback_sound"] = @"デフォルトのサンプルセットの音",
             [$@"{hitsound_prefix}:convert_mania_unavailable"] = @"「Stableとの互換性を強化する」がオンのとき、Stable形式（v14以前）のosu!maniaの譜面で使用できます",
             [$@"{hitsound_prefix}:nothing_to_convert"] = @"変換するノーツがありません",
-            [$@"{hitsound_prefix}:cannot_mix_sounds"] = @"同じ枠に入る音を1つのファイルに混ぜる処理に失敗しました: {0}",
+            [$@"{hitsound_prefix}:cannot_mix_sounds"] = @"同じサークルで同時に鳴るヒットサウンドを、1つのファイルに混ぜる処理に失敗しました: {0}",
             [$@"{hitsound_prefix}:replace_sound_files"] = @"同じ名前で中身の違うヒットサウンドが譜面にあります: {0}。置き換えますか？",
             [$@"{hitsound_prefix}:converted_to_hitsound_difficulty"] = @"{0}に変換しました。サークル{1}個・ヒットサウンド{2}個",
             [$@"{hitsound_prefix}:lane_presets"] = @"プリセット",
@@ -408,7 +408,7 @@ namespace osu.Game.Localisation
             [$@"{hitsound_prefix}:line_at"] = @"緑線 {0}",
             [$@"{hitsound_prefix}:line_to_add"] = @"緑線 {0}（新規）",
             [$@"{hitsound_prefix}:lines_of_selection"] = @"緑線（選択した箇所）",
-            [$@"{hitsound_prefix}:advance_by_previous_spacing"] = @"サークル配置後、直前の間隔ぶん進む",
+            [$@"{hitsound_prefix}:advance_by_previous_spacing"] = @"サークル配置後、直前の間隔ぶん再生位置を進める",
             [$@"{hitsound_prefix}:paste_hitsounds_only"] = @"HSだけ貼り付け",
             [$@"{hitsound_prefix}:place_circle"] = @"サークルを置く",
             [$@"{hitsound_prefix}:place_circle_with_previous"] = @"手前のHSで置く",
