@@ -190,12 +190,7 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                                 new Dimension(GridSizeMode.Absolute, 6),
                                                 new Dimension(GridSizeMode.Absolute, 240),
                                             },
-                                            RowDimensions = new[]
-                                            {
-                                                new Dimension(GridSizeMode.AutoSize),
-                                                new Dimension(GridSizeMode.Absolute, 8),
-                                                new Dimension(GridSizeMode.AutoSize),
-                                            },
+                                            RowDimensions = new[] { new Dimension(GridSizeMode.AutoSize) },
                                             Content = new[]
                                             {
                                                 new[]
@@ -207,10 +202,26 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                                         TransferValueOnCommit = true,
                                                     },
                                                     Empty(),
-                                                    WithVolumes = new FormCheckBox
+                                                    // the two things that are said of turning it into one, one above the other.
+                                                    new FillFlowContainer
                                                     {
-                                                        Caption = LazerKaiHitsoundStrings.ConvertVolumes,
-                                                        HintText = LazerKaiHitsoundStrings.ConvertVolumesHint,
+                                                        RelativeSizeAxes = Axes.X,
+                                                        AutoSizeAxes = Axes.Y,
+                                                        Direction = FillDirection.Vertical,
+                                                        Spacing = new Vector2(0, 6),
+                                                        Children = new Drawable[]
+                                                        {
+                                                            WithVolumes = new FormCheckBox
+                                                            {
+                                                                Caption = LazerKaiHitsoundStrings.ConvertVolumes,
+                                                                HintText = LazerKaiHitsoundStrings.ConvertVolumesHint,
+                                                            },
+                                                            MuteSliderBodies = new FormCheckBox
+                                                            {
+                                                                Caption = LazerKaiHitsoundStrings.MuteSliderBodies,
+                                                                HintText = LazerKaiHitsoundStrings.MuteSliderBodiesHint,
+                                                            },
+                                                        }
                                                     },
                                                     Empty(),
                                                     ConvertButton = new RoundedButton
@@ -223,27 +234,16 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                                         Action = () => laneSounds.ConvertToHitsoundDifficulty(),
                                                     },
                                                 },
-                                                new[] { Empty(), Empty(), Empty(), Empty(), Empty() },
-                                                // the volumes that are used under the volume, and beside them, under
-                                                // the other, the second thing that is said of turning it into one.
-                                                new[]
-                                                {
-                                                    VolumePresets = new FillFlowContainer<HitsoundPanel.PresetButton>
-                                                    {
-                                                        AutoSizeAxes = Axes.Both,
-                                                        Direction = FillDirection.Horizontal,
-                                                        Spacing = new Vector2(5),
-                                                    },
-                                                    Empty(),
-                                                    MuteSliderBodies = new FormCheckBox
-                                                    {
-                                                        Caption = LazerKaiHitsoundStrings.MuteSliderBodies,
-                                                        HintText = LazerKaiHitsoundStrings.MuteSliderBodiesHint,
-                                                    },
-                                                    Empty(),
-                                                    Empty(),
-                                                },
                                             }
+                                        },
+                                        // the volumes that are used, under the volume and across the whole width, for
+                                        // as many as there are to be seen.
+                                        VolumePresets = new FillFlowContainer<HitsoundPanel.PresetButton>
+                                        {
+                                            RelativeSizeAxes = Axes.X,
+                                            AutoSizeAxes = Axes.Y,
+                                            Direction = FillDirection.Full,
+                                            Spacing = new Vector2(5),
                                         },
                                     }
                                 },
@@ -430,8 +430,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
                         new Dimension(),
                         new Dimension(GridSizeMode.Absolute, 6),
                         new Dimension(GridSizeMode.Absolute, 170),
-                        // as wide as what a lane has after its sample set.
-                        new Dimension(GridSizeMode.Absolute, 6 + 170 + 6 + 40),
+                        // where a lane has its hit sound, for the button to hear it to be under theirs.
+                        new Dimension(GridSizeMode.Absolute, 6 + 170 + 6),
+                        new Dimension(GridSizeMode.Absolute, 40),
                     },
                     RowDimensions = new[] { new Dimension(GridSizeMode.AutoSize) },
                     Content = new[]
@@ -451,6 +452,14 @@ namespace osu.Game.Screens.Edit.Hitsounds
                                 Current = { Value = (LaneBank)System.Math.Max(0, System.Array.IndexOf(bank_names, sound.Bank)) },
                             },
                             Empty(),
+                            new IconButton
+                            {
+                                Anchor = Anchor.Centre,
+                                Origin = Anchor.Centre,
+                                Icon = FontAwesome.Solid.Play,
+                                TooltipText = LazerKaiHitsoundStrings.PlayLaneSound,
+                                Action = () => laneSounds.PlayFallback(),
+                            },
                         },
                     }
                 };

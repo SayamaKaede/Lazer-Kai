@@ -653,6 +653,47 @@ namespace osu.Game.Tests.Visual.Editing
         }
 
         /// <summary>
+        /// However many volumes are used, every one of their buttons can be seen and clicked: none goes under the other
+        /// controls nor past the edge of the panel.
+        /// </summary>
+        [Test]
+        public void TestEveryVolumeButtonCanBeSeen()
+        {
+            int[] volumes = { 45, 50, 55, 60, 65, 70, 75 };
+
+            make();
+
+            for (int i = 0; i < volumes.Length; i++)
+            {
+                int at = i;
+                AddStep($"set {volumes[at]} from beat {at + 1}", () =>
+                {
+                    clock.Seek(beat(at + 1));
+                    lanes.SetVolume(volumes[at]);
+                });
+            }
+
+            AddUntilStep("there is a button for each", () => panel.VolumePresets.Count, () => Is.EqualTo(volumes.Length + 1));
+
+            AddAssert("none goes under the other controls", () => panel.VolumePresets.Where(b => new Drawable[] { panel.Volume, panel.WithVolumes, panel.MuteSliderBodies, panel.ConvertButton }
+                                                                                                .Any(c => c.ScreenSpaceDrawQuad.AABBFloat.IntersectsWith(b.ScreenSpaceDrawQuad.AABBFloat))),
+                () => Is.Empty);
+            AddAssert("nor past the edge of the panel", () => panel.VolumePresets.Where(b => b.ScreenSpaceDrawQuad.TopRight.X > panel.ConvertButton.ScreenSpaceDrawQuad.TopRight.X + 1),
+                () => Is.Empty);
+        }
+
+        /// <summary>
+        /// The hit sound of the circles none of whose lanes is one can be heard from its row, as a lane's can.
+        /// </summary>
+        [Test]
+        public void TestTheFallbackSoundHasAPlayButton()
+        {
+            make();
+
+            AddAssert("its row has a button to hear it", () => Editor.ChildrenOfType<LaneSoundPanel.FallbackRow>().Single().ChildrenOfType<IconButton>().Count(), () => Is.EqualTo(1));
+        }
+
+        /// <summary>
         /// Without the volumes set here, the volumes of the hitsound difficulty made before are kept as its lines say
         /// them: the volume can be set there instead.
         /// </summary>

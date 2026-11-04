@@ -26,6 +26,7 @@ using osu.Game.Rulesets;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.Objects.Types;
+using osu.Game.Skinning;
 using osu.Game.Utils;
 
 namespace osu.Game.Screens.Edit.Hitsounds
@@ -87,6 +88,9 @@ namespace osu.Game.Screens.Edit.Hitsounds
 
         [Resolved]
         private AudioManager audio { get; set; } = null!;
+
+        [Resolved]
+        private ISkinSource skin { get; set; } = null!;
 
         /// <summary>
         /// The sounds of the library as they were when it was last read.
@@ -404,6 +408,20 @@ namespace osu.Game.Screens.Edit.Hitsounds
             keep();
             Changed?.Invoke();
             return true;
+        }
+
+        /// <summary>
+        /// Plays the hit sound of the circles none of whose lanes is one: its file of the library, or without one, the
+        /// skin's hit normal of its sample set.
+        /// </summary>
+        public void PlayFallback()
+        {
+            var sound = project.Fallback;
+
+            if (sound.HasFile)
+                librarySamples.Get(sound.File)?.Play();
+            else
+                skin.GetSample(new HitSampleInfo(HitSampleInfo.HIT_NORMAL, sound.Bank))?.Play();
         }
 
         /// <summary>
