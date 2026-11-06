@@ -95,19 +95,43 @@ namespace osu.Game.Rulesets.Osu.Tests.Editor
         }
 
         /// <summary>
+        /// A slider with a repeat turns its corner once on the way out and once on the way back, and turns round at
+        /// its end in between. A circle lands on all three. The corners were taken as how far along the whole slider
+        /// they are rather than along its path, so the first stretch ran past the corner, and everything after it was
+        /// laid somewhere along the way back instead (2026-11-04).
+        /// </summary>
+        [Test]
+        public void TestARepeatedSliderHasACircleOnEveryTurn()
+        {
+            var slider = sliderThatTurnsACorner(repeats: 1, firstRun: 100);
+            var corner = slider.Position + new Vector2(100, 0);
+            var end = slider.Position + new Vector2(100, 200);
+
+            var stretches = Enumerable.Range(0, StreamConversion.CornersOf(slider).Count + 1)
+                                      .Select(_ => new StreamConversion.Stretch(4))
+                                      .ToArray();
+            var plan = StreamConversion.PlanStretches(slider, 100, stretches);
+
+            Assert.That(plan.Count(n => (n.Position - corner).Length < 0.01f), Is.EqualTo(2), "the corner, there and back");
+            Assert.That(plan.Count(n => (n.Position - end).Length < 0.01f), Is.EqualTo(1), "where it turns round");
+            Assert.That((plan[^1].Position - slider.Position).Length, Is.LessThan(0.01f), "back where it started");
+        }
+
+        /// <summary>
         /// Two straight runs meeting at a right angle, which is what a red anchor makes.
         /// </summary>
-        private Slider sliderThatTurnsACorner()
+        private Slider sliderThatTurnsACorner(int repeats = 0, float firstRun = 200)
         {
             var slider = new Slider
             {
                 StartTime = 1000,
                 Position = Vector2.Zero,
+                RepeatCount = repeats,
                 Path = new SliderPath(new[]
                 {
                     new PathControlPoint(Vector2.Zero, PathType.LINEAR),
-                    new PathControlPoint(new Vector2(200, 0), PathType.LINEAR),
-                    new PathControlPoint(new Vector2(200, 200)),
+                    new PathControlPoint(new Vector2(firstRun, 0), PathType.LINEAR),
+                    new PathControlPoint(new Vector2(firstRun, 200)),
                 }),
             };
 

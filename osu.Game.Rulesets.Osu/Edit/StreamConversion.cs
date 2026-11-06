@@ -66,21 +66,39 @@ namespace osu.Game.Rulesets.Osu.Edit
         }
 
         /// <summary>
-        /// Where the shape turns a corner, as progress along it. A corner is a red anchor: the point where one
-        /// segment of the path ends and the next begins.
+        /// Where the slider turns, as progress along the whole of it, repeats and all. A corner is a red anchor:
+        /// the point where one segment of the path ends and the next begins. A slider with repeats passes each
+        /// corner once a span, and turns round at the end of every span but the last.
         /// </summary>
         /// <remarks>
-        /// The end of the path is not one of these. What comes back is only the corners in between, oldest first.
+        /// The start and end of the slider are not among these. What comes back is only the turns in between, in
+        /// the order they are reached.
         /// </remarks>
         public static IReadOnlyList<double> CornersOf(Slider slider)
         {
-            var corners = slider.Path.GetSegmentEnds().ToList();
+            var ends = slider.Path.GetSegmentEnds().ToList();
 
             // the last one is the end of the path rather than a corner, and anything at or past the end is not a
             // corner either -- a path told it is longer than it is reports those.
-            return corners.Take(Math.Max(corners.Count - 1, 0))
-                          .Where(c => c > 0.001 && c < 0.999)
-                          .ToList();
+            var corners = ends.Take(Math.Max(ends.Count - 1, 0))
+                              .Where(c => c > 0.001 && c < 0.999)
+                              .ToList();
+
+            int spans = Math.Max(slider.SpanCount(), 1);
+            var turns = new List<double>();
+
+            for (int span = 0; span < spans; span++)
+            {
+                // every other span runs back along the path, reaching its corners last first.
+                var inThisSpan = span % 2 == 0 ? corners : corners.Select(c => 1 - c).Reverse();
+
+                turns.AddRange(inThisSpan.Select(c => (span + c) / spans));
+
+                if (span < spans - 1)
+                    turns.Add((double)(span + 1) / spans);
+            }
+
+            return turns;
         }
 
         /// <summary>
