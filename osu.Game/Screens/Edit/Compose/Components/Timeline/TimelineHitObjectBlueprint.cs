@@ -1235,6 +1235,12 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
 
                                 if (e.CurrentState.Keyboard.ShiftPressed && hitObject is IHasSliderVelocity hasSliderVelocity)
                                 {
+                                    // at its head or behind it there is no length left to fit into, and the velocity
+                                    // would be divided by nothing or less. It stays as it last was until the end comes
+                                    // back out past a beat division.
+                                    if (proposedDuration < beatSnapProvider.GetBeatLengthAtTime(hitObject.StartTime))
+                                        return;
+
                                     double newVelocity = hasSliderVelocity.SliderVelocityMultiplier * (repeatHitObject.Duration / proposedDuration);
 
                                     if (Precision.AlmostEquals(newVelocity, hasSliderVelocity.SliderVelocityMultiplier))
