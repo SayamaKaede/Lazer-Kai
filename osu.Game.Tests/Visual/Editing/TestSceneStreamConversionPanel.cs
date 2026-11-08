@@ -18,6 +18,7 @@ using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Edit;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Screens.Edit.Compose.Components;
 using osuTK;
 using osuTK.Input;
@@ -179,6 +180,106 @@ namespace osu.Game.Tests.Visual.Editing
 
             AddStep("take it away again", () => panel().ChildrenOfType<FormSliderBar<float>>().Last().Current.Value = 0);
             AddUntilStep("they dimmed again", () => zigzagExtras().All(d => d.Alpha < 1), () => Is.True);
+        }
+
+        /// <summary>
+        /// A zigzag along a slider at the edge of the playfield keeps its circles on the playfield, as every other way
+        /// of placing or moving them does. Pushed to the side away from the path, they were left wherever that put them,
+        /// off the top here (2026-11-09).
+        /// </summary>
+        [Test]
+        public void TestAZigzagStaysOnThePlayfield()
+        {
+            AddStep("move the slider to the top edge", () =>
+            {
+                slider.Position = new Vector2(200, 5);
+                EditorBeatmap.Update(slider);
+            });
+
+            open();
+            AddUntilStep("circles appeared", circles, () => Is.Not.Empty);
+
+            AddStep("give it a wide zigzag", () => panel().ChildrenOfType<FormSliderBar<float>>().Last().Current.Value = 30);
+
+            AddUntilStep("the zigzag reached", () => circles().Select(c => c.Position.Y).Distinct().Count(), () => Is.GreaterThan(1));
+            AddAssert("every circle is on the playfield", () => circles().All(c =>
+                c.Position.X >= 0 && c.Position.X <= OsuPlayfield.BASE_SIZE.X && c.Position.Y >= 0 && c.Position.Y <= OsuPlayfield.BASE_SIZE.Y), () => Is.True);
+        }
+
+        /// <summary>
+        /// Circles that only move, keeping their times and their number, are stacked again where they now are. They
+        /// were moved without the beatmap being told, so the stacking worked out for where they had been stayed on them
+        /// (2026-11-09).
+        /// </summary>
+        [Test]
+        public void TestCirclesThatOnlyMoveAreStackedWhereTheyAre()
+        {
+            AddStep("make the slider all but a point", () =>
+            {
+                slider.Path = new SliderPath(PathType.LINEAR, new[] { Vector2.Zero, new Vector2(2, 0) });
+                EditorBeatmap.Update(slider);
+            });
+
+            open();
+            AddUntilStep("circles appeared", circles, () => Is.Not.Empty);
+
+            AddStep("ask for four", () => panel().NoteCount.Value = 4);
+            AddUntilStep("all four stack on one another", () => circles().Length == 4 && circles().Max(c => c.StackHeight) == 3, () => Is.True);
+
+            // every other circle to each side: two stacks of two.
+            AddStep("spread them with a zigzag", () => panel().ChildrenOfType<FormSliderBar<float>>().Last().Current.Value = 30);
+
+            AddUntilStep("the zigzag reached", () => circles().Select(c => c.Position.Y).Distinct().Count(), () => Is.GreaterThan(1));
+            AddAssert("they are stacked where they are now", () => circles().Max(c => c.StackHeight), () => Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// Taking the wider range away takes the count back down into the ordinary one. The top of the bar was being set
+        /// from the count as it stood, so a count above sixteen kept it there (2026-11-09).
+        /// </summary>
+        [Test]
+        public void TestNarrowingTheRangeBringsTheCountBackIntoIt()
+        {
+            open();
+            AddUntilStep("circles appeared", circles, () => Is.Not.Empty);
+
+            AddStep("widen the range", () => panel().ExtendedLimits.Value = true);
+            AddStep("ask for thirty", () => panel().NoteCount.Value = 30);
+            AddAssert("thirty it is", () => panel().NoteCount.Value, () => Is.EqualTo(30));
+
+            AddStep("narrow it again", () => panel().ExtendedLimits.Value = false);
+
+            AddAssert("the top is back to sixteen", () => panel().NoteCount.MaxValue, () => Is.EqualTo(16));
+            AddAssert("the count came down with it", () => panel().NoteCount.Value, () => Is.EqualTo(16));
+        }
+
+        /// <summary>
+        /// The run stays the selection while the panel is up, even when as many other objects are selected. It was told
+        /// apart from them only by how many there were, so the same number of anything else was taken for it, and the
+        /// panel's flips went to those instead (2026-11-09).
+        /// </summary>
+        [Test]
+        public void TestTheRunIsNotMistakenForAsManyOtherObjects()
+        {
+            HitCircle[] run = null!;
+            HitCircle[] others = null!;
+
+            // the run is only held selected for a shape drawn with the Streams tool. One from the beatmap leaves the
+            // selection to the mapper.
+            AddStep("open it as the Streams tool does", () => panel().Open(slider, fromTheBeatmap: false));
+            AddUntilStep("circles appeared", circles, () => Is.Not.Empty);
+            AddStep("note the run", () => run = circles());
+
+            AddStep("add as many others and select them", () =>
+            {
+                others = run.Select((_, i) => new HitCircle { StartTime = 20000 + i * 500, Position = new Vector2(400, 300) }).ToArray();
+                EditorBeatmap.AddRange(others);
+
+                EditorBeatmap.SelectedHitObjects.Clear();
+                EditorBeatmap.SelectedHitObjects.AddRange(others);
+            });
+
+            AddUntilStep("the run is selected again", () => EditorBeatmap.SelectedHitObjects.ToHashSet().SetEquals(run), () => Is.True);
         }
 
         /// <summary>

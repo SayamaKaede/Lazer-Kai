@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Screens.Edit;
 using osuTK;
 
@@ -71,7 +72,13 @@ namespace osu.Game.Rulesets.Osu.Edit
             var added = new List<HitCircle>();
 
             // on whole coordinates, as every other position is (2026-10-05): a stream laid along a curve lands on fractions.
-            Vector2 whole(Vector2 position) => (composer as OsuHitObjectComposer)?.RoundPositionIfAsked(position) ?? position;
+            // On the playfield too, as everything placed or moved is: a zigzag pushes circles off to the side of the path,
+            // and at the edge that is off it (2026-11-09).
+            Vector2 whole(Vector2 position)
+            {
+                position = Vector2.Clamp(position, Vector2.Zero, OsuPlayfield.BASE_SIZE);
+                return (composer as OsuHitObjectComposer)?.RoundPositionIfAsked(position) ?? position;
+            }
 
             placed.Clear();
 
@@ -83,8 +90,15 @@ namespace osu.Game.Rulesets.Osu.Edit
 
                 if (i < circles.Count)
                 {
+                    if (circles[i].StartTime == put.Time && circles[i].Position == put.Position)
+                        continue;
+
                     circles[i].StartTime = put.Time;
                     circles[i].Position = put.Position;
+
+                    // the beatmap works out the stacking, and only for what it is told has changed. Circles that only
+                    // moved were keeping the stacking of where they had been (2026-11-09).
+                    beatmap.Update(circles[i]);
                     continue;
                 }
 

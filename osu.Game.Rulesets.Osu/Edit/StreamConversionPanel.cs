@@ -356,7 +356,12 @@ namespace osu.Game.Rulesets.Osu.Edit
                 if (source == null)
                     return;
 
-                NoteCount.MaxValue = limit(NoteCount.Value);
+                // from what the division fits rather than from the count as it stands, which kept a count above sixteen
+                // as the top of the bar once the wider range was taken away. The count comes down with it (2026-11-09).
+                var shares = sharesOfTheDivision();
+                int fits = Selector.Current.Value < shares.Length ? shares[Selector.Current.Value] : 0;
+
+                NoteCount.MaxValue = limit(fits);
             });
             NoteCount.BindValueChanged(_ => takeFromControls());
             SnapSpacing.BindValueChanged(_ => takeFromControls());
@@ -556,7 +561,9 @@ namespace osu.Game.Rulesets.Osu.Edit
             if (shapeCameFromTheBeatmap || preview.Circles.Count == 0)
                 return;
 
-            if (editorBeatmap.SelectedHitObjects.Count == preview.Circles.Count)
+            // the run itself, not just as many of anything: the same number of other objects was taken for it, and the
+            // panel's flips went to those (2026-11-09).
+            if (editorBeatmap.SelectedHitObjects.Count == preview.Circles.Count && preview.Circles.All(editorBeatmap.SelectedHitObjects.Contains))
                 return;
 
             using var _ = asmr?.Quiet();
