@@ -115,7 +115,10 @@ namespace osu.Game.Screens.Edit.GreenLines
         /// Puts the lines, and the objects' sounds and velocity, back to how they were before the pending changes.
         /// </summary>
         /// <remarks>
-        /// Only what this changes is put back: anything else edited while the panel was open stays.
+        /// Everything goes back to how it was when the pending changes began, whatever changed it in the meantime: the
+        /// lines as a whole, the kiai, where the red lines were, and the sounds and velocity of every object there was
+        /// then. A line or a sound changed from the timeline or the hitsound screen while the panel was open goes back
+        /// with the rest. Only objects added since are left as they are, having nothing to go back to.
         /// </remarks>
         public void Cancel()
         {
