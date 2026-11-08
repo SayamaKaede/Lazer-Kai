@@ -143,6 +143,7 @@ namespace osu.Game.Screens.Edit.GreenLines
         private FillFlowContainer<SampleSetButton> sampleSetButtons = null!;
         private FormNumberBox sampleIndexBox = null!;
         private FillFlowContainer usedIndexButtons = null!;
+        private RoundedButton addButton = null!;
         private RoundedButton removeButton = null!;
         private RoundedButton useCurrentTimeButton = null!;
         private RoundedButton pasteButton = null!;
@@ -428,7 +429,7 @@ namespace osu.Game.Screens.Edit.GreenLines
                     {
                         new Drawable[]
                         {
-                            button(LazerKaiGreenLineStrings.Add, AddLine),
+                            addButton = button(LazerKaiGreenLineStrings.Add, AddLine),
                             removeButton = button(LazerKaiGreenLineStrings.Remove, RemoveLine),
                             cancelButton = button(LazerKaiGreenLineStrings.Cancel, Cancel),
                             confirmButton = button(LazerKaiGreenLineStrings.Confirm, Confirm),
@@ -482,7 +483,13 @@ namespace osu.Game.Screens.Edit.GreenLines
 
             bool refresh = false;
 
-            if (listOutdated)
+            // not while something outside the panel is being dragged. A slider with a velocity of its own dragged along
+            // the timeline moves the line a save will put in for it on every frame, and the list was built again on each
+            // of them, every object's sounds counted and the list scrolled back to the selection as it went. Its own
+            // controls are left alone, so what they change shows as it changes (2026-11-09).
+            bool draggedElsewhere = inputManager.DraggedDrawable is Drawable dragged && !dragged.IsRootedAt(this);
+
+            if (listOutdated && !draggedElsewhere)
             {
                 rebuildList();
                 keepSelectionToWhatIsListed();
@@ -498,7 +505,16 @@ namespace osu.Game.Screens.Edit.GreenLines
                 show();
 
             cancelButton.Enabled.Value = confirmButton.Enabled.Value = editing.Pending;
+
+            // before the first red line there is nothing for a new line to carry on from. Pressing it there did nothing
+            // and said nothing (2026-11-09).
+            bool canAdd = editing.InEffectAt(timeToAddAt()) != null;
+            addButton.Enabled.Value = canAdd;
+            addButton.TooltipText = canAdd ? default : LazerKaiGreenLineStrings.NothingToCarryOnFrom;
         }
+
+        // stable's lines stand on whole milliseconds, and one just before the object is still read by it.
+        private double timeToAddAt() => Math.Floor(editorBeatmap.SnapTime(editorClock.CurrentTime, null));
 
         /// <summary>
         /// Puts in a green line at the playhead, on the beat divisor, saying what the line before it does, and selects
@@ -509,8 +525,7 @@ namespace osu.Game.Screens.Edit.GreenLines
             if (!Editable)
                 return;
 
-            // stable's lines stand on whole milliseconds, and one just before the object is still read by it.
-            var line = editing.Add(Math.Floor(editorBeatmap.SnapTime(editorClock.CurrentTime, null)));
+            var line = editing.Add(timeToAddAt());
 
             if (line != null)
                 select(line);

@@ -83,6 +83,65 @@ namespace osu.Game.Tests.Visual.Editing
             AddUntilStep("panel is closed", () => panel.State.Value, () => Is.EqualTo(Visibility.Hidden));
         }
 
+        /// <summary>
+        /// Before the first red line there is no line for a new one to carry on from, so nothing can be added there, and
+        /// the button says so rather than doing nothing when pressed (2026-11-09).
+        /// </summary>
+        [Test]
+        public void TestNothingCanBeAddedBeforeTheFirstRedLine()
+        {
+            openAt(500);
+
+            AddUntilStep("the button cannot be used", () => addButton.Enabled.Value, () => Is.False);
+            AddAssert("it says why", () => addButton.TooltipText.ToString(), () => Is.Not.Empty);
+
+            AddStep("go past the red line", () => clock.Seek(2109));
+            AddUntilStep("the button can be used", () => addButton.Enabled.Value, () => Is.True);
+            AddAssert("with nothing to explain", () => addButton.TooltipText.ToString(), () => Is.Empty);
+        }
+
+        /// <summary>
+        /// While a slider with a velocity of its own is dragged along the timeline, the line a save will put in for it
+        /// moves with it on every frame. The list was built again on each of them, counting every object's sounds and
+        /// scrolling back to the selection as it went. It waits for the drag to end instead (2026-11-09).
+        /// </summary>
+        [Test]
+        public void TestTheListWaitsForADragElsewhereToEnd()
+        {
+            Slider dragged = null!;
+            GreenLinePanel.LineRow[] before = null!;
+
+            AddStep("give the slider a velocity of its own", () =>
+            {
+                dragged = slider(2274);
+                dragged.SliderVelocityMultiplier = 1.5;
+                EditorBeatmap.Update(dragged);
+            });
+
+            openAt(2274);
+
+            AddStep("press on the slider in the timeline", () =>
+            {
+                var blueprint = Editor.ChildrenOfType<TimelineHitObjectBlueprint>().Single(b => b.Item == dragged);
+                InputManager.MoveMouseTo(blueprint.SelectionQuad.TopLeft + new osuTK.Vector2(5, blueprint.SelectionQuad.Height / 2));
+                InputManager.PressButton(MouseButton.Left);
+            });
+
+            AddStep("note the rows", () => before = rows().ToArray());
+
+            for (int i = 1; i <= 5; i++)
+            {
+                int step = i;
+                AddStep($"drag along {step}", () => InputManager.MoveMouseTo(InputManager.CurrentState.Mouse.Position + new osuTK.Vector2(10, 0)));
+            }
+
+            AddUntilStep("the slider moved", () => dragged.StartTime, () => Is.GreaterThan(2274));
+            AddAssert("the list was not built again", () => rows().SequenceEqual(before), () => Is.True);
+
+            AddStep("let go", () => InputManager.ReleaseButton(MouseButton.Left));
+            AddUntilStep("it is built once let go", () => rows().SequenceEqual(before), () => Is.False);
+        }
+
         [Test]
         public void TestAnAddedLineCarriesOnFromTheOneBefore()
         {
@@ -490,7 +549,9 @@ namespace osu.Game.Tests.Visual.Editing
                 () => Does.Contain(119637d).And.Not.Contains(119700d));
         }
 
-        private RoundedButton useCurrentTimeButton => panel.ChildrenOfType<RoundedButton>().Single(b => b.Text == LazerKaiGreenLineStrings.UseCurrentTime);
+        private RoundedButton addButton => panel.ChildrenOfType<RoundedButton>().Single(b => b.Text == LazerKaiGreenLineStrings.Add);
+
+        private RoundedButton useCurrentTimeButton =>panel.ChildrenOfType<RoundedButton>().Single(b => b.Text == LazerKaiGreenLineStrings.UseCurrentTime);
 
         [Test]
         public void TestTheSelectedLineIsScrolledToWhenOpened()

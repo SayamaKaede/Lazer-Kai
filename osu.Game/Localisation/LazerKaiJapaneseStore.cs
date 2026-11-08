@@ -268,6 +268,7 @@ namespace osu.Game.Localisation
             [$@"{green_line_prefix}:green_line"] = @"緑線",
             [$@"{green_line_prefix}:red_line"] = @"赤線",
             [$@"{green_line_prefix}:add"] = @"追加",
+            [$@"{green_line_prefix}:nothing_to_carry_on_from"] = @"最初の赤線より前には、緑線を追加できません",
             [$@"{green_line_prefix}:remove"] = @"削除",
             [$@"{green_line_prefix}:cancel"] = @"キャンセル",
             [$@"{green_line_prefix}:confirm"] = @"確定",

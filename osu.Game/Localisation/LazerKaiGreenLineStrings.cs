@@ -30,6 +30,11 @@ namespace osu.Game.Localisation
         public static LocalisableString Add => new TranslatableString(getKey(@"add"), @"Add");
 
         /// <summary>
+        /// "A green line cannot be added before the first red line"
+        /// </summary>
+        public static LocalisableString NothingToCarryOnFrom => new TranslatableString(getKey(@"nothing_to_carry_on_from"), @"A green line cannot be added before the first red line");
+
+        /// <summary>
         /// "Remove"
         /// </summary>
         public static LocalisableString Remove => new TranslatableString(getKey(@"remove"), @"Remove");
