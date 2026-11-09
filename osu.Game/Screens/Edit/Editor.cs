@@ -3337,7 +3337,7 @@ namespace osu.Game.Screens.Edit
                 foreach (var beatmapInfo in Beatmap.Value.BeatmapSetInfo.Beatmaps)
                 {
                     var menuItem = difficultyItems.OfType<DifficultyMenuItem>().FirstOrDefault(i => i.BeatmapInfo.Equals(beatmapInfo));
-                    menuItem?.Text.Value = string.IsNullOrEmpty(beatmapInfo.DifficultyName) ? "(unnamed)" : beatmapInfo.DifficultyName;
+                    menuItem?.Text.Value = DifficultyMenuItem.LabelFor(beatmapInfo);
                 }
             };
 

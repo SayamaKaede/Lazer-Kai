@@ -11,6 +11,7 @@ using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Game.Graphics;
+using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
@@ -255,6 +256,9 @@ namespace osu.Game.Screens.Edit.Components.Menus
                     case OsuMenuItemSpacer spacer:
                         return new DrawableSpacer(spacer);
 
+                    case DifficultyMenuItem difficulty:
+                        return new EditorDifficultyMenuItem(difficulty);
+
                     case StatefulMenuItem stateful:
                         return new EditorStatefulMenuItem(stateful);
 
@@ -277,6 +281,34 @@ namespace osu.Game.Screens.Edit.Components.Menus
                     BackgroundColourHover = colourProvider.Background1;
 
                     Foreground.Padding = new MarginPadding { Vertical = 2 };
+                }
+            }
+
+            /// <summary>
+            /// A difficulty in the difficulty list, with the icon of its mode in front of its name (2026-11-09).
+            /// </summary>
+            private partial class EditorDifficultyMenuItem : EditorStatefulMenuItem
+            {
+                public EditorDifficultyMenuItem(DifficultyMenuItem difficulty)
+                    : base(difficulty)
+                {
+                }
+
+                // called from the base constructor, before anything of this class is set: the difficulty is read from the item.
+                protected override DrawableOsuMenuItem.TextContainer CreateTextContainer()
+                {
+                    var difficulty = (DifficultyMenuItem)Item;
+                    var text = base.CreateTextContainer();
+
+                    text.ShowIcon(new ConstrainedIconContainer
+                    {
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreLeft,
+                        Size = new Vector2(TEXT_SIZE - 3),
+                        Icon = difficulty.BeatmapInfo.Ruleset.CreateInstance().CreateIcon(),
+                    });
+
+                    return text;
                 }
             }
 

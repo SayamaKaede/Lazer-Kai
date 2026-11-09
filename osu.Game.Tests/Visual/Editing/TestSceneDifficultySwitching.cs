@@ -4,6 +4,7 @@
 #nullable disable
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
@@ -11,6 +12,8 @@ using osu.Framework.Extensions;
 using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
+using osu.Game.Graphics.Containers;
+using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays.Dialog;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Catch;
@@ -18,8 +21,10 @@ using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Taiko;
 using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Edit;
+using osu.Game.Screens.Edit.Components.Menus;
 using osu.Game.Storyboards;
 using osu.Game.Tests.Beatmaps.IO;
+using osu.Game.Utils;
 
 namespace osu.Game.Tests.Visual.Editing
 {
@@ -196,6 +201,46 @@ namespace osu.Game.Tests.Visual.Editing
             // ensure editor loader didn't resume.
             AddAssert("stack empty", () => Stack.CurrentScreen == null);
         }
+
+        [Test]
+        public void TestDifficultiesAreListedWithTheirModeAndStars()
+        {
+            openDifficultyList();
+
+            AddAssert("every difficulty shows its stars", () => difficultyMenuItems().Select(d => d.Item.Text.Value.ToString()),
+                () => Is.EqualTo(difficultyMenuItems().Select(d => expectedLabel(((DifficultyMenuItem)d.Item).BeatmapInfo))));
+            AddAssert("the stars are the calculated ones", () => difficultyMenuItems().All(d => ((DifficultyMenuItem)d.Item).BeatmapInfo.StarRating > 0));
+            AddAssert("every difficulty shows its mode", () => difficultyMenuItems().All(d => d.ChildrenOfType<ConstrainedIconContainer>().Count() == 1));
+        }
+
+        [Test]
+        public void TestARenamedDifficultyKeepsItsStars()
+        {
+            AddStep("rename the difficulty", () =>
+            {
+                EditorBeatmap.BeatmapInfo.DifficultyName = "Renamed";
+                EditorBeatmap.SaveState();
+            });
+
+            openDifficultyList();
+
+            AddAssert("the new name shows with its stars", () => difficultyMenuItems().Single(d => ((DifficultyMenuItem)d.Item).BeatmapInfo.Equals(EditorBeatmap.BeatmapInfo)).Item.Text.Value.ToString(),
+                () => Is.EqualTo(expectedLabel(EditorBeatmap.BeatmapInfo)));
+            AddAssert("which is the new name", () => EditorBeatmap.BeatmapInfo.DifficultyName, () => Is.EqualTo("Renamed"));
+        }
+
+        private void openDifficultyList()
+        {
+            AddStep("click File", () => this.ChildrenOfType<EditorMenuBar.DrawableEditorBarMenuItem>().First().TriggerClick());
+            AddStep("open change difficulty", () => this.ChildrenOfType<DrawableOsuMenuItem>()
+                                                        .Single(item => item.Item.Text.Value.ToString() == "Change difficulty")
+                                                        .TriggerClick());
+            AddUntilStep("difficulties listed", () => difficultyMenuItems().Count(), () => Is.EqualTo(Beatmap.Value.BeatmapSetInfo.Beatmaps.Count));
+        }
+
+        private IEnumerable<DrawableOsuMenuItem> difficultyMenuItems() => this.ChildrenOfType<DrawableOsuMenuItem>().Where(d => d.Item is DifficultyMenuItem);
+
+        private static string expectedLabel(BeatmapInfo beatmap) => $"{beatmap.DifficultyName} ({beatmap.StarRating.FormatStarRating()}*)";
 
         private void switchToDifficulty(Func<BeatmapInfo> difficulty) => AddStep("switch to difficulty", () => Editor.SwitchToDifficulty(difficulty.Invoke()));
 

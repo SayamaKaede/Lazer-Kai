@@ -168,6 +168,18 @@ namespace osu.Game.Graphics.UserInterface
             public readonly SpriteText BoldText;
             public readonly Container CheckboxContainer;
 
+            /// <summary>
+            /// Room for an icon between the checkbox and the text, empty and taking no space until <see cref="ShowIcon"/>
+            /// is called. Used for the mode of each difficulty in the editor's difficulty list (2026-11-09).
+            /// </summary>
+            private readonly Container iconContainer;
+
+            public void ShowIcon(Drawable icon)
+            {
+                iconContainer.Child = icon;
+                iconContainer.Show();
+            }
+
             public TextContainer()
             {
                 AutoSizeAxes = Axes.Both;
@@ -188,6 +200,13 @@ namespace osu.Game.Graphics.UserInterface
                         {
                             RelativeSizeAxes = Axes.Y,
                             Width = MARGIN_HORIZONTAL,
+                        },
+                        iconContainer = new Container
+                        {
+                            Anchor = Anchor.CentreLeft,
+                            Origin = Anchor.CentreLeft,
+                            AutoSizeAxes = Axes.Both,
+                            Alpha = 0,
                         },
                         new Container
                         {
