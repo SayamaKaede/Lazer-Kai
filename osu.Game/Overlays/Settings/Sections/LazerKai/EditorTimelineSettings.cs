@@ -47,6 +47,13 @@ namespace osu.Game.Overlays.Settings.Sections.LazerKai
                 },
                 new SettingsCheckbox
                 {
+                    LabelText = LazerKaiSavedLinesStrings.ShowBookmarks,
+                    // drawn in the same timeline styles as the green lines, so the same note applies.
+                    TooltipText = LazerKaiSavedLinesStrings.ShowStableGreenLinesDescription,
+                    Current = config.GetBindable<bool>(OsuSetting.EditorTimelineShowBookmarks)
+                },
+                new SettingsCheckbox
+                {
                     LabelText = EditorStrings.TimelineInspector,
                     TooltipText = EditorStrings.TimelineInspectorDescription,
                     Current = config.GetBindable<bool>(OsuSetting.EditorTimelineInspector)

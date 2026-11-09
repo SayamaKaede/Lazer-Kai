@@ -178,6 +178,7 @@ namespace osu.Game.Screens.Edit.Compose.Components.Timeline
                         // over the objects, as in stable, where they would otherwise be hidden behind them. They take
                         // no clicks, so the objects under them are still the ones clicked.
                         new TimelineSavedLineDisplay { RelativeSizeAxes = Axes.Both },
+                        new TimelineBookmarkDisplay { RelativeSizeAxes = Axes.Both },
                     }
                 },
             });

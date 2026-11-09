@@ -21,6 +21,11 @@ namespace osu.Game.Localisation
             @"Only applies while the top timeline is in the Stable or Lazer-Kai style.");
 
         /// <summary>
+        /// "Show bookmarks"
+        /// </summary>
+        public static LocalisableString ShowBookmarks => new TranslatableString(getKey(@"show_bookmarks"), @"Show bookmarks");
+
+        /// <summary>
         /// "Red line {0} · {1} BPM · {2}/4 · {3} #{4} · {5}%"
         /// </summary>
         public static LocalisableString RedLine(string time, string bpm, int meter, string sampleSet, int index, int volume) =>

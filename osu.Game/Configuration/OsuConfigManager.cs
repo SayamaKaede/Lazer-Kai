@@ -336,6 +336,7 @@ namespace osu.Game.Configuration
             // Lazer-Kai keeps what they had, since the settings file says it either way.
             SetDefault(OsuSetting.StableCompatibility, true);
             SetDefault(OsuSetting.EditorTimelineShowSavedLines, false);
+            SetDefault(OsuSetting.EditorTimelineShowBookmarks, true);
             SetDefault(OsuSetting.EditorStatusShowSaveFormat, true);
             SetDefault(OsuSetting.ErrorReporting, true);
             SetDefault(OsuSetting.ReplayShowMissTimeline, false);
@@ -1451,5 +1452,10 @@ namespace osu.Game.Configuration
         /// game (2026-10-28). Offered only in builds that are not distributed.
         /// </summary>
         EditorOperationLog,
+
+        /// <summary>
+        /// Whether the top timeline draws a line at each bookmark, the way it draws the saved green lines (2026-11-09).
+        /// </summary>
+        EditorTimelineShowBookmarks,
     }
 }

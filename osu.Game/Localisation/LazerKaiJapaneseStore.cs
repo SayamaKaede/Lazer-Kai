@@ -258,7 +258,8 @@ namespace osu.Game.Localisation
             // the saved file's red and green lines on the timeline
             [$@"{saved_lines_prefix}:show_stable_green_lines"] = @"Stableの緑線を表示",
             [$@"{saved_lines_prefix}:show_stable_green_lines_description"] = @"上部タイムラインが、StableかLazer-Kaiモードの場合にのみ適用されます",
-            [$@"{saved_lines_prefix}:red_line"] = @"赤線 {0}・BPM {1}・{2}/4・{3} #{4}・ボリューム{5}%",
+            [$@"{saved_lines_prefix}:show_bookmarks"] = @"ブックマークを表示",
+            [$@"{saved_lines_prefix}:red_line"] =@"赤線 {0}・BPM {1}・{2}/4・{3} #{4}・ボリューム{5}%",
             [$@"{saved_lines_prefix}:green_line"] = @"緑線 {0}・SV x{1}・{2} #{3}・ボリューム{4}%",
             [$@"{saved_lines_prefix}:kiai"] = @"・Kiai",
             [$@"{saved_lines_prefix}:put_in_on_save"] = @"（保存時に追加されます）",

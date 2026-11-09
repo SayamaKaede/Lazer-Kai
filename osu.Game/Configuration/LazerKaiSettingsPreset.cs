@@ -97,6 +97,7 @@ namespace osu.Game.Configuration
             [OsuSetting.EditorTimelineDragToSeek] = @"False",
             [OsuSetting.EditorTimelineInspector] = @"True",
             [OsuSetting.EditorTimelineRepeatDragThreshold] = @"0.5",
+            [OsuSetting.EditorTimelineShowBookmarks] = @"True",
             [OsuSetting.EditorTimelineShowSavedLines] = @"True",
             [OsuSetting.EditorTimelineStyle] = @"LazerKai",
             [OsuSetting.EditorToggleButtonSquareness] = @"0.0",
