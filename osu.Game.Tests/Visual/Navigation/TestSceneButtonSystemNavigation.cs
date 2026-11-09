@@ -33,9 +33,9 @@ namespace osu.Game.Tests.Visual.Navigation
         {
             AddAssert("state is initial", () => buttons.State == ButtonSystemState.Initial);
 
-            AddStep("press P three times", () =>
+            // twice rather than three times: play goes straight to song select, solo being the only way to play in this build.
+            AddStep("press P twice", () =>
             {
-                InputManager.Key(Key.P);
                 InputManager.Key(Key.P);
                 InputManager.Key(Key.P);
             });
@@ -52,10 +52,18 @@ namespace osu.Game.Tests.Visual.Navigation
             AddAssert("state is top level", () => buttons.State == ButtonSystemState.TopLevel);
 
             AddStep("press P", () => InputManager.Key(Key.P));
-            AddAssert("state is play", () => buttons.State == ButtonSystemState.Play);
-
-            AddStep("press P", () => InputManager.Key(Key.P));
             AddAssert("entered song select", () => Game.ScreenStack.CurrentScreen is SoloSongSelect);
+        }
+
+        [Test]
+        public void TestClickingPlayEntersSongSelect()
+        {
+            AddStep("press P", () => InputManager.Key(Key.P));
+            AddAssert("state is top level", () => buttons.State == ButtonSystemState.TopLevel);
+
+            AddStep("click play", () => buttons.ChildrenOfType<MainMenuButton>().First(b => b.VisibleStateMin == ButtonSystemState.TopLevel
+                                                                                          && b.TriggerKeys.Contains(Key.P)).TriggerClick());
+            AddUntilStep("entered song select", () => Game.ScreenStack.CurrentScreen is SoloSongSelect);
         }
     }
 }

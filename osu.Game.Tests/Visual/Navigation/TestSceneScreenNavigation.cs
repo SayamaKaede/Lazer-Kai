@@ -1197,7 +1197,7 @@ namespace osu.Game.Tests.Visual.Navigation
             AddStep("close settings sidebar", () => InputManager.Key(Key.Escape));
 
             Screens.Select.SongSelect songSelect = null;
-            AddRepeatStep("go to solo", () => InputManager.Key(Key.P), 3);
+            AddRepeatStep("go to solo", () => InputManager.Key(Key.P), 2);
             AddUntilStep("wait for song select", () => (songSelect = Game.ScreenStack.CurrentScreen as Screens.Select.SongSelect) != null);
             AddUntilStep("wait for beatmap sets loaded", () => songSelect.CarouselItemsPresented);
 

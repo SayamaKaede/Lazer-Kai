@@ -67,7 +67,8 @@ namespace osu.Game.Tests.Visual.UserInterface
             AddStep("Enter mode", performEnterMode);
         }
 
-        [TestCase(Key.P, Key.P)]
+        // a single P from the top level: play goes straight to solo, there being nothing else to choose in this build.
+        [TestCase(Key.P)]
         // no cases for the multiplayer, playlists or lounge shortcuts: this build leaves those buttons out, since it
         // does not submit scores (see `UnsendableRequests`).
         [TestCase(Key.B, Key.E, Key.B)]
