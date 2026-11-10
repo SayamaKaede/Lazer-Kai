@@ -882,7 +882,49 @@ namespace osu.Game.Localisation
             [$@"{editor_setup_prefix}:sync_metadata_with_all_difficulties"] = @"メタデータをすべての難易度と同期",
             // the name stays as mappers say it, like Addition bank and New Combo
             [$@"{osu_editor_setup_prefix}:stack_leniency_description"] = @"プレイ中、同じ位置にあるノーツは自動でスタックされます。値を大きくすると、時間の離れたノーツもスタックされやすくなります",
+
+            // snapshots: the name stays as the mapper asked for it
+            [$@"{snapshot_prefix}:header"] = @"Snapshot",
+            [$@"{snapshot_prefix}:this_difficulty"] = @"この難易度",
+            [$@"{snapshot_prefix}:whole_set"] = @"セット全体",
+            [$@"{snapshot_prefix}:no_snapshots"] = @"Snapshotはまだありません。変更があった日ごとに記録します",
+            [$@"{snapshot_prefix}:not_recording"] = @"この譜面のSnapshotは記録していません。下のチェックでオンにできます",
+            [$@"{snapshot_prefix}:record"] = @"この譜面のSnapshotを記録",
+            [$@"{snapshot_prefix}:keep_days"] = @"保持する日数（空欄で無制限）",
+            [$@"{snapshot_prefix}:no_changes"] = @"変更はありません",
+            [$@"{snapshot_prefix}:not_saved"] = @"この日の記録はありません",
+            [$@"{snapshot_prefix}:first_record"] = @"最初の記録です。これより前の記録はありません",
+            [$@"{snapshot_prefix}:more"] = @"ほか{0}件",
+            [$@"{snapshot_prefix}:added"] = @"追加: {0}",
+            [$@"{snapshot_prefix}:removed"] = @"削除: {0}",
+            [$@"{snapshot_prefix}:changed"] = @"変更: {0}",
+            [$@"{snapshot_prefix}:changed_in"] = @"変更: {0}（{1}）",
+            [$@"{snapshot_prefix}:separator"] = @"・",
+            [$@"{snapshot_prefix}:file"] = @"ファイル {0}",
+            [$@"{snapshot_prefix}:event"] = @"[Events]の行 {0}",
+            [$@"{snapshot_prefix}:circle"] = @"サークル",
+            [$@"{snapshot_prefix}:slider"] = @"スライダー",
+            [$@"{snapshot_prefix}:spinner"] = @"スピナー",
+            [$@"{snapshot_prefix}:hold_note"] = @"ロングノーツ",
+            [$@"{snapshot_prefix}:red_line"] = @"赤線",
+            [$@"{snapshot_prefix}:green_line"] = @"緑線",
+            [$@"{snapshot_prefix}:bookmark"] = @"ブックマーク",
+            [$@"{snapshot_prefix}:break"] = @"休憩時間",
+            [$@"{snapshot_prefix}:position"] = @"位置",
+            [$@"{snapshot_prefix}:hitsound"] = @"ヒットサウンド",
+            [$@"{snapshot_prefix}:shape"] = @"アンカー",
+            [$@"{snapshot_prefix}:repeats"] = @"折り返し",
+            [$@"{snapshot_prefix}:length"] = @"長さ",
+            [$@"{snapshot_prefix}:meter"] = @"拍子",
+            [$@"{snapshot_prefix}:volume"] = @"ボリューム",
+            // said as mappers say them
+            [$@"{snapshot_prefix}:new_combo"] = @"New Combo",
+            [$@"{snapshot_prefix}:bpm"] = @"BPM",
+            [$@"{snapshot_prefix}:slider_velocity"] = @"SV",
+            [$@"{snapshot_prefix}:kiai"] = @"Kiai",
         };
+
+        private const string snapshot_prefix = @"osu.Game.Resources.Localisation.LazerKaiSnapshot";
 
         private const string editor_prefix = @"osu.Game.Resources.Localisation.Editor";
         private const string editor_dialogs_prefix = @"osu.Game.Resources.Localisation.EditorDialogs";

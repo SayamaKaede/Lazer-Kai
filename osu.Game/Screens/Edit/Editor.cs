@@ -67,6 +67,7 @@ using osu.Game.Screens.Edit.Compose.Components.Timeline;
 using osu.Game.Screens.Edit.Design;
 using osu.Game.Screens.Edit.GameplayTest;
 using osu.Game.Screens.Edit.Setup;
+using osu.Game.Screens.Edit.Snapshots;
 using osu.Game.Screens.Edit.Submission;
 using osu.Game.Screens.Edit.GreenLines;
 using osu.Game.Screens.Edit.Hitsounds;
@@ -301,6 +302,42 @@ namespace osu.Game.Screens.Edit
 
         private DifficultyGraphDetailOverlay difficultyGraphDetail;
 
+        private SnapshotOverlay snapshotOverlay;
+
+        private BeatmapSnapshotStore snapshotStore;
+
+        /// <summary>
+        /// Whether the set being edited is the logged in mapper's own: by the website's ID where the set has its
+        /// mapper's, which a change of name leaves alone, and by name where it has not been uploaded.
+        /// </summary>
+        private bool isOwnBeatmap()
+        {
+            if (!api.IsLoggedIn)
+                return false;
+
+            var user = api.LocalUser.Value;
+            var author = editorBeatmap.BeatmapInfo.Metadata.Author;
+
+            return (author.OnlineID > 1 && author.OnlineID == user.Id) || string.Equals(author.Username, user.Username, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Keeps how the difficulty is stored now among its snapshots, as when it is opened: for the panel, when
+        /// snapshots are turned on from it.
+        /// </summary>
+        public void RecordSnapshotAsOpened() => snapshotStore.RecordOpened(editorBeatmap.BeatmapInfo, readStoredFile(), readSetFiles());
+
+        /// <summary>
+        /// The hash of every file of the set as it is stored now, by its name: what a snapshot keeps of the set.
+        /// </summary>
+        private IReadOnlyDictionary<string, string> readSetFiles()
+        {
+            Guid set = editorBeatmap.BeatmapInfo.BeatmapSet?.ID ?? Guid.Empty;
+
+            return beatmapManager.QueryBeatmapSet(s => s.ID == set)?.PerformRead(s => s.Files.GroupBy(f => f.Filename).ToDictionary(g => g.Key, g => g.First().File.Hash))
+                   ?? new Dictionary<string, string>();
+        }
+
         private GreenLinePanel greenLinePanel;
 
         [Resolved]
@@ -498,6 +535,20 @@ namespace osu.Game.Screens.Edit
             canSave = editorBeatmap.BeatmapInfo.Ruleset.CreateInstance() is ILegacyRuleset;
 
             byte[] savedFile = readSavedFile(loadableBeatmap);
+
+            dependencies.Cache(snapshotStore = new BeatmapSnapshotStore(storage));
+
+            if (canSave)
+            {
+                // the mapper's own are recorded without being asked for; anyone else's from the panel.
+                if (isOwnBeatmap())
+                    snapshotStore.EnableAsOwn(editorBeatmap.BeatmapInfo);
+
+                // how things are now: what an update or a change made outside the game left, or, the first time, what
+                // the first day is compared with.
+                if (!isNewBeatmap)
+                    snapshotStore.RecordOpened(editorBeatmap.BeatmapInfo, savedFile, readSetFiles());
+            }
 
             AddInternal(savedTimingLines);
             dependencies.Cache(savedTimingLines);
@@ -721,6 +772,7 @@ namespace osu.Game.Screens.Edit
                                             {
                                                 Hotkey = new Hotkey(GlobalAction.EditorToggleDiscussion)
                                             },
+                                            new EditorMenuItem(LazerKaiSnapshotStrings.Header, MenuItemType.Standard, () => snapshotOverlay?.ToggleVisibility()),
                                             placementPresetsMenuItem = new EditorMenuItem(PlacementPresetStrings.MenuItem, MenuItemType.Standard, () => placementPresets?.ToggleVisibility())
                                             {
                                                 Hotkey = new Hotkey(GlobalAction.EditorTogglePlacementPresets)
@@ -934,6 +986,8 @@ namespace osu.Game.Screens.Edit
                     // above everything else of the editor's, which it stands in the way of while it is open.
                     wholeBeatmapOffset = new WholeBeatmapOffsetOverlay { State = { Value = Visibility.Hidden } },
                     redLineCopy = new RedLineCopyOverlay { State = { Value = Visibility.Hidden } },
+                    // beside the beatmap as the discussion is, and under the windows above that stand in its way.
+                    snapshotOverlay = new SnapshotOverlay { State = { Value = Visibility.Hidden } },
                     MutationTracker,
                     autoBackup = new EditorAutoBackup
                     {
@@ -1252,6 +1306,10 @@ namespace osu.Game.Screens.Edit
             updateLastSavedHash();
             onScreenDisplay?.Display(new EditorToast(ToastStrings.BeatmapSaved, editorBeatmap.BeatmapInfo.GetDisplayTitle()));
             Saved?.Invoke();
+
+            // the day's snapshot is its last save.
+            snapshotStore.RecordSaved(editorBeatmap.BeatmapInfo, readStoredFile(), readSetFiles());
+            snapshotOverlay?.Refresh();
 
             // a save is a deliberate stopping point, so the graph is brought up to date without waiting.
             bottomBar?.ChildrenOfType<DifficultyGraphPart>().SingleOrDefault()?.RecalculateNow();
@@ -2701,6 +2759,7 @@ namespace osu.Game.Screens.Edit
                 comboColourStudio?.Hide();
                 collab?.Hide();
                 discussion?.Hide();
+                snapshotOverlay?.Hide();
                 difficultyGraphDetail?.Hide();
             }
 
