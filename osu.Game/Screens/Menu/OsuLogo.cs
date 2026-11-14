@@ -293,6 +293,11 @@ namespace osu.Game.Screens.Menu
             logo.Size = size;
             ripple.Texture = texture;
             ripple.Size = size;
+
+            // sized by the texture rather than by the sprite, since a turned sprite takes more room than an upright one
+            // and the coloured circle (which fills this) would grow with it while the logo is spun.
+            LogoElements.AutoSizeAxes = Axes.None;
+            LogoElements.Size = size;
         }
 
         private int lastBeatIndex;
@@ -374,6 +379,8 @@ namespace osu.Game.Screens.Menu
         {
             base.Update();
 
+            updateSpin();
+
             const float scale_adjust_cutoff = 0.4f;
 
             if (musicController.CurrentTrack.IsRunning)
@@ -442,24 +449,78 @@ namespace osu.Game.Screens.Menu
             impactContainer.ScaleTo(1.12f, 250);
         }
 
-        public override bool DragBlocksClick => false;
+        // a small toy: dragging the logo round turns it with the cursor, and let go it keeps turning and slows down.
+        // it replaces the rubber-band pull upstream gives the logo.
 
-        protected override bool OnDragStart(DragStartEvent e) => true;
+        /// <summary>How quickly a spinning logo slows down; the speed falls to about a third each second.</summary>
+        private const float spin_friction = 1.1f;
+
+        /// <summary>A turn this large while dragging makes the drag a spin rather than a click.</summary>
+        private const float spin_blocks_click_degrees = 15;
+
+        /// <summary>Degrees per millisecond, positive clockwise.</summary>
+        private float spinVelocity;
+
+        private float spunThisDrag;
+        private double lastSpinTime;
+
+        public override bool DragBlocksClick => Math.Abs(spunThisDrag) >= spin_blocks_click_degrees;
+
+        protected override bool OnDragStart(DragStartEvent e)
+        {
+            spunThisDrag = 0;
+            spinVelocity = 0;
+            lastSpinTime = Time.Current;
+            return true;
+        }
 
         protected override void OnDrag(DragEvent e)
         {
-            Vector2 change = e.MousePosition - e.MouseDownPosition;
+            Vector2 centre = logo.ScreenSpaceDrawQuad.Centre;
+            Vector2 from = e.ScreenSpaceLastMousePosition - centre;
+            Vector2 to = e.ScreenSpaceMousePosition - centre;
 
-            // Diminish the drag distance as we go further to simulate "rubber band" feeling.
-            change *= change.Length <= 0 ? 0 : MathF.Pow(change.Length, 0.6f) / change.Length;
+            // near the middle the angle swings wildly for a tiny movement, so only the outer part turns it.
+            float minimumRadius = logo.ScreenSpaceDrawQuad.Width * 0.15f;
+            if (from.Length < minimumRadius || to.Length < minimumRadius)
+                return;
 
-            logoBounceContainer.MoveTo(change);
+            float delta = MathHelper.RadiansToDegrees(MathF.Atan2(from.X * to.Y - from.Y * to.X, Vector2.Dot(from, to)));
+
+            rotateLogo(delta);
+            spunThisDrag += delta;
+
+            double elapsed = Math.Max(1, Time.Current - lastSpinTime);
+            spinVelocity = (float)Interpolation.Lerp(spinVelocity, delta / elapsed, 0.5);
+            lastSpinTime = Time.Current;
         }
 
         protected override void OnDragEnd(DragEndEvent e)
         {
-            logoBounceContainer.MoveTo(Vector2.Zero, 800, Easing.OutElastic);
+            // a cursor held still before letting go has stopped the logo.
+            if (Time.Current - lastSpinTime > 80)
+                spinVelocity = 0;
+
             base.OnDragEnd(e);
+        }
+
+        private void updateSpin()
+        {
+            if (IsDragged || spinVelocity == 0)
+                return;
+
+            rotateLogo((float)(spinVelocity * Time.Elapsed));
+            spinVelocity *= MathF.Exp(-spin_friction * (float)Time.Elapsed / 1000);
+
+            if (Math.Abs(spinVelocity) < 0.001f)
+                spinVelocity = 0;
+        }
+
+        private void rotateLogo(float degrees)
+        {
+            float rotation = (logo.Rotation + degrees) % 360;
+            logo.Rotation = rotation;
+            ripple.Rotation = rotation;
         }
 
         private Container defaultProxyTarget;
