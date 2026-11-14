@@ -21,6 +21,7 @@ using osu.Framework.Utils;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Graphics.Backgrounds;
 using osu.Game.Graphics.Containers;
+using osu.Game.IO;
 using osu.Game.Overlays;
 using osuTK;
 using osuTK.Graphics;
@@ -62,7 +63,7 @@ namespace osu.Game.Screens.Menu
         protected Sample SampleDownbeat;
 
         private readonly Container colourAndTriangles;
-        private readonly TrianglesV2 triangles;
+        private readonly LazerKaiHexagons triangles;
 
         /// <summary>
         /// Return value decides whether the logo should play its own sample for the click action.
@@ -188,16 +189,16 @@ namespace osu.Game.Screens.Menu
                                                                         new Box
                                                                         {
                                                                             RelativeSizeAxes = Axes.Both,
-                                                                            Colour = ColourInfo.GradientVertical(Color4Extensions.FromHex(@"ff66ab"), Color4Extensions.FromHex(@"cc5289")),
+                                                                            // the fork's own colours: a cool, greyish blue where osu!'s pink was.
+                                                                            Colour = ColourInfo.GradientVertical(Color4Extensions.FromHex(@"6f8fb5"), Color4Extensions.FromHex(@"587495")),
                                                                         },
-                                                                        triangles = new TrianglesV2
+                                                                        triangles = new LazerKaiHexagons
                                                                         {
                                                                             Anchor = Anchor.Centre,
                                                                             Origin = Anchor.Centre,
-                                                                            Thickness = 0.009f,
-                                                                            ScaleAdjust = 3,
+                                                                            HexagonWidth = 160,
                                                                             SpawnRatio = 1.4f,
-                                                                            Colour = ColourInfo.GradientVertical(Color4Extensions.FromHex(@"ff66ab"), Color4Extensions.FromHex(@"b6346f")),
+                                                                            Colour = ColourInfo.GradientVertical(Color4Extensions.FromHex(@"6f8fb5"), Color4Extensions.FromHex(@"3e5675")),
                                                                             RelativeSizeAxes = Axes.Both,
                                                                         },
                                                                     }
@@ -275,15 +276,23 @@ namespace osu.Game.Screens.Menu
         }
 
         [BackgroundDependencyLoader]
-        private void load(TextureStore textures, AudioManager audio)
+        private void load(TextureStore textures, AudioManager audio, LazerKaiArtwork artwork)
         {
             sampleClick = audio.Samples.Get(@"Menu/osu-logo-select");
 
             SampleBeat = audio.Samples.Get(@"Menu/osu-logo-heartbeat");
             SampleDownbeat = audio.Samples.Get(@"Menu/osu-logo-downbeat");
 
-            logo.Texture = textures.Get(@"Menu/logo");
-            ripple.Texture = textures.Get(@"Menu/logo");
+            // the fork's own mark goes where osu!'s name was, since that name is not this fork's to show.
+            // it is drawn at the size osu!'s texture is, so the ring still lines up with the coloured circle behind it.
+            Texture osuLogo = textures.Get(@"Menu/logo");
+            Texture texture = artwork.GetTexture(@"menu-logo") ?? osuLogo;
+            var size = new Vector2(osuLogo.DisplayWidth, osuLogo.DisplayHeight);
+
+            logo.Texture = texture;
+            logo.Size = size;
+            ripple.Texture = texture;
+            ripple.Size = size;
         }
 
         private int lastBeatIndex;
