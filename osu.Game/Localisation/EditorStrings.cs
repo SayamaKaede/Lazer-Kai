@@ -567,9 +567,14 @@ namespace osu.Game.Localisation
         public static LocalisableString ColourWhite => new TranslatableString(getKey(@"colour_white"), @"White");
 
         /// <summary>
-        /// "Export this difficulty as .osu (v14)"
+        /// "Export this difficulty in stable format (.osu v14)"
         /// </summary>
-        public static LocalisableString ExportBeatmapFile => new TranslatableString(getKey(@"export_beatmap_file"), @"Export this difficulty as .osu (v14)");
+        public static LocalisableString ExportBeatmapFile => new TranslatableString(getKey(@"export_beatmap_file"), @"Export this difficulty in stable format (.osu v14)");
+
+        /// <summary>
+        /// "Export this difficulty in lazer format (.osu v128)"
+        /// </summary>
+        public static LocalisableString ExportLazerBeatmapFile => new TranslatableString(getKey(@"export_lazer_beatmap_file"), @"Export this difficulty in lazer format (.osu v128)");
 
         /// <summary>
         /// "Show difficulty over the song"

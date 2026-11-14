@@ -1028,6 +1028,10 @@ namespace osu.Game.Screens.Edit
             savedInStableFormat.BindValueChanged(_ => updateStableFormatNeeds(), true);
 
             changeHandler?.CanRedo.BindValueChanged(v => redoMenuItem.Action.Disabled = !v.NewValue, true);
+
+            // a file kept in stable's format holds nothing in lazer's to write out.
+            savedInStableFormat.BindValueChanged(_ => updateLazerExport());
+            MutationTracker.InProgress.BindValueChanged(_ => updateLazerExport(), true);
         }
 
         [Resolved]
@@ -2302,6 +2306,10 @@ namespace osu.Game.Screens.Edit
         /// </summary>
         private readonly Bindable<bool> savedInStableFormat = new Bindable<bool>();
 
+        private EditorMenuItem exportLazerBeatmapFileMenuItem = null!;
+
+        private void updateLazerExport() => exportLazerBeatmapFileMenuItem.Action.Disabled = MutationTracker.InProgress.Value || savedInStableFormat.Value;
+
         /// <summary>
         /// What the difficulty is missing before it is kept in stable's format, as the hitsound screen asks for it. Only
         /// an osu! difficulty is converted; one of another mode is asked only for the option.
@@ -3063,7 +3071,8 @@ namespace osu.Game.Screens.Edit
             };
 
             var export = createExportMenu();
-            saveRelatedMenuItems.AddRange(export.Items);
+            // the lazer export is also disabled for a file kept in stable's format, which the mutation tracker would clear.
+            saveRelatedMenuItems.AddRange(export.Items.Where(i => i != exportLazerBeatmapFileMenuItem));
             yield return export;
 
             yield return new EditorMenuItem(LazerKaiStableCompatibilityStrings.Convert)
@@ -3145,12 +3154,21 @@ namespace osu.Game.Screens.Edit
             {
                 new EditorMenuItem(EditorStrings.ExportForEditing, MenuItemType.Standard, () => runExport(manager => manager.Export(Beatmap.Value.BeatmapSetInfo))),
                 new EditorMenuItem(EditorStrings.ExportForCompatibility, MenuItemType.Standard, () => runExport(manager => manager.ExportLegacy(Beatmap.Value.BeatmapSetInfo))),
-                new EditorMenuItem(EditorStrings.ExportGuestDifficulty, MenuItemType.Standard, () => runExport(manager => manager.ExportLegacy(Beatmap.Value.BeatmapInfo))),
+                // upstream's guest difficulty export went through the same stable exporter as the item below, so the two
+                // wrote the same file; it is replaced by the pair here, which differ in the format written.
                 new EditorMenuItem(EditorStrings.ExportBeatmapFile, MenuItemType.Standard, () => runExport(manager =>
                 {
                     manager.ExportLegacyBeatmapFile(Beatmap.Value.BeatmapInfo);
                     return Task.CompletedTask;
                 })),
+                (exportLazerBeatmapFileMenuItem = new EditorMenuItem(EditorStrings.ExportLazerBeatmapFile, MenuItemType.Standard, () => runExport(manager =>
+                {
+                    // saving first may have written the file in stable's format, which has no lazer version to give.
+                    if (!savedInStableFormat.Value)
+                        manager.ExportLazerBeatmapFile(Beatmap.Value.BeatmapInfo);
+
+                    return Task.CompletedTask;
+                }))),
             };
 
             return new EditorMenuItem(CommonStrings.Export) { Items = exportItems };

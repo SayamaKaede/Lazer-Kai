@@ -677,6 +677,15 @@ namespace osu.Game.Beatmaps
             legacyBeatmapExporter.PresentExportedFiles();
         }
 
+        /// <summary>
+        /// Writes one difficulty out as a bare <c>.osu</c> file as lazer stores it, and reveals it.
+        /// </summary>
+        public void ExportLazerBeatmapFile(BeatmapInfo beatmap)
+        {
+            beatmapExporter.ExportBeatmapFile(beatmap);
+            beatmapExporter.PresentExportedFiles();
+        }
+
         private void updateHashAndMarkDirty(BeatmapSetInfo setInfo)
         {
             setInfo.Hash = beatmapImporter.ComputeHash(setInfo);

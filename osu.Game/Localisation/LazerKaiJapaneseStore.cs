@@ -36,7 +36,8 @@ namespace osu.Game.Localisation
             [$@"{editor_prefix}:test_gameplay"] = @"テストプレイ",
             [$@"{editor_prefix}:test_play_mods"] = @"テストプレイのMod",
             [$@"{editor_prefix}:test_play_deselect_all_mods"] = @"Modをすべて解除",
-            [$@"{editor_prefix}:export_beatmap_file"] = @"この難易度を.osu形式で書き出す（v14）",
+            [$@"{editor_prefix}:export_beatmap_file"] = @"この難易度をStable形式で出力 (.osu v14)",
+            [$@"{editor_prefix}:export_lazer_beatmap_file"] = @"この難易度をLazer形式で出力 (.osu v128)",
 
             // test play
             [$@"{editor_prefix}:carry_over_song_select_mods"] = @"曲選択画面とエディターでのMod情報を共有する",
