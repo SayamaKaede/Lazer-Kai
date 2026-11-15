@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/lazer-kai-logo.png" alt="Lazer-Kai" width="160"></p>
+
 # Lazer-Kai
 
 [English](#english)
