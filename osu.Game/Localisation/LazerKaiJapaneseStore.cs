@@ -858,8 +858,6 @@ namespace osu.Game.Localisation
             [$@"{mapping_time_prefix}:friday"] = @"金",
             [$@"{mapping_time_prefix}:saturday"] = @"土",
 
-            [$@"{update_prefix}:release_available"] = @"Lazer-Kai {0} が公開されました。クリックするとダウンロードページを開きます",
-
             // upstream's own, which its Japanese translation does not cover yet
             [$@"{editor_prefix}:edit_externally"] = @"外部で編集...",
             [$@"{editor_prefix}:open_info_page"] = @"譜面の情報ページを開く",
@@ -949,7 +947,6 @@ namespace osu.Game.Localisation
         private const string welcome_prefix = @"osu.Game.Resources.Localisation.LazerKaiWelcome";
         private const string mapping_time_prefix = @"osu.Game.Resources.Localisation.LazerKaiMappingTime";
         private const string combo_colour_studio_prefix = @"osu.Game.Resources.Localisation.ComboColourStudio";
-        private const string update_prefix = @"osu.Game.Resources.Localisation.LazerKaiUpdate";
         private const string editor_setup_prefix = @"osu.Game.Resources.Localisation.EditorSetup";
         private const string osu_editor_setup_prefix = @"osu.Game.Resources.Localisation.Osu.OsuEditorSetupStrings";
 

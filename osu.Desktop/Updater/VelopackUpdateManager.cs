@@ -74,7 +74,7 @@ namespace osu.Desktop.Updater
         /// </summary>
         /// <remarks>
         /// A build handed out as a folder to copy over an existing one has nothing to update from, and velopack's
-        /// check fails on every run. Those are told a release happened instead, by osu.Game's LazerKaiUpdateManager.
+        /// check fails on every run. Those are left without an update check.
         /// </remarks>
         public static bool CanReplaceItself => RootDirectory != null;
 

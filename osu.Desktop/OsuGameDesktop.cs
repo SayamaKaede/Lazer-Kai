@@ -143,9 +143,8 @@ namespace osu.Desktop
                 return new VelopackUpdateManager();
 
             // builds handed out before this fork was packaged are folders copied over an existing one, so velopack has
-            // nothing to update from and its check fails on every run. Knowing a release happened is all that is left
-            // to offer them, and it is what tells them to move over to a packaged build once.
-            return new LazerKaiUpdateManager();
+            // nothing to update from and its check fails on every run. They are left without an update check.
+            return new UpdateManager();
         }
 
         public override bool RestartAppWhenExited()
