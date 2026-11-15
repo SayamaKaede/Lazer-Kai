@@ -78,10 +78,11 @@ namespace osu.Game
     [Cached(typeof(OsuGameBase))]
     public partial class OsuGameBase : Framework.Game, ICanAcceptFiles, IBeatSyncProvider
     {
+        // the window and taskbar carry this fork's own name rather than osu!'s.
 #if DEBUG
-        public const string GAME_NAME = "osu! (development)";
+        public const string GAME_NAME = "Lazer-Kai (development)";
 #else
-        public const string GAME_NAME = "osu!";
+        public const string GAME_NAME = "Lazer-Kai";
 #endif
 
         public const string OSU_PROTOCOL = "osu://";
