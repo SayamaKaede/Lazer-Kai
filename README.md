@@ -16,7 +16,7 @@ osu! および ppy とは関係ありません。不具合が発生しても osu
 
 ## 再配布について
 
-配布は [Releases](https://github.com/SayamaKaede/Lazer-Kai-Releases/releases) だけで行っています。転載や再配布はなるべくしないでください。外部での宣伝もしないでください。
+配布は [Releases](https://github.com/SayamaKaede/Lazer-Kai-Releases/releases) だけで行っています。転載や再配布はなるべくしないでください。
 
 古いバージョンが出回ると、修正済みの不具合の報告が届いたり、更新の通知が表示されない状態の人が発生したりします。人に渡すときは、このページを教えてください。
 
@@ -25,3 +25,7 @@ osu! および ppy とは関係ありません。不具合が発生しても osu
 MIT。詳しくは [LICENCE](LICENCE) を参照してください。
 
 osu! 本体の著作権は ppy Pty Ltd にあります。このフォークが追加した部分も同じ MIT ライセンスです。
+
+ゲームの素材（画像・音声など）は [ppy/osu-resources](https://github.com/ppy/osu-resources) のもので、CC-BY-NC 4.0 です。営利目的には使えません。「osu!」と「ppy」の名前とロゴは商標で、MIT ライセンスの対象ではありません。
+
+タイトル画面のロゴの「改」には [Yuji Boku](https://github.com/Kinutafontfactory/Yuji)（SIL Open Font License 1.1）を使っています。
