@@ -1,5 +1,7 @@
 # Lazer-Kai
 
+[English](#english)
+
 osu! および ppy とは関係ありません。不具合が発生しても osu! 側に問い合わせないでください。
 
 [osu!lazer](https://github.com/ppy/osu) のフォークです。マッピングを楽に・便利にすることを中心に、主にエディターへ機能を追加しています。
@@ -29,3 +31,37 @@ osu! 本体の著作権は ppy Pty Ltd にあります。このフォークが�
 ゲームの素材（画像・音声など）は [ppy/osu-resources](https://github.com/ppy/osu-resources) のもので、CC-BY-NC 4.0 です。営利目的には使用できません。「osu!」と「ppy」の名前とロゴは商標で、MIT ライセンスの対象ではありません。
 
 タイトル画面のロゴの「改」には [Yuji Boku](https://github.com/Kinutafontfactory/Yuji)（SIL Open Font License 1.1）を使用しています。
+
+---
+
+## English
+
+Not affiliated with osu! or ppy. Please do not contact the osu! team about problems with this build.
+
+A fork of [osu!lazer](https://github.com/ppy/osu), adding features mainly to the editor to make mapping easier and more convenient.
+
+It is portable: beatmaps, settings and scores are kept inside its own folder. It uses separate data from the official osu!lazer, so you can use both side by side.
+
+### Installing
+
+Download `LazerKai-win-Portable.zip` from [Releases](https://github.com/SayamaKaede/Lazer-Kai-Releases/releases), extract it anywhere, and run `Lazer-Kai.exe`.
+
+### Updating
+
+Updates are automatic. Click the notification, and once the download has finished, restart the game to apply it.
+
+### Redistribution
+
+It is distributed only through [Releases](https://github.com/SayamaKaede/Lazer-Kai-Releases/releases). Please avoid reuploading or redistributing it.
+
+When sharing it with others, please point them to this page.
+
+### Licence
+
+MIT. See [LICENCE](LICENCE) for details.
+
+osu! itself is copyright ppy Pty Ltd. What this fork adds is under the same MIT licence.
+
+The game's resources (images, sounds and so on) come from [ppy/osu-resources](https://github.com/ppy/osu-resources) and are licensed under CC-BY-NC 4.0, so they may not be used commercially. The "osu!" and "ppy" names and logos are trademarks and are not covered by the MIT licence.
+
+The 改 in the title screen's logo is set in [Yuji Boku](https://github.com/Kinutafontfactory/Yuji) (SIL Open Font License 1.1).
