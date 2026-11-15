@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -47,9 +48,11 @@ namespace osu.Game.Utils
     public class SentryLogger : IDisposable
     {
         /// <summary>
-        /// Where reports go. It is in every copy of the game anyway, and it can only be sent to, not read from.
+        /// Where reports go, built in from sentry-dsn.txt beside the repository (see osu.Game.csproj), or null when the
+        /// build had no such file -- a build of the public source by anybody else, which then sends nothing.
         /// </summary>
-        private const string dsn = @"https://b600614892ac193b68d09c2543137ee4@o4512145916297216.ingest.us.sentry.io/4512145926914048";
+        internal static string? BuiltInDsn => typeof(SentryLogger).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+                                                                     .FirstOrDefault(a => a.Key == @"LazerKaiSentryDsn")?.Value;
 
         /// <summary>
         /// The address a report says it came from, in place of the one it did.
@@ -78,6 +81,11 @@ namespace osu.Game.Utils
 
             // a build from the working tree is the one being worked on: its errors are seen as they happen.
             if (!game.IsDeployedBuild)
+                return;
+
+            string? dsn = BuiltInDsn;
+
+            if (string.IsNullOrEmpty(dsn))
                 return;
 
             sentrySession = SentrySdk.Init(options =>

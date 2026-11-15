@@ -11,6 +11,17 @@
     <PackageIcon>icon.png</PackageIcon>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
+  <!-- Lazer-Kai: where error reports go is read from sentry-dsn.txt beside the repository rather than kept in it, so a
+       build of the public source by anybody else sends nothing. Without the file the game sends no reports. -->
+  <PropertyGroup Condition="Exists('$(MSBuildThisFileDirectory)..\..\sentry-dsn.txt')">
+    <LazerKaiSentryDsn>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\..\sentry-dsn.txt').Trim())</LazerKaiSentryDsn>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(LazerKaiSentryDsn)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>LazerKaiSentryDsn</_Parameter1>
+      <_Parameter2>$(LazerKaiSentryDsn)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
   <ItemGroup Label="Icon">
     <None Include="..\assets\lazer-nuget.png">
       <Pack>True</Pack>
